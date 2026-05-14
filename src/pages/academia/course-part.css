@@ -1,0 +1,968 @@
+.course-part-page .hero-sec{
+    padding: 20px 30px;
+    border-bottom: 1px solid #DBDFE9;
+    width: 100%;
+}
+
+.course-part-page .hero-sec-inner{
+    width: 100%;
+    border-radius: 6px;
+    background:
+		linear-gradient(270deg, rgba(69, 4, 104, 0.6) 0%, rgba(0, 0, 0, 0.6) 100%),
+		url("../assets/imgs/ac-hr.jpg") center/cover no-repeat;
+    min-height: 250px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 10px;
+}
+
+.course-part-page .hsi-contents{
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 20px 30px;
+    width: 95%;
+    margin: 0 auto;
+    padding-bottom: 40px;
+}
+
+.course-part-page .hsi-contents-h{
+    padding: 10px 0;
+    border-bottom: 1px solid #E2E8F033;
+}
+
+.course-part-page .hsi-contents-h h1{
+    font-family: Montserrat;
+    font-weight: 600;
+    font-style: SemiBold;
+    font-size: 36px;
+    line-height: 100%;
+    letter-spacing: -1px;
+    color: #F5F5F5;
+}
+
+.course-part-page .hsi-contents-b p{
+    font-family: Inter;
+    font-weight: 400;
+    font-style: Regular;
+    font-size: 16px;
+    line-height: 24px;
+    letter-spacing: 0%;
+    color: #B5B7C8;
+}
+
+
+.course-part-page .sec-h{
+    padding: 30px 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+}
+
+.course-part-page .sec-h p{
+    font-family: Inter;
+    font-weight: 400;
+    font-style: Regular;
+    font-size: 16px;
+    line-height: 20px;
+    letter-spacing: 0%;
+    text-align: center;
+    vertical-align: middle;
+    color: #450468;
+}
+
+.course-part-page .sec-h h1{
+    font-family: Montserrat;
+    font-weight: 600;
+    font-style: SemiBold;
+    font-size: 24px;
+    line-height: 100%;
+    letter-spacing: -1px;
+    color: #000000;
+}
+
+
+.course-part-page .newsletter-sec{
+    height: 170px;
+    background-color: #450468;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 5%;
+}
+
+.course-part-page .newsletter-sec-l{
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.course-part-page .newsletter-sec-l h3{
+    font-family: Montserrat;
+    font-weight: 500;
+    font-style: Medium;
+    font-size: 27px;
+    line-height: 40.5px;
+    letter-spacing: 0%;
+    vertical-align: middle;
+    color: #FFFFFF;
+}
+
+.course-part-page .newsletter-sec-l p{
+    font-family: Montserrat;
+    font-weight: 400;
+    font-style: Regular;
+    font-size: 16px;
+    line-height: 28.8px;
+    letter-spacing: 0%;
+    vertical-align: middle;
+    color: #FFFFFFCC;
+}
+
+.course-part-page .newsletter-sec-r form{
+    display: flex;
+    align-items: center;
+    width: 400px;
+    min-width: 300px;
+    position: relative;
+}
+
+.course-part-page .newsletter-sec-r form input{
+    width: 100%;
+    height: 45px;
+    border: none;
+    border-bottom: 1.33px solid #FFFFFF80;
+    background-color: transparent;
+    font-family: Inter;
+    font-weight: 400;
+    font-style: Regular;
+    font-size: 14px;
+    line-height: 100%;
+    letter-spacing: 0%;
+    vertical-align: middle;
+    color: #FFFFFF;
+    padding: 0 10px;
+    padding-left: 35px;
+    padding-right: 35px;
+    outline: none;
+    transition: all 0.3s ease;
+}
+
+.course-part-page .newsletter-sec-r form input:focus {
+    border-bottom-color: #FFFFFF;
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.course-part-page .newsletter-sec-r form input::placeholder {
+    color: #FFFFFFCC;
+    transition: color 0.3s ease;
+}
+
+.course-part-page .newsletter-sec-r form input:focus::placeholder {
+    color: #FFFFFF99;
+}
+
+.course-part-page .ac-sms{
+    position: absolute;
+    left: 2px;
+}
+
+.course-part-page .newsletter-sec-r button{
+    position: absolute;
+    right: 0px;
+    border: none;
+    background-color: transparent;
+    color: #FFFFFF;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.course-part-page .newsletter-sec-r button:hover {
+    transform: scale(1.2) translateX(-2px);
+}
+
+.course-part-page .newsletter-sec-r button:active {
+    transform: scale(0.9);
+}
+
+
+.course-part-page .sec-CTA{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    padding: 20px 0 30px;
+}
+
+.course-part-page .sec-CTA button{
+    padding: 14px 24px;
+    background: #450468;
+    border: none;
+    border-radius: 4px;
+    font-family: Inter;
+    font-weight: 500;
+    font-style: Medium;
+    font-size: 14px;
+    line-height: 14px;
+    letter-spacing: 0%;
+    color: #FFFFFF;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.course-part-page .sec-CTA button:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(69, 4, 104, 0.3);
+}
+
+.course-part-page .sec-CTA button:active {
+    transform: translateY(-1px);
+}
+
+.course-part-page .sec-CTA button:focus {
+    outline: 2px solid #450468;
+    outline-offset: 2px;
+}
+
+
+.course-part-page .main-content{
+    padding: 30px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.course-part-page .div-h{
+    display: grid;
+    grid-template-columns: 1fr 4fr;
+    gap: 20px;
+    padding: 0 0 30px;
+    align-items: center;
+}
+
+.course-part-page .div-h-r{
+    display: flex;
+    width: 100%;
+}
+
+.course-part-page .div-h-r-s{
+    height: 45px;
+    display: flex;
+    align-items: center;
+    padding: 0 7px 0 15px;
+    gap: 20px;
+    width: 100%;
+    border: 1px solid #DBDFE9;
+    border-radius: 6px;
+}
+
+.course-part-page .div-h-r-s input{
+    height: 100%;
+    width: 100%;
+    border-radius: 0px;
+    border: none;
+    outline: none;
+    font-family: Inter;
+    font-weight: 500;
+    font-style: Medium;
+    font-size: 13px;
+    line-height: 14px;
+    letter-spacing: -1%;
+    padding: 0 10px;
+}
+
+.course-part-page .div-h-r-s-f{
+    display: flex;
+    align-items: center;
+    height: 40px;
+    gap: 20px;
+}
+
+.course-part-page .div-h-r-s-f button,
+.course-part-page .div-h .div-h-r-s-f .dropdown button{
+    background-color: transparent;
+    border: none;
+    font-family: Inter;
+    font-weight: 400;
+    font-style: Regular;
+    font-size: 12px;
+    line-height: 14px;
+    letter-spacing: 0%;
+    color: #99A1B7;
+    padding: 7px 12px;
+    transition: all 0.2s ease;
+    border-radius: 100px;
+    margin: auto 0;
+    height: 100;
+}
+
+.course-part-page .div-h .div-h-r-s-f .dropdown button::after{
+    display: none;
+}
+
+.course-part-page .div-h-r-s-f button.active{
+    font-family: Inter;
+    font-weight: 500;
+    font-style: Medium;
+    font-size: 12px;
+    line-height: 14px;
+    letter-spacing: 0%;
+    color: #450468;
+    background-color: #45046814;
+    border: 0.5px solid #4504681A;
+}
+
+.course-part-page .div-h-r-s-f-f{
+    padding-left: 15px;
+    border-left: 1px solid #DBDFE9;
+}
+
+.course-part-page .div-h-r-s-f-f button,
+.course-part-page .div-h .div-h-r-s-f .dropdown button{
+    border: 0.5px solid #4504681A;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.course-part-page .div-h .dropdown{
+    width: 100%;
+    height: 45px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+
+.course-part-page .div-h .filter-drop button{
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    font-family: Inter;
+    font-weight: 400;
+    font-style: Regular;
+    font-size: 13px;
+    line-height: 14px;
+    letter-spacing: -1%;
+    color: #071437;
+    padding: 0 10px;
+    border-radius: 6px;
+    background-color: #FCFCFC;
+    border: none;
+}
+
+.course-part-page .div-h .filter-drop button::after{
+    display: flex;
+}
+
+.course-part-page .div-h .dropdown button div{
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.course-part-page .div-h .dropdown-menu{
+    padding: 10px 0;
+    box-shadow: 7px 7px 25px 0px #0000001A;
+    background-color: #FFFFFF;
+    gap: 10px;
+    border: 1px solid #F9F9F9;
+}
+
+.course-part-page .div-h .dropdown-menu .dropdown-item{
+    font-family: Inter;
+    font-weight: 400;
+    font-style: Regular;
+    font-size: 13px;
+    line-height: 14px;
+    letter-spacing: 0%;
+    color: #450468;
+    padding: 10px 14px;
+}
+
+.course-part-page .div-h .dropdown-menu .dropdown-item a{
+    color: #450468;
+    font-family: Inter;
+    font-weight: 400;
+    font-style: Regular;
+    font-size: 13px;
+    line-height: 14px;
+    letter-spacing: 0%;
+}
+
+.course-part-page .div-h .dropdown-menu .dropdown-item.active{
+    background-color: #F9F9F9;
+}
+
+
+.course-part-page .filters-grid-b-h{
+    display: flex;
+    align-items: center;
+    gap: 25px;
+    padding: 20px 0;
+    border-bottom: 0.5px solid #DBDFE9;
+}
+
+.course-part-page .filters-grid-b-h button{
+    background-color: transparent;
+    border: none;
+}
+
+.course-part-page .filters-grid-b-h div{
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: Inter;
+    font-weight: 400;
+    font-style: Regular;
+    font-size: 11px;
+    line-height: 14px;
+    letter-spacing: 0%;
+    color: #4B5675;
+}
+
+.course-part-page .filters-grid-b-h div p{
+    font-family: Inter;
+    font-weight: 500;
+    font-style: Medium;
+    font-size: 11px;
+    line-height: 16px;
+    letter-spacing: 0%;
+    color: #071437;
+}
+
+.course-part-page .filters-grid-b-sel{
+    border-bottom: 0.5px solid #DBDFE9;
+    padding: 20px 0;
+}
+
+.course-part-page .filters-grid-b-sel-h{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+}
+
+.course-part-page .filters-grid-b-sel-h h1{
+    font-family: Inter;
+    font-weight: 600;
+    font-style: Semi Bold;
+    font-size: 24px;
+    line-height: 16px;
+    letter-spacing: 0%;
+    color: #071437;
+}
+
+.course-part-page .filters-grid-b-sel-h div{
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.course-part-page .filters-grid-b-sel-h p{
+    font-family: Inter;
+    font-weight: 500;
+    font-style: Medium;
+    font-size: 11px;
+    line-height: 14px;
+    letter-spacing: 0%;
+    color: #64748B;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.course-part-page .filters-grid-b-sel-h button{
+    padding: 9px 7px;
+    font-family: Inter;
+    font-weight: 500;
+    font-style: Medium;
+    font-size: 12px;
+    line-height: 14px;
+    letter-spacing: 0%;
+    vertical-align: middle;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    background: #450468;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.course-part-page .filters-grid-b-sel-h button:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(69, 4, 104, 0.3);
+}
+
+.course-part-page .filters-grid-b-sel-b{
+    padding: 20px 0 0;
+}
+
+.course-part-page .filters-grid-b-sel-b p{
+    font-family: Inter;
+    font-weight: 400;
+    font-style: Regular;
+    font-size: 13px;
+    line-height: 19px;
+    letter-spacing: 0%;
+    color: #6A7287;
+}
+
+.course-part-page .main-content-grid{
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 20px;
+}
+
+.course-part-page .main-content-grid-l{
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    border-right: 1px solid #E2E8F0;
+    padding-right: 20px;
+}
+
+.course-part-page .mcgl-h{
+    padding: 15px 0;
+}
+
+.course-part-page .mcgr-h{
+    padding: 25px 0;
+}
+
+.course-part-page .mcgl-h h2,
+.course-part-page .mcgr-h h2{
+    font-family: Inter;
+    font-weight: 600;
+    font-style: Semi Bold;
+    font-size: 20px;
+    line-height: 16px;
+    letter-spacing: 0%;
+    color: #071437;
+}
+
+.course-part-page .mcgl-b,
+.course-part-page .course-part{
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.course-part-page .course-part{
+    padding: 10px 0;
+    border-bottom: 0.5px solid #DBDFE9;
+}
+
+.course-part-page .course-part-h{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.course-part-page .course-part-h div{
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.course-part-page .course-part-h h5{
+    font-family: Inter;
+    font-weight: 600;
+    font-style: Semi Bold;
+    font-size: 20px;
+    line-height: 16px;
+    letter-spacing: 0%;
+    text-decoration: underline;
+    text-decoration-style: solid;
+    text-decoration-offset: 0%;
+    text-decoration-thickness: 0%;
+    color: #071437CC;
+}
+
+.course-part-page .course-part-h p{
+    font-family: Inter;
+    font-weight: 400;
+    font-style: Regular;
+    font-size: 13px;
+    line-height: 19px;
+    letter-spacing: 0%;
+    color: #6A7287;
+}
+
+.course-part-page .course-part-h button{
+    font-family: Inter;
+    font-weight: 500;
+    font-style: Medium;
+    font-size: 11px;
+    line-height: 14px;
+    letter-spacing: 0%;
+    color: #64748B;
+    background: #FCFCFC;
+    padding: 9px;
+    border: 0.5px solid #E2E8F0;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.course-part-page .course-part-h div:last-child{
+    flex-direction: row;
+}
+
+.course-part-page .course-part-h div button:last-child{
+    background: #45046812;
+    border: 0.5px solid #45046812;
+}
+
+.course-part-page .course-part-b{
+    padding: 10px 0;
+}
+
+.course-part-page .course-part-b p{
+    font-weight: 400;
+    font-style: Regular;
+    font-size: 13px;
+    line-height: 19px;
+    letter-spacing: 0%;
+    color: #6A7287;
+}
+
+
+.course-part-page .mcgl-b .pagination{
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    width: 100%;
+    justify-content: center;
+
+}
+
+.course-part-page .mcgl-b .pagination div{
+    display: flex;
+    gap: 2px;
+    align-items: center;
+}
+
+.course-part-page .mcgl-b .pagination div p{
+    width: 30px;
+    height: 30px;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border-radius: 6px;
+    font-size: 14px;
+    transition: all 0.3s ease;
+}
+
+.course-part-page .mcgl-b .pagination div p.active,
+.course-part-page .mcgl-b .pagination div p:hover{
+    background-color: #450468;
+    color: white;
+}
+
+.course-part-page .mcgl-b .pagination button{
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 5px 0;
+    border: 1px solid #DBDFE9;
+    border-radius: 6px;
+    min-width: 30px;
+    background-color: transparent;
+}
+
+.course-part-page .mcgr-b{
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+
+.course-part-page .fgbl-item{
+    border: 0.5px solid #E2E8F0;
+    backdrop-filter: blur(22.899999618530273px);
+    background: #FCFCFC;
+    padding: 20px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.course-part-page .fgbl-item-l{
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.course-part-page .fgbl-item-l h4{
+    font-family: Montserrat;
+    font-weight: 600;
+    font-style: SemiBold;
+    font-size: 14px;
+    line-height: 24px;
+    letter-spacing: 0px;
+    text-decoration: underline;
+    text-decoration-style: solid;
+    text-decoration-offset: 0%;
+    text-decoration-thickness: 0%;
+    text-decoration-skip-ink: auto;
+    color: #071437;
+}
+
+.course-part-page .fgbl-item-l p{
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: Inter;
+    font-weight: 400;
+    font-style: Regular;
+    font-size: 12px;
+    line-height: 14px;
+    letter-spacing: 0%;
+    color: #07143799;
+}
+
+.course-part-page .fgbl-item-r button{
+    background: #45046812;
+    padding: 9px;
+    border: 1px solid #45046812;
+    font-family: Inter;
+    font-weight: 500;
+    font-style: Medium;
+    font-size: 11px;
+    line-height: 14px;
+    letter-spacing: 0%;
+    color: #450468;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-radius: 4px;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+@media(max-width: 768px){
+
+    .course-part-page .hero-sec{
+        padding: 15px;
+    }
+
+    .course-part-page .hero-sec-inner{
+        min-height: 170px;
+    }
+
+    .course-part-page .hsi-contents{
+        gap: 15px;
+        padding: 15px 20px;
+        width: 97%;
+        padding-bottom: 30px;
+    }
+
+    .course-part-page .hsi-contents-h h1{
+        font-size: 16px;
+    }
+
+    .course-part-page .hsi-contents-b p{
+        font-size: 12px;
+        line-height: 16px;
+    }
+
+    .course-part-page .sec-h{
+        padding: 15px 0 20px;
+        gap: 10px;
+    }
+
+    .course-part-page .sec-h p{
+        font-size: 14px;
+    }
+
+    .course-part-page .sec-h h1{
+        font-size: 20px;
+    }
+
+    .course-part-page .main-content{
+        padding: 15px;
+    }
+
+    .course-part-page .div-h{
+        display: flex;
+        grid-template-columns: unset;
+        gap: 20px;
+        padding: 0 0 0px;
+    }
+
+    .course-part-page .div-h-r-s{
+        height: 45px;
+        padding: 0px;
+        gap: 15px;
+        width: 100%;
+        border: none;
+        border-radius: 0px;
+    }
+
+
+    .course-part-page .div-h-r-s input{
+        background-color: #FCFCFC;
+        border: 1px solid #DBDFE9;
+        border-radius: 6px;
+        width: 100%;
+    }
+
+    .course-part-page .div-h-r-s-f{
+        display: flex;
+        align-items: center;
+        height: 40px;
+        gap: 20px;
+    }
+
+    .course-part-page .div-h-r-s-f button{
+        display: none;
+        background-color: transparent;
+        border: none;
+        color: #99A1B7;
+        padding: 7px 12px;
+        transition: all 0.2s ease;
+        border-radius: 100px;
+    }
+
+    .course-part-page .div-h-r-s-f-f{
+        padding-left: 0px;
+        border-left: none;
+    }
+
+    .course-part-page .div-h-r-s-f-f button{
+        border: 0.5px solid #4504681A;
+        border-radius: 6px;
+        align-items: center;
+        gap: 10px;
+        display: flex;
+        height: 45px;
+        aspect-ratio: 1;
+    }
+
+    .course-part-page .div-h-r-s-f-f button span{
+        display: none;
+    }
+
+    .course-part-page .div-h .dropdown{
+        width: fit-content;
+    }
+
+    .course-part-page .div-h .dropdown button{
+        width: unset;
+        height: 100%;
+        aspect-ratio: 1;
+        gap: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .course-part-page .div-h .dropdown button span{
+        display: none;
+    }
+
+    .course-part-page .div-h .dropdown button::after{
+        display: none;
+    }
+
+    .course-part-page .filters-grid-b-h{
+        gap: 20px;
+        padding: 10px 0;
+    }
+
+    .course-part-page .filters-grid-b-sel{
+        border-bottom: 0.5px solid #DBDFE9;
+        padding: 0px 0 20px;
+    }
+
+    .course-part-page .main-content-grid{
+        grid-template-columns: 1fr;
+    }
+
+    .course-part-page .main-content-grid-l{
+        gap: 20px;
+        border-right: unset;
+        padding-right: 0px;
+    }
+
+    .course-part-page .mcgl-h{
+        padding: 10px 0;
+    }
+
+    .course-part-page .mcgr-h{
+        padding: 30px 0;
+    }
+
+    .course-part-page .course-part-h{
+        display: unset;
+    }
+
+    .course-part-page .course-part-h h5{
+        line-height: 25px;
+    }
+
+    .course-part-page .course-part-h div:last-child{
+        margin-top: 15px;
+    }
+
+    .course-part-page .newsletter-sec{
+        height: auto;
+        align-items: unset;
+        justify-content: unset;
+        flex-direction: column;
+        gap: 20px;
+        padding: 30px 20px;
+    }
+
+    .course-part-page .newsletter-sec-l h3{
+        font-size: 22px;
+        line-height: normal;
+    }
+
+    .course-part-page .newsletter-sec-l p{
+        font-size: 14px;
+    }
+
+    .course-part-page .newsletter-sec-r form{
+        display: flex;
+        align-items: center;
+        width: 100%;
+        min-width: 0;
+        position: relative;
+    }
+
+}

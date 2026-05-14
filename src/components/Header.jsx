@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import logoIcon from '../assets/icons/logo.svg';
 import follow1Icon from '../assets/icons/follow1.svg';
@@ -51,6 +52,8 @@ const courseGroups = [
 const categories = ['Business', 'Academia', 'News', 'Jobs', 'Marketing'];
 
 function Header() {
+  const [activeCourseGroup, setActiveCourseGroup] = useState(0);
+
   return (
     <header className="site-header">
       <div className="ad-part">
@@ -61,8 +64,8 @@ function Header() {
 
       <div className="first-part-h">
         <div className="first-part-h-l">
-          <NavLink to="/">Digital Marketing</NavLink>
-          <NavLink to="/">News</NavLink>
+          <NavLink to="/" end>Digital Marketing</NavLink>
+          <a href="#">News</a>
           <a href="#">Magazine</a>
           <a href="#">Job Portal</a>
           <a href="#">Academia</a>
@@ -95,13 +98,13 @@ function Header() {
 
       <div className="second-part-h active">
         <div className="second-part-h-logo">
-          <NavLink to="/gonaraza/academia/index">
+          <NavLink to="/academia/index">
             <img className="site-logo" src={logoIcon} alt="Gonaraza Academia" />
           </NavLink>
         </div>
 
         <nav className="second-part-h-menus">
-          <NavLink to="/gonaraza/academia/index">Home</NavLink>
+          <NavLink to="/academia/index">Home</NavLink>
 
           <div className="dropdown courses-dropdown">
             <button id="coursesToggle" className="dropdown-toggle courses-toggle" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
@@ -112,14 +115,26 @@ function Header() {
               <div className="courses-dropdown-left">
                 {courseGroups.map((group, groupIndex) => (
                   <div className="dropend course-group" key={group.title}>
-                    <button className={`dropdown-item courses-left-link${group.active ? ' active' : ''}`} type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <button
+                      className={`dropdown-item courses-left-link${activeCourseGroup === groupIndex ? ' active' : ''}`}
+                      type="button"
+                      /* disable Bootstrap click toggle for these left links so they act on hover only */
+                      data-bs-toggle={groupIndex === 0 ? undefined : 'dropdown'}
+                      aria-expanded={activeCourseGroup === groupIndex}
+                      onMouseEnter={() => setActiveCourseGroup(groupIndex)}
+                      onFocus={() => setActiveCourseGroup(groupIndex)}
+                      onClick={(e) => { if (groupIndex === 0) { e.preventDefault(); e.stopPropagation(); } }}
+                    >
                       <span className="courses-left-text">{group.title}</span>
                       <span className="courses-left-arrow"><img src={rightIcon} alt="" /></span>
                     </button>
-                    <div className="dropdown-menu courses-submenu shadow" aria-labelledby={`course-group-${groupIndex}`}>
+                    <div
+                      className={`dropdown-menu courses-submenu shadow${activeCourseGroup === groupIndex ? ' show' : ''}`}
+                      aria-labelledby={`course-group-${groupIndex}`}
+                    >
                       {group.items.map((item, itemIndex) => (
                         <button
-                          className={`dropdown-item courses-right-link${itemIndex === 0 ? ' active' : ''}${item === 'Art & Creation Design' || item === 'Partnerships' ? ' soon' : ''}`}
+                          className={`dropdown-item courses-right-link${activeCourseGroup === groupIndex && itemIndex === 0 ? ' active' : ''}${item === 'Art & Creation Design' || item === 'Partnerships' ? ' soon' : ''}`}
                           type="button"
                           key={item}
                         >
@@ -134,9 +149,9 @@ function Header() {
             </div>
           </div>
 
-          <a href="/gonaraza/academia/journals">Journals &amp; Projects</a>
+          <a href="/academia/journals">Journals &amp; Projects</a>
           <a href="#">Community Feed</a>
-          <a href="/gonaraza/academia/rewards">Rewards</a>
+          <a href="/academia/rewards">Rewards</a>
         </nav>
 
         <div className="second-part-h-links" aria-label="Header actions">

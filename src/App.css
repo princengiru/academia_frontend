@@ -41,8 +41,9 @@
 }
 
 .content {
-  width: min(980px, 100% - 32px);
+  width: 100%;
   margin: 24px auto;
+  flex: 1;
 }
 
 .card {

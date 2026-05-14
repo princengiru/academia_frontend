@@ -1,0 +1,700 @@
+.hero-sec{
+    padding: 20px 30px;
+    border-bottom: 1px solid #DBDFE9;
+    width: 100%;
+}
+
+.hero-sec-inner{
+    width: 100%;
+    border-radius: 6px;
+    background:
+		linear-gradient(270deg, rgba(69, 4, 104, 0.6) 0%, rgba(0, 0, 0, 0.6) 100%),
+		url("../assets/imgs/ac-hr.jpg") center/cover no-repeat;
+    min-height: 250px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 10px;
+}
+
+.hsi-contents{
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 20px 30px;
+    width: 95%;
+    margin: 0 auto;
+    padding-bottom: 40px;
+}
+
+.hsi-contents-h{
+    padding: 10px 0;
+    border-bottom: 1px solid #E2E8F033;
+}
+
+.hsi-contents-h h1{
+    font-family: Montserrat;
+    font-weight: 600;
+    font-style: SemiBold;
+    font-size: 36px;
+    line-height: 100%;
+    letter-spacing: -1px;
+    color: #F5F5F5;
+}
+
+.hsi-contents-b p{
+    font-family: Inter;
+    font-weight: 400;
+    font-style: Regular;
+    font-size: 16px;
+    line-height: 24px;
+    letter-spacing: 0%;
+    color: #B5B7C8;
+}
+
+
+.stats-sec{
+    padding: 30px 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    gap: 20px;
+    background-color: #FCFCFC;
+}
+
+.stats-sec-item{
+    display: flex;
+    gap: 20px;
+    align-items: center;
+}
+
+.stats-sec-item  div{
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.stats-sec-item h5{
+    font-family: Montserrat;
+    font-weight: 700;
+    font-style: Bold;
+    font-size: 16px;
+    line-height: 100%;
+    letter-spacing: 0%;
+    vertical-align: middle;
+    color: #071437;
+}
+
+.stats-sec-item p{
+    font-family: Inter;
+    font-weight: 400;
+    font-style: Regular;
+    font-size: 16px;
+    line-height: 100%;
+    letter-spacing: 0%;
+    vertical-align: middle;
+    color: #071437;
+}
+
+
+.new-content{
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 10px 30px;
+    border-bottom: 1px solid #DBDFE9;
+    justify-content: space-between;
+}
+
+.new-content h2{
+    font-family: Inter;
+    font-weight: 600;
+    font-style: Semi Bold;
+    font-size: 20px;
+    line-height: 14px;
+    letter-spacing: -1%;
+    color: #071437;
+}
+
+.new-content-l{
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 15px;
+    background-color: #FCFCFC;
+    border: 0.5px solid #DCE0E2;
+    border-radius: 4px;
+}
+
+.new-content-l div{
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.new-content-l h6{
+    font-family: Inter;
+    font-weight: 700;
+    font-style: Bold;
+    font-size: 14px;
+    line-height: 17.5px;
+    letter-spacing: 0%;
+    vertical-align: middle;
+    color: #2B2B2B;
+}
+
+.new-content-l p{
+    font-family: Inter;
+    font-weight: 400;
+    font-style: Regular;
+    font-size: 12px;
+    line-height: 15px;
+    letter-spacing: 0%;
+    vertical-align: middle;
+    color: #5C6D77;
+}
+
+.main-content{
+    padding: 30px;
+}
+
+.main-content-inner{
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+    min-width: 0;
+}
+
+.reward{
+    min-width: 0;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    box-shadow: 0px 10px 25px -13px #0000001A;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.reward-img{
+    width: 100%;
+    height: fit-content;
+    position: relative;
+}
+
+
+.reward-img img{
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.reward-text{
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.reward-text h4{
+    font-family: Montserrat;
+    font-weight: 600;
+    font-style: SemiBold;
+    font-size: 14px;
+    line-height: 20px;
+    letter-spacing: -0.5px;
+    vertical-align: middle;
+    color: #000000;
+}
+
+.reward-text div{
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    justify-content: space-between;
+    width: 100%;
+}
+
+.reward-text p{
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: Inter;
+    font-weight: 600;
+    font-style: Semi Bold;
+    font-size: 13px;
+    line-height: 10px;
+    letter-spacing: 0px;
+    color: #9A9CAE;
+}
+
+.reward-text button{
+    padding: 0;
+    border: none;
+    background-color: transparent;
+}
+
+.vid-sec{
+    padding: 15px;
+}
+
+.main-content-grid{
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+    border: 1px solid #F1F1F4;
+    padding: 15px;
+    border-radius: 6px;
+}
+
+.main-content-grid-l{
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.watch-content{
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.watch-content h2{
+    margin: 0;
+    font-family: Inter;
+    font-weight: 600;
+    font-style: Semi Bold;
+    font-size: 20px;
+    line-height: 16px;
+    letter-spacing: 0%;
+    color: #071437;
+}
+
+.watch-content p{
+    font-family: Inter;
+    font-weight: 400;
+    font-style: Regular;
+    font-size: 16px;
+    line-height: 25px;
+    letter-spacing: -0.75px;
+    color: #1A2A5A;
+}
+
+.watch-cta{
+    width: 100%;
+    border-radius: 8px;
+    padding: 15px 20px;
+    background: linear-gradient(270deg, #450468 0%, #000000 100%);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 30px;
+    overflow: hidden;
+}
+
+.watch-cta-l,
+.watch-cta-r{
+    display: flex;
+    align-items: center;
+}
+
+.watch-cta-stack{
+    position: relative;
+    width: unset;
+    height: 70px;
+    width: 120px;
+}
+
+.watch-cta-thumb{
+    position: absolute;
+    border-radius: 6px;
+    overflow: hidden;
+    border: 2px solid #E2E8F0;
+    border-collapse: collapse;
+    box-shadow: 7px 7px 25px -13px #0000001A;
+    width: 70px;
+    min-width: 70px;
+}
+
+.watch-cta-thumb img{
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.watch-cta-thumb.main-thumb{
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    height: 70px;
+    z-index: 3;
+}
+
+.watch-cta-thumb.sub-thumb{
+    z-index: 2;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.watch-cta-thumb.sub-thumb.one{
+    height: 60px;
+    left: unset;
+    right: 35px;
+}
+
+.watch-cta-thumb.sub-thumb.two{
+    z-index: 1;
+    height: 50px;
+    left: unset;
+    right: 20px;
+}
+
+.watch-cta-overlay{
+    position: absolute;
+    inset: 0;
+    background: #45046885;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.watch-cta-overlay span{
+    font-family: Inter;
+    font-weight: 700;
+    font-style: Bold;
+    font-size: 10px;
+    line-height: 14px;
+    letter-spacing: 0px;
+    text-align: center;
+    color: #FFFFFF;
+}
+
+.watch-cta-r button{
+    border: none;
+    border-radius: 8px;
+    padding: 12px 10px;
+    background: #FFFFFF;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.watch-cta-r button img{
+    width: 20px;
+    height: 20px;
+}
+
+.watch-cta-r button span{
+    font-family: Inter;
+    font-weight: 500;
+    font-style: Medium;
+    font-size: 14px;
+    line-height: 14px;
+    letter-spacing: 0%;
+    color: #450468;
+}
+
+
+
+
+/* --- CONTAINER --- */
+.story-thumbnail {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16/9;
+    background: #000;
+    overflow: hidden;
+    border-radius: 8px;
+    font-family: sans-serif; /* Clean font */
+    user-select: none; /* Prevent text selection while clicking */
+    min-width: 0;
+}
+
+.story-thumbnail video {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+}
+
+/* --- UI OVERLAY LAYERS --- */
+.ui-layer {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    pointer-events: none; /* Let clicks pass through to video */
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+/* Make buttons clickable again */
+.ui-layer button, .ui-layer input, .progress-area {
+    pointer-events: auto;
+}
+
+/* --- CENTER CONTROLS --- */
+.center-controls {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    align-items: center;
+    gap: 0px;
+    justify-content: space-around;
+    width: 80%;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+/* Show center controls when paused or hovering */
+.story-thumbnail.paused .center-controls,
+.story-thumbnail:hover .center-controls {
+    opacity: 1;
+}
+
+/* Hide center controls while playing (optional - remove this block if you always want them visible on hover) */
+.story-thumbnail.playing:not(:hover) .center-controls {
+    opacity: 0;
+}
+
+.center-btn {
+    background: none; border: none; cursor: pointer; color: white;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+    transition: transform 0.1s;
+}
+.center-btn:active { transform: scale(0.95); }
+.center-btn svg { width: 45px; height: 45px; }
+.center-btn.big-play svg { width: 70px; height: 70px; }
+
+/* --- BOTTOM BAR FIX --- */
+.bottom-controls {
+    position: absolute; /* Force it to float over the video */
+    bottom: 0;          /* Pin it strictly to the bottom */
+    left: 0;            /* Stretch from left... */
+    width: 100%;        /* ...to right */
+    
+    /* Design & Gradient */
+    padding: 40px 15px 10px 15px; /* More top padding for the gradient fade */
+    background: linear-gradient(180deg, rgba(102, 102, 102, 0) 0%, rgba(57, 57, 57, 0.4375) 23.08%, rgba(13, 13, 13, 0.75) 55.29%, rgba(10, 10, 10, 0.90625) 71.63%, rgba(6, 6, 6, 0.9375) 82.59%, #000000 100%);
+
+    
+    /* Layout */
+    display: flex;
+    align-items: flex-end; 
+    justify-content: space-between;
+    
+    /* Visibility */
+    opacity: 0;
+    transition: opacity 0.3s;
+    z-index: 20; /* Ensure it sits on top of everything */
+}
+
+.story-thumbnail:hover .bottom-controls,
+.story-thumbnail.paused .bottom-controls {
+    opacity: 1;
+}
+
+/* Left Box (The Pill) */
+.left-pill {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    backdrop-filter: blur(4px);
+    padding: 6px 7px ;
+    border-radius: 6px;
+    border: 1px solid #FFFFFF1A;
+    margin-bottom: 8px;
+    background: #222222B2;
+}
+
+.icon-btn {
+    background: none; border: none; cursor: pointer; color: white;
+    display: flex; align-items: center;
+}
+.icon-btn svg { width: 18px; height: 18px; }
+
+.time-text {
+    color: white;
+    font-family: Inter;
+    font-weight: 500;
+    font-style: Medium;
+    font-size: 14px;
+    line-height: 100%;
+    letter-spacing: 0%;
+    vertical-align: middle;
+}
+
+/* Right Icons */
+.right-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+.right-actions .icon-btn {
+    padding: 8px;
+    /* Optional: background for right icons too? */
+    /* background: rgba(20, 20, 20, 0.85); border-radius: 6px; */ 
+}
+.right-actions svg { width: 22px; height: 22px; }
+
+/* --- PROGRESS BAR (The Smooth Part) --- */
+.progress-area {
+    position: absolute;
+    top: 20%; left: 15px;
+    width: calc(100% - 30px);
+    height: 5px; /* Thin line */
+    background: rgba(255,255,255,0.2);
+    cursor: pointer;
+    z-index: 10;
+    transition: height 0.1s;
+}
+
+/* Hovering progress bar makes it thicker */
+.progress-area:hover { height: 8px; }
+
+.progress-fill {
+    height: 100%;
+    background: #FF0000; /* Red */
+    width: 0%;
+    position: relative;
+    /* This transition makes normal playback smooth */
+    transition: width 0.1s linear; 
+}
+
+/* THE KNOB (Circle) */
+.progress-fill::after {
+    content: '';
+    position: absolute;
+    right: -6px; /* Center the knob on the end */
+    top: 50%;
+    transform: translateY(-50%) scale(0); /* Hidden by default */
+    width: 12px; height: 12px;
+    background: #FF0000;
+    border-radius: 50%;
+    transition: transform 0.1s;
+}
+
+.progress-area:hover .progress-fill::after {
+    transform: translateY(-50%) scale(1); /* Show on hover */
+}
+
+/* CRITICAL: NO JUMPING CLASS */
+/* When JS adds this class (during drag), updates are instant */
+.progress-fill.no-transition {
+    transition: none !important;
+}
+
+
+
+
+.newsletter-sec{
+    height: 170px;
+    background-color: #450468;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 5%;
+}
+
+.newsletter-sec-l{
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.newsletter-sec-l h3{
+    font-family: Montserrat;
+    font-weight: 500;
+    font-style: Medium;
+    font-size: 27px;
+    line-height: 40.5px;
+    letter-spacing: 0%;
+    vertical-align: middle;
+    color: #FFFFFF;
+}
+
+.newsletter-sec-l p{
+    font-family: Montserrat;
+    font-weight: 400;
+    font-style: Regular;
+    font-size: 16px;
+    line-height: 28.8px;
+    letter-spacing: 0%;
+    vertical-align: middle;
+    color: #FFFFFFCC;
+}
+
+.newsletter-sec-r form{
+    display: flex;
+    align-items: center;
+    width: 400px;
+    min-width: 300px;
+    position: relative;
+}
+
+.newsletter-sec-r form input{
+    width: 100%;
+    height: 45px;
+    border: none;
+    border-bottom: 1.33px solid #FFFFFF80;
+    background-color: transparent;
+    font-family: Inter;
+    font-weight: 400;
+    font-style: Regular;
+    font-size: 14px;
+    line-height: 100%;
+    letter-spacing: 0%;
+    vertical-align: middle;
+    color: #FFFFFF;
+    padding: 0 10px;
+    padding-left: 35px;
+    padding-right: 35px;
+    outline: none;
+    transition: all 0.3s ease;
+}
+
+.newsletter-sec-r form input:focus {
+    border-bottom-color: #FFFFFF;
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.newsletter-sec-r form input::placeholder {
+    color: #FFFFFFCC;
+    transition: color 0.3s ease;
+}
+
+.newsletter-sec-r form input:focus::placeholder {
+    color: #FFFFFF99;
+}
+
+.ac-sms{
+    position: absolute;
+    left: 2px;
+}
+
+.newsletter-sec-r button{
+    position: absolute;
+    right: 0px;
+    border: none;
+    background-color: transparent;
+    color: #FFFFFF;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.newsletter-sec-r button:hover {
+    transform: scale(1.2) translateX(-2px);
+}
+
+.newsletter-sec-r button:active {
+    transform: scale(0.9);
+}
+

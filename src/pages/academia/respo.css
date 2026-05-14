@@ -1,0 +1,184 @@
+
+@media(max-width: 768px){
+    .academia-read-journal-page .stats-sec{
+        padding: 10px;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 20px;
+    }
+
+    .academia-read-journal-page .stats-sec-item{
+        gap: 10px;
+    }
+
+    .academia-read-journal-page .stats-sec-item img{
+        width: 35px;
+    }
+
+    .academia-read-journal-page .stats-sec-item  div{
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+    }
+
+    .academia-read-journal-page .stats-sec-item h5{
+        font-size: 14px
+    }
+
+    .academia-read-journal-page .stats-sec-item p{
+        font-size: 12px;
+    }
+
+    .academia-read-journal-page .main-content-grid{
+        grid-template-columns: 1fr;
+        gap: 20px;
+        padding: 5px;
+    }
+
+    .academia-read-journal-page .main-content{
+        padding: 15px;
+    }
+
+    .academia-read-journal-page .center-btn svg { width: 30px; height: 30px; }
+    .academia-read-journal-page .center-btn.big-play svg { width: 40px; height: 40px; }
+
+    .academia-read-journal-page .bottom-controls {
+        padding: 30px 10px 5px 10px;
+    }
+
+    .academia-read-journal-page .left-pill {
+        gap: 10px;
+        padding: 5px;
+        margin-bottom: 5px;
+    }
+
+    .academia-read-journal-page .time-text {
+        font-size: 12px;
+    }
+
+    .academia-read-journal-page .right-actions svg { width: 10px; height: 10px; }
+
+    .academia-read-journal-page .watch-content{
+        gap: 10px;
+    }
+
+    .academia-read-journal-page .watch-content h2{
+        font-size: 18px;
+    }
+
+    .academia-read-journal-page .watch-content p{
+        font-size: 14px;
+    }
+
+    .academia-read-journal-page .watch-cta{
+        padding: 10px;
+        gap: 30px;
+    }
+
+    .academia-read-journal-page .watch-cta-stack{
+        position: relative;
+        width: unset;
+        height: 60px;
+        width: 80px;
+    }
+
+    .academia-read-journal-page .watch-cta-thumb.sub-thumb.one{
+        height: 60px;
+        left: unset;
+        right: 0px;
+    }
+
+    .academia-read-journal-page .watch-cta-thumb.sub-thumb.two{
+        z-index: 1;
+        height: 50px;
+        left: unset;
+        right: -10px;
+    }
+
+    .academia-read-journal-page .watch-cta-r button{
+        padding: 8px;
+        gap: 8px;
+    }
+
+    .academia-read-journal-page .watch-cta-r button img{
+        width: 18px;
+        height: 18px;
+    }
+
+    .academia-read-journal-page .watch-cta-r button span{
+        font-size: 13px;
+    }
+
+    .academia-read-journal-page .new-content{
+        padding: 20px 10px;
+        flex-direction: column;
+    }
+
+    .academia-read-journal-page .new-content-l{
+        gap: 15px;
+        padding: 15px;
+        width: 100%;
+    }
+
+    .academia-read-journal-page .new-content-l div{
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    
+    .academia-read-journal-page .newsletter-sec{
+        height: auto;
+        align-items: unset;
+        justify-content: unset;
+        flex-direction: column;
+        gap: 20px;
+        padding: 30px 20px;
+    }
+
+    .academia-read-journal-page .newsletter-sec-l h3{
+        font-size: 22px;
+        line-height: normal;
+    }
+
+    .academia-read-journal-page .newsletter-sec-l p{
+        font-size: 14px;
+    }
+
+    .academia-read-journal-page .newsletter-sec-r form{
+        display: flex;
+        align-items: center;
+        width: 100%;
+        min-width: 0;
+        position: relative;
+    }
+
+    .academia-read-journal-page .main-content-inner{
+        grid-template-columns: repeat(1, 1fr);
+        gap: 20px;
+    }
+
+    .academia-read-journal-page .hero-sec{
+        padding: 15px;
+    }
+
+    .academia-read-journal-page .hero-sec-inner{
+        min-height: 170px;
+    }
+
+    .academia-read-journal-page .hsi-contents{
+        gap: 15px;
+        padding: 15px 20px;
+        width: 97%;
+        padding-bottom: 30px;
+    }
+
+    .academia-read-journal-page .hsi-contents-h h1{
+        font-size: 16px;
+    }
+
+    .academia-read-journal-page .hsi-contents-b p{
+        font-size: 12px;
+        line-height: 16px;
+    }
+}
