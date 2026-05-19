@@ -967,6 +967,16 @@
         font-weight: 700;
     }
 
+    .academia-read-story-page .ss-swiper .ss-btn svg {
+        width: 13px !important;
+        height: 13px !important;
+    }
+
+    .academia-read-story-page .ss-swiper .ss-btn svg path {
+        stroke: #450468 !important;
+        fill: #450468 !important;
+    }
+
     .academia-read-story-page .sec-CTA{
         padding: 15px 0 20px;
     }

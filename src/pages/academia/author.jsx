@@ -2,6 +2,8 @@ import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Swiper from 'swiper';
 import { Navigation } from 'swiper/modules';
+import 'swiper/css';
+import 'swiper/css/navigation';
 import acGtIcon from '../../assets/icons/ac-gt.svg';
 import acUedIcon from '../../assets/icons/ac-ued.svg';
 import acBriIcon from '../../assets/icons/ac-bri.svg';

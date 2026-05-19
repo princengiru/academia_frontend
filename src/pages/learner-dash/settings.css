@@ -1,0 +1,1221 @@
+.learners-settings-page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding-bottom: 18px;
+}
+
+.learners-settings-page .learners-projects-profile-strip {
+  background: #FFFFFF;
+  border-bottom: 1px solid #ECEFF5;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  flex-wrap: wrap;
+  margin-top: 25px;
+}
+
+.learners-settings-page .learners-projects-profile-strip-main {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.learners-settings-page .learners-projects-profile-avatar {
+  width: 57px;
+  height: 57px;
+  border-radius: 50%;
+  border: 1.5px solid #C7D4E5;
+  overflow: hidden;
+  flex: 0 0 auto;
+}
+
+.learners-settings-page .learners-projects-profile-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.learners-settings-page .learners-projects-profile-copy {
+  min-width: 0;
+}
+
+.learners-settings-page .learners-projects-profile-name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.learners-settings-page .learners-projects-profile-name-row h1 {
+  margin: 0;
+  font-family: Inter, sans-serif;
+  font-weight: 600;
+  font-size: 16px;
+  line-height: 18px;
+  color: #071437;
+}
+
+.learners-settings-page .learners-projects-status-badge,
+.learners-settings-page .learners-projects-count-badge {
+  min-height: 24px;
+  padding: 0 10px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: Inter, sans-serif;
+  font-weight: 500;
+  font-size: 11px;
+  line-height: 14px;
+}
+
+.learners-settings-page .learners-projects-status-badge {
+  background: #F5FAFF;
+  border: 1px solid #B7D5FF;
+  color: #0D6EFD;
+}
+
+.learners-settings-page .learners-projects-status-badge.is-inactive {
+  background: #FFF2F2;
+  border-color: #F4B4C1;
+  color: #D92D20;
+}
+
+.learners-settings-page .learners-projects-count-badge {
+  background: #F3EDF7;
+  color: #6C2B98;
+}
+
+.learners-settings-page .learners-projects-count-badge img {
+  width: 13px;
+  height: 13px;
+}
+
+.learners-settings-page .learners-projects-profile-meta {
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-family: Inter, sans-serif;
+  font-weight: 400;
+  font-size: 12px;
+  line-height: 14px;
+  color: #7B8499;
+}
+
+.learners-settings-page .learners-projects-profile-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-left: auto;
+}
+
+.learners-settings-page .learners-projects-primary-btn,
+.learners-settings-page .learners-projects-secondary-btn {
+  min-height: 36px;
+  padding: 0 16px;
+  border-radius: 6px;
+  border: none;
+  font-family: Inter, sans-serif;
+  font-weight: 600;
+  font-size: 12px;
+  line-height: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.learners-settings-page .learners-projects-primary-btn {
+  background: #520A80;
+  color: #FFFFFF;
+}
+
+.learners-settings-page .learners-projects-secondary-btn {
+  background: #FCF8FF;
+  border: 1px solid #D7C6E2;
+  color: #6C2B98;
+}
+
+.learners-settings-page .learners-settings-shell {
+  display: grid;
+  grid-template-columns: 250px minmax(0, 1fr);
+  gap: 25px;
+  align-items: start;
+}
+
+.learners-settings-page .learners-settings-side {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.learners-settings-page .learners-settings-side-section,
+.learners-settings-page .learners-settings-panel {
+  background: #FFFFFF;
+}
+
+.learners-settings-page .learners-settings-side-section {
+  padding: 0 6px 12px;
+}
+
+.learners-settings-page .learners-settings-side-head {
+  padding: 12px 0 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.learners-settings-page .learners-settings-side-head-main {
+  padding-top: 10px;
+}
+
+.learners-settings-page .learners-settings-side-head h2,
+.learners-settings-page .learners-settings-side-head h3,
+.learners-settings-page .learners-settings-panel-head h3,
+.learners-settings-page .learners-settings-subtitle {
+  margin: 0;
+  font-family: Inter, sans-serif;
+  font-weight: 600;
+  color: #071437;
+}
+
+.learners-settings-page .learners-settings-side-head h2 {
+  font-size: 13px;
+  line-height: 17px;
+}
+
+.learners-settings-page .learners-settings-side-head h3,
+.learners-settings-page .learners-settings-subtitle {
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.learners-settings-page .learners-settings-side-head p,
+.learners-settings-page .learners-settings-about-copy,
+.learners-settings-page .learners-settings-stats-list span,
+.learners-settings-page .learners-settings-skills-list span,
+.learners-settings-page .learners-settings-activity-item p,
+.learners-settings-page .learners-settings-activity-item span,
+.learners-settings-page .learners-settings-callout-copy p,
+.learners-settings-page .learners-settings-confirm-row span {
+  font-family: Inter, sans-serif;
+  font-weight: 400;
+  color: #6A7287;
+}
+
+.learners-settings-page .learners-settings-side-head p {
+  margin: 4px 0 0;
+  font-size: 11px;
+  line-height: 14px;
+}
+
+.learners-settings-page .learners-settings-edit-btn,
+.learners-settings-page .learners-settings-ghost-btn,
+.learners-settings-page .learners-settings-followers-btn,
+.learners-settings-page .learners-settings-email-btn,
+.learners-settings-page .learners-settings-callout-btn,
+.learners-settings-page .learners-settings-save-btn,
+.learners-settings-page .learners-settings-danger-btn {
+  border: none;
+  font-family: Inter, sans-serif;
+}
+
+.learners-settings-page .learners-settings-edit-btn,
+.learners-settings-page .learners-settings-ghost-btn {
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: 6px;
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 500;
+  font-size: 11px;
+  line-height: 14px;
+  color: #64748B;
+}
+
+.learners-settings-page .learners-settings-edit-btn img,
+.learners-settings-page .learners-settings-ghost-btn img,
+.learners-settings-page .learners-settings-side-list img,
+.learners-settings-page .learners-settings-followers-btn img,
+.learners-settings-page .learners-settings-field-head img,
+.learners-settings-page .learners-settings-password-value img,
+.learners-settings-page .learners-settings-phone-value img {
+  width: 12px;
+  height: 12px;
+}
+
+.learners-settings-page .learners-settings-availability-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 4px 0 10px;
+}
+
+.learners-settings-page .learners-settings-availability-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.learners-settings-page .learners-settings-availability {
+  min-height: 22px;
+  padding: 0 9px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  background: #EAFBF1;
+  color: #1DA862;
+  font-family: Inter, sans-serif;
+  font-weight: 500;
+  font-size: 10px;
+  line-height: 13px;
+}
+
+.learners-settings-page .learners-settings-side-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.learners-settings-page .learners-settings-side-list div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: Inter, sans-serif;
+  font-weight: 400;
+  font-size: 10px;
+  line-height: 13px;
+  color: #64748B;
+}
+
+.learners-settings-page .learners-settings-followers-btn {
+  margin-top: 12px;
+  width: 100%;
+  min-height: 24px;
+  border-radius: 999px;
+  background: #FCFCFD;
+  border: 1px solid #EEF2F7;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  font-weight: 500;
+  font-size: 10px;
+  line-height: 13px;
+  color: #6C2B98;
+}
+
+.learners-settings-page .learners-settings-followers-btn.is-active {
+  background: #F4ECFB;
+  border-color: #D7C6E2;
+}
+
+.learners-settings-page .learners-settings-email-btn {
+  margin-top: 10px;
+  width: 100%;
+  min-height: 30px;
+  border-radius: 999px;
+  background: #520A80;
+  color: #FFFFFF;
+  font-weight: 600;
+  font-size: 10px;
+  line-height: 13px;
+}
+
+.learners-settings-page .learners-settings-side-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.learners-settings-page .learners-settings-inline-editor,
+.learners-settings-page .learners-settings-inline-actions,
+.learners-settings-page .learners-settings-inline-input-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.learners-settings-page .learners-settings-inline-editor {
+  align-items: stretch;
+}
+
+.learners-settings-page .learners-settings-inline-input-row.is-stack {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.learners-settings-page .learners-settings-inline-select,
+.learners-settings-page .learners-settings-inline-input,
+.learners-settings-page .learners-settings-textarea,
+.learners-settings-page .learners-settings-field-control {
+  width: 100%;
+  border: 1px solid #E2E8F0;
+  background: #FCFCFC;
+  border-radius: 8px;
+  font-family: Inter, sans-serif;
+  font-weight: 400;
+  font-size: 12px;
+  line-height: 16px;
+  color: #475569;
+}
+
+.learners-settings-page .learners-settings-inline-select,
+.learners-settings-page .learners-settings-inline-input {
+  min-height: 42px;
+  padding: 10px 10px 12px;
+  border-bottom-color: #DDE3EE;
+}
+
+.learners-settings-page .learners-settings-textarea {
+  min-height: 110px;
+  padding: 10px 10px 12px;
+  border-bottom-color: #DDE3EE;
+  resize: vertical;
+}
+
+.learners-settings-page .learners-settings-inline-save,
+.learners-settings-page .learners-settings-inline-cancel {
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: 8px;
+  border: none;
+  font-family: Inter, sans-serif;
+  font-weight: 600;
+  font-size: 11px;
+  line-height: 14px;
+}
+
+.learners-settings-page .learners-settings-inline-save {
+  background: #520A80;
+  color: #FFFFFF;
+}
+
+.learners-settings-page .learners-settings-inline-cancel {
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  color: #64748B;
+}
+
+.learners-settings-page .learners-settings-about-editor,
+.learners-settings-page .learners-settings-skills-editor,
+.learners-settings-page .learners-settings-reset-panel {
+  margin-top: 12px;
+}
+
+.learners-settings-page .learners-settings-reset-fields .learners-settings-inline-input {
+  min-height: 42px;
+}
+
+.learners-settings-page .learners-settings-reset-panel .learners-settings-inline-actions {
+  margin-top: 16px;
+}
+
+.learners-settings-page .learners-settings-feedback {
+  margin-top: 14px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-family: Inter, sans-serif;
+  font-weight: 500;
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.learners-settings-page .learners-settings-feedback.is-success {
+  background: #EAFBF1;
+  color: #1F8C53;
+}
+
+.learners-settings-page .learners-settings-feedback.is-warning {
+  background: #FFF4E5;
+  color: #B25C00;
+}
+
+.learners-settings-page .learners-settings-about-copy {
+  margin: 0;
+  font-size: 11px;
+  line-height: 18px;
+}
+
+.learners-settings-page .learners-settings-about-copy a,
+.learners-settings-page .learners-settings-callout-copy a {
+  color: #520A80;
+  text-decoration: underline;
+}
+
+.learners-settings-page .learners-settings-stats-list,
+.learners-settings-page .learners-settings-skills-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.learners-settings-page .learners-settings-skills-list.is-editing {
+  gap: 10px;
+}
+
+.learners-settings-page .learners-settings-stats-list div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.learners-settings-page .learners-settings-stats-list span,
+.learners-settings-page .learners-settings-stats-list strong,
+.learners-settings-page .learners-settings-skills-list span {
+  font-size: 10px;
+  line-height: 13px;
+}
+
+.learners-settings-page .learners-settings-stats-list strong {
+  font-family: Inter, sans-serif;
+  font-weight: 400;
+  color: #64748B;
+}
+
+.learners-settings-page .learners-settings-skill-chip {
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid #EEF2F7;
+  background: #FCFCFD;
+  text-align: left;
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  color: #64748B;
+}
+
+.learners-settings-page .learners-settings-skill-chip-remove {
+  display: none;
+  font-size: 14px;
+  line-height: 14px;
+  color: #FF4D6D;
+}
+
+.learners-settings-page .learners-settings-skills-list.is-editing .learners-settings-skill-chip-remove {
+  display: inline-block;
+}
+
+.learners-settings-page .learners-settings-main {
+  min-width: 0;
+}
+
+.learners-settings-page .learners-settings-tabs {
+  border-bottom: 1px solid #E9EDF5;
+  gap: 20px;
+}
+
+.learners-settings-page .learners-settings-tabs .nav-link {
+  border: none;
+  background: transparent;
+  padding: 0 2px 12px;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  font-family: Inter, sans-serif;
+  font-weight: 500;
+  font-size: 12px;
+  line-height: 16px;
+  color: #7B8499;
+}
+
+.learners-settings-page .learners-settings-tabs .nav-link.active,
+.learners-settings-page .learners-settings-tabs .nav-link:hover {
+  color: #520A80;
+  border-color: #520A80;
+}
+
+.learners-settings-page .learners-settings-tab-content {
+  padding-top: 14px;
+}
+
+.learners-settings-page .learners-settings-panel {
+  padding: 0 20px 20px;
+  margin-bottom: 16px;
+}
+
+.learners-settings-page .learners-settings-activity-panel {
+  padding: 0;
+  border: 1px solid #E1E7F0;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.learners-settings-page .learners-settings-panel-head {
+  min-height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.learners-settings-page .learners-settings-panel-head h3 {
+  font-size: 15px;
+  line-height: 20px;
+}
+
+.learners-settings-page .learners-settings-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px 22px;
+}
+
+.learners-settings-page .learners-settings-field {
+  min-width: 0;
+}
+
+.learners-settings-page .learners-settings-field.is-full,
+.learners-settings-page .learners-settings-notification-field {
+  grid-column: 1 / -1;
+}
+
+.learners-settings-page .learners-settings-field-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.learners-settings-page .learners-settings-field-head label,
+.learners-settings-page .learners-settings-field-value,
+.learners-settings-page .learners-settings-notification-options label,
+.learners-settings-page .learners-settings-save-btn,
+.learners-settings-page .learners-settings-danger-btn,
+.learners-settings-page .learners-settings-callout-copy strong,
+.learners-settings-page .learners-settings-activity-item strong {
+  font-family: Inter, sans-serif;
+}
+
+.learners-settings-page .learners-settings-field-head label {
+  font-weight: 500;
+  font-size: 12px;
+  line-height: 16px;
+  color: #071437;
+}
+
+.learners-settings-page .learners-settings-field-value {
+  min-height: 42px;
+  margin-top: 10px;
+  padding: 10px 10px 12px;
+  border-bottom: 1px solid #DDE3EE;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 400;
+  font-size: 12px;
+  line-height: 16px;
+  color: #64748B;
+}
+
+.learners-settings-page .learners-settings-field-control {
+  appearance: none;
+  outline: none;
+}
+
+.learners-settings-page .learners-settings-field-control:disabled {
+  border: none;
+  border-bottom: 1px solid #DDE3EE;
+  background: transparent;
+  border-radius: 0;
+  padding-left: 0;
+  padding-right: 0;
+  cursor: default;
+  color: #64748B;
+}
+
+.learners-settings-page .learners-settings-field-control:not(:disabled):focus,
+.learners-settings-page .learners-settings-inline-select:focus,
+.learners-settings-page .learners-settings-inline-input:focus,
+.learners-settings-page .learners-settings-textarea:focus {
+  border-color: #C79AE7;
+  box-shadow: 0 0 0 3px rgba(82, 10, 128, 0.08);
+}
+
+.learners-settings-page .learners-settings-phone-value {
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+.learners-settings-page .learners-settings-phone-value input {
+  width: 100%;
+  border: none;
+  background: transparent;
+  outline: none;
+  color: inherit;
+  font: inherit;
+}
+
+.learners-settings-page .learners-settings-phone-value input:disabled {
+  cursor: default;
+}
+
+.learners-settings-page .learners-settings-field-control.is-plain {
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+  min-height: auto;
+}
+
+.learners-settings-page .learners-settings-phone-value img {
+  width: 16px;
+  height: 16px;
+}
+
+.learners-settings-page .learners-settings-password-value {
+  justify-content: space-between;
+}
+
+.learners-settings-page .learners-settings-icon-btn {
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 6px;
+  background: #F8FAFC;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+}
+
+.learners-settings-page .learners-settings-notification-options {
+  margin-top: 14px;
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  flex-wrap: wrap;
+}
+
+.learners-settings-page .learners-settings-notification-options label,
+.learners-settings-page .learners-settings-confirm-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.learners-settings-page .learners-settings-notification-options label {
+  font-weight: 400;
+  font-size: 11px;
+  line-height: 14px;
+  color: #64748B;
+}
+
+.learners-settings-page .learners-settings-notification-options.is-disabled {
+  opacity: 0.55;
+}
+
+.learners-settings-page .learners-settings-notification-options input,
+.learners-settings-page .learners-settings-confirm-row input {
+  accent-color: #520A80;
+}
+
+.learners-settings-page .learners-settings-switch {
+  width: 24px;
+  height: 14px;
+  border: none;
+  border-radius: 999px;
+  background: #D9DDE5;
+  position: relative;
+  padding: 0;
+}
+
+.learners-settings-page .learners-settings-switch::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #FFFFFF;
+}
+
+.learners-settings-page .learners-settings-switch.is-on {
+  background: #520A80;
+}
+
+.learners-settings-page .learners-settings-switch.is-on::after {
+  left: 12px;
+}
+
+.learners-settings-page .learners-settings-save-btn {
+  margin-top: 18px;
+  width: 100%;
+  min-height: 42px;
+  border-radius: 6px;
+  background: #520A80;
+  color: #FFFFFF;
+  font-weight: 600;
+  font-size: 14px;
+  line-height: 18px;
+}
+
+.learners-settings-page .learners-settings-save-btn:disabled,
+.learners-settings-page .learners-settings-danger-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.learners-settings-page .learners-settings-ghost-btn {
+  color: #64748B;
+}
+
+.learners-settings-page .learners-settings-callout {
+  margin-top: 20px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  border: 1px dashed;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+}
+
+.learners-settings-page .learners-settings-callout.is-security {
+  background: #FCF8FF;
+  border-color: #C9A7E6;
+}
+
+.learners-settings-page .learners-settings-callout.is-warning {
+  background: #FFF8E6;
+  border-color: #F0D269;
+}
+
+.learners-settings-page .learners-settings-callout-icon {
+  width: 18px;
+  height: 18px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: Inter, sans-serif;
+  font-weight: 700;
+  font-size: 11px;
+  line-height: 12px;
+}
+
+.learners-settings-page .learners-settings-callout.is-security .learners-settings-callout-icon {
+  background: #DCC3EE;
+  color: #520A80;
+}
+
+.learners-settings-page .learners-settings-callout.is-warning .learners-settings-callout-icon {
+  background: #FFE089;
+  color: #A87A00;
+}
+
+.learners-settings-page .learners-settings-callout-copy strong {
+  display: block;
+  font-weight: 600;
+  font-size: 13px;
+  line-height: 18px;
+  color: #071437;
+}
+
+.learners-settings-page .learners-settings-callout-copy p {
+  margin: 4px 0 0;
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.learners-settings-page .learners-settings-callout-btn {
+  min-width: 60px;
+  min-height: 36px;
+  padding: 0 16px;
+  border-radius: 6px;
+  background: #520A80;
+  color: #FFFFFF;
+  font-weight: 600;
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.learners-settings-page .learners-settings-callout-btn.is-active {
+  background: #EAFBF1;
+  color: #1F8C53;
+}
+
+.learners-settings-page .learners-settings-subtitle {
+  margin-top: 18px;
+  font-size: 14px;
+  line-height: 18px;
+}
+
+.learners-settings-page .learners-settings-confirm-row {
+  margin-top: 18px;
+  font-family: Inter, sans-serif;
+  font-weight: 400;
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.learners-settings-page .learners-settings-danger-btn {
+  margin-top: 18px;
+  min-width: 122px;
+  min-height: 38px;
+  padding: 0 14px;
+  border-radius: 6px;
+  background: #FF2F63;
+  color: #FFFFFF;
+  font-weight: 500;
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.learners-settings-page .learners-settings-activity-head {
+  min-height: 62px;
+  padding: 12px 26px;
+  border-bottom: 1px solid #D5DDEA;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.learners-settings-page .learners-settings-activity-head h3 {
+  margin: 0;
+  font-family: Inter, sans-serif;
+  font-weight: 600;
+  font-size: 16px;
+  line-height: 22px;
+  color: #23345D;
+}
+
+.learners-settings-page .learners-settings-activity-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.learners-settings-page .learners-settings-activity-filter,
+.learners-settings-page .learners-settings-activity-clear-btn,
+.learners-settings-page .learners-settings-activity-menu-btn {
+  border: 1px solid #D9DFE9;
+  background: #FFFFFF;
+}
+
+.learners-settings-page .learners-settings-activity-filter {
+  min-height: 38px;
+  padding: 0 14px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-family: Inter, sans-serif;
+  font-weight: 500;
+  font-size: 12px;
+  line-height: 16px;
+  color: #64748B;
+}
+
+.learners-settings-page .learners-settings-activity-filter::after {
+  display: none;
+}
+
+.learners-settings-page .learners-settings-activity-filter img {
+  width: 14px;
+  height: 14px;
+}
+
+.learners-settings-page .learners-settings-activity-filter-menu {
+  min-width: 170px;
+  border: 1px solid #E1E7F0;
+  border-radius: 10px;
+  padding: 8px;
+}
+
+.learners-settings-page .learners-settings-activity-filter-menu .dropdown-item {
+  border-radius: 8px;
+  font-family: Inter, sans-serif;
+  font-size: 12px;
+  line-height: 16px;
+  color: #64748B;
+}
+
+.learners-settings-page .learners-settings-activity-filter-menu .dropdown-item.active,
+.learners-settings-page .learners-settings-activity-filter-menu .dropdown-item:active {
+  background: #F4ECFB;
+  color: #520A80;
+}
+
+.learners-settings-page .learners-settings-activity-clear-btn {
+  min-height: 38px;
+  padding: 0 16px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-family: Inter, sans-serif;
+  font-weight: 500;
+  font-size: 12px;
+  line-height: 16px;
+  color: #FF4D6D;
+}
+
+.learners-settings-page .learners-settings-activity-clear-btn img {
+  width: 15px;
+  height: 15px;
+}
+
+.learners-settings-page .learners-settings-activity-list {
+  padding: 10px 24px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.learners-settings-page .learners-settings-activity-item {
+  padding-left: 10px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  position: relative;
+}
+
+.learners-settings-page .learners-settings-activity-item.is-reviewed {
+  opacity: 0.62;
+}
+
+.learners-settings-page .learners-settings-activity-item::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 2px;
+  bottom: 2px;
+  width: 3px;
+  border-radius: 999px;
+  background: #37B24D;
+}
+
+.learners-settings-page .learners-settings-activity-item-orange::before { background: #FF8A3D; }
+.learners-settings-page .learners-settings-activity-item-green::before { background: #37C871; }
+.learners-settings-page .learners-settings-activity-item-blue::before { background: #2F80ED; }
+
+.learners-settings-page .learners-settings-activity-item-copy {
+  min-width: 0;
+  padding-right: 12px;
+}
+
+.learners-settings-page .learners-settings-activity-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.learners-settings-page .learners-settings-activity-meta span,
+.learners-settings-page .learners-settings-activity-line span,
+.learners-settings-page .learners-settings-activity-foot {
+  font-family: Inter, sans-serif;
+  font-weight: 400;
+  color: #7B87A3;
+}
+
+.learners-settings-page .learners-settings-activity-meta span {
+  font-size: 11px;
+  line-height: 15px;
+}
+
+.learners-settings-page .learners-settings-activity-meta-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #C4CCDA;
+  display: inline-block;
+}
+
+.learners-settings-page .learners-settings-activity-line,
+.learners-settings-page .learners-settings-activity-foot {
+  margin: 6px 0 0;
+}
+
+.learners-settings-page .learners-settings-activity-line strong,
+.learners-settings-page .learners-settings-activity-foot strong {
+  font-family: Inter, sans-serif;
+  font-weight: 700;
+  font-size: 12px;
+  line-height: 18px;
+  color: #3D4A65;
+}
+
+.learners-settings-page .learners-settings-activity-line span,
+.learners-settings-page .learners-settings-activity-foot {
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.learners-settings-page .learners-settings-activity-foot strong {
+  color: #4C1D95;
+}
+
+.learners-settings-page .learners-settings-activity-menu-btn {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+}
+
+.learners-settings-page .learners-settings-activity-menu {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.learners-settings-page .learners-settings-activity-popover {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  min-width: 128px;
+  padding: 6px;
+  border-radius: 10px;
+  border: 1px solid #E1E7F0;
+  background: #FFFFFF;
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.08);
+  z-index: 5;
+}
+
+.learners-settings-page .learners-settings-activity-popover button {
+  width: 100%;
+  min-height: 32px;
+  padding: 0 10px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  text-align: left;
+  font-family: Inter, sans-serif;
+  font-size: 12px;
+  line-height: 16px;
+  color: #475569;
+}
+
+.learners-settings-page .learners-settings-activity-popover button:hover {
+  background: #F8FAFC;
+}
+
+.learners-settings-page .learners-settings-activity-empty {
+  min-height: 220px;
+  border: 1px dashed #D9DFE9;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  text-align: center;
+}
+
+.learners-settings-page .learners-settings-activity-empty strong,
+.learners-settings-page .learners-settings-activity-empty span {
+  font-family: Inter, sans-serif;
+}
+
+.learners-settings-page .learners-settings-activity-empty strong {
+  font-weight: 600;
+  font-size: 14px;
+  line-height: 18px;
+  color: #23345D;
+}
+
+.learners-settings-page .learners-settings-activity-empty span {
+  font-weight: 400;
+  font-size: 12px;
+  line-height: 16px;
+  color: #7B87A3;
+}
+
+.learners-settings-page .learners-settings-activity-menu-btn img {
+  width: 14px;
+  height: 14px;
+}
+
+@media (max-width: 991px) {
+  .learners-settings-page .learners-settings-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .learners-settings-page .learners-settings-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .learners-settings-page .learners-settings-callout {
+    grid-template-columns: 1fr;
+    align-items: flex-start;
+  }
+
+  .learners-settings-page .learners-settings-activity-head {
+    padding: 14px 16px;
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .learners-settings-page .learners-settings-activity-actions {
+    width: 100%;
+  }
+
+  .learners-settings-page .learners-settings-activity-list {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+}
+
+@media (max-width: 640px) {
+  .learners-settings-page .learners-projects-profile-strip {
+    padding: 16px;
+  }
+
+  .learners-settings-page .learners-projects-profile-actions {
+    width: 100%;
+  }
+
+  .learners-settings-page .learners-projects-primary-btn,
+  .learners-settings-page .learners-projects-secondary-btn {
+    flex: 1 1 100%;
+  }
+
+  .learners-settings-page .learners-settings-panel {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
+  .learners-settings-page .learners-settings-tabs {
+    gap: 14px;
+  }
+
+  .learners-settings-page .learners-settings-activity-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .learners-settings-page .learners-settings-activity-filter,
+  .learners-settings-page .learners-settings-activity-clear-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .learners-settings-page .learners-settings-activity-item {
+    gap: 10px;
+  }
+}
+
+.learners-settings-page input,
+.learners-settings-page select {
+  outline: none;
+}

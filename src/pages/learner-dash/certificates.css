@@ -1,0 +1,684 @@
+.learners-certificates-page {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding-bottom: 18px;
+}
+
+.learners-certificates-page .learners-projects-profile-strip {
+  background: #FFFFFF;
+  border-bottom: 1px solid #ECEFF5;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  flex-wrap: wrap;
+  margin-top: 25px;
+}
+
+.learners-certificates-page .learners-projects-profile-strip-main {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.learners-certificates-page .learners-projects-profile-avatar {
+  width: 57px;
+  height: 57px;
+  border-radius: 50%;
+  border: 1.5px solid #C7D4E5;
+  overflow: hidden;
+  flex: 0 0 auto;
+}
+
+.learners-certificates-page .learners-projects-profile-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.learners-certificates-page .learners-projects-profile-copy {
+  min-width: 0;
+}
+
+.learners-certificates-page .learners-projects-profile-name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.learners-certificates-page .learners-projects-profile-name-row h1 {
+  margin: 0;
+  font-family: Inter, sans-serif;
+  font-weight: 600;
+  font-size: 16px;
+  line-height: 18px;
+  color: #071437;
+}
+
+.learners-certificates-page .learners-projects-status-badge,
+.learners-certificates-page .learners-projects-count-badge {
+  min-height: 24px;
+  padding: 0 10px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: Inter, sans-serif;
+  font-weight: 500;
+  font-size: 11px;
+  line-height: 14px;
+}
+
+.learners-certificates-page .learners-projects-status-badge {
+  background: #F5FAFF;
+  border: 1px solid #B7D5FF;
+  color: #0D6EFD;
+}
+
+.learners-certificates-page .learners-projects-count-badge {
+  background: #F3EDF7;
+  color: #6C2B98;
+}
+
+.learners-certificates-page .learners-projects-count-badge img {
+  width: 13px;
+  height: 13px;
+}
+
+.learners-certificates-page .learners-projects-profile-meta {
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-family: Inter, sans-serif;
+  font-weight: 400;
+  font-size: 12px;
+  line-height: 14px;
+  color: #7B8499;
+}
+
+.learners-certificates-page .learners-projects-profile-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-left: auto;
+}
+
+.learners-certificates-page .learners-projects-primary-btn,
+.learners-certificates-page .learners-projects-secondary-btn {
+  min-height: 36px;
+  padding: 0 16px;
+  border-radius: 6px;
+  border: none;
+  font-family: Inter, sans-serif;
+  font-weight: 600;
+  font-size: 12px;
+  line-height: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.learners-certificates-page .learners-projects-primary-btn {
+  background: #520A80;
+  color: #FFFFFF;
+}
+
+.learners-certificates-page .learners-projects-secondary-btn {
+  background: #FCF8FF;
+  border: 1px solid #D7C6E2;
+  color: #6C2B98;
+}
+
+.learners-certificates-page .learners-certificates-summary {
+  background: #FFFFFF;
+  border: 1px solid #E6EAF1;
+  border-radius: 12px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  overflow: hidden;
+  box-shadow: 0 10px 30px -24px rgba(15, 23, 42, 0.25);
+}
+
+.learners-certificates-page .learners-certificates-summary-card {
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  position: relative;
+}
+
+.learners-certificates-page .learners-certificates-summary-card:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: 20px;
+  bottom: 20px;
+  width: 1px;
+  background: #E9EDF5;
+}
+
+.learners-certificates-page .learners-certificates-summary-card strong {
+  font-family: Inter, sans-serif;
+  font-weight: 600;
+  font-size: 18px;
+  line-height: 24px;
+  color: #071437;
+}
+
+.learners-certificates-page .learners-certificates-summary-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.learners-certificates-page .learners-certificates-summary-meta span,
+.learners-certificates-page .learners-certificates-summary-meta small {
+  font-family: Inter, sans-serif;
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.learners-certificates-page .learners-certificates-summary-meta span {
+  font-weight: 400;
+  color: #7B8499;
+}
+
+.learners-certificates-page .learners-certificates-summary-meta small {
+  font-weight: 500;
+}
+
+.learners-certificates-page .learners-certificates-summary-meta .is-positive {
+  color: #18A957;
+}
+
+.learners-certificates-page .learners-certificates-summary-meta .is-negative {
+  color: #E84C5B;
+}
+
+.learners-certificates-page .learners-certificates-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  flex-wrap: wrap;
+  padding: 20px 0;
+}
+
+.learners-certificates-page .learners-certificates-section-head h2 {
+  margin: 0;
+  font-family: Inter, sans-serif;
+  font-weight: 600;
+  font-size: 16px;
+  line-height: 20px;
+  color: #071437;
+}
+
+.learners-certificates-page .learners-certificates-section-head p {
+  margin: 4px 0 0;
+  font-family: Inter, sans-serif;
+  font-weight: 400;
+  font-size: 12px;
+  line-height: 16px;
+  color: #6A7287;
+}
+
+.learners-certificates-page .learners-certificates-filters {
+  background: #FFFFFF;
+  border-bottom: 1px solid #DBE2EC;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: min(100%, 575px);
+  padding-bottom: 10px;
+}
+
+.learners-certificates-page .learners-certificates-filter-dropdown {
+  flex: 0 0 auto;
+}
+
+.learners-certificates-page .learners-certificates-search {
+  flex: 1 1 auto;
+  height: 38px;
+  padding: 0 12px;
+  background: transparent;
+  border: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-right: 1px solid #DBE2EC;
+}
+
+.learners-certificates-page .learners-certificates-search img,
+.learners-certificates-page .learners-certificates-filter-btn img {
+  width: 14px;
+  height: 14px;
+}
+
+.learners-certificates-page .learners-certificates-search input {
+  width: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-family: Inter, sans-serif;
+  font-weight: 400;
+  font-size: 12px;
+  line-height: 16px;
+  color: #6A7287;
+}
+
+.learners-certificates-page .learners-certificates-filter-btn {
+  min-width: 106px;
+  height: 38px;
+  border: 1px solid #D7DEE9;
+  border-radius: 8px;
+  background: #FFFFFF;
+  padding: 0 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-family: Inter, sans-serif;
+  font-weight: 500;
+  font-size: 12px;
+  line-height: 16px;
+  color: #4B5675;
+}
+
+.learners-certificates-page .learners-certificates-filter-btn.dropdown-toggle::after {
+  display: none;
+}
+
+.learners-certificates-page .learners-certificates-filter-menu {
+  min-width: 100%;
+  border: 1px solid #E2E8F0;
+  border-radius: 8px;
+  padding: 6px;
+  box-shadow: 0 18px 34px -26px rgba(15, 23, 42, 0.35);
+}
+
+.learners-certificates-page .learners-certificates-filter-menu .dropdown-item {
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-family: Inter, sans-serif;
+  font-weight: 500;
+  font-size: 12px;
+  line-height: 16px;
+  color: #4B5675;
+}
+
+.learners-certificates-page .learners-certificates-filter-menu .dropdown-item.active,
+.learners-certificates-page .learners-certificates-filter-menu .dropdown-item:active {
+  background: #F3EDF7;
+  color: #5A1688;
+}
+
+.learners-certificates-page .learners-certificates-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px 12px;
+}
+
+.learners-certificates-page .learners-certificate-card {
+  background: #FFFFFF;
+  border: 1px solid #E6EAF1;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 16px 36px -30px rgba(15, 23, 42, 0.3);
+}
+
+.learners-certificates-page .learners-certificate-card-banner {
+  margin: 12px 12px 0;
+  min-height: 180px;
+  padding: 24px 28px 18px;
+  border-radius: 16px;
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(180deg, #03154A 0%, #031041 100%);
+}
+
+.learners-certificates-page .learners-certificate-card-banner::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 15% 105%, rgba(215, 116, 255, 0.22) 0 18%, transparent 18.5%),
+    radial-gradient(circle at 100% 12%, rgba(92, 17, 146, 0.95) 0 19%, transparent 19.5%),
+    repeating-radial-gradient(circle at 10% 0, transparent 0 22px, rgba(0, 152, 255, 0.32) 22px 25px, transparent 25px 46px);
+  background-size: auto, auto, 330px 220px;
+  background-position: 0 0, 100% 0, 60px -18px;
+  background-repeat: no-repeat, no-repeat, repeat-x;
+  opacity: 1;
+}
+
+.learners-certificates-page .learners-certificate-card-banner::after {
+  content: "";
+  position: absolute;
+  left: -2%;
+  right: -1%;
+  bottom: -34px;
+  height: 92px;
+  border-top: 6px solid #D68EFF;
+  border-radius: 72px 72px 0 0;
+  background: linear-gradient(90deg, #4B0A6E 0%, #4E086E 28%, #7100A6 72%, #7900B2 100%);
+  box-shadow: inset 0 16px 28px rgba(255, 255, 255, 0.06);
+}
+
+.learners-certificates-page .learners-certificate-card-banner-copy::before {
+  content: "";
+  position: absolute;
+  left: -12px;
+  top: 4px;
+  width: 44px;
+  height: 72px;
+  background:
+    linear-gradient(90deg, rgba(171, 182, 227, 0.22) 0 4px, transparent 4px 10px, rgba(171, 182, 227, 0.22) 10px 14px, transparent 14px 100%),
+    linear-gradient(45deg, transparent 0 13px, rgba(171, 182, 227, 0.22) 13px 17px, transparent 17px 22px),
+    linear-gradient(135deg, transparent 0 13px, rgba(171, 182, 227, 0.22) 13px 17px, transparent 17px 22px);
+  background-size: 44px 72px, 22px 22px, 22px 22px;
+  background-position: 0 0, 18px 0, 18px 26px;
+  background-repeat: no-repeat, no-repeat, no-repeat;
+  opacity: 1;
+}
+
+.learners-certificates-page .learners-certificate-card-badge-pill {
+  position: absolute;
+  right: 30px;
+  top: 0px;
+  z-index: 1;
+  width: 50px;
+  height: 60px;
+  background-image: url("../../assets/icons/cerr.svg");
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: auto 60px;
+  color: #FFFFFF;
+  font-family: Inter;
+  font-weight: 800;
+  font-style: Extra Bold;
+  font-size: 8px;
+  line-height: 20px;
+  letter-spacing: 0%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
+}
+
+.learners-certificates-page .learners-certificate-card-badge-pill span {
+  position: absolute;
+  bottom: 20%;
+}
+
+.learners-certificates-page .learners-certificate-card-banner-copy {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-left: 20px;
+  padding-top: 2px;
+}
+
+.learners-certificates-page .learners-certificate-card-banner-copy span {
+  font-family: Inter;
+  font-weight: 400;
+  font-style: Regular;
+  font-size: 13px;
+  line-height: 16px;
+  letter-spacing: 0px;
+  color: rgba(255, 255, 255, 0.84);
+}
+
+.learners-certificates-page .learners-certificate-card-banner-copy h3 {
+  margin: 0;
+  font-family: Inter;
+  font-weight: 700;
+  font-style: Bold;
+  font-size: 20px;
+  line-height: 26px;
+  letter-spacing: 0px;
+  color: #FFFFFF;
+}
+
+.learners-certificates-page .learners-certificate-card-body {
+  padding: 14px 20px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.learners-certificates-page .learners-certificate-card-title-block {
+  text-align: center;
+}
+
+.learners-certificates-page .learners-certificate-card-title-block h4 {
+  margin: 0;
+  font-family: Inter, sans-serif;
+  font-weight: 500;
+  font-size: 16px;
+  line-height: 22px;
+  color: #071437;
+}
+
+.learners-certificates-page .learners-certificate-card-title-block p {
+  margin: 6px 0 0;
+  font-family: Inter, sans-serif;
+  font-weight: 400;
+  font-size: 13px;
+  line-height: 18px;
+  color: #8A94A6;
+}
+
+.learners-certificates-page .learners-certificate-card-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0;
+}
+
+.learners-certificates-page .learners-certificate-card-stats div {
+  text-align: center;
+  position: relative;
+  padding: 2px 8px;
+}
+
+.learners-certificates-page .learners-certificate-card-stats div:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: 2px;
+  bottom: 2px;
+  width: 1px;
+  background: #EAEFF5;
+}
+
+.learners-certificates-page .learners-certificate-card-stats strong {
+  display: block;
+  font-family: Inter, sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+  line-height: 20px;
+  color: #071437;
+}
+
+.learners-certificates-page .learners-certificate-card-stats span {
+  display: block;
+  margin-top: 3px;
+  font-family: Inter, sans-serif;
+  font-weight: 400;
+  font-size: 11px;
+  line-height: 14px;
+  color: #8A94A6;
+}
+
+.learners-certificates-page .learners-certificate-status {
+  width: fit-content;
+  margin: 0 auto;
+  padding: 4px 9px;
+  border-radius: 4px;
+  font-size: 11px;
+  line-height: 14px;
+}
+
+.learners-certificates-page .learners-certificate-status.is-progress {
+  background: #FFF4D6;
+  color: #D59600;
+}
+
+.learners-certificates-page .learners-certificate-status.is-passed {
+  background: #E8F9EF;
+  color: #21A366;
+}
+
+.learners-certificates-page .learners-certificate-status.is-failed {
+  background: #FFE7EA;
+  color: #D6455D;
+}
+
+.learners-certificates-page .learners-certificate-card-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.learners-certificates-page .learners-certificate-card-actions button {
+  height: 40px;
+  border: 1px solid #EEF2F7;
+  background: #FFFFFF;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-family: Inter, sans-serif;
+  font-weight: 500;
+  font-size: 13px;
+  line-height: 18px;
+  color: #5A1688;
+}
+
+.learners-certificates-page .learners-certificate-card-actions button.is-primary {
+  background: #F3EAF8;
+  border-color: #F3EAF8;
+}
+
+.learners-certificates-page .learners-certificate-card-actions img {
+  width: 13px;
+  height: 13px;
+}
+
+.learners-certificates-page .learners-certificates-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding-top: 6px;
+}
+
+.learners-certificates-page .learners-certificates-pagination button,
+.learners-certificates-page .learners-certificates-pagination span {
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: Inter, sans-serif;
+  font-weight: 600;
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.learners-certificates-page .learners-certificates-pagination button {
+  border: 1px solid #DDE4EE;
+  background: transparent;
+}
+
+.learners-certificates-page .learners-certificates-pagination span {
+  color: #071437;
+}
+
+.learners-certificates-page .learners-certificates-pagination span.active {
+  background: #5A1688;
+  color: #FFFFFF;
+}
+
+@media (max-width: 1100px) {
+  .learners-certificates-page .learners-certificates-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .learners-certificates-page .learners-certificates-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .learners-certificates-page .learners-certificates-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .learners-certificates-page .learners-certificates-summary-card:not(:last-child)::after {
+    display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .learners-certificates-page .learners-projects-profile-strip {
+    padding: 16px;
+  }
+
+  .learners-certificates-page .learners-projects-profile-actions {
+    width: 100%;
+  }
+
+  .learners-certificates-page .learners-projects-primary-btn,
+  .learners-certificates-page .learners-projects-secondary-btn {
+    flex: 1 1 100%;
+  }
+
+  .learners-certificates-page .learners-certificates-filters {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .learners-certificates-page .learners-certificates-search,
+  .learners-certificates-page .learners-certificates-filter-btn {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .learners-certificates-page .learners-certificate-card-stats,
+  .learners-certificates-page .learners-certificate-card-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .learners-certificates-page .learners-certificate-card-banner {
+    min-height: 126px;
+    padding: 18px 18px 14px;
+  }
+
+  .learners-certificates-page .learners-certificate-card-banner-copy {
+    padding-left: 30px;
+  }
+
+  .learners-certificates-page .learners-certificate-card-banner-copy span {
+    font-size: 13px;
+    line-height: 18px;
+  }
+
+  .learners-certificates-page .learners-certificate-card-banner-copy h3 {
+    font-size: 18px;
+    line-height: 24px;
+  }
+}

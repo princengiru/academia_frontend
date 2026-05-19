@@ -9,11 +9,11 @@
 .academia-author-page .hero-sec-inner {
     width: 100%;
     border-radius: 6px;
-    min-height: 120px;
+    min-height: auto;
     display: flex;
     align-items: center;
     gap: 20px;
-    padding: 0 30px;
+    padding: 30px;
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
@@ -71,12 +71,14 @@
 
 .academia-author-page .main-content {
     padding: 30px;
+    width: 100%;
 }
 
 .academia-author-page .main-content-grid {
     display: grid;
     grid-template-columns: 1fr 3fr;
     gap: 30px;
+    width: 100%;
 }
 
 .academia-author-page .main-content-grid-l {
@@ -88,6 +90,7 @@
     gap: 35px;
     padding-right: 20px;
     border-right: 1px solid #E2E8F0;
+    width: 100%;
 }
 
 .academia-author-page .mcgl-t {
@@ -265,14 +268,16 @@
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 20px;
+
+    grid-auto-rows: max-content;
 }
 
 .academia-author-page .journal {
-    width: 100%;
     box-shadow: 0px 10px 25px -13px #0000001A;
     background: #FFFFFF;
     border-radius: 4px;
     overflow: hidden;
+    align-self: start;
 }
 
 .academia-author-page .journal-img {
@@ -447,29 +452,44 @@
 }
 
 .academia-author-page .more-from-grid .js-btn {
-    color: #450468;
-    border: 1px solid #45046833;
-    background: #FFFFFF;
-    width: 40px;
-    min-width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    font-family: Inter;
-    font-weight: 500;
-    font-style: Medium;
-    font-size: 14px;
-    line-height: 14px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    transition: all 0.3s ease;
-    cursor: pointer;
+    color: #450468 !important;
+    border: 1px solid #45046833 !important;
+    background: #FFFFFF !important;
+
+    width: 40px !important;
+    min-width: 40px !important;
+    height: 40px !important;
+
+    border-radius: 50% !important;
+
+    font-family: Inter !important;
+    font-weight: 500 !important;
+    font-size: 14px !important;
+    line-height: 14px !important;
+
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+
+    transition: all 0.3s ease !important;
+    cursor: pointer !important;
+    opacity: 1 !important;
 }
 
 .academia-author-page .more-from-grid .js-btn::after {
-    font-size: 15px;
-    font-weight: 700;
+    color: #450468 !important;
+    font-size: 10px !important;
+    font-weight: 700 !important;
+}
+
+.academia-author-page .more-from-grid .js-btn svg {
+    width: 10px !important;
+    height: 10px !important;
+}
+
+.academia-author-page .more-from-grid .js-btn svg path {
+    stroke: #450468 !important;
+    fill: #450468 !important;
 }
 
 .academia-author-page .newsletter-sec {
@@ -627,7 +647,7 @@
     }
 
     .academia-author-page .hero-sec-inner {
-        padding: 0 10px;
+        padding: 10px;
         gap: 10px;
     }
 

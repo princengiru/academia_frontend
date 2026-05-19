@@ -1,15 +1,15 @@
-.hero-sec{
+﻿.academia-rewards-page .hero-sec {
     padding: 20px 30px;
     border-bottom: 1px solid #DBDFE9;
     width: 100%;
 }
 
-.hero-sec-inner{
+.academia-rewards-page .hero-sec-inner {
     width: 100%;
     border-radius: 6px;
     background:
-		linear-gradient(270deg, rgba(69, 4, 104, 0.6) 0%, rgba(0, 0, 0, 0.6) 100%),
-		url("../assets/imgs/ac-hr.jpg") center/cover no-repeat;
+        linear-gradient(270deg, rgba(69, 4, 104, 0.6) 0%, rgba(0, 0, 0, 0.6) 100%),
+        url("../../assets/imgs/ac-hr.jpg") center/cover no-repeat;
     min-height: 250px;
     display: flex;
     flex-direction: column;
@@ -18,7 +18,7 @@
     gap: 10px;
 }
 
-.hsi-contents{
+.academia-rewards-page .hsi-contents {
     width: 100%;
     display: flex;
     flex-direction: column;
@@ -29,12 +29,12 @@
     padding-bottom: 40px;
 }
 
-.hsi-contents-h{
+.academia-rewards-page .hsi-contents-h {
     padding: 10px 0;
     border-bottom: 1px solid #E2E8F033;
 }
 
-.hsi-contents-h h1{
+.academia-rewards-page .hsi-contents-h h1 {
     font-family: Montserrat;
     font-weight: 600;
     font-style: SemiBold;
@@ -44,7 +44,7 @@
     color: #F5F5F5;
 }
 
-.hsi-contents-b p{
+.academia-rewards-page .hsi-contents-b p {
     font-family: Inter;
     font-weight: 400;
     font-style: Regular;
@@ -54,8 +54,7 @@
     color: #B5B7C8;
 }
 
-
-.stats-sec{
+.academia-rewards-page .stats-sec {
     padding: 30px 0;
     display: flex;
     align-items: center;
@@ -64,19 +63,19 @@
     background-color: #FCFCFC;
 }
 
-.stats-sec-item{
+.academia-rewards-page .stats-sec-item {
     display: flex;
     gap: 20px;
     align-items: center;
 }
 
-.stats-sec-item  div{
+.academia-rewards-page .stats-sec-item div {
     display: flex;
     flex-direction: column;
     gap: 10px;
 }
 
-.stats-sec-item h5{
+.academia-rewards-page .stats-sec-item h5 {
     font-family: Montserrat;
     font-weight: 700;
     font-style: Bold;
@@ -87,7 +86,7 @@
     color: #071437;
 }
 
-.stats-sec-item p{
+.academia-rewards-page .stats-sec-item p {
     font-family: Inter;
     font-weight: 400;
     font-style: Regular;
@@ -98,8 +97,7 @@
     color: #071437;
 }
 
-
-.new-content{
+.academia-rewards-page .new-content {
     display: flex;
     align-items: center;
     gap: 20px;
@@ -108,7 +106,7 @@
     justify-content: space-between;
 }
 
-.new-content h2{
+.academia-rewards-page .new-content h2 {
     font-family: Inter;
     font-weight: 600;
     font-style: Semi Bold;
@@ -118,7 +116,7 @@
     color: #071437;
 }
 
-.new-content-l{
+.academia-rewards-page .new-content-l {
     display: flex;
     align-items: center;
     gap: 20px;
@@ -128,13 +126,13 @@
     border-radius: 4px;
 }
 
-.new-content-l div{
+.academia-rewards-page .new-content-l div {
     display: flex;
     flex-direction: column;
     gap: 10px;
 }
 
-.new-content-l h6{
+.academia-rewards-page .new-content-l h6 {
     font-family: Inter;
     font-weight: 700;
     font-style: Bold;
@@ -145,7 +143,7 @@
     color: #2B2B2B;
 }
 
-.new-content-l p{
+.academia-rewards-page .new-content-l p {
     font-family: Inter;
     font-weight: 400;
     font-style: Regular;
@@ -156,18 +154,18 @@
     color: #5C6D77;
 }
 
-.main-content{
+.academia-rewards-page .main-content {
     padding: 30px;
 }
 
-.main-content-inner{
+.academia-rewards-page .main-content-inner {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 20px;
     min-width: 0;
 }
 
-.reward{
+.academia-rewards-page .reward {
     min-width: 0;
     width: 100%;
     display: flex;
@@ -178,27 +176,26 @@
     overflow: hidden;
 }
 
-.reward-img{
+.academia-rewards-page .reward-img {
     width: 100%;
     height: fit-content;
     position: relative;
 }
 
-
-.reward-img img{
+.academia-rewards-page .reward-img img {
     width: 100%;
     height: 100%;
     object-fit: cover;
 }
 
-.reward-text{
+.academia-rewards-page .reward-text {
     padding: 15px;
     display: flex;
     flex-direction: column;
     gap: 10px;
 }
 
-.reward-text h4{
+.academia-rewards-page .reward-text h4 {
     font-family: Montserrat;
     font-weight: 600;
     font-style: SemiBold;
@@ -209,7 +206,7 @@
     color: #000000;
 }
 
-.reward-text div{
+.academia-rewards-page .reward-text div {
     display: flex;
     align-items: center;
     gap: 10px;
@@ -217,7 +214,7 @@
     width: 100%;
 }
 
-.reward-text p{
+.academia-rewards-page .reward-text p {
     display: flex;
     align-items: center;
     gap: 10px;
@@ -230,17 +227,18 @@
     color: #9A9CAE;
 }
 
-.reward-text button{
+.academia-rewards-page .reward-text button {
     padding: 0;
     border: none;
     background-color: transparent;
+    cursor: pointer;
 }
 
-.vid-sec{
+.academia-rewards-page .vid-sec {
     padding: 15px;
 }
 
-.main-content-grid{
+.academia-rewards-page .main-content-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 30px;
@@ -249,19 +247,20 @@
     border-radius: 6px;
 }
 
-.main-content-grid-l{
+.academia-rewards-page .main-content-grid-l {
     display: flex;
     flex-direction: column;
     gap: 20px;
+    width: 100%;
 }
 
-.watch-content{
+.academia-rewards-page .watch-content {
     display: flex;
     flex-direction: column;
     gap: 15px;
 }
 
-.watch-content h2{
+.academia-rewards-page .watch-content h2 {
     margin: 0;
     font-family: Inter;
     font-weight: 600;
@@ -272,7 +271,7 @@
     color: #071437;
 }
 
-.watch-content p{
+.academia-rewards-page .watch-content p {
     font-family: Inter;
     font-weight: 400;
     font-style: Regular;
@@ -282,7 +281,7 @@
     color: #1A2A5A;
 }
 
-.watch-cta{
+.academia-rewards-page .watch-cta {
     width: 100%;
     border-radius: 8px;
     padding: 15px 20px;
@@ -294,20 +293,20 @@
     overflow: hidden;
 }
 
-.watch-cta-l,
-.watch-cta-r{
+.academia-rewards-page .watch-cta-l,
+.academia-rewards-page .watch-cta-r {
     display: flex;
     align-items: center;
 }
 
-.watch-cta-stack{
+.academia-rewards-page .watch-cta-stack {
     position: relative;
     width: unset;
     height: 70px;
     width: 120px;
 }
 
-.watch-cta-thumb{
+.academia-rewards-page .watch-cta-thumb {
     position: absolute;
     border-radius: 6px;
     overflow: hidden;
@@ -318,13 +317,13 @@
     min-width: 70px;
 }
 
-.watch-cta-thumb img{
+.academia-rewards-page .watch-cta-thumb img {
     width: 100%;
     height: 100%;
     object-fit: cover;
 }
 
-.watch-cta-thumb.main-thumb{
+.academia-rewards-page .watch-cta-thumb.main-thumb {
     left: 0;
     top: 50%;
     transform: translateY(-50%);
@@ -332,26 +331,26 @@
     z-index: 3;
 }
 
-.watch-cta-thumb.sub-thumb{
+.academia-rewards-page .watch-cta-thumb.sub-thumb {
     z-index: 2;
     top: 50%;
     transform: translateY(-50%);
 }
 
-.watch-cta-thumb.sub-thumb.one{
+.academia-rewards-page .watch-cta-thumb.sub-thumb.one {
     height: 60px;
     left: unset;
     right: 35px;
 }
 
-.watch-cta-thumb.sub-thumb.two{
+.academia-rewards-page .watch-cta-thumb.sub-thumb.two {
     z-index: 1;
     height: 50px;
     left: unset;
     right: 20px;
 }
 
-.watch-cta-overlay{
+.academia-rewards-page .watch-cta-overlay {
     position: absolute;
     inset: 0;
     background: #45046885;
@@ -361,7 +360,7 @@
     text-align: center;
 }
 
-.watch-cta-overlay span{
+.academia-rewards-page .watch-cta-overlay span {
     font-family: Inter;
     font-weight: 700;
     font-style: Bold;
@@ -372,7 +371,7 @@
     color: #FFFFFF;
 }
 
-.watch-cta-r button{
+.academia-rewards-page .watch-cta-r button {
     border: none;
     border-radius: 8px;
     padding: 12px 10px;
@@ -381,14 +380,15 @@
     align-items: center;
     justify-content: center;
     gap: 10px;
+    cursor: pointer;
 }
 
-.watch-cta-r button img{
+.academia-rewards-page .watch-cta-r button img {
     width: 20px;
     height: 20px;
 }
 
-.watch-cta-r button span{
+.academia-rewards-page .watch-cta-r button span {
     font-family: Inter;
     font-weight: 500;
     font-style: Medium;
@@ -398,126 +398,135 @@
     color: #450468;
 }
 
-
-
-
-/* --- CONTAINER --- */
-.story-thumbnail {
+.academia-rewards-page .story-thumbnail {
     position: relative;
     width: 100%;
     aspect-ratio: 16/9;
     background: #000;
     overflow: hidden;
     border-radius: 8px;
-    font-family: sans-serif; /* Clean font */
-    user-select: none; /* Prevent text selection while clicking */
+    font-family: sans-serif;
+    user-select: none;
     min-width: 0;
 }
 
-.story-thumbnail video {
+.academia-rewards-page .story-thumbnail video {
     width: 100%;
     height: 100%;
     object-fit: contain;
     display: block;
 }
 
-/* --- UI OVERLAY LAYERS --- */
-.ui-layer {
+.academia-rewards-page .ui-layer {
     position: absolute;
-    top: 0; left: 0; width: 100%; height: 100%;
-    pointer-events: none; /* Let clicks pass through to video */
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
 }
 
-/* Make buttons clickable again */
-.ui-layer button, .ui-layer input, .progress-area {
+.academia-rewards-page .ui-layer button,
+.academia-rewards-page .ui-layer input,
+.academia-rewards-page .progress-area {
     pointer-events: auto;
 }
 
-/* --- CENTER CONTROLS --- */
-.center-controls {
+.academia-rewards-page .center-controls {
     position: absolute;
-    top: 50%; left: 50%;
+    top: 50%;
+    left: 50%;
     transform: translate(-50%, -50%);
     display: flex;
     align-items: center;
-    gap: 0px;
     justify-content: space-around;
     width: 80%;
     opacity: 0;
     transition: opacity 0.2s;
 }
 
-/* Show center controls when paused or hovering */
-.story-thumbnail.paused .center-controls,
-.story-thumbnail:hover .center-controls {
+.academia-rewards-page .story-thumbnail.paused .center-controls,
+.academia-rewards-page .story-thumbnail:hover .center-controls {
     opacity: 1;
 }
 
-/* Hide center controls while playing (optional - remove this block if you always want them visible on hover) */
-.story-thumbnail.playing:not(:hover) .center-controls {
+.academia-rewards-page .story-thumbnail.playing:not(:hover) .center-controls {
     opacity: 0;
 }
 
-.center-btn {
-    background: none; border: none; cursor: pointer; color: white;
-    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+.academia-rewards-page .center-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: white;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
     transition: transform 0.1s;
 }
-.center-btn:active { transform: scale(0.95); }
-.center-btn svg { width: 45px; height: 45px; }
-.center-btn.big-play svg { width: 70px; height: 70px; }
 
-/* --- BOTTOM BAR FIX --- */
-.bottom-controls {
-    position: absolute; /* Force it to float over the video */
-    bottom: 0;          /* Pin it strictly to the bottom */
-    left: 0;            /* Stretch from left... */
-    width: 100%;        /* ...to right */
-    
-    /* Design & Gradient */
-    padding: 40px 15px 10px 15px; /* More top padding for the gradient fade */
-    background: linear-gradient(180deg, rgba(102, 102, 102, 0) 0%, rgba(57, 57, 57, 0.4375) 23.08%, rgba(13, 13, 13, 0.75) 55.29%, rgba(10, 10, 10, 0.90625) 71.63%, rgba(6, 6, 6, 0.9375) 82.59%, #000000 100%);
-
-    
-    /* Layout */
-    display: flex;
-    align-items: flex-end; 
-    justify-content: space-between;
-    
-    /* Visibility */
-    opacity: 0;
-    transition: opacity 0.3s;
-    z-index: 20; /* Ensure it sits on top of everything */
+.academia-rewards-page .center-btn:active {
+    transform: scale(0.95);
 }
 
-.story-thumbnail:hover .bottom-controls,
-.story-thumbnail.paused .bottom-controls {
+.academia-rewards-page .center-btn svg {
+    width: 45px;
+    height: 45px;
+}
+
+.academia-rewards-page .center-btn.big-play svg {
+    width: 70px;
+    height: 70px;
+}
+
+.academia-rewards-page .bottom-controls {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    padding: 40px 15px 10px 15px;
+    background: linear-gradient(180deg, rgba(102, 102, 102, 0) 0%, rgba(57, 57, 57, 0.4375) 23.08%, rgba(13, 13, 13, 0.75) 55.29%, rgba(10, 10, 10, 0.90625) 71.63%, rgba(6, 6, 6, 0.9375) 82.59%, #000000 100%);
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    opacity: 0;
+    transition: opacity 0.3s;
+    z-index: 20;
+}
+
+.academia-rewards-page .story-thumbnail:hover .bottom-controls,
+.academia-rewards-page .story-thumbnail.paused .bottom-controls {
     opacity: 1;
 }
 
-/* Left Box (The Pill) */
-.left-pill {
+.academia-rewards-page .left-pill {
     display: flex;
     align-items: center;
     gap: 12px;
     backdrop-filter: blur(4px);
-    padding: 6px 7px ;
+    padding: 6px 7px;
     border-radius: 6px;
     border: 1px solid #FFFFFF1A;
     margin-bottom: 8px;
     background: #222222B2;
 }
 
-.icon-btn {
-    background: none; border: none; cursor: pointer; color: white;
-    display: flex; align-items: center;
+.academia-rewards-page .icon-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: white;
+    display: flex;
+    align-items: center;
 }
-.icon-btn svg { width: 18px; height: 18px; }
 
-.time-text {
+.academia-rewards-page .icon-btn svg {
+    width: 18px;
+    height: 18px;
+}
+
+.academia-rewards-page .time-text {
     color: white;
     font-family: Inter;
     font-weight: 500;
@@ -528,71 +537,102 @@
     vertical-align: middle;
 }
 
-/* Right Icons */
-.right-actions {
+.academia-rewards-page .right-actions {
     display: flex;
     align-items: center;
     gap: 10px;
     margin-bottom: 8px;
 }
-.right-actions .icon-btn {
-    padding: 8px;
-    /* Optional: background for right icons too? */
-    /* background: rgba(20, 20, 20, 0.85); border-radius: 6px; */ 
-}
-.right-actions svg { width: 22px; height: 22px; }
 
-/* --- PROGRESS BAR (The Smooth Part) --- */
-.progress-area {
+.academia-rewards-page .right-actions .icon-btn {
+    padding: 8px;
+}
+
+.academia-rewards-page .right-actions svg {
+    width: 22px;
+    height: 22px;
+}
+
+.academia-rewards-page .progress-area {
     position: absolute;
-    top: 20%; left: 15px;
+    top: 20%;
+    left: 15px;
     width: calc(100% - 30px);
-    height: 5px; /* Thin line */
-    background: rgba(255,255,255,0.2);
+    height: 5px;
+    background: rgba(255, 255, 255, 0.2);
     cursor: pointer;
     z-index: 10;
     transition: height 0.1s;
 }
 
-/* Hovering progress bar makes it thicker */
-.progress-area:hover { height: 8px; }
-
-.progress-fill {
-    height: 100%;
-    background: #FF0000; /* Red */
-    width: 0%;
-    position: relative;
-    /* This transition makes normal playback smooth */
-    transition: width 0.1s linear; 
+.academia-rewards-page .progress-area:hover {
+    height: 8px;
 }
 
-/* THE KNOB (Circle) */
-.progress-fill::after {
+.academia-rewards-page .progress-fill {
+    height: 100%;
+    background: #FF0000;
+    width: 0%;
+    position: relative;
+    transition: width 0.1s linear;
+}
+
+.academia-rewards-page .progress-fill::after {
     content: '';
     position: absolute;
-    right: -6px; /* Center the knob on the end */
+    right: -6px;
     top: 50%;
-    transform: translateY(-50%) scale(0); /* Hidden by default */
-    width: 12px; height: 12px;
+    transform: translateY(-50%) scale(0);
+    width: 12px;
+    height: 12px;
     background: #FF0000;
     border-radius: 50%;
     transition: transform 0.1s;
 }
 
-.progress-area:hover .progress-fill::after {
-    transform: translateY(-50%) scale(1); /* Show on hover */
+.academia-rewards-page .progress-area:hover .progress-fill::after {
+    transform: translateY(-50%) scale(1);
 }
 
-/* CRITICAL: NO JUMPING CLASS */
-/* When JS adds this class (during drag), updates are instant */
-.progress-fill.no-transition {
+.academia-rewards-page .progress-fill.no-transition {
     transition: none !important;
 }
 
+/* Clickable thumbnail used on rewards page to open watch page */
+.academia-rewards-page .story-thumbnail.clickable {
+    cursor: pointer;
+}
 
+.academia-rewards-page .video-thumb {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
 
+.academia-rewards-page .video-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
 
-.newsletter-sec{
+.academia-rewards-page .play-overlay {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 72px;
+    height: 72px;
+    background: rgba(0,0,0,0.5);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.academia-rewards-page .play-overlay svg { width: 28px; height: 28px; }
+
+.academia-rewards-page .newsletter-sec {
     height: 170px;
     background-color: #450468;
     display: flex;
@@ -601,13 +641,13 @@
     padding: 0 5%;
 }
 
-.newsletter-sec-l{
+.academia-rewards-page .newsletter-sec-l {
     display: flex;
     flex-direction: column;
     gap: 10px;
 }
 
-.newsletter-sec-l h3{
+.academia-rewards-page .newsletter-sec-l h3 {
     font-family: Montserrat;
     font-weight: 500;
     font-style: Medium;
@@ -618,7 +658,7 @@
     color: #FFFFFF;
 }
 
-.newsletter-sec-l p{
+.academia-rewards-page .newsletter-sec-l p {
     font-family: Montserrat;
     font-weight: 400;
     font-style: Regular;
@@ -629,7 +669,7 @@
     color: #FFFFFFCC;
 }
 
-.newsletter-sec-r form{
+.academia-rewards-page .newsletter-sec-r form {
     display: flex;
     align-items: center;
     width: 400px;
@@ -637,7 +677,7 @@
     position: relative;
 }
 
-.newsletter-sec-r form input{
+.academia-rewards-page .newsletter-sec-r form input {
     width: 100%;
     height: 45px;
     border: none;
@@ -658,26 +698,26 @@
     transition: all 0.3s ease;
 }
 
-.newsletter-sec-r form input:focus {
+.academia-rewards-page .newsletter-sec-r form input:focus {
     border-bottom-color: #FFFFFF;
     background-color: rgba(255, 255, 255, 0.05);
 }
 
-.newsletter-sec-r form input::placeholder {
+.academia-rewards-page .newsletter-sec-r form input::placeholder {
     color: #FFFFFFCC;
     transition: color 0.3s ease;
 }
 
-.newsletter-sec-r form input:focus::placeholder {
+.academia-rewards-page .newsletter-sec-r form input:focus::placeholder {
     color: #FFFFFF99;
 }
 
-.ac-sms{
+.academia-rewards-page .ac-sms {
     position: absolute;
     left: 2px;
 }
 
-.newsletter-sec-r button{
+.academia-rewards-page .newsletter-sec-r button {
     position: absolute;
     right: 0px;
     border: none;
@@ -690,11 +730,54 @@
     justify-content: center;
 }
 
-.newsletter-sec-r button:hover {
+.academia-rewards-page .newsletter-sec-r button:hover {
     transform: scale(1.2) translateX(-2px);
 }
 
-.newsletter-sec-r button:active {
+.academia-rewards-page .newsletter-sec-r button:active {
     transform: scale(0.9);
 }
 
+@media (max-width: 768px) {
+    .academia-rewards-page .main-content-inner {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .academia-rewards-page .main-content-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .academia-rewards-page .stats-sec {
+        flex-direction: column;
+        padding: 20px 0;
+    }
+
+    .academia-rewards-page .newsletter-sec {
+        height: auto;
+        padding: 20px 5%;
+        flex-direction: column;
+        gap: 20px;
+        text-align: center;
+    }
+
+    .academia-rewards-page .newsletter-sec-l h3 {
+        font-size: 20px;
+        line-height: 30px;
+    }
+
+    .academia-rewards-page .newsletter-sec-r form {
+        width: 100%;
+        min-width: unset;
+    }
+
+    .academia-rewards-page .watch-cta {
+        flex-direction: column;
+        padding: 20px 15px;
+    }
+
+    .academia-rewards-page .new-content {
+        flex-direction: column;
+        padding: 15px;
+        gap: 15px;
+    }
+}

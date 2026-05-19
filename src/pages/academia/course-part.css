@@ -9,7 +9,7 @@
     border-radius: 6px;
     background:
 		linear-gradient(270deg, rgba(69, 4, 104, 0.6) 0%, rgba(0, 0, 0, 0.6) 100%),
-		url("../assets/imgs/ac-hr.jpg") center/cover no-repeat;
+		url("../../assets/imgs/ac-hr.jpg") center/cover no-repeat;
     min-height: 250px;
     display: flex;
     flex-direction: column;
@@ -538,6 +538,7 @@
     gap: 20px;
     border-right: 1px solid #E2E8F0;
     padding-right: 20px;
+    width: 100%;
 }
 
 .course-part-page .mcgl-h{
@@ -911,6 +912,13 @@
 
     .course-part-page .main-content-grid{
         grid-template-columns: 1fr;
+        grid-template-rows: auto;
+    }
+
+    .course-part-page .main-content-grid-r{
+        height: fit-content;
+        display: flex;
+        flex-direction: column;
     }
 
     .course-part-page .main-content-grid-l{

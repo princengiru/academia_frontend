@@ -721,6 +721,16 @@
     font-weight: 700;
 }
 
+.more-from-grid .js-btn svg {
+    width: 15px !important;
+    height: 15px !important;
+}
+
+.more-from-grid .js-btn svg path {
+    stroke: #450468 !important;
+    fill: #450468 !important;
+}
+
 
 .journal{
     width: 100%;

@@ -359,6 +359,14 @@
     gap: 20px;
     border-right: 1px solid #E2E8F0;
     padding-right: 20px;
+    width: 100%;
+}
+
+.academia-read-contents-page .main-content-grid-r{
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    width: 100%;
 }
 
 .academia-read-contents-page .related-list{

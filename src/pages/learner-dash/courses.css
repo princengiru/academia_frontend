@@ -1,0 +1,626 @@
+/* --- Learners Courses page --- */
+
+.learners-courses-page .learners-home-title {
+  padding: 20px 0 18px;
+}
+
+.learners-courses-page .learners-home-title-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.learners-courses-page .learners-home-title-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.learners-courses-page .learners-home-title h1 {
+  font-family: "Inter", sans-serif;
+  font-weight: 600;
+  font-size: 20px;
+  line-height: 24px;
+  color: #071437;
+  margin: 0;
+}
+
+.learners-courses-page .div-h{
+    display: grid;
+    grid-template-columns: 1fr 4fr;
+    gap: 20px;
+    padding: 0 0 30px;
+    align-items: center;
+}
+
+.learners-courses-page .div-h-r{
+    display: flex;
+    width: 100%;
+}
+
+.learners-courses-page .div-h-r-s{
+    height: 45px;
+    display: flex;
+    align-items: center;
+    padding: 0 7px 0 15px;
+    gap: 20px;
+    width: 100%;
+    border: 1px solid #DBDFE9;
+    border-radius: 6px;
+}
+
+.learners-courses-page .div-h-r-s input{
+    height: 100%;
+    width: 100%;
+    border-radius: 0px;
+    border: none;
+    outline: none;
+    font-family: Inter;
+    font-weight: 500;
+    font-style: Medium;
+    font-size: 13px;
+    line-height: 14px;
+    letter-spacing: -1%;
+    padding: 0 10px;
+}
+
+/* Small focus/hover polish for courses search and controls */
+.learners-courses-page .div-h-r-s input:focus{
+    box-shadow: 0 6px 18px rgba(69,4,104,0.06);
+    border-radius: 6px;
+    border: 1px solid rgba(69,4,104,0.12);
+}
+
+.learners-courses-page .div-h-r-s-f button:hover{
+    transform: translateY(-1px);
+    background-color: #F7F7FA;
+}
+
+.learners-courses-page .div-h-r-s-f button:focus-visible{
+    outline: 3px solid rgba(69,4,104,0.16);
+    outline-offset: 2px;
+    border-radius: 100px;
+}
+
+.learners-courses-page .div-h-r-s-f{
+    display: flex;
+    align-items: center;
+    height: 40px;
+    gap: 20px;
+}
+
+.learners-courses-page .div-h-r-s-f button,
+.learners-courses-page .div-h .div-h-r-s-f .dropdown button{
+    background-color: transparent;
+    border: none;
+    font-family: Inter;
+    font-weight: 400;
+    font-style: Regular;
+    font-size: 12px;
+    line-height: 14px;
+    letter-spacing: 0%;
+    color: #99A1B7;
+    padding: 7px 12px;
+    transition: all 0.2s ease;
+    border-radius: 100px;
+    margin: auto 0;
+    height: 100;
+}
+
+.learners-courses-page .div-h .div-h-r-s-f .dropdown button::after{
+    display: none;
+}
+
+.learners-courses-page .div-h-r-s-f button.active{
+    font-family: Inter;
+    font-weight: 500;
+    font-style: Medium;
+    font-size: 12px;
+    line-height: 14px;
+    letter-spacing: 0%;
+    color: #450468;
+    background-color: #45046814;
+    border: 0.5px solid #4504681A;
+}
+
+.learners-courses-page .div-h-r-s-f-f{
+    padding-left: 15px;
+    border-left: 1px solid #DBDFE9;
+}
+
+.learners-courses-page .div-h-r-s-f-f button,
+.learners-courses-page .div-h .div-h-r-s-f .dropdown button{
+    border: 0.5px solid #4504681A;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.learners-courses-page .div-h .dropdown{
+    width: 100%;
+    height: 45px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+
+.learners-courses-page .div-h .filter-drop button{
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    font-family: Inter;
+    font-weight: 400;
+    font-style: Regular;
+    font-size: 13px;
+    line-height: 14px;
+    letter-spacing: -1%;
+    color: #071437;
+    padding: 0 10px;
+    border-radius: 6px;
+    background-color: #FCFCFC;
+    border: none;
+}
+
+.learners-courses-page .div-h .filter-drop button::after{
+    display: flex;
+}
+
+.learners-courses-page .div-h .dropdown button div{
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.learners-courses-page .div-h .dropdown-menu{
+    padding: 10px 0;
+    box-shadow: 7px 7px 25px 0px #0000001A;
+    background-color: #FFFFFF;
+    gap: 10px;
+    border: 1px solid #F9F9F9;
+}
+
+.learners-courses-page .div-h .dropdown-menu .dropdown-item{
+    font-family: Inter;
+    font-weight: 400;
+    font-style: Regular;
+    font-size: 13px;
+    line-height: 14px;
+    letter-spacing: 0%;
+    color: #450468;
+    padding: 10px 14px;
+}
+
+.learners-courses-page .div-h .dropdown-menu .dropdown-item a{
+    color: #450468;
+    font-family: Inter;
+    font-weight: 400;
+    font-style: Regular;
+    font-size: 13px;
+    line-height: 14px;
+    letter-spacing: 0%;
+}
+
+.learners-courses-page .div-h .dropdown-menu .dropdown-item.active{
+    background-color: #F9F9F9;
+}
+
+.learners-courses-main {
+    padding-bottom: 18px;
+}
+
+.learners-courses-main-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 2.35fr) minmax(260px, 0.95fr);
+    gap: 28px;
+    align-items: start;
+}
+
+.learners-courses-section-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 20px 0 30px;
+}
+
+.learners-courses-section-head h2 {
+    font-family: Inter;
+    font-weight: 600;
+    font-style: Semi Bold;
+    font-size: 16px;
+    line-height: 20px;
+    letter-spacing: 0%;
+    color: #1F2A5A;
+    margin: 0 0 4px;
+}
+
+.learners-courses-section-head p {
+    font-family: Inter;
+    font-weight: 400;
+    font-style: Regular;
+    font-size: 12px;
+    line-height: 14px;
+    letter-spacing: 0%;
+    color: #4B5675;
+    margin: 0;
+}
+
+.learners-courses-section-head-right a {
+    font-family: Inter;
+    font-weight: 500;
+    font-size: 14px;
+    line-height: 20px;
+    letter-spacing: 0%;
+    color: #4B5675;
+    text-decoration: none;
+    border-bottom: 1px dotted #4B5675;
+    padding-bottom: 1px;
+    margin-top: 2px;
+}
+
+.learners-online-sec-contents {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    min-width: 0;
+}
+
+.osc-item{
+    width: 100%;
+    aspect-ratio: 4/3;
+    overflow: hidden;
+    position: relative;
+    border-radius: 8px;
+    transition: transform 0.4s ease, box-shadow 0.4s ease;
+    cursor: pointer;
+}
+
+.osc-item:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.15);
+}
+
+.osc-item-img{
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    position: relative;
+    z-index: 1;
+}
+
+.osc-item-img img{
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.osc-item-text{
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    padding: 10px;
+    background: linear-gradient(180deg, rgba(102, 102, 102, 0) 0%, rgba(57, 57, 57, 0.4375) 23.08%, rgba(13, 13, 13, 0.75) 55.29%, rgba(10, 10, 10, 0.90625) 71.63%, rgba(6, 6, 6, 0.9375) 82.59%, #000000 100%);
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    z-index: 10;
+    height: 100%;
+    justify-content: flex-end;
+}
+
+.osc-item-text .osc-item-text-float{
+    position: absolute;
+    top: 5px;
+    left: 5px;
+    z-index: 10;
+    gap: 5px;
+    padding: 4px 6px;
+    background-color: #450468; 
+    width: fit-content;
+    border-radius: 3px;
+}
+
+.osc-item-text h6{
+    font-family: Inter;
+    font-weight: 600;
+    font-style: Semi Bold;
+    font-size: 11px;
+    line-height: 13px;
+    letter-spacing: 0%;
+    color: #FFFFFFCC;
+}
+
+.osc-item-text h6 a{
+    color: inherit;
+    text-decoration: none;
+}
+
+.osc-item-text p{
+    font-family: Inter;
+    font-weight: 400;
+    font-style: Regular;
+    font-size: 10px;
+    line-height: 13px;
+    letter-spacing: 2%;
+    color: #FFFFFFCC;
+}
+
+.osc-item-text small{
+    font-family: Inter;
+    font-weight: 400;
+    font-style: Regular;
+    font-size: 8px;
+    line-height: 10px;
+    letter-spacing: 2%;
+    color: #FFFFFFCC;
+}
+
+.osc-item-text div{
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 3px;
+}
+
+.osc-item-text div:last-child{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-direction: row;
+}
+
+.osc-item-text div button,
+.learners-course-open{
+    padding: 0 10px 2px;
+    border: none;
+    height: fit-content;
+    background-color: transparent;
+    transition: transform 0.2s ease;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.osc-item-text div button:hover,
+.learners-course-open:hover {
+    transform: scale(1.2);
+}
+
+.learners-course-open img {
+    width: 14px;
+    height: 14px;
+}
+
+
+.learners-courses-pagination {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    justify-content: center;
+    margin-top: 22px;
+}
+
+.learners-courses-pagination div {
+    display: flex;
+    gap: 2px;
+    align-items: center;
+}
+
+.learners-courses-pagination div p,
+.learners-courses-pagination div span {
+    width: 30px;
+    height: 30px;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    font-family: Inter;
+    font-size: 14px;
+    color: #4B5675;
+    margin: 0;
+}
+
+.learners-courses-pagination div p {
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.learners-courses-pagination div p.active,
+.learners-courses-pagination div p:hover {
+    background-color: #450468;
+    color: white;
+}
+
+.learners-courses-pagination button {
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 5px 0;
+    border: 1px solid #DBDFE9;
+    border-radius: 6px;
+    min-width: 30px;
+    background-color: transparent;
+}
+
+.learners-courses-pagination button img {
+    width: 20px;
+    height: 20px;
+}
+
+.learners-syllabus-list {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.learners-syllabus-item {
+    border: 0.5px solid #E2E8F0;
+    backdrop-filter: blur(22.899999618530273px);
+    background: #FCFCFC;
+    padding: 20px 16px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.fgbl-item{
+    border: 0.5px solid #E2E8F0;
+    backdrop-filter: blur(22.899999618530273px);
+    background: #FCFCFC;
+    padding: 20px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.fgbl-item-l{
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.fgbl-item-l h4{
+    font-family: Montserrat;
+    font-weight: 600;
+    font-style: SemiBold;
+    font-size: 14px;
+    line-height: 24px;
+    letter-spacing: 0px;
+    text-decoration: underline;
+    text-decoration-style: solid;
+    color: #071437;
+}
+
+.fgbl-item-l p{
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: Inter;
+    font-weight: 400;
+    font-style: Regular;
+    font-size: 12px;
+    line-height: 14px;
+    letter-spacing: 0%;
+    color: #07143799;
+}
+
+.fgbl-item-r button{
+    background: #45046812;
+    padding: 9px;
+    border: 1px solid #45046812;
+    font-family: Inter;
+    font-weight: 500;
+    font-style: Medium;
+    font-size: 11px;
+    line-height: 14px;
+    letter-spacing: 0%;
+    color: #450468;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-radius: 4px;
+}
+
+
+@media (max-width: 1200px) {
+    .learners-courses-page .learners-courses-main-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .learners-courses-page .learners-online-sec-contents {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 768px) {
+    .learners-courses-page .learners-online-sec-contents {
+        grid-template-columns: 1fr;
+    }
+
+    .learners-courses-page .osc-item {
+        width: 100%;
+        aspect-ratio: unset;
+        overflow: hidden;
+        position: relative;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        box-shadow: 5px 5px 7.3px 1px #0000000A;
+    }
+
+    .learners-courses-page .osc-item-img {
+        width: 80px;
+        min-width: 80px;
+        aspect-ratio: 1;
+        object-fit: cover;
+        position: relative;
+        z-index: 1;
+        border-radius: 4px;
+        overflow: hidden;
+    }
+
+    .learners-courses-page .osc-item-text {
+        position: unset;
+        bottom: unset;
+        left: unset;
+        width: 100%;
+        padding: 5px 10px;
+        background: unset;
+        height: unset;
+        justify-content: flex-end;
+    }
+
+    .learners-courses-page .osc-item-text h6,
+    .learners-courses-page .osc-item-text p,
+    .learners-courses-page .osc-item-text small {
+        color: #071437;
+    }
+
+    .learners-courses-page .osc-item-text p {
+        display: -webkit-box;
+        line-clamp: 1;
+        -webkit-line-clamp: 1;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        line-height: 1.5;
+    }
+
+    .learners-courses-page .osc-item-text div button {
+        padding: 0 10px 0;
+    }
+
+    .learners-courses-page .osc-item-text .osc-item-text-float {
+        padding: 4px;
+        max-width: 70px;
+    }
+
+    .learners-courses-page .osc-item-text .osc-item-text-float p {
+        font-size: 6px;
+        color: white;
+    }
+
+    .learners-courses-page .learners-courses-section-head {
+        flex-wrap: wrap;
+    }
+
+    .learners-syllabus-item {
+        padding: 16px 14px;
+        gap: 14px;
+    }
+}
