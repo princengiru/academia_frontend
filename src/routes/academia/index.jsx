@@ -1,30 +1,33 @@
 import { Navigate, Route } from 'react-router-dom';
-import AcademiaIndex from '../../pages/academia';
-import AcademiaJournals from '../../pages/academia/journals';
-import AcademiasCourses from '../../pages/academia/courses';
-import AcademiaCoursePart from '../../pages/academia/course-part';
-import AcademiaReadContents from '../../pages/academia/read-contents';
-import AcademiaReadJournal from '../../pages/academia/read-journal';
-import AcademiaReadStory from '../../pages/academia/read-story';
-import AcademiaWatch from '../../pages/academia/watch';
-import AcademiaAuthor from '../../pages/academia/author';
-import AcademiaRewards from '../../pages/academia/rewards';
+import AcademiaLayout from '../../layouts/academia/AcademiaLayout';
+import AcademiaPublicLayout from '../../layouts/academia/AcademiaLayout';
+import AcademiaLearnerLayout from '../../layouts/academia/LearnersLayout';
+import AcademiaAuthLayout from '../../layouts/academia/AuthLayout';
+import AcademiaAuthRoutes from './auth';
+import AcademiaPublicRoutes from './public';
+import AcademiaLearnerRoutes from './learner';
 
 function AcademiaRoutes() {
   return (
-    <Route path="academia">
-      <Route index element={<Navigate to="index" replace />} />
-      <Route path="index" element={<AcademiaIndex />} />
-      <Route path="journals" element={<AcademiaJournals />} />
-      <Route path="courses" element={<AcademiasCourses />} />
-      <Route path="course-part" element={<AcademiaCoursePart />} />
-      <Route path="read-contents" element={<AcademiaReadContents />} />
-      <Route path="read-journal" element={<AcademiaReadJournal />} />
-      <Route path="read-story" element={<AcademiaReadStory />} />
-      <Route path="watch" element={<AcademiaWatch />} />
-      <Route path="author" element={<AcademiaAuthor />} />
-      <Route path="rewards" element={<AcademiaRewards />} />
-    </Route>
+    <>
+      <Route path="/" element={<Navigate to="/academia/index" replace />} />
+
+      {/* Public pages — use AcademiaLayout (header + footer) */}
+      <Route path="academia" element={<AcademiaLayout />}>
+        <Route index element={<Navigate to="index" replace />} />
+        {AcademiaPublicRoutes()}
+      </Route>
+
+      {/* Learner pages — standalone learner layout (no public header) */}
+      <Route path="academia/learner" element={<AcademiaLearnerLayout />}>
+        {AcademiaLearnerRoutes()}
+      </Route>
+
+      {/* Auth pages — standalone auth layout */}
+      <Route path="academia/auth" element={<AcademiaAuthLayout />}>
+        {AcademiaAuthRoutes()}
+      </Route>
+    </>
   );
 }
 

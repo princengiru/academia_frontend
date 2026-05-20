@@ -302,7 +302,7 @@ function Header() {
           <div className="offcanvas-header-logo">
             <img src={logoIcon} alt="" />
           </div>
-          <button type="button" onClick={() => window.location.assign('/accounts/register-gonaraza?login=1')}>
+          <button type="button" onClick={() => window.location.assign('/academia/auth/signin')}>
             <img src={opIcon} alt="" />
             <span>Sign In</span>
           </button>
