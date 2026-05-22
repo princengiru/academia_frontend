@@ -44,6 +44,15 @@ function AcademiaSignIn() {
         return;
       }
 
+      if (data?.data?.requiresOTPVerification) {
+        localStorage.removeItem('token');
+        localStorage.setItem('user', JSON.stringify({ email: data?.data?.email || apexEmail }));
+        setTimeout(() => {
+          navigate('/academia/auth/verify', { replace: true });
+        }, 300);
+        return;
+      }
+
       // Store token and user data
       localStorage.setItem('token', data.data.token);
       localStorage.setItem('user', JSON.stringify(data.data.user));

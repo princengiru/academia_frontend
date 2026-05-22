@@ -1,0 +1,23 @@
+Account page dynamic notes
+
+Can be made dynamic next:
+- Client ID from current user profile
+- Profile photo upload/remove state
+- Name, phone, role, visibility
+- Email and primary email state
+- Availability toggle
+- Email system updates toggle
+- Documents list and upload/delete actions
+- Social connections and linked accounts
+- Two-factor status and setup state
+- Payment method cards and defaults
+- Preference dropdown values
+- Notification toggles and radio options
+- Address fields
+- Appearance/theme choice
+
+Current backend-backed pieces already used:
+- GET /api/profile
+- PUT /api/profile/complete
+- POST /api/profile/photo
+- PUT /api/auth/profile for avatar/name only in backend as-is

@@ -10,6 +10,7 @@ import LearnersProjects from '../../../pages/academia/learner/projects';
 import LearnersViewProject from '../../../pages/academia/learner/view-project';
 import LearnersCertificates from '../../../pages/academia/learner/certificates';
 import LearnersSettings from '../../../pages/academia/learner/settings';
+import LearnersAccount from '../../../pages/academia/learner/account';
 
 export default function AcademiaLearnerRoutes() {
   return (
@@ -24,6 +25,7 @@ export default function AcademiaLearnerRoutes() {
       <Route path="projects" element={<LearnersProjects />} />
       <Route path="view-project" element={<LearnersViewProject />} />
       <Route path="certificates" element={<LearnersCertificates />} />
+      <Route path="account" element={<LearnersAccount />} />
       <Route path="settings" element={<LearnersSettings />} />
     </>
   );

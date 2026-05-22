@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import googleIcon from '../../../assets/icons/google.svg';
 import eyeIcon from '../../../assets/icons/eye.svg';
 import bgVisual from '../../../assets/imgs/bg.png';
+import 'bootstrap/dist/css/bootstrap.min.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
@@ -67,9 +68,13 @@ function AcademiaSignUp() {
       localStorage.setItem('user', JSON.stringify(data.data.user));
       localStorage.setItem('profileCompleted', data.data.profileCompleted);
 
-      // Redirect to profile completion or dashboard
+      // Redirect based on selected role
       setTimeout(() => {
-        navigate('/academia/learner/settings', { replace: true });
+        if (phoenixRole === 'student') {
+          navigate('/academia/learner/settings', { replace: true });
+        } else {
+          navigate('/academia/index', { replace: true });
+        }
       }, 500);
     } catch (error) {
       console.error('Signup error:', error);
@@ -306,6 +311,21 @@ function AcademiaSignUp() {
           height: 18px;
         }
 
+        /* Keep the role dropdown button from getting a dark Bootstrap hover */
+        .signup-page-wrapper .btn-outline-secondary {
+          background: transparent;
+          color: #2e3a54;
+          border-color: var(--field-border);
+        }
+
+        .signup-page-wrapper .btn-outline-secondary:hover,
+        .signup-page-wrapper .btn-outline-secondary:focus {
+          background: transparent !important;
+          color: #2e3a54 !important;
+          box-shadow: none !important;
+          border-color: var(--field-border) !important;
+        }
+
         .remember-row {
           margin-top: 16px;
           display: flex;
@@ -491,21 +511,15 @@ function AcademiaSignUp() {
                 <div className="dropdown" style={{ position: 'relative' }}>
                   <button
                     type="button"
-                    className="dropdown-btn"
+                    className={`btn btn-outline-secondary dropdown-toggle w-100 text-start`}
                     aria-haspopup="listbox"
                     aria-expanded={roleOpen}
                     onClick={() => setRoleOpen(!roleOpen)}
                     style={{
-                      width: '100%',
                       height: '40px',
                       borderRadius: '6px',
-                      border: '1px solid var(--field-border)',
-                      background: 'transparent',
                       padding: '0 12px',
                       color: '#2e3a54',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
                       fontFamily: 'Inter',
                       fontWeight: '400',
                       fontSize: '13px',
@@ -514,52 +528,34 @@ function AcademiaSignUp() {
                       cursor: 'pointer',
                     }}
                   >
-                    <span>{phoenixRole === 'student' ? 'Student' : 'Instructor'}</span>
-                    <span style={{ opacity: 0.6 }}>{roleOpen ? '▴' : '▾'}</span>
+                    {phoenixRole === 'student' ? 'Student' : 'Instructor'}
                   </button>
 
-                  {roleOpen && (
-                    <ul
-                      role="listbox"
-                      tabIndex={-1}
-                      className="dropdown-menu"
-                      style={{
-                        listStyle: 'none',
-                        margin: 0,
-                        padding: 0,
-                        position: 'absolute',
-                        left: 0,
-                        right: 0,
-                        top: 'calc(100% + 6px)',
-                        background: 'white',
-                        border: '1px solid var(--field-border)',
-                        borderRadius: '8px',
-                        boxShadow: '0 6px 18px rgba(16,24,40,0.08)',
-                        zIndex: 9999,
-                        maxHeight: '220px',
-                        overflowY: 'auto',
-                        WebkitOverflowScrolling: 'touch',
-                        pointerEvents: 'auto',
-                      }}
-                    >
-                      <li
-                        role="option"
-                        onClick={() => { setPhoenixRole('student'); setRoleOpen(false); }}
+                  <ul
+                    role="listbox"
+                    tabIndex={-1}
+                    className={`dropdown-menu${roleOpen ? ' show' : ''}`}
+                    style={{ width: '100%' }}
+                  >
+                    <li>
+                      <button
+                        type="button"
                         className="dropdown-item"
-                        style={{ padding: '10px 12px', cursor: 'pointer' }}
+                        onClick={() => { setPhoenixRole('student'); setRoleOpen(false); }}
                       >
                         Student
-                      </li>
-                      <li
-                        role="option"
-                        onClick={() => { setPhoenixRole('instructor'); setRoleOpen(false); }}
+                      </button>
+                    </li>
+                    <li>
+                      <button
+                        type="button"
                         className="dropdown-item"
-                        style={{ padding: '10px 12px', cursor: 'pointer' }}
+                        onClick={() => { setPhoenixRole('instructor'); setRoleOpen(false); }}
                       >
                         Instructor
-                      </li>
-                    </ul>
-                  )}
+                      </button>
+                    </li>
+                  </ul>
                 </div>
               </div>
             </div>

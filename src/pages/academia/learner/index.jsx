@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Pagination } from 'swiper/modules';
 import 'swiper/css';
@@ -24,6 +25,8 @@ import acFf from '../../../assets/icons/ac-ff.svg';
 import drop1 from '../../../assets/icons/drop1.svg';
 import leAr from '../../../assets/icons/le-ar.svg';
 import './index.css';
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 const calendarItems = [
   { date: '06', title: 'ENGLISH', num: '1', total: '2', time: '10:00 AM' },
@@ -51,10 +54,61 @@ const recommendedCourses = Array.from({ length: 6 }, () => ({
 
 function LearnersIndex() {
   const navigate = useNavigate();
-
+  
+  const [profileLoading, setProfileLoading] = useState(true);
+  const [profile, setProfile] = useState({});
+  const [profileCompletion, setProfileCompletion] = useState(0);
+  const [stats, setStats] = useState({ completed: 0, inProgress: 0, notStarted: 0, avgProgress: 0 });
   const handleCourseClick = () => {
     navigate('/academia/learner/course-part');
   };
+
+  useEffect(() => {
+    const loadProfile = async () => {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setProfileLoading(false);
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/profile`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const body = await res.json();
+        if (!res.ok) throw new Error(body.message || 'Failed to load profile');
+
+        const user = body?.data?.user || {};
+        setProfile({
+          name: user.name || user.email || 'Learner',
+          email: user.email || '',
+          role: user.role || 'learner',
+          avatar: user.avatar ? (user.avatar.startsWith('http') || user.avatar.startsWith('/')) ? user.avatar : `${API_BASE_URL}/${user.avatar}` : defaultProfile,
+          location: user.address?.city || user.address?.town || '',
+          badges: user.badges || 0,
+        });
+
+        setProfileCompletion(Number(body?.data?.profilePercentage || 0));
+
+        // optional stats from backend if present
+        const backendStats = body?.data?.stats;
+        if (backendStats) {
+          setStats({
+            completed: backendStats.completed || 0,
+            inProgress: backendStats.inProgress || 0,
+            notStarted: backendStats.notStarted || 0,
+            avgProgress: backendStats.avgProgress || 0,
+          });
+        }
+      } catch (err) {
+        // keep defaults on error
+      } finally {
+        setProfileLoading(false);
+      }
+    };
+
+    loadProfile();
+  }, []);
 
   return (
     <>
@@ -83,35 +137,35 @@ function LearnersIndex() {
         <div className="row g-4">
         <div className="col-12 col-xl-8">
           <div className="learners-card learners-profile-card learners-profile-card--hero">
-            <div className="learners-profile-hero" style={{ '--progress': '56' }}>
-              <div className="learners-progress-avatar">
-                <img src={defaultProfile} alt="John Doe" />
-                <span className="learners-progress-badge">56%</span>
-              </div>
+            <div className="learners-profile-hero" style={{ '--progress': profileCompletion }}>
+                <div className="learners-progress-avatar">
+                  <img src={profileLoading ? defaultProfile : profile.avatar} alt={profile.name || 'Learner'} />
+                  <span className="learners-progress-badge">{profileLoading ? '...' : `${profileCompletion}%`}</span>
+                </div>
 
-              <div className="learners-profile-hero-title">
-                <h3>Hi, John Doe</h3>
-                <span className="learners-award-pill">
-                  <img src={badge1} alt="Badge" />
-                  <span>6</span>
-                </span>
-              </div>
+                <div className="learners-profile-hero-title">
+                  <h3>Hi, {profileLoading ? 'Learner' : profile.name}</h3>
+                  <span className="learners-award-pill">
+                    <img src={badge1} alt="Badge" />
+                    <span>{profileLoading ? '0' : (profile.badges || 0)}</span>
+                  </span>
+                </div>
 
-              <div className="learners-profile-hero-meta">
-                <span className="learners-meta-chip learners-meta-chip--pill">
-                  <img src={userIcon} alt="" />
-                  <span>Personal user</span>
-                </span>
-                <span className="learners-meta-chip">
-                  <img src={locationIcon} alt="" />
-                  <span>Kicukiro, Kigali</span>
-                </span>
-                <span className="learners-meta-chip">
-                  <img src={mailIcon} alt="" />
-                  <span>johndoe@gonaraza.com</span>
-                </span>
+                <div className="learners-profile-hero-meta">
+                  <span className="learners-meta-chip learners-meta-chip--pill">
+                    <img src={userIcon} alt="" />
+                    <span>{profileLoading ? 'Personal user' : profile.role}</span>
+                  </span>
+                  <span className="learners-meta-chip">
+                    <img src={locationIcon} alt="" />
+                    <span>{profileLoading ? '' : profile.location}</span>
+                  </span>
+                  <span className="learners-meta-chip">
+                    <img src={mailIcon} alt="" />
+                    <span>{profileLoading ? '' : profile.email}</span>
+                  </span>
+                </div>
               </div>
-            </div>
           </div>
 
           <div className="learners-card learners-stats-card">
