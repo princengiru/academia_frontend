@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 
 const Sidebar = ({ currentPage }) => {
   const checkActive = (slug) => (currentPage === slug ? 'active-menu' : '');
@@ -22,49 +23,49 @@ const Sidebar = ({ currentPage }) => {
           <img src="/assets/icons/magnifier.svg" alt="Search" />
         </form>
 
-        <a href="/professor" className={checkActive('index')}>
+        <Link to="/academia/professor" className={checkActive('index')}>
           <img src="/assets/icons/home-2.svg" alt="Home" />
           <span>Home</span>
-        </a>
-        <a href="/professor/prepare-course" className={checkActive('prepare-course')}>
+        </Link>
+        <Link to="/academia/professor/prepare-course" className={checkActive('prepare-course')}>
           <img src="/assets/icons/lea3.svg" alt="Prepare Course" />
           <span>Prepare Course</span>
-        </a>
-        <a href="/professor/assignments" className={checkActive('assignments')}>
+        </Link>
+        <Link to="/academia/professor/assignments" className={checkActive('assignments')}>
           <img src="/assets/icons/lea3.svg" alt="Assessments" />
           <span>Assessments</span>
-        </a>
-        <a href="/professor/projects" className={checkActive('projects')}>
+        </Link>
+        <Link to="/academia/professor/projects" className={checkActive('projects')}>
           <img src="/assets/icons/pi1.svg" alt="My Projects" />
           <span>My Projects</span>
           <span className="prof-sidebar-badge">4</span>
-        </a>
-        <a href="/professor/performance" className={checkActive('performance')}>
+        </Link>
+        <Link to="/academia/professor/performance" className={checkActive('performance')}>
           <img src="/assets/icons/pi2.svg" alt="Performance" />
           <span>Performance</span>
-        </a>
-        <a href="#" onClick={preventDefault}>
+        </Link>
+        <button type="button" className="prof-sidebar-action" onClick={preventDefault}>
           <img src="/assets/icons/pi2.svg" alt="Analytics" />
           <span>Analytics & Payments</span>
-        </a>
-        <a 
-          href="/professor/management" 
+        </button>
+        <Link 
+          to="/academia/professor/management" 
           className={['management', 'management-schedule', 'management-lessons-ranks', 'management-student-qa'].includes(currentPage) ? 'active-menu' : ''}
         >
           <img src="/assets/icons/pi3.svg" alt="Management" />
           <span>Management</span>
-        </a>
-        <a href="/professor/settings" className={checkActive('settings')}>
+        </Link>
+        <Link to="/academia/professor/settings" className={checkActive('settings')}>
           <img src="/assets/icons/setting-2.svg" alt="Settings" />
           <span>Settings</span>
-        </a>
+        </Link>
       </div>
 
       <div className="sidebar-events prof-sidebar-events">
-        <a href="#" onClick={preventDefault}>
+        <button type="button" className="prof-sidebar-events-link" onClick={preventDefault}>
           <p>2 Events Pending</p>
           <p>&gt;</p>
-        </a>
+        </button>
       </div>
 
       <div className="sidebar-advertise prof-sidebar-advertise">
@@ -84,9 +85,9 @@ const Sidebar = ({ currentPage }) => {
           </div>
         </div>
         <div className="prof-sidebar-profile-right">
-          <a href="/professor/settings" className="prof-icon-btn" aria-label="Settings">
+          <Link to="/academia/professor/settings" className="prof-icon-btn" aria-label="Settings">
             <img src="/assets/icons/setting-2.svg" alt="Settings" />
-          </a>
+          </Link>
           <button type="button" className="prof-icon-btn" aria-label="Logout" onClick={preventDefault}>
             <img src="/assets/icons/exit-right.svg" alt="Logout" />
           </button>

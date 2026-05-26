@@ -335,6 +335,61 @@ body[data-role="prof"] .right-container {
   font-weight: 600;
 }
 
+.prof-sidebar-action,
+.prof-sidebar-events-link {
+  width: 100%;
+  border: none;
+  background: transparent;
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+  color: #450468;
+  font-family: Inter;
+  font-weight: 500;
+  font-size: 14px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.prof-sidebar-action:hover,
+.prof-sidebar-action:focus,
+.prof-sidebar-events-link:hover,
+.prof-sidebar-events-link:focus {
+  background-color: #ffffff;
+  box-shadow: 0 3px 4px 0 #00000008;
+  outline: none;
+}
+
+.prof-sidebar-action img {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+}
+
+.prof-sidebar-action span {
+  font-family: "Inter", sans-serif;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.prof-sidebar-events-link {
+  justify-content: space-between;
+  color: #071437;
+}
+
+.prof-sidebar-events-link p {
+  color: inherit;
+  font-size: 14px;
+}
+
+.prof-sidebar-events-link p:last-child {
+  color: #78829D;
+  font-size: 18px;
+  font-weight: 400;
+}
+
 .prof-sidebar-badge {
   margin-left: auto;
   width: 22px;
