@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import ProfessorLayout from '../../../components/layouts/ProfessorLayout/ProfessorLayout';
 import './management-lessons-ranks.css';
 
@@ -74,14 +75,13 @@ const ManagementLessonsRanks = () => {
         {/* Tab Navigation */}
         <nav className="prof-management-tabs" aria-label="Management sections">
           {managementTabs.map((tab) => (
-            <a 
+            <Link 
               key={tab.id}
-              href={`#${tab.id}`} 
+              to={`/academia/professor/${tab.id}`} 
               className={`prof-management-tab ${activeTab === tab.id ? 'is-active' : ''}`}
-              onClick={(e) => { e.preventDefault(); setActiveTab(tab.id); }}
             >
               {tab.label}
-            </a>
+            </Link>
           ))}
         </nav>
 
