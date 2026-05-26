@@ -1,0 +1,849 @@
+.learners-view-project-page {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding-bottom: 18px;
+}
+
+.learners-projects-profile-strip {
+  background: #FFFFFF;
+  border-bottom: 1px solid #ECEFF5;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  flex-wrap: wrap;
+  margin-top: 25px;
+}
+
+.learners-projects-profile-strip-main {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.learners-projects-profile-avatar {
+  width: 57px;
+  height: 57px;
+  border-radius: 50%;
+  border: 1.5px solid #C7D4E5;
+  overflow: hidden;
+  flex: 0 0 auto;
+}
+
+.learners-projects-profile-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.learners-projects-profile-copy {
+  min-width: 0;
+}
+
+.learners-projects-profile-name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.learners-projects-profile-name-row h1 {
+  margin: 0;
+  font-family: Inter, sans-serif;
+  font-weight: 600;
+  font-size: 16px;
+  line-height: 18px;
+  color: #071437;
+}
+
+.learners-projects-status-badge,
+.learners-projects-count-badge {
+  min-height: 24px;
+  padding: 0 10px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: Inter, sans-serif;
+  font-weight: 500;
+  font-size: 11px;
+  line-height: 14px;
+}
+
+.learners-projects-status-badge {
+  background: #F5FAFF;
+  border: 1px solid #B7D5FF;
+  color: #0D6EFD;
+}
+
+.learners-projects-count-badge {
+  padding: 0 11px;
+  background: #F3EDF7;
+  color: #450468;
+}
+
+.learners-projects-count-badge img {
+  width: 13px;
+  height: 13px;
+}
+
+.learners-projects-count-badge span {
+  font-size: 11px;
+  line-height: 14px;
+}
+
+.learners-projects-profile-meta {
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-family: Inter, sans-serif;
+  font-weight: 400;
+  font-size: 12px;
+  line-height: 14px;
+  color: #7B8499;
+}
+
+.learners-projects-profile-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-left: auto;
+}
+
+.learners-projects-primary-btn,
+.learners-projects-secondary-btn {
+  min-height: 36px;
+  padding: 0 16px;
+  border: none;
+  border-radius: 8px;
+  font-family: Inter, sans-serif;
+  font-weight: 600;
+  font-size: 12px;
+  line-height: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  cursor: pointer;
+}
+
+.learners-projects-primary-btn {
+  background: #450468;
+  color: #FFFFFF;
+}
+
+.learners-projects-primary-btn img {
+  width: 14px;
+  height: 14px;
+  filter: brightness(0) invert(1);
+}
+
+.learners-projects-secondary-btn {
+  border: 1px solid #D7C6E2;
+  background: #FCF8FF;
+  color: #450468;
+}
+
+.learners-view-project-shell {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 350px;
+  gap: 40px;
+  align-items: start;
+}
+
+.learners-view-project-main,
+.learners-view-project-comments-panel {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+}
+
+.learners-view-project-main {
+  padding: 0;
+}
+
+.learners-view-project-head h2,
+.learners-view-project-comments-head h3 {
+  margin: 0;
+  font-family: Inter, sans-serif;
+  font-weight: 600;
+  color: #071437;
+}
+
+.learners-view-project-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  font-family: Inter, sans-serif;
+  font-weight: 500;
+  font-size: 12px;
+  line-height: 16px;
+  color: #450468;
+}
+
+.learners-view-project-back img {
+  width: 14px;
+  height: 14px;
+}
+
+.learners-view-project-head h2 {
+  margin-top: 16px;
+  font-size: 22px;
+  line-height: 28px;
+}
+
+.learners-view-project-head p,
+.learners-view-project-abstract-card p,
+.learners-view-project-comment p {
+  font-family: Inter, sans-serif;
+  font-weight: 400;
+  color: #78829D;
+}
+
+.learners-view-project-head p {
+  margin: 10px 0 0;
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.learners-view-project-side {
+  position: relative;
+  min-width: 0;
+}
+
+.learners-view-project-comments-panel {
+  padding: 0;
+}
+
+.learners-view-project-abstract-card {
+  background: #FFFFFF;
+  border-top: 1px solid #ECEFF5;
+  padding: 18px 0 0;
+  margin-top: 18px;
+}
+
+.learners-view-project-abstract-card h3 {
+  margin: 0;
+  font-family: Inter, sans-serif;
+  font-weight: 600;
+  font-size: 16px;
+  line-height: 20px;
+  color: #071437;
+}
+
+.learners-view-project-abstract-card p {
+  margin: 14px 0 0;
+  font-family: Inter, sans-serif;
+  font-weight: 400;
+  font-size: 13px;
+  line-height: 21px;
+  color: #6A7287;
+}
+
+.learners-view-project-tools-toggle {
+  margin-top: 20px;
+  border: none;
+  background: transparent;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-family: Inter, sans-serif;
+  font-weight: 500;
+  font-size: 12px;
+  line-height: 16px;
+  color: #4B5675;
+  cursor: pointer;
+}
+
+.learners-view-project-tools-toggle-icon {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #F3EDF7;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.learners-view-project-tools-toggle-icon img {
+  width: 14px;
+  height: 14px;
+}
+
+.learners-view-project-tools-toggle-caret {
+  width: 8px;
+  height: 8px;
+  border-right: 1.5px solid #7B8499;
+  border-bottom: 1.5px solid #7B8499;
+  transform: rotate(45deg) translateY(-1px);
+}
+
+.learners-view-project-gallery {
+  margin-top: 18px;
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 6px;
+  grid-auto-flow: dense;
+}
+
+.learners-view-project-gallery-item {
+  position: relative;
+  border-radius: 0;
+  overflow: hidden;
+  background: #EDEFF3;
+  aspect-ratio: 1 / 1;
+}
+
+.learners-view-project-gallery-item img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.learners-view-project-gallery-item.is-wide {
+  grid-column: 1 / -1;
+  aspect-ratio: 16 / 7;
+}
+
+.learners-view-project-gallery-item.is-tall {
+  grid-column: span 5;
+  aspect-ratio: 4 / 5;
+}
+
+.learners-view-project-gallery-item.is-half {
+  grid-column: span 6;
+  aspect-ratio: 1 / 1;
+}
+
+.learners-view-project-comments-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.learners-view-project-comments-head h3 {
+  font-size: 20px;
+  line-height: 30px;
+  letter-spacing: -0.02em;
+}
+
+.learners-view-project-team-toggle {
+  margin-top: 8px;
+  border: none;
+  background: transparent;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: Inter, sans-serif;
+  font-weight: 400;
+  font-size: 12px;
+  line-height: 18px;
+  color: #667085;
+  cursor: pointer;
+}
+
+.learners-view-project-team-caret {
+  width: 8px;
+  height: 8px;
+  border-right: 1.5px solid #98A2B3;
+  border-bottom: 1.5px solid #98A2B3;
+  transform: rotate(45deg) translateY(-1px);
+}
+
+.learners-view-project-share-btn {
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.learners-view-project-share-btn img {
+  width: 18px;
+  height: 18px;
+  opacity: 0.68;
+}
+
+.learners-view-project-engagement-row {
+  margin-top: 22px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.learners-view-project-engagement-pill {
+  min-height: 34px;
+  border: 1px solid #EAECF0;
+  border-radius: 6px;
+  background: #FFFFFF;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 0 14px;
+  font-family: Inter, sans-serif;
+  font-weight: 500;
+  font-size: 12px;
+  line-height: 18px;
+  color: #667085;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.learners-view-project-engagement-pill.is-active {
+  border-color: #D7C6E2;
+  background: #F6EFFA;
+  color: #4F1178;
+}
+
+.learners-view-project-engagement-pill img {
+  width: 14px;
+  height: 14px;
+}
+
+.learners-view-project-comments-list {
+  margin-top: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+.learners-view-project-comment {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.learners-view-project-comment::before {
+  content: "";
+  position: absolute;
+  left: 12px;
+  top: 30px;
+  bottom: -14px;
+  width: 1px;
+  background: #EEF0F4;
+}
+
+.learners-view-project-comment:last-child::before {
+  display: none;
+}
+
+.learners-view-project-comment-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex: 0 0 auto;
+  position: relative;
+  z-index: 1;
+}
+
+.learners-view-project-comment-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.learners-view-project-comment-body {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding-left: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.learners-view-project-comment-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.learners-view-project-comment-meta strong {
+  font-family: Inter, sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+  line-height: 18px;
+  color: #0F1F4D;
+}
+
+.learners-view-project-comment-meta span,
+.learners-view-project-comment-foot span {
+  font-family: Inter, sans-serif;
+  font-weight: 400;
+  font-size: 11px;
+  line-height: 16px;
+  color: #667085;
+}
+
+.learners-view-project-comment p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 21px;
+  color: #5A1688;
+  max-width: 255px;
+}
+
+.learners-view-project-comment-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding-top: 2px;
+}
+
+.learners-view-project-comment-foot strong {
+  color: #0F1F4D;
+  font-weight: 600;
+}
+
+.learners-view-project-comment-reply {
+  border: none;
+  background: transparent;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: Inter, sans-serif;
+  font-weight: 500;
+  font-size: 11px;
+  line-height: 16px;
+  color: #667085;
+  cursor: pointer;
+}
+
+.learners-view-project-comment-reply img {
+  width: 12px;
+  height: 12px;
+  opacity: 0.72;
+}
+
+@media (max-width: 991px) {
+  .learners-view-project-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .learners-view-project-engagement-row {
+    flex-direction: column;
+  }
+
+  .learners-view-project-gallery-item.is-tall {
+    grid-column: span 12;
+    aspect-ratio: 16 / 10;
+  }
+}
+
+@media (max-width: 640px) {
+  .learners-projects-profile-strip {
+    padding: 16px;
+  }
+
+  .learners-projects-profile-actions {
+    width: 100%;
+  }
+
+  .learners-projects-primary-btn,
+  .learners-projects-secondary-btn {
+    flex: 1 1 100%;
+  }
+
+  .learners-view-project-gallery {
+    grid-template-columns: 1fr;
+  }
+
+  .learners-view-project-gallery-item.is-wide,
+  .learners-view-project-gallery-item.is-half,
+  .learners-view-project-gallery-item.is-tall {
+    grid-column: auto;
+    aspect-ratio: 16 / 10;
+  }
+
+  .learners-view-project-comment-body {
+    padding-left: 14px;
+  }
+
+  .learners-view-project-comment p {
+    max-width: none;
+  }
+}
+
+/* Upload Modal Styles (Reused from Projects page) */
+.learners-upload-modal {
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 1200;
+}
+
+.learners-upload-modal.is-open {
+  display: flex;
+}
+
+.learners-upload-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(7, 20, 55, 0.34);
+}
+
+.learners-upload-modal__dialog {
+  position: relative;
+  width: min(680px, calc(100vw - 32px));
+  max-height: calc(100vh - 40px);
+  overflow: auto;
+  background: #FFFFFF;
+  border: 1px solid #DDE3EE;
+  border-radius: 12px;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.18);
+}
+
+.learners-upload-modal__dialog,
+.learners-upload-modal__dialog * {
+  font-family: Inter, sans-serif;
+  letter-spacing: 0;
+}
+
+.learners-upload-modal__header {
+  padding: 22px 24px 18px;
+  border-bottom: 1px solid #D7DEE9;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.learners-upload-modal__header h2 {
+  margin: 0;
+  font-weight: 600;
+  font-size: 16px;
+  line-height: 23.4px;
+  color: #213056;
+  vertical-align: middle;
+}
+
+.learners-upload-modal__field label,
+.learners-upload-modal__dropzone-copy strong,
+.learners-upload-modal__submit {
+  margin: 0;
+  font-weight: 600;
+  font-size: 14px;
+  line-height: 20px;
+  color: #213056;
+  vertical-align: middle;
+}
+
+.learners-upload-modal__chip span {
+  margin: 0;
+  font-weight: 500;
+  font-size: 13px;
+  line-height: 18px;
+  color: #213056;
+  vertical-align: middle;
+}
+
+.learners-upload-modal__close {
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.learners-upload-modal__close img {
+  opacity: 0.7;
+}
+
+.learners-upload-modal__body {
+  padding: 18px 24px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.learners-upload-modal__field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.learners-upload-modal__field input,
+.learners-upload-modal__field textarea,
+.learners-upload-modal__search input {
+  width: 100%;
+  border: none;
+  border-bottom: 1px solid #D7DEE9;
+  padding: 10px;
+  background: #FCFCFC;
+  font-weight: 500;
+  font-size: 13px;
+  line-height: 19px;
+  color: #67748E;
+  outline: none;
+}
+
+.learners-upload-modal__field textarea {
+  min-height: 110px;
+  resize: none;
+  padding-top: 8px;
+}
+
+.learners-upload-modal__field input::placeholder,
+.learners-upload-modal__field textarea::placeholder,
+.learners-upload-modal__search input::placeholder,
+.learners-upload-modal__dropzone-copy span {
+  font-weight: 500;
+  font-size: 13px;
+  line-height: 19px;
+  color: #B2BBCD;
+}
+
+.learners-upload-modal__search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 14px;
+  background: #FCFCFC;
+  border-bottom: 1px solid #D7DEE9;
+}
+
+.learners-upload-modal__search img {
+  width: 18px;
+  height: 18px;
+  opacity: 0.72;
+}
+
+.learners-upload-modal__search input {
+  padding-left: 0;
+}
+
+.learners-upload-modal__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: -2px;
+}
+
+.learners-upload-modal__chip {
+  min-height: 36px;
+  padding: 5px 10px;
+  border-radius: 8px;
+  background: #F8F9FC;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.learners-upload-modal__chip > img {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.learners-upload-modal__chip button {
+  margin-left: 2px;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.learners-upload-modal__chip button img {
+  width: 10px;
+  height: 10px;
+  opacity: 0.7;
+}
+
+.learners-upload-modal__dropzone {
+  min-height: 68px;
+  padding: 14px 18px;
+  border: 1px dashed #A85FD0;
+  border-radius: 10px;
+  background: #FCF8FF;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  cursor: pointer;
+}
+
+.learners-upload-modal__dropzone-icon {
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+}
+
+.learners-upload-modal__dropzone-icon img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: contain;
+}
+
+.learners-upload-modal__dropzone-copy {
+  display: flex;
+  flex-direction: column;
+}
+
+.learners-upload-modal__file {
+  display: none;
+}
+
+.learners-upload-modal__submit {
+  min-height: 40px;
+  border: none;
+  border-radius: 8px;
+  background: #57067D;
+  color: #FFFFFF;
+  cursor: pointer;
+}
+
+@media (max-width: 640px) {
+  .learners-upload-modal {
+    padding: 12px;
+  }
+
+  .learners-upload-modal__header,
+  .learners-upload-modal__body {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .learners-upload-modal__dropzone {
+    align-items: flex-start;
+  }
+}

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import ProfessorLayout from '../../../components/layouts/ProfessorLayout/ProfessorLayout';
 import './projects.css';
 
@@ -120,9 +121,9 @@ const Projects = () => {
               {projectCards.map((card) => (
                 <article key={card.id} className="learners-project-card">
                   <div className="learners-project-card-image">
-                    <a href="/view-project" onClick={preventDefault}>
+                    <Link to="/academia/professor/view-project" className="learners-project-card-link">
                       <img src={card.image} alt={card.title} />
-                    </a>
+                    </Link>
                   </div>
 
                   <div className="learners-project-card-info">
@@ -145,7 +146,11 @@ const Projects = () => {
                     </div>
 
                     <div className="learners-project-card-info-body">
-                      <p><a href="/view-project" onClick={preventDefault}>{card.title}</a></p>
+                      <p>
+                        <Link to="/academia/professor/view-project" className="learners-project-card-title-link">
+                          {card.title}
+                        </Link>
+                      </p>
                     </div>
                   </div>
                 </article>
