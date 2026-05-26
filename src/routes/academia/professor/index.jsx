@@ -32,5 +32,3 @@ function AcademiaProfessorRoutes() {
 }
 
 export default AcademiaProfessorRoutes;
-
-export default AcademiaProfessorRoutes;
