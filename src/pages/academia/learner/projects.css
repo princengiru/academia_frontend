@@ -226,6 +226,12 @@
   object-fit: cover;
 }
 
+.learners-projects-page .learners-project-card-image--empty {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  background: #F8F9FC;
+}
+
 .learners-projects-page .learners-project-card-info {
   padding: 14px 10px 16px;
   display: flex;
@@ -318,15 +324,14 @@
 .learners-projects-page .learners-projects-pagination div {
   display: inline-flex;
   align-items: center;
-  gap: 2px;
+  gap: 6px;
 }
 
-.learners-projects-page .learners-projects-pagination p,
-.learners-projects-page .learners-projects-pagination span {
-  width: 30px;
-  height: 30px;
+.learners-projects-page .learners-projects-pagination button {
+  min-width: 34px;
+  height: 34px;
   margin: 0;
-  border-radius: 6px;
+  border-radius: 8px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -334,11 +339,15 @@
   font-size: 14px;
   line-height: 18px;
   color: #4B5675;
+  border: 1px solid #E8EAF2;
+  background: transparent;
+  padding: 0 8px;
 }
 
-.learners-projects-page .learners-projects-pagination p.active {
+.learners-projects-page .learners-projects-pagination button.active {
   background: #450468;
   color: #FFFFFF;
+  border-color: transparent;
 }
 
 .learners-projects-page .learners-projects-side-card {
@@ -511,6 +520,55 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+.learners-projects-page .learners-projects-empty-state {
+  margin: 0 16px 16px 0;
+  padding: 20px;
+  border: 1px solid #F1F1F4;
+  border-radius: 12px;
+  background: #FCFCFD;
+}
+
+.learners-projects-page .learners-projects-empty-state h3 {
+  margin: 0;
+  font-family: Inter, sans-serif;
+  font-weight: 600;
+  font-size: 15px;
+  line-height: 20px;
+  color: #071437;
+}
+
+.learners-projects-page .learners-projects-empty-state p {
+  margin: 8px 0 0;
+  font-family: Inter, sans-serif;
+  font-weight: 400;
+  font-size: 12px;
+  line-height: 18px;
+  color: #78829D;
+}
+
+.learners-projects-page .learners-projects-empty-actions {
+  margin-top: 14px;
+  display: inline-flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.learners-projects-page .learners-projects-loading-state,
+.learners-projects-page .learners-projects-error-state {
+  min-height: 150px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.learners-projects-page .learners-projects-pagination--muted {
+  opacity: 0.6;
+}
+
+.learners-projects-page .learners-projects-pagination--muted button[disabled] {
+  cursor: not-allowed;
 }
 
 @media (max-width: 1100px) {
@@ -806,6 +864,22 @@
 .learners-upload-modal__dropzone-copy {
   display: flex;
   flex-direction: column;
+}
+
+.learners-upload-modal__hint,
+.learners-upload-modal__error {
+  margin: -6px 0 0;
+  font-family: Inter, sans-serif;
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.learners-upload-modal__hint {
+  color: #78829D;
+}
+
+.learners-upload-modal__error {
+  color: #B42318;
 }
 
 .learners-upload-modal__file {

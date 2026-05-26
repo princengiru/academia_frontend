@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 // Assets (Update paths to match your React project structure)
 import bgVisual from '../../../assets/imgs/bg.png';
@@ -6,6 +7,7 @@ import bgVisual from '../../../assets/imgs/bg.png';
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 function AcademiaForgotPassword() {
+  const navigate = useNavigate();
   // Using rare variable names for state logic
   const [apexEmail, setApexEmail] = useState('');
   const [titanLoading, setTitanLoading] = useState(false);
@@ -38,7 +40,11 @@ function AcademiaForgotPassword() {
       }
 
       setStellarSuccess('Password reset link sent to your email. Please check your inbox.');
+      localStorage.setItem('user', JSON.stringify({ email: apexEmail }));
       setApexEmail('');
+      setTimeout(() => {
+        navigate('/academia/auth/check-email-single', { replace: true });
+      }, 900);
       setTitanLoading(false);
     } catch (error) {
       console.error('Forgot password error:', error);

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation, useSearchParams } from 'react-router-dom';
 import LearnersPageShell from './LearnersPageShell';
 
 // Icons & Images
@@ -29,92 +30,32 @@ import acFi from '../../../assets/icons/ac-fi.svg';
 import './read-contents.css';
 
 const apexCourseMeta = {
-  title: 'Cyber Security',
-  author: 'Emmanuella Jean Marie Vianney',
+  title: '',
+  author: '',
   authorImage: profImg,
-  authorRole: 'Author',
-  publishedOn: '12 Jan 2029',
-  headline: 'Core Principles of Cybersecurity, Leadership and Oversight',
-  summary: 'Statistics is the branch of mathematics that deals with the collection, analysis, interpretation, presentation, and organization of data. It provides methodologies for making.',
+  authorRole: '',
+  publishedOn: '',
+  headline: '',
+  summary: '',
   image: acOnImg,
-  duration: '4 weeks',
-  weekly: '4 hours',
-  level: 'Intermediate',
-  price: '$5 Per month',
-  discount: '-4% Off',
-  intro: 'Statistics is the branch of mathematics that deals with the collection, analysis, interpretation, presentation, and organization of data. It provides methodologies for making inferences about populations based on sample data, enabling researchers to quantify uncertainty and variability in empirical findings...',
-  audience: 'This course is ideal for cyber security engineers, service desk analysts, IT managers, and service desk managers looking to improve incident response skills, implement frameworks, and create practical CIRPs.',
+  duration: '',
+  weekly: '',
+  level: '',
+  price: '',
+  discount: '',
+  intro: '',
+  audience: '',
 };
 
-const slateCourseReader = {
-  title: 'Cyber Security',
-  author: 'Emmanuella Jean Marie Vianney',
-  score: '0.0%',
-};
+const slateCourseReader = { title: '', author: '', score: '0.0%' };
 
-const genesisOutcomes = [
-  'Describe the fundamentals of a cybersecurity major incident response process.',
-  'Explain key industry frameworks (NIST and SANS).',
-  'Develop your own cybersecurity major incident response plan.',
-  'Test, measure, and improve your cybersecurity major incident management process.',
-  'A certificate of achievement in cyber 100% legit',
-];
+const genesisOutcomes = [];
 
-const slateExerciseQuestions = [
-  {
-    id: 'exercise-q1',
-    number: 1,
-    type: 'single',
-    prompt: 'Describe the fundamentals of a cybersecurity major incident response process.',
-    options: [
-      'Preparation: Establishing policies, training the incident response team, defining playbooks for various scenarios, and implementing security tools (e.g., SIEM, backups).',
-      'Identification (Detection & Analysis): Monitoring systems to detect potential breaches, analyzing evidence, determining the scope and severity, and initiating the incident response plan.',
-      'Containment: Isolating affected systems to prevent further spread of the attack, which includes short-term containment (e.g., disconnecting infected machines) and long-term containment.',
-      'Eradication: Removing the root cause of the incident, such as deleting malware, closing vulnerabilities, and removing compromised accounts from the network.',
-      'All above',
-    ],
-    correctAnswers: [4],
-  },
-];
+const slateExerciseQuestions = [];
 
-const genesisAssessmentTracker = [
-  'wrong', 'correct', 'correct', 'correct', 'wrong', 'correct', 'correct', 'wrong', 'wrong', 'correct', 'correct', 'correct',
-  'correct', 'correct', 'correct', 'correct', 'correct', 'correct', 'correct', 'correct', 'correct', 'correct', 'wrong', 'correct', 'correct', 'correct',
-];
+const genesisAssessmentTracker = [];
 
-const slateAssessmentQuestions = [
-  {
-    id: 'assessment-q1',
-    number: 1,
-    progressText: '8/26',
-    type: 'single',
-    prompt: 'Describe the fundamentals of a cybersecurity major incident response process.',
-    options: [
-      'Preparation: Establishing policies, training the incident response team, defining playbooks for various scenarios, and implementing security tools (e.g., SIEM, backups).',
-      'Identification (Detection & Analysis): Monitoring systems to detect potential breaches, analyzing evidence, determining the scope and severity, and initiating the incident response plan.',
-      'Containment: Isolating affected systems to prevent further spread of the attack, which includes short-term containment (e.g., disconnecting infected machines) and long-term containment.',
-      'Eradication: Removing the root cause of the incident, such as deleting malware, closing vulnerabilities, and removing compromised accounts from the network.',
-      'All above',
-    ],
-    correctAnswers: [2],
-  },
-  {
-    id: 'assessment-q2',
-    number: 2,
-    progressText: '26/26',
-    type: 'multi',
-    prompt: 'Describe the fundamentals of a cybersecurity major incident response process.',
-    image: acOnImg,
-    options: [
-      'Preparation: Establishing policies, training the incident response team, defining playbooks for various scenarios, and implementing security tools (e.g., SIEM, backups).',
-      'Identification (Detection & Analysis): Monitoring systems to detect potential breaches, analyzing evidence, determining the scope and severity, and initiating the incident response plan.',
-      'Containment: Isolating affected systems to prevent further spread of the attack, which includes short-term containment (e.g., disconnecting infected machines) and long-term containment.',
-      'Eradication: Removing the root cause of the incident, such as deleting malware, closing vulnerabilities, and removing compromised accounts from the network.',
-      'Lessons Learned (Post-Incident Activity): Conducting a review to analyze the cause, evaluating the effectiveness of the response, and updating the plan to strengthen future security postures.',
-    ],
-    correctAnswers: [0, 2, 3],
-  },
-];
+const slateAssessmentQuestions = [];
 
 const apexAssessmentResult = {
   score: '89.8%',
@@ -130,80 +71,39 @@ const apexAssessmentResult = {
   ],
 };
 
-const slateOutlineWeeks = [
-  {
-    id: 'week-1',
-    title: 'Week 1',
-    completed: false,
-    expanded: true,
-    chapters: [
-      { id: 'chapter-1', title: 'Chapter 1', completed: true },
-      { id: 'chapter-2', title: 'Chapter 2', completed: true },
-      { id: 'chapter-3', title: 'Chapter 3', completed: false },
-      { id: 'chapter-4', title: 'Chapter 4', completed: false },
-      { id: 'chapter-5', title: 'Chapter 5', completed: false },
-      { id: 'chapter-6', title: 'Chapter 6', completed: false },
-      { id: 'assessment', title: 'Assessment', completed: false },
-    ],
-  },
-  { id: 'week-2', title: 'Week 2', completed: false, expanded: false, chapters: [] },
-  { id: 'week-3', title: 'Week 3', completed: false, expanded: false, chapters: [] },
-  { id: 'week-4', title: 'Week 4', completed: false, expanded: false, chapters: [] },
-];
+const slateOutlineWeeks = [];
 
-const apexChapterContent = {
-  'chapter-1': {
-    weekLabel: 'Week 1',
-    chapterLabel: 'Chapter 1 : Milestone to achieve Basic understanding and breakdowns',
-    progressLabel: 'Viewed : 0%',
-    headline: 'Core Principles of Cybersecurity, Leadership and Oversight',
-    summary: 'Statistics is the branch of mathematics that deals with the collection, analysis, interpretation, presentation, and organization of data. It provides methodologies for making.',
-    image: acOnImg,
-    introTitle: 'Introduction',
-    introBody: 'Statistics is the branch of mathematics that deals with the collection, analysis, interpretation, presentation, and organization of data. It provides methodologies for making inferences about populations based on sample data, enabling researchers to quantify uncertainty and variability in empirical findings...',
-    introLinkLabel: 'Read more',
-    audienceTitle: 'Who is the course for?',
-    audienceBody: 'This course is ideal for cyber security engineers, service desk analysts, IT managers, and service desk managers looking to improve incident response skills, implement frameworks, and create practical CIRPs.',
-  },
-  'chapter-2': {
-    weekLabel: 'Week 1',
-    chapterLabel: 'Chapter 2 : Core incident management principles',
-    progressLabel: 'Viewed : 18%',
-    headline: 'Incident Management Foundations and Operating Principles',
-    summary: 'This chapter explains the core operating principles used to identify, classify, and route incidents quickly across a security team.',
-    image: acOnImg,
-    introTitle: 'Introduction',
-    introBody: 'You will review severity levels, response ownership, and the difference between normal support operations and major incident handling.',
-    introLinkLabel: 'Read more',
-    audienceTitle: 'Who is the course for?',
-    audienceBody: 'This chapter is useful for service desk teams, security engineers, operations leads, and managers responsible for response workflows.',
-  },
-  'assessment': {
-    weekLabel: 'Week 1',
-    chapterLabel: 'Assessment : Core Principles of Cybersecurity, Leadership and Oversight',
-    progressLabel: 'Viewed : 23.45%',
-    headline: 'Week 1 Assessment',
-    summary: 'Complete the checkpoint to verify your understanding of week one before moving into the next section.',
-    image: acOnImg,
-    introTitle: 'Introduction',
-    introBody: 'The assessment combines short scenario reasoning with core concept questions drawn from the first six chapters.',
-    introLinkLabel: 'Read more',
-    audienceTitle: 'Who is the course for?',
-    audienceBody: 'This checkpoint is for learners finishing the first week and preparing to move into the next section.',
-  },
-};
+const apexChapterContent = {};
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
+const extractBody = (body) => body?.data?.data || body?.data || body;
 
 function LearnersReadContents() {
   const preventDefault = (e) => e.preventDefault();
-
   // Layout State
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [expandedWeeks, setExpandedWeeks] = useState({ 'week-1': true });
   const [activeChapterId, setActiveChapterId] = useState('chapter-1');
 
+  // Router params
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
+
+  // Backend-driven content state (fallback to local mocks)
+  const [courseMetaState, setCourseMetaState] = useState(apexCourseMeta);
+  const [courseReader, setCourseReader] = useState(slateCourseReader);
+  const [outlineWeeksState, setOutlineWeeksState] = useState(slateOutlineWeeks);
+  const [chapterContentMapState, setChapterContentMapState] = useState(apexChapterContent);
+  const [exerciseQuestionsState, setExerciseQuestionsState] = useState(slateExerciseQuestions);
+  const [outcomesState, setOutcomesState] = useState(genesisOutcomes);
+  const [studentAttempts, setStudentAttempts] = useState([]);
+
+  const [loadingCourse, setLoadingCourse] = useState(false);
+
   // Exercise State
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
-  const [exerciseStates, setExerciseStates] = useState(slateExerciseQuestions.map(() => 'pending'));
+  const [exerciseStates, setExerciseStates] = useState(() => exerciseQuestionsState.map(() => 'pending'));
   const [selectedExerciseOption, setSelectedExerciseOption] = useState(null);
   const [isExerciseGraded, setIsExerciseGraded] = useState(false);
 
@@ -213,10 +113,151 @@ function LearnersReadContents() {
   const [isAssessmentGraded, setIsAssessmentGraded] = useState(false);
   const [isAssessmentComplete, setIsAssessmentComplete] = useState(false);
 
+  const inboundId = location.state?.courseId || searchParams.get('id');
+
+  useEffect(() => {
+    let cancelled = false;
+    const loadCourse = async (id) => {
+      if (!id) return;
+      setLoadingCourse(true);
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/courses/${id}`);
+        const body = await res.json();
+        const data = extractBody(body);
+        const courseData = data?.data || data?.course || data || {};
+
+        if (cancelled) return;
+
+        // map course meta
+        setCourseMetaState((prev) => ({
+          ...prev,
+          title: courseData.title || prev.title,
+          author: courseData.instructor_name || courseData.author || prev.author,
+          authorImage: prev.authorImage,
+          publishedOn: courseData.created_at || prev.publishedOn,
+          headline: courseData.subtitle || courseData.title || prev.headline,
+          summary: courseData.description || prev.summary,
+          image: courseData.thumbnail && (courseData.thumbnail.startsWith('/') ? `${API_BASE_URL}${courseData.thumbnail}` : courseData.thumbnail) || prev.image,
+          duration: courseData.duration_weeks ? `${courseData.duration_weeks} weeks` : prev.duration,
+          weekly: courseData.required_hours_per_week ? `${courseData.required_hours_per_week} hours` : prev.weekly,
+          level: courseData.level || prev.level,
+          price: courseData.price ? `$${courseData.price}` : (courseData.is_free ? 'Free' : prev.price),
+          intro: courseData.intro_message || courseData.description || prev.intro,
+          audience: courseData.target_audience || prev.audience,
+        }));
+
+        setCourseReader((prev) => ({
+          ...prev,
+          title: courseData.title || prev.title,
+          author: courseData.instructor_name || prev.author,
+        }));
+
+        // chapters -> outline weeks
+        const chapters = Array.isArray(courseData.chapters) ? courseData.chapters : [];
+        if (chapters.length) {
+          const weeks = [
+            {
+              id: 'week-1',
+              title: 'Week 1',
+              completed: false,
+              expanded: true,
+              chapters: chapters.map((c, i) => ({ id: c.id || `ch-${i}`, title: c.title || c.name || `Chapter ${i + 1}`, completed: false })),
+            },
+          ];
+          setOutlineWeeksState(weeks);
+
+          // set active chapter to first real chapter if available
+          const firstId = chapters[0].id || `ch-0`;
+          setActiveChapterId(firstId);
+
+          // build chapter content map
+          const cmap = {};
+          chapters.forEach((c, i) => {
+            const cid = c.id || `ch-${i}`;
+            cmap[cid] = {
+              weekLabel: `Week ${1}`,
+              chapterLabel: c.title || c.name || `Chapter ${i + 1}`,
+              progressLabel: `Viewed : 0%`,
+              headline: c.title || c.name || '',
+              summary: c.description || c.summary || '',
+              image: c.thumbnail ? (c.thumbnail.startsWith('/') ? `${API_BASE_URL}${c.thumbnail}` : c.thumbnail) : acOnImg,
+              introTitle: 'Introduction',
+              introBody: c.description || c.content || '',
+              introLinkLabel: 'Read more',
+              audienceTitle: 'Who is the course for?',
+              audienceBody: c.target_audience || '',
+            };
+          });
+          setChapterContentMapState((prev) => ({ ...prev, ...cmap }));
+
+          // outcomes
+          if (courseData.objectives) {
+            if (typeof courseData.objectives === 'string') setOutcomesState(courseData.objectives.split('\n'));
+            else if (Array.isArray(courseData.objectives)) setOutcomesState(courseData.objectives);
+          }
+
+          // exercises
+          const exercises = [];
+          chapters.forEach((c, chIndex) => {
+            if (Array.isArray(c.exercises)) {
+              c.exercises.forEach((ex, exIndex) => {
+                exercises.push({
+                  id: ex.id || `${chIndex + 1}.${exIndex + 1}`,
+                  number: exIndex + 1,
+                  type: ex.type || 'single',
+                  prompt: ex.title || ex.name || ex.headline || ex.prompt || 'Exercise',
+                  options: ex.options || ['Option A', 'Option B'],
+                  correctAnswers: ex.correctAnswers || [],
+                });
+              });
+            }
+          });
+          if (exercises.length) {
+            setExerciseQuestionsState(exercises);
+            setExerciseStates(exercises.map(() => 'pending'));
+          }
+          // If chapter ids exist, try to fetch exercises for the first chapter from API
+          if (chapters[0] && (chapters[0].id || chapters[0].chapter_id)) {
+            const cid = chapters[0].id || chapters[0].chapter_id;
+            fetchChapterExercises(cid).catch(() => {});
+          }
+        }
+        // load student attempts for this course to reflect progress
+        if (courseData.id || courseData.course_id || id) {
+          const courseId = courseData.id || courseData.course_id || id;
+          fetchCourseStudentAttempts(courseId).catch(() => {});
+        }
+      } catch (err) {
+        // keep fallbacks
+      } finally {
+        if (!cancelled) setLoadingCourse(false);
+      }
+    };
+
+    if (inboundId) loadCourse(inboundId);
+
+    return () => { cancelled = true; };
+  }, [inboundId]);
+
   // Dynamic Content Loading based on Active Chapter
-  // Fallback to chapter-1 if content is undefined in our mock dict
-  const activeContent = apexChapterContent[activeChapterId] || apexChapterContent['chapter-1'];
+  const defaultContent = {
+    weekLabel: '',
+    chapterLabel: '',
+    progressLabel: '',
+    headline: '',
+    summary: '',
+    image: acOnImg,
+    introTitle: '',
+    introBody: '',
+    introLinkLabel: '',
+    audienceTitle: '',
+    audienceBody: '',
+  };
+  const activeContent = chapterContentMapState[activeChapterId] || defaultContent;
   const isAssessmentView = activeChapterId === 'assessment';
+  const hasOutline = Array.isArray(outlineWeeksState) && outlineWeeksState.length > 0;
+  const hasOutcomes = Array.isArray(outcomesState) && outcomesState.length > 0;
+  const showContentSections = !loadingCourse && (hasOutline || hasOutcomes);
 
   const toggleWeek = (weekId) => {
     setExpandedWeeks((prev) => ({ ...prev, [weekId]: !prev[weekId] }));
@@ -236,7 +277,76 @@ function LearnersReadContents() {
       setCurrentExerciseIndex(0);
       setSelectedExerciseOption(null);
       setIsExerciseGraded(false);
-      setExerciseStates(slateExerciseQuestions.map(() => 'pending'));
+      setExerciseStates(exerciseQuestionsState.map(() => 'pending'));
+    }
+    // fetch exercises for the selected chapter from backend
+    if (chapterId && chapterId !== 'assessment') {
+      const numeric = String(chapterId).replace(/[^0-9]/g, '');
+      const cid = numeric ? Number(numeric) : chapterId;
+      fetchChapterExercises(cid).catch(() => {});
+    }
+  };
+
+  // Fetch exercises for a chapter from backend and set state
+  const fetchChapterExercises = async (chapterId) => {
+    if (!chapterId) return;
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/chapters/${chapterId}/exercises`);
+      if (!res.ok) return;
+      const body = await res.json();
+      const data = extractBody(body) || [];
+      const list = Array.isArray(data) ? data : (data.data || []);
+      if (!list || !list.length) return;
+      const mapped = list.map((ex, i) => {
+        // options may be JSON string or array
+        let options = ex.options;
+        if (typeof options === 'string') {
+          try { options = JSON.parse(options); } catch (e) { options = null; }
+        }
+        // if options are objects with label/value/is_correct
+        const optionLabels = Array.isArray(options) ? options.map(o => (typeof o === 'object' ? (o.label || o.value || String(o)) : String(o))) : (options || ['Option A','Option B']);
+        const correctAnswers = Array.isArray(options) ? options.map((o, idx) => (o && o.is_correct ? idx : -1)).filter(i => i >= 0) : (ex.correct_answer ? [ex.correct_answer] : []);
+        return {
+          id: ex.id || ex.exercise_id || `ex-${i}`,
+          number: ex.order_index || i + 1,
+          type: ex.type || 'single',
+          prompt: ex.question || ex.title || ex.prompt || 'Exercise',
+          options: optionLabels,
+          correctAnswers,
+        };
+      });
+      setExerciseQuestionsState(mapped);
+      // set states based on student attempts if available
+      setExerciseStates(mapped.map((m) => {
+        const att = studentAttempts.find(a => Number(a.exercise_id) === Number(m.id) || Number(a.exercise_id) === Number(m.id));
+        if (att) return att.is_correct ? 'correct' : 'wrong';
+        return 'pending';
+      }));
+    } catch (err) {
+      // ignore
+    }
+  };
+
+  // Fetch student attempts for a course
+  const fetchCourseStudentAttempts = async (courseId) => {
+    if (!courseId) return;
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/courses/${courseId}/exercise-attempts`);
+      if (!res.ok) return;
+      const body = await res.json();
+      const data = extractBody(body) || [];
+      const list = Array.isArray(data) ? data : (data.data || []);
+      setStudentAttempts(list || []);
+      // merge into existing exercise states
+      setExerciseStates((prev) => {
+        return exerciseQuestionsState.map((q) => {
+          const att = list.find(a => Number(a.exercise_id) === Number(q.id) || Number(a.exercise_id) === Number(q.id));
+          if (att) return att.is_correct ? 'correct' : 'wrong';
+          return 'pending';
+        });
+      });
+    } catch (err) {
+      // ignore
     }
   };
 
@@ -247,16 +357,16 @@ function LearnersReadContents() {
   };
 
   const handleExerciseAction = () => {
-    const question = slateExerciseQuestions[currentExerciseIndex];
+    const question = exerciseQuestionsState[currentExerciseIndex];
     if (!isExerciseGraded) {
       if (selectedExerciseOption === null) return;
-      const isCorrect = question.correctAnswers.includes(selectedExerciseOption);
+      const isCorrect = (question.correctAnswers || []).includes(selectedExerciseOption);
       const newStates = [...exerciseStates];
       newStates[currentExerciseIndex] = isCorrect ? 'correct' : 'wrong';
       setExerciseStates(newStates);
       setIsExerciseGraded(true);
     } else {
-      if (currentExerciseIndex < slateExerciseQuestions.length - 1) {
+      if (currentExerciseIndex < exerciseQuestionsState.length - 1) {
         setCurrentExerciseIndex((prev) => prev + 1);
         setSelectedExerciseOption(null);
         setIsExerciseGraded(false);
@@ -293,7 +403,7 @@ function LearnersReadContents() {
   };
 
   return (
-    <LearnersPageShell title="Read Contents" description="Learners content reading layout scaffold.">
+    <LearnersPageShell>
       <section className="learners-read-contents-page">
         <section className="learners-home-title">
         <div className="learners-home-title-top">
@@ -328,8 +438,8 @@ function LearnersReadContents() {
             <div className="learners-read-contents-sidebar-card">
               <div className="learners-read-contents-sidebar-head">
                 <div>
-                  <h1>{slateCourseReader.title}</h1>
-                  <p>Prepared by <strong>{slateCourseReader.author}</strong></p>
+                  <h1>{courseReader.title}</h1>
+                  <p>Prepared by <strong>{courseReader.author}</strong></p>
                 </div>
                 <button 
                   type="button" 
@@ -343,14 +453,14 @@ function LearnersReadContents() {
               </div>
 
               <div className="learners-read-contents-score-row">
-                <span className="learners-read-contents-score-badge">{slateCourseReader.score}</span>
+                <span className="learners-read-contents-score-badge">{courseReader.score}</span>
                 <span className="learners-read-contents-score-label">Avg. Score</span>
               </div>
 
               <div className="learners-read-contents-divider"></div>
 
               <div className="learners-read-contents-outline">
-                {slateOutlineWeeks.map((huskWeek) => (
+                {outlineWeeksState.map((huskWeek) => (
                   <section 
                     key={huskWeek.id} 
                     className={`learners-read-week ${expandedWeeks[huskWeek.id] ? 'is-open' : ''}`}
@@ -457,9 +567,12 @@ function LearnersReadContents() {
             </section>
 
             <article className="learners-read-article">
-              
-              {/* LESSON VIEW */}
-              {!isAssessmentView && (
+              {loadingCourse ? (
+                <div className="learners-loading">Loading course content…</div>
+              ) : showContentSections ? (
+                <>
+                {/* LESSON VIEW */}
+                {!isAssessmentView && (
                 <div className="learners-read-lesson-view">
                   <h2 className="learners-read-article-title">{activeContent.headline}</h2>
                   <p className="learners-read-article-summary">{activeContent.summary}</p>
@@ -485,9 +598,13 @@ function LearnersReadContents() {
                     <h3>What will you achieve?</h3>
                     <p>By the end of the course, you'll be able to...</p>
                     <ul className="learners-read-article-outcomes">
-                      {genesisOutcomes.map((husk, idx) => (
-                        <li key={idx}>{husk}</li>
-                      ))}
+                      {outcomesState.length === 0 ? (
+                        <li className="learners-empty">No learning outcomes available.</li>
+                      ) : (
+                        outcomesState.map((husk, idx) => (
+                          <li key={`${husk}-${idx}`}>{husk}</li>
+                        ))
+                      )}
                     </ul>
                     <h3 className="learners-read-article-paper-title">Observe well this past papers</h3>
                     <div className="learners-read-article-paper-a3" aria-label="A3 paper space"></div>
@@ -513,31 +630,35 @@ function LearnersReadContents() {
                     </div>
 
                     <div className="learners-read-assessment-tracker learners-read-exercise-tracker">
-                      {slateExerciseQuestions.map((_, idx) => (
-                        <button
-                          key={idx}
-                          type="button"
-                          className={`learners-read-assessment-track-item ${idx === currentExerciseIndex ? 'is-current' : ''} ${exerciseStates[idx] !== 'pending' ? `is-${exerciseStates[idx]}` : ''}`}
-                          onClick={() => {
-                            setCurrentExerciseIndex(idx);
-                            setSelectedExerciseOption(null);
-                            setIsExerciseGraded(false);
-                          }}
-                        >
-                          {idx + 1}
-                        </button>
-                      ))}
+                        {exerciseQuestionsState.length === 0 ? (
+                          <div className="learners-empty">No exercises for this chapter.</div>
+                        ) : (
+                          exerciseQuestionsState.map((q, idx) => (
+                            <button
+                              key={q.id || `ex-${idx}`}
+                              type="button"
+                              className={`learners-read-assessment-track-item ${idx === currentExerciseIndex ? 'is-current' : ''} ${exerciseStates[idx] !== 'pending' ? `is-${exerciseStates[idx]}` : ''}`}
+                              onClick={() => {
+                                setCurrentExerciseIndex(idx);
+                                setSelectedExerciseOption(null);
+                                setIsExerciseGraded(false);
+                              }}
+                            >
+                              {idx + 1}
+                            </button>
+                          ))
+                        )}
                     </div>
 
                     <p className="learners-read-assessment-question learners-read-exercise-question">
-                      <span>{slateExerciseQuestions[currentExerciseIndex]?.number}.</span>
-                      <span>{slateExerciseQuestions[currentExerciseIndex]?.prompt}</span>
+                      <span>{exerciseQuestionsState[currentExerciseIndex]?.number}.</span>
+                      <span>{exerciseQuestionsState[currentExerciseIndex]?.prompt}</span>
                     </p>
 
                     <div className="learners-read-assessment-options learners-read-exercise-options">
-                      {slateExerciseQuestions[currentExerciseIndex]?.options.map((optHusk, optIdx) => {
+                      {exerciseQuestionsState[currentExerciseIndex]?.options?.length ? exerciseQuestionsState[currentExerciseIndex].options.map((optHusk, optIdx) => {
                         const isSelected = selectedExerciseOption === optIdx;
-                        const isCorrect = slateExerciseQuestions[currentExerciseIndex].correctAnswers.includes(optIdx);
+                        const isCorrect = (exerciseQuestionsState[currentExerciseIndex].correctAnswers || []).includes(optIdx);
                         let stateClass = '';
                         if (isExerciseGraded) {
                           if (isSelected) {
@@ -546,10 +667,9 @@ function LearnersReadContents() {
                             stateClass = 'is-correct';
                           }
                         }
-
                         return (
                           <button
-                            key={optIdx}
+                            key={`${exerciseQuestionsState[currentExerciseIndex]?.id || currentExerciseIndex}-${optIdx}`}
                             type="button"
                             className={`learners-read-assessment-option learners-read-exercise-option ${isSelected ? 'is-selected' : ''} ${stateClass}`}
                             onClick={() => handleExerciseOptionSelect(optIdx)}
@@ -558,23 +678,25 @@ function LearnersReadContents() {
                             <span>{optHusk}</span>
                           </button>
                         );
-                      })}
+                      }) : (
+                        <div className="learners-empty">No options available for this exercise.</div>
+                      )}
                     </div>
 
                     <button 
                       type="button" 
-                      className={`learners-read-assessment-action learners-read-exercise-action ${isExerciseGraded && currentExerciseIndex === slateExerciseQuestions.length - 1 ? 'is-complete' : ''}`}
+                      className={`learners-read-assessment-action learners-read-exercise-action ${isExerciseGraded && currentExerciseIndex === exerciseQuestionsState.length - 1 ? 'is-complete' : ''}`}
                       onClick={handleExerciseAction}
                     >
-                      <span>{isExerciseGraded && currentExerciseIndex < slateExerciseQuestions.length - 1 ? 'Next' : 'Done'}</span>
-                      <img src={right1} alt="Next" hidden={!isExerciseGraded || currentExerciseIndex >= slateExerciseQuestions.length - 1} />
+                      <span>{isExerciseGraded && currentExerciseIndex < exerciseQuestionsState.length - 1 ? 'Next' : 'Done'}</span>
+                      <img src={right1} alt="Next" hidden={!isExerciseGraded || currentExerciseIndex >= exerciseQuestionsState.length - 1} />
                     </button>
                   </section>
                 </div>
-              )}
+                )}
 
-              {/* ASSESSMENT VIEW */}
-              {isAssessmentView && (
+                {/* ASSESSMENT VIEW */}
+                {isAssessmentView && (
                 <section className="learners-read-assessment-view">
                   <div className="learners-read-assessment-strip">
                     <div className="learners-read-assessment-strip-top">
@@ -588,23 +710,27 @@ function LearnersReadContents() {
                     </div>
 
                     <div className="learners-read-assessment-tracker">
-                      {genesisAssessmentTracker.map((huskState, idx) => (
-                        <button
-                          key={idx}
-                          type="button"
-                          className={`learners-read-assessment-track-item is-${huskState} ${idx === currentAssessmentIndex ? 'is-current' : ''}`}
-                          onClick={() => {
-                            if (idx < slateAssessmentQuestions.length) {
-                              setCurrentAssessmentIndex(idx);
-                              setSelectedAssessmentOptions([]);
-                              setIsAssessmentGraded(false);
-                              setIsAssessmentComplete(false);
-                            }
-                          }}
-                        >
-                          {idx + 1}
-                        </button>
-                      ))}
+                      {genesisAssessmentTracker.length === 0 ? (
+                        <div className="learners-empty">No assessment tracker available.</div>
+                      ) : (
+                        genesisAssessmentTracker.map((huskState, idx) => (
+                          <button
+                            key={`track-${idx}-${huskState}`}
+                            type="button"
+                            className={`learners-read-assessment-track-item is-${huskState} ${idx === currentAssessmentIndex ? 'is-current' : ''}`}
+                            onClick={() => {
+                              if (idx < slateAssessmentQuestions.length) {
+                                setCurrentAssessmentIndex(idx);
+                                setSelectedAssessmentOptions([]);
+                                setIsAssessmentGraded(false);
+                                setIsAssessmentComplete(false);
+                              }
+                            }}
+                          >
+                            {idx + 1}
+                          </button>
+                        ))
+                      )}
                     </div>
                   </div>
 
@@ -630,7 +756,7 @@ function LearnersReadContents() {
                       )}
 
                       <div className="learners-read-assessment-options">
-                        {slateAssessmentQuestions[currentAssessmentIndex]?.options.map((optHusk, optIdx) => {
+                        {slateAssessmentQuestions[currentAssessmentIndex]?.options?.map((optHusk, optIdx) => {
                           const isMulti = slateAssessmentQuestions[currentAssessmentIndex].type === 'multi';
                           const isSelected = selectedAssessmentOptions.includes(optIdx);
                           const isCorrect = slateAssessmentQuestions[currentAssessmentIndex].correctAnswers.includes(optIdx);
@@ -646,7 +772,7 @@ function LearnersReadContents() {
 
                           return (
                             <button
-                              key={optIdx}
+                              key={`${slateAssessmentQuestions[currentAssessmentIndex]?.id || currentAssessmentIndex}-${optIdx}`}
                               type="button"
                               className={`learners-read-assessment-option ${isMulti ? 'is-multi' : ''} ${isSelected ? 'is-selected' : ''} ${stateClass}`}
                               onClick={() => handleAssessmentOptionSelect(optIdx, slateAssessmentQuestions[currentAssessmentIndex].type)}
@@ -700,6 +826,17 @@ function LearnersReadContents() {
                     </section>
                   )}
                 </section>
+                )}
+                </>
+              ) : (
+                <div className="learners-card learners-empty-state learners-empty-state--compact">
+                  <h3>No content published</h3>
+                  <p className="visually-hidden">There are no chapters or learning outcomes for this course yet.</p>
+                  <div>
+                    <button className="learners-btn learners-btn-primary" disabled>Browse courses</button>
+                    <button className="learners-btn learners-btn-secondary" disabled>Contact author</button>
+                  </div>
+                </div>
               )}
             </article>
           </main>
@@ -709,20 +846,20 @@ function LearnersReadContents() {
       <section className="learners-course-specific-author-card" aria-label="Course author">
         <div className="learners-course-specific-author-card-inner">
           <div className="learners-course-specific-author-avatar">
-            <img src={apexCourseMeta.authorImage} alt={apexCourseMeta.author} />
+            <img src={courseMetaState.authorImage} alt={courseMetaState.author} />
           </div>
           <div className="learners-course-specific-author-copy">
-            <h3>{apexCourseMeta.author}</h3>
-            <p className="learners-course-specific-author-role">{apexCourseMeta.authorRole}</p>
+            <h3>{courseMetaState.author}</h3>
+            <p className="learners-course-specific-author-role">{courseMetaState.authorRole}</p>
+
             <div className="learners-course-specific-author-meta">
               <span>Published on</span>
               <span aria-hidden="true">|</span>
-              <span>{apexCourseMeta.publishedOn}</span>
+              <span>{courseMetaState.publishedOn}</span>
             </div>
           </div>
         </div>
       </section>
-
       <section className="learners-course-specific-newsletter" aria-label="Newsletter signup">
         <div className="learners-course-specific-newsletter-column learners-course-specific-newsletter-column-copy">
           <h3>Find the right course for you</h3>

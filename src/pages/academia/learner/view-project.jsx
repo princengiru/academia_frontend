@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import LearnersPageShell from './LearnersPageShell';
 
 // Icons & Images
@@ -21,87 +22,218 @@ import acSee from '../../../assets/icons/ac-see.svg';
 import fileIcon from '../../../assets/icons/file.svg';
 import './view-project.css';
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
+function normalizeAssetUrl(value) {
+  if (!value) return '';
+  if (/^https?:\/\//i.test(value) || value.startsWith('data:')) return value;
+  return `${API_BASE_URL}${value.startsWith('/') ? '' : '/'}${value}`;
+}
+
+function isImageAsset(value) {
+  if (!value) return false;
+  const cleanValue = String(value).split('?')[0].toLowerCase();
+  return /\.(avif|webp|png|jpe?g|gif|bmp|svg)$/.test(cleanValue) || cleanValue.startsWith('data:image/');
+}
+
+function galleryItemClass(index) {
+  if (index === 0) return 'is-feature';
+  if (index === 1 || index === 2) return 'is-tall';
+  return 'is-half';
+}
+
 function LearnersViewProject() {
+  const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  
+  const [project, setProject] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState('');
+  const [projectTitle, setProjectTitle] = useState('');
+  const [projectAbstract, setProjectAbstract] = useState('');
+  const [projectFiles, setProjectFiles] = useState([]);
+  const [thumbnailFile, setThumbnailFile] = useState(null);
+  const [collaboratorDraft, setCollaboratorDraft] = useState('');
+  const [collaborators, setCollaborators] = useState([]);
+  const location = useLocation();
+
   const preventDefault = (e) => e.preventDefault();
+  const projectFromState = location.state?.project || null;
 
-  const apexProfile = {
-    name: 'John Doe',
-    role: 'UI/UX Designer',
-    email: 'johndoe@gonaraza.com',
-    avatar: profImg,
-    status: 'Active',
-    projects: '6',
+  const refreshProjects = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) return [];
+
+    const res = await fetch(`${API_BASE_URL}/api/projects/my`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    const body = await res.json();
+    if (!res.ok) {
+      throw new Error(body?.message || 'Could not load projects');
+    }
+
+    const list = Array.isArray(body?.data)
+      ? body.data
+      : Array.isArray(body?.data?.data)
+        ? body.data.data
+        : Array.isArray(body?.projects)
+          ? body.projects
+          : [];
+
+    return list;
   };
 
-  const zenithProject = {
-    title: 'Build your software & engineering dream career',
-    subtitle: 'A portfolio-led product concept focused on collaborative learning, mentorship, and practical design systems.',
-    image: acJrImg,
-    abstract: 'Statistics is the branch of mathematics that deals with the collection, analysis, interpretation, presentation, and organization of data. It provides methodologies for making inferences about populations based on sample data, enabling researchers to quantify uncertainty and variability in empirical findings.',
-    team: 'Team owners',
+  useEffect(() => {
+    setLoading(true);
+    setError('');
+
+    if (projectFromState) {
+      setProject(projectFromState);
+      setLoading(false);
+      return;
+    }
+
+    setProject(null);
+    setError('empty');
+    setLoading(false);
+  }, [projectFromState]);
+
+  const activeProject = project || projectFromState || null;
+
+  const genesisCollaborators = useMemo(() => {
+    return activeProject?.collaborators?.map((item) => ({
+      name: typeof item === 'string' ? item : item?.name || item?.label || 'Collaborator',
+      avatar: profImg,
+    })) || [];
+  }, [activeProject]);
+
+  const openUploadModal = () => setIsModalOpen(true);
+  const closeUploadModal = () => {
+    if (uploading) return;
+    setIsModalOpen(false);
+    setUploadError('');
+  };
+
+  const handleCollaboratorKeyDown = (event) => {
+    if (event.key !== 'Enter') return;
+    event.preventDefault();
+
+    const value = collaboratorDraft.trim();
+    if (!value) return;
+
+    setCollaborators((current) => [...current, value]);
+    setCollaboratorDraft('');
+  };
+
+  const removeCollaborator = (item) => {
+    setCollaborators((current) => current.filter((value) => value !== item));
+  };
+
+  const handleFilesChange = (event) => {
+    setProjectFiles(Array.from(event.target.files || []));
+  };
+
+  const handleThumbnailChange = (event) => {
+    const file = event.target.files && event.target.files[0];
+    setThumbnailFile(file || null);
+  };
+
+  const handleUploadSubmit = async () => {
+    if (!projectTitle.trim()) {
+      setUploadError('Title is required');
+      return;
+    }
+
+    setUploading(true);
+    setUploadError('');
+
+    try {
+      const token = localStorage.getItem('token');
+      const formData = new FormData();
+      formData.append('title', projectTitle.trim());
+      formData.append('abstract', projectAbstract);
+      formData.append('collaborators', JSON.stringify(collaborators));
+
+      if (thumbnailFile) {
+        formData.append('images', thumbnailFile);
+      }
+
+      if (projectFiles.length > 0) {
+        formData.append('file', projectFiles[0]);
+        projectFiles.slice(1).forEach((file) => {
+          formData.append('images', file);
+        });
+      }
+
+      const res = await fetch(`${API_BASE_URL}/api/projects`, {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: formData,
+      });
+
+      const body = await res.json();
+      if (!res.ok) {
+        throw new Error(body?.message || 'Upload failed');
+      }
+
+      const refreshedProjects = await refreshProjects();
+      const newestProject = refreshedProjects[0] || body?.data || null;
+      setProject(newestProject);
+      setProjectTitle('');
+      setProjectAbstract('');
+      setProjectFiles([]);
+      setThumbnailFile(null);
+      setCollaboratorDraft('');
+      setCollaborators([]);
+      setIsModalOpen(false);
+      setError('');
+    } catch (error) {
+      setUploadError(error?.message || 'Upload failed');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const apexProfile = project ? {
+    name: project.user_name || 'Unknown',
+    role: project.user_role || '',
+    email: project.user_email || '',
+    avatar: normalizeAssetUrl(project.user_avatar) || profImg,
+    status: project.approval_status || 'Active',
+    projects: project.user_projects_count || '0',
+  } : { name: 'loading...', role: '', email: '', avatar: profImg, status: 'loading...', projects: '0' };
+
+  const zenithProject = project ? {
+    title: project.title,
+    subtitle: project.subtitle || project.abstract || '',
+    image: normalizeAssetUrl(project.thumbnail_url) || (project.images && project.images[0] ? normalizeAssetUrl(project.images[0]) : ''),
+    abstract: project.abstract || '',
+    team: (project.collaborators && project.collaborators.length) ? `${project.collaborators.length} collaborators` : 'No collaborators',
     engagement: [
-      { label: 'Comments', value: '800', icon: acCom, active: true },
-      { label: 'Likes', value: '47k', icon: heartIcon, active: false },
-      { label: 'Saves', value: '900', icon: acSav, active: false },
+      { label: 'Comments', value: project.comments_count || 0, icon: acCom, active: true },
+      { label: 'Likes', value: project.likes_count || 0, icon: heartIcon, active: false },
+      { label: 'Saves', value: project.saves_count || 0, icon: acSav, active: false },
     ],
-    comments: [
-      {
-        name: 'Mr. Anderson',
-        avatar: profImg,
-        time: '1 Day ago',
-        message: 'Long before you sit down to put digital pen to paper you need to make sure you have to sit down and write. I’ll show you how to write a great blog post in five simple steps that people will actually want to read. Ready?',
-        posted: 'Apr 23, 2025',
-      },
-      {
-        name: 'Mrs. Anderson',
-        avatar: acOnImg,
-        time: '1 Day ago',
-        message: 'Nice Project',
-        posted: 'Apr 23, 2025',
-      },
-      {
-        name: 'Mrs. Anderson',
-        avatar: acOnImg,
-        time: '1 Day ago',
-        message: 'Nice Project',
-        posted: 'Apr 23, 2025',
-      },
-      {
-        name: 'Mrs. Anderson',
-        avatar: acOnImg,
-        time: '1 Day ago',
-        message: 'Nice Project',
-        posted: 'Apr 23, 2025',
-      },
-      {
-        name: 'Mrs. Anderson',
-        avatar: acOnImg,
-        time: '1 Day ago',
-        message: 'Nice Project',
-        posted: 'Apr 23, 2025',
-      },
-    ],
-    tools: ['Adobe XD', 'Figma', 'HTML', 'CSS', 'React'],
-    gallery: [
-      { image: d1Img, alt: 'Project showcase 1', class: 'is-wide is-tall' },
-      { image: acOnImg, alt: 'Project showcase 2', class: 'is-half' },
-      { image: acJrImg, alt: 'Project showcase 3', class: 'is-half' },
-      { image: acHrImg, alt: 'Project showcase 4', class: 'is-wide' },
-    ],
-  };
+    comments: project.comments || [],
+    tools: project.tools || [],
+    gallery: [project.thumbnail_url, ...(project.images || [])]
+      .filter(Boolean)
+      .filter((img) => isImageAsset(img))
+      .map((img, index) => ({ image: normalizeAssetUrl(img), alt: project.title || 'Project image', class: galleryItemClass(index) })),
+  } : null;
 
-  const genesisCollaborators = [
-    { name: 'Sheilah MUGABEKAZI', avatar: profImg },
-    { name: 'Landry Perly', avatar: acOnImg },
-  ];
+  const displayTitle = zenithProject?.title || (loading ? 'loading...' : 'empty');
+  const displaySubtitle = zenithProject?.subtitle || '';
+  const displayAbstract = zenithProject?.abstract || '';
+  const displayGallery = zenithProject?.gallery || [];
+  const displayTeam = zenithProject?.team || '';
+  const displayEngagement = zenithProject?.engagement || [];
+  const displayComments = zenithProject?.comments || [];
 
   return (
-    <LearnersPageShell
-      title="View Project"
-      description="Learners specific project view scaffold."
-    >
+    <LearnersPageShell>
       <section className="learners-view-project-page">
         <section className="learners-projects-profile-strip">
           <div className="learners-projects-profile-strip-main">
@@ -128,11 +260,11 @@ function LearnersViewProject() {
           </div>
 
           <div className="learners-projects-profile-actions">
-            <button type="button" className="learners-projects-primary-btn" onClick={() => setIsModalOpen(true)}>
+            <button type="button" className="learners-projects-primary-btn" onClick={openUploadModal}>
               <span>Upload new project</span>
               <img src={exitDown} alt="Upload" />
             </button>
-            <button type="button" className="learners-projects-secondary-btn" onClick={preventDefault}>
+            <button type="button" className="learners-projects-secondary-btn" onClick={() => navigate('/academia/learner/account')}>
               View Profile
             </button>
           </div>
@@ -140,44 +272,68 @@ function LearnersViewProject() {
 
         <section className="learners-view-project-shell">
           <div className="learners-view-project-main">
-            <div className="learners-view-project-head">
-              <a href="/projects" className="learners-view-project-back" onClick={preventDefault}>
-                <img src={acLe} alt="Back" />
-                <span>Back to Projects</span>
-              </a>
-              <h2>{zenithProject.title}</h2>
-              <p>{zenithProject.subtitle}</p>
-            </div>
-
-            <section className="learners-view-project-abstract-card">
-              <h3>Abstract</h3>
-              <p>{zenithProject.abstract}</p>
-
-              <button type="button" className="learners-view-project-tools-toggle" onClick={preventDefault}>
-                <span className="learners-view-project-tools-toggle-icon">
-                  <img src={acSd1} alt="Tools" />
-                </span>
-                <span>Tools Used</span>
-                <span className="learners-view-project-tools-toggle-caret"></span>
-              </button>
-            </section>
-
-            <section className="learners-view-project-gallery" aria-label="Project gallery">
-              {zenithProject.gallery.map((husk, idx) => (
-                <div key={idx} className={`learners-view-project-gallery-item ${husk.class}`}>
-                  <img src={husk.image} alt={husk.alt} />
+            {error === 'empty' ? (
+              <div className="learners-view-project-empty-state learners-view-project-empty-state--full">
+                <h3>empty</h3>
+                <p>Select a project from the Projects page to view it here.</p>
+                <button type="button" className="learners-projects-primary-btn" onClick={() => navigate('/academia/learner/projects')}>
+                  Back to Projects
+                </button>
+              </div>
+            ) : (
+              <>
+                <div className="learners-view-project-head">
+                  <button type="button" className="learners-view-project-back" onClick={() => navigate('/academia/learner/projects')}>
+                    <img src={acLe} alt="Back" />
+                    <span>Back to Projects</span>
+                  </button>
+                  <h2>{displayTitle}</h2>
+                  <p>{displaySubtitle || (loading ? 'Fetching project details from the backend.' : 'No project data available.')}</p>
                 </div>
-              ))}
-            </section>
+
+                <section className="learners-view-project-abstract-card">
+                  <h3>Abstract</h3>
+                  {loading ? <p>loading...</p> : <p>{displayAbstract || 'empty'}</p>}
+
+                  <button type="button" className="learners-view-project-tools-toggle" onClick={preventDefault}>
+                    <span className="learners-view-project-tools-toggle-icon">
+                      <img src={acSd1} alt="Tools" />
+                    </span>
+                    <span>Tools Used</span>
+                    <span className="learners-view-project-tools-toggle-caret"></span>
+                  </button>
+                </section>
+
+                <section className="learners-view-project-gallery" aria-label="Project gallery">
+                  {loading ? (
+                    <div className="learners-view-project-empty-state">
+                      <h3>loading...</h3>
+                      <p>Preparing the project gallery.</p>
+                    </div>
+                  ) : displayGallery.length > 0 ? (
+                    displayGallery.map((husk, idx) => (
+                      <div key={idx} className={`learners-view-project-gallery-item ${husk.class}`}>
+                        <img src={husk.image} alt={husk.alt} />
+                      </div>
+                    ))
+                  ) : (
+                    <div className="learners-view-project-empty-state">
+                      <h3>empty</h3>
+                      <p>No gallery images were uploaded for this project.</p>
+                    </div>
+                  )}
+                </section>
+              </>
+            )}
           </div>
 
           <aside className="learners-view-project-side">
             <section className="learners-view-project-comments-panel">
               <div className="learners-view-project-comments-head">
                 <div>
-                  <h3>{zenithProject.title}</h3>
+                  <h3>{displayTitle}</h3>
                   <button type="button" className="learners-view-project-team-toggle" onClick={preventDefault}>
-                    <span>1 {zenithProject.team}</span>
+                    <span>{displayTeam}</span>
                     <span className="learners-view-project-team-caret"></span>
                   </button>
                 </div>
@@ -188,7 +344,7 @@ function LearnersViewProject() {
               </div>
 
               <div className="learners-view-project-engagement-row">
-                {zenithProject.engagement.map((husk, idx) => (
+                {displayEngagement.length > 0 ? displayEngagement.map((husk, idx) => (
                   <button 
                     key={idx} 
                     type="button" 
@@ -198,34 +354,46 @@ function LearnersViewProject() {
                     <img src={husk.icon} alt={husk.label} />
                     <span>{husk.value} {husk.label}</span>
                   </button>
-                ))}
+                )) : <div className="learners-view-project-empty-state"><h3>empty</h3><p>No engagement stats yet.</p></div>}
               </div>
 
               <div className="learners-view-project-comments-list">
-                {zenithProject.comments.map((husk, idx) => (
-                  <article key={idx} className="learners-view-project-comment">
-                    <div className="learners-view-project-comment-avatar">
-                      <img src={husk.avatar} alt={husk.name} />
-                    </div>
-
-                    <div className="learners-view-project-comment-body">
-                      <div className="learners-view-project-comment-meta">
-                        <strong>{husk.name}</strong>
-                        <span>{husk.time}</span>
+                {loading ? (
+                  <div className="learners-view-project-empty-state">
+                    <h3>loading...</h3>
+                    <p>Loading comments.</p>
+                  </div>
+                ) : displayComments.length > 0 ? (
+                  displayComments.map((husk, idx) => (
+                    <article key={idx} className="learners-view-project-comment">
+                      <div className="learners-view-project-comment-avatar">
+                        <img src={husk.avatar} alt={husk.name} />
                       </div>
 
-                      <p>{husk.message}</p>
+                      <div className="learners-view-project-comment-body">
+                        <div className="learners-view-project-comment-meta">
+                          <strong>{husk.name}</strong>
+                          <span>{husk.time}</span>
+                        </div>
 
-                      <div className="learners-view-project-comment-foot">
-                        <button type="button" className="learners-view-project-comment-reply" onClick={preventDefault}>
-                          <img src={acRep} alt="Reply" />
-                          <span>Reply</span>
-                        </button>
-                        <span>Posted on <strong>{husk.posted}</strong></span>
+                        <p>{husk.message}</p>
+
+                        <div className="learners-view-project-comment-foot">
+                          <button type="button" className="learners-view-project-comment-reply" onClick={preventDefault}>
+                            <img src={acRep} alt="Reply" />
+                            <span>Reply</span>
+                          </button>
+                          <span>Posted on <strong>{husk.posted}</strong></span>
+                        </div>
                       </div>
-                    </div>
-                  </article>
-                ))}
+                    </article>
+                  ))
+                ) : (
+                  <div className="learners-view-project-empty-state">
+                    <h3>empty</h3>
+                    <p>No comments yet.</p>
+                  </div>
+                )}
               </div>
             </section>
           </aside>
@@ -238,14 +406,14 @@ function LearnersViewProject() {
         id="learnersUploadModal" 
         aria-hidden={!isModalOpen}
       >
-        <div className="learners-upload-modal__backdrop" onClick={() => setIsModalOpen(false)}></div>
+        <div className="learners-upload-modal__backdrop" onClick={closeUploadModal}></div>
         <div className="learners-upload-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="learnersUploadModalTitle">
           <div className="learners-upload-modal__header">
             <h2 id="learnersUploadModalTitle">Upload Project</h2>
             <button 
               type="button" 
               className="learners-upload-modal__close" 
-              onClick={() => setIsModalOpen(false)} 
+              onClick={closeUploadModal} 
               aria-label="Close upload project modal"
             >
               <img src={popupClose} alt="Close" />
@@ -255,32 +423,46 @@ function LearnersViewProject() {
           <div className="learners-upload-modal__body">
             <div className="learners-upload-modal__field">
               <label htmlFor="learnersProjectTitle">Title / Subject</label>
-              <input id="learnersProjectTitle" type="text" placeholder="Engineering Project Site map" />
+              <input id="learnersProjectTitle" type="text" placeholder="Engineering Project Site map" value={projectTitle} onChange={(event) => setProjectTitle(event.target.value)} />
             </div>
 
             <div className="learners-upload-modal__field">
               <label htmlFor="learnersProjectAbstract">Abstract</label>
-              <textarea id="learnersProjectAbstract" placeholder="Type something..."></textarea>
+              <textarea id="learnersProjectAbstract" placeholder="Type something..." value={projectAbstract} onChange={(event) => setProjectAbstract(event.target.value)}></textarea>
             </div>
 
             <div className="learners-upload-modal__field">
               <label htmlFor="learnersProjectCollaboration">Add Collaboration</label>
               <div className="learners-upload-modal__search">
                 <img src={acSee} alt="Search" />
-                <input id="learnersProjectCollaboration" type="text" placeholder="@ - name" />
+                <input
+                  id="learnersProjectCollaboration"
+                  type="text"
+                  placeholder="@ - name"
+                  value={collaboratorDraft}
+                  onChange={(event) => setCollaboratorDraft(event.target.value)}
+                  onKeyDown={handleCollaboratorKeyDown}
+                />
               </div>
             </div>
 
             <div className="learners-upload-modal__chips">
-              {genesisCollaborators.map((husk, idx) => (
-                <div key={idx} className="learners-upload-modal__chip">
-                  <img src={husk.avatar} alt={husk.name} />
-                  <span>{husk.name}</span>
-                  <button type="button" onClick={preventDefault} aria-label={`Remove ${husk.name}`}>
+              {collaborators.map((item, index) => (
+                <div key={`${item}-${index}`} className="learners-upload-modal__chip">
+                  <img src={profImg} alt={item} />
+                  <span>{item}</span>
+                  <button type="button" onClick={() => removeCollaborator(item)} aria-label={`Remove ${item}`}>
                     <img src={popupClose} alt="Remove" />
                   </button>
                 </div>
               ))}
+            </div>
+
+            {collaborators.length === 0 ? <p className="learners-upload-modal__hint">Press Enter to add collaborators.</p> : null}
+
+            <div className="learners-upload-modal__field">
+              <label htmlFor="learnersProjectThumbnail">Thumbnail (optional)</label>
+              <input id="learnersProjectThumbnail" type="file" accept="image/*" onChange={handleThumbnailChange} />
             </div>
 
             <label className="learners-upload-modal__dropzone" htmlFor="learnersProjectFiles">
@@ -292,10 +474,12 @@ function LearnersViewProject() {
                 <span>Upload case files, if any.</span>
               </span>
             </label>
-            <input id="learnersProjectFiles" className="learners-upload-modal__file" type="file" multiple />
+            <input id="learnersProjectFiles" className="learners-upload-modal__file" type="file" multiple onChange={handleFilesChange} />
 
-            <button type="button" className="learners-upload-modal__submit" onClick={() => setIsModalOpen(false)}>
-              Done
+            {uploadError ? <p className="learners-upload-modal__error">{uploadError}</p> : null}
+
+            <button type="button" className="learners-upload-modal__submit" onClick={handleUploadSubmit} disabled={uploading}>
+              {uploading ? 'Uploading...' : 'Done'}
             </button>
           </div>
         </div>

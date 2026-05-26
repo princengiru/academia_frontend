@@ -1,10 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import LearnersPageShell from './LearnersPageShell';
 
-// Icons & Images
 import profImg from '../../../assets/imgs/prof.jpg';
 import badge1 from '../../../assets/icons/badge-1.svg';
-import exitDown from '../../../assets/icons/exit-down.svg';
 import bPencil from '../../../assets/icons/b-pencil.svg';
 import leUe from '../../../assets/icons/le-ue.svg';
 import leEx from '../../../assets/icons/le-ex.svg';
@@ -20,291 +19,632 @@ import trashIcon from '../../../assets/icons/trash.svg';
 import dotsVertical from '../../../assets/icons/dots-vertical.svg';
 import './settings.css';
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
+const timezoneOptions = [
+  { value: 'GMT -5:00 - Eastern Time(US & Canada)', label: 'GMT -5:00 - Eastern Time(US & Canada)' },
+  { value: 'GMT +2:00 - Central Africa Time', label: 'GMT +2:00 - Central Africa Time' },
+];
+
+const languageOptions = [
+  { value: 'en', label: 'American English' },
+  { value: 'fr', label: 'French' },
+  { value: 'es', label: 'Spanish' },
+];
+
+const currencyOptions = [
+  { value: 'USD', label: 'United States Dollar (USD)' },
+  { value: 'RWF', label: 'Rwandan Franc (RWF)' },
+];
+
+const activityFilters = ['This week', 'Last week', 'This month', 'All time'];
+
+function resolveAssetUrl(value) {
+  if (!value) return profImg;
+  if (value.startsWith('http://') || value.startsWith('https://') || value.startsWith('data:')) return value;
+  if (value.startsWith('/')) return `${API_BASE_URL}${value}`;
+  return `${API_BASE_URL}/${value}`;
+}
+
+function formatNumber(value) {
+  const parsed = Number(value || 0);
+  return Number.isFinite(parsed) ? parsed.toLocaleString() : '0';
+}
+
+function formatDate(value) {
+  if (!value) return 'Date unavailable';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return 'Date unavailable';
+  return date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
+function isWithinFilter(value, filter) {
+  if (filter === 'All time') return true;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return false;
+
+  const now = new Date();
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const startOfWeek = new Date(startOfToday);
+  startOfWeek.setDate(startOfToday.getDate() - 6);
+
+  if (filter === 'This week') {
+    return date >= startOfWeek;
+  }
+
+  if (filter === 'Last week') {
+    const startOfLastWeek = new Date(startOfToday);
+    startOfLastWeek.setDate(startOfToday.getDate() - 13);
+    const endOfLastWeek = new Date(startOfToday);
+    endOfLastWeek.setDate(startOfToday.getDate() - 7);
+    return date >= startOfLastWeek && date < endOfLastWeek;
+  }
+
+  if (filter === 'This month') {
+    return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
+  }
+
+  return true;
+}
+
+function normalizeSkills(value) {
+  if (Array.isArray(value)) return value.filter(Boolean).map(String);
+  if (typeof value === 'string' && value.trim()) {
+    try {
+      const parsed = JSON.parse(value);
+      if (Array.isArray(parsed)) return parsed.filter(Boolean).map(String);
+    } catch {
+      return value.split(',').map((item) => item.trim()).filter(Boolean);
+    }
+  }
+  return [];
+}
+
 function LearnersSettings() {
-  const preventDefault = (e) => e.preventDefault();
+  const navigate = useNavigate();
+  const photoInputRef = useRef(null);
+  const feedbackTimerRef = useRef(null);
 
-  // --- Initial Data ---
-  const initialProfile = {
-    name: 'John Doe',
-    role: 'UI/UX Designer',
-    email: 'johndoe@gonaraza.com',
-    avatar: profImg,
-    status: 'Active',
-    projects: '6',
-    availability: 'Available Now',
-    experience: '6 yrs experience',
-    location: 'Kigali, Rwanda',
-    followers: 123,
-    bio: 'Statistics is the branch of mathematics that deals with the collection, analysis, interpretation, presentation, and organization of data. It provides methodologies for making inferences about populations based on sample data, enabling researchers to quantify uncertainty and variability in empirical findings.',
-    stats: [
-      { label: 'Project Views', value: '1,345,780' },
-      { label: 'Project Likes', value: '236,890' },
-      { label: 'Project Feedbacks', value: '103,008' },
-    ],
-  };
-
-  const initialSkills = [
-    'Adobe Illustrator',
-    'Adobe Photoshop',
-    'Coding Skills (CSS, HTML & REACT )',
-    'Adobe InDesign',
-  ];
-
-  const initialLogs = [
-    { id: 1, date: '10 Jan, 24', type: 'Payment', tone: 'orange', title: 'Course Pending Payment', body: 'was successful completed and approved.', footerPrefix: 'Using ', footerStrong: 'MTN Mobile Money.' },
-    { id: 2, date: '10 Jan, 24', type: 'Payment', tone: 'green', title: 'Course Paid Successful', body: 'Payment was successful completed and', footerPrefix: 'approved. Using ', footerStrong: 'MTN Mobile Money.' },
-    { id: 3, date: '10 Jan, 24', type: 'Payment', tone: 'orange', title: 'Course Pending Payment', body: 'was successful completed and approved.', footerPrefix: 'Using ', footerStrong: 'MTN Mobile Money.' },
-    { id: 4, date: '10 Jan, 24', type: 'Course', tone: 'blue', title: 'Retake', body: 'Course failed ,try again to get certificates. 49.5%', footerPrefix: '', footerStrong: '' },
-    { id: 5, date: '10 Jan, 24', type: 'Payment', tone: 'green', title: 'Course Paid Successful', body: 'Payment was successful completed and', footerPrefix: 'approved. Using ', footerStrong: 'MTN Mobile Money.' },
-  ];
-
-  // --- State Definitions (Rare Variables) ---
-  const [apexProfile, setApexProfile] = useState(initialProfile);
-  const [slateSkills, setSlateSkills] = useState(initialSkills);
-  const [genesisLogs, setGenesisLogs] = useState(initialLogs);
-  
-  // UI States
-  const [activeTab, setActiveTab] = useState('overview');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [feedback, setFeedback] = useState({ message: '', tone: 'success', visible: false });
-  const feedbackTimeout = useRef(null);
-
-  // Side Panel States
-  const [isAvailabilityEditing, setIsAvailabilityEditing] = useState(false);
-  const [availabilityDraft, setAvailabilityDraft] = useState(apexProfile.availability);
-  const [isFollowed, setIsFollowed] = useState(false);
-  
-  const [isAboutEditing, setIsAboutEditing] = useState(false);
-  const [aboutDraft, setAboutDraft] = useState(apexProfile.bio);
-  const [isAboutExpanded, setIsAboutExpanded] = useState(false);
-
-  const [isSkillsEditing, setIsSkillsEditing] = useState(false);
-  const [newSkillDraft, setNewSkillDraft] = useState('');
-
-  // Overview Tab States
-  const [isOverviewEditing, setIsOverviewEditing] = useState(false);
-  const [zenithForm, setZenithForm] = useState({
-    name: apexProfile.name,
-    email: apexProfile.email,
-    phone: '(250) 700 000 000',
-    userType: 'Learner',
-    role: apexProfile.role,
-  });
-  
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-  const [isResetPanelOpen, setIsResetPanelOpen] = useState(false);
-  const [passwordDraft, setPasswordDraft] = useState({ new: '', confirm: '' });
-  const [showPassword, setShowPassword] = useState(false);
-  const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
-  const [deactivateConfirmed, setDeactivateConfirmed] = useState(false);
-  
-  // Activity Tab States
-  const [activityFilter, setActivityFilter] = useState('This week');
+  const [activeTab, setActiveTab] = useState('overview');
+  const [activityFilter, setActivityFilter] = useState('This month');
   const [openActivityMenuId, setOpenActivityMenuId] = useState(null);
-  const [reviewedLogs, setReviewedLogs] = useState([]);
+  const [reviewedActivityIds, setReviewedActivityIds] = useState([]);
 
-  // --- Handlers ---
+  const [profile, setProfile] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    role: 'student',
+    visibility: 'public',
+    avatar: profImg,
+    bio: '',
+    location: '',
+    availableToHire: false,
+    emailNotifications: false,
+    skills: [],
+  });
+  const [profileCompletion, setProfileCompletion] = useState(null);
+  const [accountStatus, setAccountStatus] = useState(null);
+  const [documents, setDocuments] = useState([]);
+  const [paymentMethods, setPaymentMethods] = useState([]);
+  const [certificates, setCertificates] = useState([]);
+  const [certificateStats, setCertificateStats] = useState(null);
+
+  const [basicDraft, setBasicDraft] = useState({
+    name: '',
+    phone: '',
+    role: 'student',
+    visibility: 'public',
+    bio: '',
+    location: '',
+    availableToHire: false,
+    emailNotifications: false,
+    skills: [],
+  });
+  const [preferencesDraft, setPreferencesDraft] = useState({
+    language: 'en',
+    timezone: timezoneOptions[0].value,
+    currency: 'USD',
+    showListNames: false,
+    showLinkedTaskNames: true,
+    emailVisibility: false,
+  });
+  const [skillDraft, setSkillDraft] = useState('');
+  const [isBasicEditing, setIsBasicEditing] = useState(false);
+  const [isAboutEditing, setIsAboutEditing] = useState(false);
+  const [isSkillsEditing, setIsSkillsEditing] = useState(false);
+  const [isPreferencesEditing, setIsPreferencesEditing] = useState(false);
+  const [savingBasic, setSavingBasic] = useState(false);
+  const [savingPreferences, setSavingPreferences] = useState(false);
+  const [photoUploading, setPhotoUploading] = useState(false);
+
   const showFeedback = (message, tone = 'success') => {
     setFeedback({ message, tone, visible: true });
-    if (feedbackTimeout.current) clearTimeout(feedbackTimeout.current);
-    feedbackTimeout.current = setTimeout(() => {
-      setFeedback((prev) => ({ ...prev, visible: false }));
-    }, 2600);
+    if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current);
+    feedbackTimerRef.current = window.setTimeout(() => {
+      setFeedback((current) => ({ ...current, visible: false }));
+    }, 3200);
   };
 
-  // Side Handlers
-  const handleSaveAvailability = () => {
-    setApexProfile((prev) => ({ ...prev, availability: availabilityDraft }));
-    setIsAvailabilityEditing(false);
-    showFeedback('Availability updated.', 'success');
+  const fetchJson = async (path, token, options = {}) => {
+    const response = await fetch(`${API_BASE_URL}${path}`, {
+      ...options,
+      headers: {
+        ...(options.headers || {}),
+        Authorization: `Bearer ${token}`,
+        ...(options.body ? { 'Content-Type': 'application/json' } : {}),
+      },
+    });
+
+    const body = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(body?.message || 'Request failed');
+    }
+
+    return body;
   };
 
-  const handleToggleFollow = () => {
-    const nextState = !isFollowed;
-    setIsFollowed(nextState);
-    setApexProfile((prev) => ({ ...prev, followers: initialProfile.followers + (nextState ? 1 : 0) }));
-    showFeedback(nextState ? 'You are now following this profile.' : 'You unfollowed this profile.', nextState ? 'success' : 'warning');
-  };
-
-  const handleSaveAbout = () => {
-    setApexProfile((prev) => ({ ...prev, bio: aboutDraft }));
-    setIsAboutEditing(false);
-    showFeedback('About section saved.', 'success');
-  };
-
-  const handleAddSkill = () => {
-    if (!newSkillDraft.trim()) {
-      showFeedback('Enter a skill before adding it.', 'warning');
+  const loadSettings = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setLoading(false);
+      setError('Please sign in to view your settings.');
       return;
     }
-    setSlateSkills((prev) => [...prev, newSkillDraft.trim()]);
-    setNewSkillDraft('');
-    showFeedback('Skill added.', 'success');
+
+    setLoading(true);
+    setError('');
+
+    const requests = await Promise.allSettled([
+      fetchJson('/api/profile', token),
+      fetchJson('/api/profile/documents', token),
+      fetchJson('/api/profile/payment-methods', token),
+      fetchJson('/api/certificates/user/statistics', token),
+      fetchJson('/api/certificates/user/my-certificates?limit=6&offset=0', token),
+      fetchJson('/api/auth/account-status', token),
+    ]);
+
+    let firstError = '';
+
+    const profileResult = requests[0];
+    if (profileResult.status === 'fulfilled') {
+      const user = profileResult.value?.data?.user || {};
+      const completion = profileResult.value?.data?.completionStatus || null;
+      const avatar = resolveAssetUrl(user.avatar);
+      const skills = normalizeSkills(user.skills);
+
+      setProfile({
+        name: user.name || user.email || 'Learner',
+        email: user.email || '',
+        phone: user.phone || '',
+        role: user.role || 'student',
+        visibility: user.visibility || 'public',
+        avatar,
+        bio: user.bio || '',
+        location: user.location || [user.city, user.country].filter(Boolean).join(', ') || '',
+        availableToHire: Boolean(user.available_to_hire),
+        emailNotifications: Boolean(user.email_notifications),
+        skills,
+      });
+
+      setBasicDraft({
+        name: user.name || user.email || 'Learner',
+        phone: user.phone || '',
+        role: user.role || 'student',
+        visibility: user.visibility || 'public',
+        bio: user.bio || '',
+        location: user.location || [user.city, user.country].filter(Boolean).join(', ') || '',
+        availableToHire: Boolean(user.available_to_hire),
+        emailNotifications: Boolean(user.email_notifications),
+        skills,
+      });
+
+      setPreferencesDraft({
+        language: user.language || 'en',
+        timezone: user.timezone || timezoneOptions[0].value,
+        currency: user.currency || 'USD',
+        showListNames: Boolean(user.show_list_names),
+        showLinkedTaskNames: user.show_linked_task_names !== false,
+        emailVisibility: Boolean(user.email_visibility),
+      });
+
+      setProfileCompletion(completion);
+    } else {
+      firstError = profileResult.reason?.message || 'Failed to load profile data';
+    }
+
+    const documentsResult = requests[1];
+    if (documentsResult.status === 'fulfilled') {
+      setDocuments(Array.isArray(documentsResult.value?.data?.documents) ? documentsResult.value.data.documents : []);
+    } else if (!firstError) {
+      firstError = documentsResult.reason?.message || 'Failed to load documents';
+    }
+
+    const paymentsResult = requests[2];
+    if (paymentsResult.status === 'fulfilled') {
+      setPaymentMethods(Array.isArray(paymentsResult.value?.data?.paymentMethods) ? paymentsResult.value.data.paymentMethods : []);
+    } else if (!firstError) {
+      firstError = paymentsResult.reason?.message || 'Failed to load payment methods';
+    }
+
+    const statsResult = requests[3];
+    if (statsResult.status === 'fulfilled') {
+      setCertificateStats(statsResult.value?.data || statsResult.value || null);
+    }
+
+    const certificatesResult = requests[4];
+    if (certificatesResult.status === 'fulfilled') {
+      const items = certificatesResult.value?.data?.certificates || certificatesResult.value?.data?.data || [];
+      setCertificates(Array.isArray(items) ? items : []);
+    } else if (!firstError) {
+      firstError = certificatesResult.reason?.message || 'Failed to load certificates';
+    }
+
+    const accountResult = requests[5];
+    if (accountResult.status === 'fulfilled') {
+      setAccountStatus(accountResult.value?.data || accountResult.value || null);
+    }
+
+    if (firstError) {
+      setError(firstError);
+    }
+
+    setLoading(false);
   };
 
-  const handleRemoveSkill = (skillToRemove) => {
+  useEffect(() => {
+    loadSettings();
+
+    return () => {
+      if (feedbackTimerRef.current) {
+        clearTimeout(feedbackTimerRef.current);
+      }
+    };
+  }, []);
+
+  const profileCompletionValue = Number(profileCompletion?.profile_percentage ?? profileCompletion?.profilePercentage ?? 0);
+  const totalCertificates = Number(certificateStats?.totalCertificates ?? certificates.length ?? 0);
+  const totalDocuments = documents.length;
+  const totalPaymentMethods = paymentMethods.length;
+  const isAccountActive = accountStatus?.isActive !== false;
+  const is2FAEnabled = Boolean(accountStatus?.twoFactorEnabled);
+
+  const summaryCards = useMemo(() => ([
+    { label: 'Profile completion', value: `${Math.round(profileCompletionValue)}%` },
+    { label: 'Certificates', value: formatNumber(totalCertificates) },
+    { label: 'Documents', value: formatNumber(totalDocuments) },
+    { label: 'Payment methods', value: formatNumber(totalPaymentMethods) },
+  ]), [profileCompletionValue, totalCertificates, totalDocuments, totalPaymentMethods]);
+
+  const activityItems = useMemo(() => {
+    const certificateEvents = certificates.map((certificate) => ({
+      id: `certificate-${certificate.id || certificate.certificateNumber}`,
+      type: 'Certificate',
+      title: certificate.courseTitle || certificate.courseName || 'Certificate earned',
+      body: certificate.certificateNumber ? `Certificate ${certificate.certificateNumber}` : 'Issued from your account data',
+      date: certificate.issueDate,
+      tone: certificate.status === 'passed' ? 'success' : certificate.status === 'failed' ? 'warning' : 'info',
+    }));
+
+    const documentEvents = documents.map((document) => ({
+      id: `document-${document.id}`,
+      type: 'Document',
+      title: document.document_name || document.name || 'Document uploaded',
+      body: document.is_public ? 'Shared document' : 'Private document',
+      date: document.created_at,
+      tone: 'info',
+    }));
+
+    const paymentEvents = paymentMethods.map((method) => ({
+      id: `payment-${method.id}`,
+      type: 'Payment method',
+      title: method.paymentProvider || method.payment_provider || 'Payment method added',
+      body: method.is_primary ? 'Primary payment method' : 'Saved payment method',
+      date: method.created_at || method.createdAt,
+      tone: 'success',
+    }));
+
+    return [...certificateEvents, ...documentEvents, ...paymentEvents]
+      .filter((item) => isWithinFilter(item.date, activityFilter))
+      .sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+  }, [activityFilter, certificates, documents, paymentMethods]);
+
+  const visibleActivityItems = activityItems.filter((item) => !reviewedActivityIds.includes(item.id));
+
+  const saveBasicProfile = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setError('Please sign in again to save your profile.');
+      return;
+    }
+
+    setSavingBasic(true);
+    setError('');
+
+    try {
+      const response = await fetchJson('/api/profile/complete', token, {
+        method: 'PUT',
+        body: JSON.stringify({
+          name: basicDraft.name,
+          phone: basicDraft.phone,
+          role: basicDraft.role,
+          visibility: basicDraft.visibility,
+          bio: basicDraft.bio,
+          location: basicDraft.location,
+          skills: basicDraft.skills,
+          availableToHire: basicDraft.availableToHire,
+          emailNotifications: basicDraft.emailNotifications,
+        }),
+      });
+
+      const user = response?.data?.user || {};
+      const completion = response?.data?.profilePercentage;
+
+      setProfile((current) => ({
+        ...current,
+        name: user.name || current.name,
+        email: user.email || current.email,
+        phone: user.phone || current.phone,
+        role: user.role || current.role,
+        visibility: user.visibility || current.visibility,
+        bio: user.bio || basicDraft.bio,
+        location: user.location || basicDraft.location,
+        avatar: user.avatar ? resolveAssetUrl(user.avatar) : current.avatar,
+        availableToHire: Boolean(user.available_to_hire),
+        emailNotifications: Boolean(user.email_notifications),
+        skills: normalizeSkills(user.skills).length ? normalizeSkills(user.skills) : basicDraft.skills,
+      }));
+
+      setProfileCompletion((current) => ({ ...(current || {}), profile_percentage: completion ?? current?.profile_percentage ?? 0 }));
+      setIsBasicEditing(false);
+      setIsAboutEditing(false);
+      setIsSkillsEditing(false);
+      showFeedback('Profile saved to your account.', 'success');
+      await loadSettings();
+    } catch (saveError) {
+      showFeedback(saveError.message || 'Failed to save profile', 'warning');
+    } finally {
+      setSavingBasic(false);
+    }
+  };
+
+  const savePreferences = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setError('Please sign in again to save your preferences.');
+      return;
+    }
+
+    setSavingPreferences(true);
+    setError('');
+
+    try {
+      const response = await fetchJson('/api/profile/preferences', token, {
+        method: 'PUT',
+        body: JSON.stringify(preferencesDraft),
+      });
+
+      const user = response?.data?.user || {};
+      setProfile((current) => ({
+        ...current,
+        emailNotifications: Boolean(user.email_notifications ?? current.emailNotifications),
+      }));
+      setIsPreferencesEditing(false);
+      showFeedback('Preferences saved to your account.', 'success');
+      await loadSettings();
+    } catch (saveError) {
+      showFeedback(saveError.message || 'Failed to save preferences', 'warning');
+    } finally {
+      setSavingPreferences(false);
+    }
+  };
+
+  const handlePhotoSelect = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setError('Please sign in again to upload a photo.');
+      return;
+    }
+
+    setPhotoUploading(true);
+    setError('');
+
+    try {
+      const formData = new FormData();
+      formData.append('photo', file);
+
+      const response = await fetch(`${API_BASE_URL}/api/profile/photo`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(body?.message || 'Failed to upload photo');
+      }
+
+      const nextAvatar = body?.data?.photoUrl || body?.data?.user?.avatar;
+      if (nextAvatar) {
+        setProfile((current) => ({ ...current, avatar: resolveAssetUrl(nextAvatar) }));
+      }
+
+      showFeedback('Photo updated in your account.', 'success');
+      await loadSettings();
+    } catch (uploadError) {
+      showFeedback(uploadError.message || 'Failed to upload photo', 'warning');
+    } finally {
+      setPhotoUploading(false);
+      event.target.value = '';
+    }
+  };
+
+  const toggleAvailability = async () => {
+    setBasicDraft((current) => ({ ...current, availableToHire: !current.availableToHire }));
+    await saveBasicProfile();
+  };
+
+  const addSkill = () => {
+    const nextSkill = skillDraft.trim();
+    if (!nextSkill) {
+      showFeedback('Type a skill before adding it.', 'warning');
+      return;
+    }
+
+    setBasicDraft((current) => ({
+      ...current,
+      skills: Array.from(new Set([...current.skills, nextSkill])),
+    }));
+    setSkillDraft('');
+  };
+
+  const removeSkill = (skill) => {
     if (!isSkillsEditing) return;
-    setSlateSkills((prev) => prev.filter(skill => skill !== skillToRemove));
-    showFeedback('Skill removed.', 'success');
+    setBasicDraft((current) => ({
+      ...current,
+      skills: current.skills.filter((item) => item !== skill),
+    }));
   };
 
-  // Overview Handlers
-  const handleSaveOverview = () => {
-    setApexProfile((prev) => ({ ...prev, name: zenithForm.name, email: zenithForm.email, role: zenithForm.role }));
-    setIsOverviewEditing(false);
-    showFeedback('Profile information saved.', 'success');
-  };
-
-  const handlePasswordReset = () => {
-    if (passwordDraft.new.length < 8) {
-      showFeedback('Password must be at least 8 characters.', 'warning');
-      return;
+  const handleActivityAction = (id, action) => {
+    if (action === 'review') {
+      setReviewedActivityIds((current) => (current.includes(id) ? current.filter((item) => item !== id) : [...current, id]));
     }
-    if (passwordDraft.new !== passwordDraft.confirm) {
-      showFeedback('Passwords do not match.', 'warning');
-      return;
+
+    if (action === 'hide') {
+      setReviewedActivityIds((current) => [...current, id]);
     }
-    setPasswordDraft({ new: '', confirm: '' });
-    setIsResetPanelOpen(false);
-    showFeedback('Password updated on the frontend.', 'success');
-  };
 
-  const handleToggleAccountStatus = () => {
-    const isInactive = apexProfile.status === 'Inactive';
-    setApexProfile((prev) => ({ ...prev, status: isInactive ? 'Active' : 'Inactive' }));
-    setDeactivateConfirmed(false);
-    showFeedback(isInactive ? 'Account restored to active state.' : 'Account marked as inactive.', isInactive ? 'success' : 'warning');
-  };
-
-  // Activity Handlers
-  const handleMarkReviewed = (id) => {
-    setReviewedLogs((prev) => prev.includes(id) ? prev.filter(logId => logId !== id) : [...prev, id]);
     setOpenActivityMenuId(null);
-    showFeedback(reviewedLogs.includes(id) ? 'Review mark removed.' : 'Log marked as reviewed.', 'success');
-  };
-
-  const handleRemoveLog = (id) => {
-    setGenesisLogs((prev) => prev.filter((log) => log.id !== id));
-    setOpenActivityMenuId(null);
-    showFeedback('Activity row removed.', 'success');
   };
 
   return (
-    <LearnersPageShell title="Settings" description="Learners settings layout scaffold.">
-      <section className="learners-settings-page" onClick={(e) => { if (!e.target.closest('.learners-settings-activity-menu')) setOpenActivityMenuId(null); }}>
-        
+    <LearnersPageShell>
+      <section className="learners-settings-page" onClick={(event) => { if (!event.target.closest('.learners-settings-activity-menu')) setOpenActivityMenuId(null); }}>
+        <input ref={photoInputRef} type="file" accept="image/*" hidden onChange={handlePhotoSelect} />
+
         <section className="learners-projects-profile-strip">
           <div className="learners-projects-profile-strip-main">
             <div className="learners-projects-profile-avatar">
-              <img src={apexProfile.avatar} alt={apexProfile.name} />
+              <img src={profile.avatar} alt={profile.name || 'Profile'} />
             </div>
+
             <div className="learners-projects-profile-copy">
               <div className="learners-projects-profile-name-row">
-                <h1>{apexProfile.name}</h1>
-                <span className={`learners-projects-status-badge ${apexProfile.status === 'Inactive' ? 'is-inactive' : ''}`}>
-                  {apexProfile.status}
+                <h1>{profile.name || 'Loading profile...'}</h1>
+                <span className={`learners-projects-status-badge ${isAccountActive ? '' : 'is-inactive'}`}>
+                  {isAccountActive ? 'Active' : 'Inactive'}
                 </span>
                 <span className="learners-projects-count-badge">
                   <img src={badge1} alt="Badge" />
-                  <span>{apexProfile.projects}</span>
+                  <span>{Math.round(profileCompletionValue)}%</span>
                 </span>
               </div>
+
               <div className="learners-projects-profile-meta">
-                <span>{apexProfile.role}</span>
+                <span>{profile.role || 'Learner'}</span>
                 <span>&bull;</span>
-                <span>{apexProfile.email}</span>
+                <span>{profile.email || 'No email on file'}</span>
               </div>
             </div>
           </div>
+
           <div className="learners-projects-profile-actions">
-            <button type="button" className="learners-projects-primary-btn" onClick={preventDefault}>Earn certificates</button>
-            <button type="button" className="learners-projects-secondary-btn" onClick={() => setActiveTab('overview')}>View Profile</button>
+            <button type="button" className="learners-projects-secondary-btn" onClick={() => photoInputRef.current?.click()} disabled={photoUploading}>
+              {photoUploading ? 'Uploading...' : 'Change Photo'}
+            </button>
+            <button type="button" className="learners-projects-primary-btn" onClick={() => navigate('/academia/learner/account')}>
+              Open Account
+            </button>
           </div>
         </section>
 
+        {error && (
+          <div className="learners-settings-feedback is-warning">
+            {error}
+          </div>
+        )}
+
+        {feedback.visible && (
+          <div className={`learners-settings-feedback is-${feedback.tone}`}>
+            {feedback.message}
+          </div>
+        )}
+
         <section className="learners-settings-shell">
           <aside className="learners-settings-side">
-            
             <section className="learners-settings-side-section">
               <div className="learners-settings-side-head learners-settings-side-head-main">
                 <div>
-                  <h2>Project Profile</h2>
-                  <p>Bio &amp; All about your experience</p>
+                  <h2>Profile Snapshot</h2>
+                  <p>Everything here is synced from your account.</p>
                 </div>
               </div>
 
-              <div className="learners-settings-availability-row">
-                <div className="learners-settings-availability-stack">
-                  <span className="learners-settings-availability">{apexProfile.availability}</span>
-                  {isAvailabilityEditing && (
-                    <div className="learners-settings-inline-editor learners-settings-side-form">
-                      <select 
-                        className="learners-settings-inline-select" 
-                        value={availabilityDraft} 
-                        onChange={(e) => setAvailabilityDraft(e.target.value)}
-                      >
-                        <option value="Available Now">Available Now</option>
-                        <option value="Busy">Busy</option>
-                        <option value="On Break">On Break</option>
-                      </select>
-                      <div className="learners-settings-inline-actions">
-                        <button type="button" className="learners-settings-inline-save" onClick={handleSaveAvailability}>Apply</button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-                <button type="button" className="learners-settings-edit-btn" onClick={() => setIsAvailabilityEditing(!isAvailabilityEditing)}>
-                  <img src={bPencil} alt="Edit" />
-                  <span>Edit</span>
-                </button>
+              <div className="learners-settings-stats-list">
+                {summaryCards.map((item) => (
+                  <div key={item.label}>
+                    <span>{item.label}</span>
+                    <strong>{item.value}</strong>
+                  </div>
+                ))}
               </div>
 
-              <div className="learners-settings-side-list">
-                <div><img src={leUe} alt="Role" /><span>{apexProfile.role}</span></div>
-                <div><img src={leEx} alt="Experience" /><span>{apexProfile.experience}</span></div>
-                <div><img src={leLo} alt="Location" /><span>{apexProfile.location}</span></div>
+              <div className="learners-settings-side-list" style={{ marginTop: 14 }}>
+                <div><img src={leUe} alt="Role" /><span>{profile.role || 'Learner'}</span></div>
+                <div><img src={leEx} alt="Visibility" /><span>{profile.visibility === 'private' ? 'Private profile' : 'Public profile'}</span></div>
+                <div><img src={leLo} alt="Location" /><span>{profile.location || 'Location not set'}</span></div>
+                <div><img src={userIcon} alt="2FA" /><span>{is2FAEnabled ? 'Two-factor enabled' : 'Two-factor disabled'}</span></div>
               </div>
 
-              <button 
-                type="button" 
-                className={`learners-settings-followers-btn ${isFollowed ? 'is-active' : ''}`} 
-                onClick={handleToggleFollow} 
-                aria-pressed={isFollowed}
+              <button
+                type="button"
+                className={`learners-settings-followers-btn ${basicDraft.availableToHire ? 'is-active' : ''}`}
+                onClick={toggleAvailability}
+                aria-pressed={basicDraft.availableToHire}
               >
-                <img src={userIcon} alt="Followers" />
-                <span>{apexProfile.followers} Followers</span>
+                <img src={userIcon} alt="Availability" />
+                <span>{basicDraft.availableToHire ? 'Available to hire' : 'Not available to hire'}</span>
               </button>
 
-              <button type="button" className="learners-settings-email-btn" onClick={() => { setActiveTab('overview'); setIsOverviewEditing(true); }}>
-                Edit E-mail
+              <button type="button" className="learners-settings-email-btn" onClick={() => setActiveTab('overview')}>
+                View profile settings
               </button>
             </section>
 
             <section className="learners-settings-side-section">
               <div className="learners-settings-side-head">
                 <h3>About</h3>
-                <button type="button" className="learners-settings-edit-btn" onClick={() => setIsAboutEditing(!isAboutEditing)}>
+                <button type="button" className="learners-settings-edit-btn" onClick={() => setIsAboutEditing((current) => !current)}>
                   <img src={bPencil} alt="Edit" />
-                  <span>Edit</span>
+                  <span>{isAboutEditing ? 'Editing' : 'Edit'}</span>
                 </button>
               </div>
-              
+
               {!isAboutEditing ? (
-                <p className={`learners-settings-about-copy ${isAboutExpanded ? 'is-expanded' : ''}`}>
-                  {apexProfile.bio}{' '}
-                  <a href="/" onClick={(e) => { e.preventDefault(); setIsAboutExpanded(!isAboutExpanded); }}>
-                    {isAboutExpanded ? 'Show less' : 'Read more'}
-                  </a>
+                <p className="learners-settings-about-copy">
+                  {basicDraft.bio || 'No bio has been added yet. This area now reflects your account data only.'}
                 </p>
               ) : (
                 <div className="learners-settings-about-editor learners-settings-side-form">
-                  <textarea 
-                    className="learners-settings-textarea" 
-                    value={aboutDraft} 
-                    onChange={(e) => setAboutDraft(e.target.value)}
+                  <textarea
+                    className="learners-settings-textarea"
+                    value={basicDraft.bio}
+                    onChange={(event) => setBasicDraft((current) => ({ ...current, bio: event.target.value }))}
                   />
                   <div className="learners-settings-inline-actions">
-                    <button type="button" className="learners-settings-inline-save" onClick={handleSaveAbout}>Save</button>
-                    <button type="button" className="learners-settings-inline-cancel" onClick={() => { setIsAboutEditing(false); setAboutDraft(apexProfile.bio); }}>Cancel</button>
+                    <button type="button" className="learners-settings-inline-save" onClick={saveBasicProfile} disabled={savingBasic}>
+                      {savingBasic ? 'Saving...' : 'Save'}
+                    </button>
+                    <button type="button" className="learners-settings-inline-cancel" onClick={() => setIsAboutEditing(false)}>
+                      Cancel
+                    </button>
                   </div>
                 </div>
               )}
@@ -312,94 +652,93 @@ function LearnersSettings() {
 
             <section className="learners-settings-side-section">
               <div className="learners-settings-side-head">
-                <h3>Projects Stats</h3>
-              </div>
-              <div className="learners-settings-stats-list">
-                {apexProfile.stats.map((husk, idx) => (
-                  <div key={idx}>
-                    <span>{husk.label}</span>
-                    <strong>{husk.value}</strong>
-                  </div>
-                ))}
-              </div>
-            </section>
-
-            <section className="learners-settings-side-section">
-              <div className="learners-settings-side-head">
-                <h3>Tools &amp; Skills</h3>
-                <button type="button" className="learners-settings-edit-btn" onClick={() => setIsSkillsEditing(!isSkillsEditing)}>
+                <h3>Skills</h3>
+                <button type="button" className="learners-settings-edit-btn" onClick={() => setIsSkillsEditing((current) => !current)}>
                   <img src={bPencil} alt="Edit" />
-                  <span>Edit</span>
+                  <span>{isSkillsEditing ? 'Editing' : 'Edit'}</span>
                 </button>
               </div>
-              
+
               <div className={`learners-settings-skills-list ${isSkillsEditing ? 'is-editing' : ''}`}>
-                {slateSkills.map((husk, idx) => (
-                  <button key={idx} type="button" className="learners-settings-skill-chip" onClick={() => handleRemoveSkill(husk)}>
-                    <span>{husk}</span>
-                    <span className="learners-settings-skill-chip-remove">&times;</span>
+                {basicDraft.skills.length ? basicDraft.skills.map((skill) => (
+                  <button key={skill} type="button" className="learners-settings-skill-chip" onClick={() => removeSkill(skill)}>
+                    <span>{skill}</span>
+                    {isSkillsEditing && <span className="learners-settings-skill-chip-remove">&times;</span>}
                   </button>
-                ))}
+                )) : (
+                  <div className="learners-settings-about-copy">No skills saved to your account yet.</div>
+                )}
               </div>
 
               {isSkillsEditing && (
                 <div className="learners-settings-skills-editor learners-settings-side-form">
                   <div className="learners-settings-inline-input-row">
-                    <input 
-                      type="text" 
-                      className="learners-settings-inline-input" 
-                      placeholder="Add a new skill"
-                      value={newSkillDraft}
-                      onChange={(e) => setNewSkillDraft(e.target.value)}
+                    <input
+                      type="text"
+                      className="learners-settings-inline-input"
+                      placeholder="Add a skill"
+                      value={skillDraft}
+                      onChange={(event) => setSkillDraft(event.target.value)}
                     />
-                    <button type="button" className="learners-settings-inline-save" onClick={handleAddSkill}>Add</button>
+                    <button type="button" className="learners-settings-inline-save" onClick={addSkill}>
+                      Add
+                    </button>
                   </div>
                   <div className="learners-settings-inline-actions">
-                    <button type="button" className="learners-settings-inline-save" onClick={() => { setIsSkillsEditing(false); showFeedback('Skills updated.', 'success'); }}>Done</button>
-                    <button type="button" className="learners-settings-inline-cancel" onClick={() => setIsSkillsEditing(false)}>Cancel</button>
+                    <button type="button" className="learners-settings-inline-save" onClick={saveBasicProfile} disabled={savingBasic}>
+                      {savingBasic ? 'Saving...' : 'Save skills'}
+                    </button>
+                    <button type="button" className="learners-settings-inline-cancel" onClick={() => setIsSkillsEditing(false)}>
+                      Cancel
+                    </button>
                   </div>
                 </div>
               )}
             </section>
-
           </aside>
 
           <div className="learners-settings-main">
             <ul className="nav learners-settings-tabs" role="tablist">
               <li className="nav-item" role="presentation">
-                <button 
-                  className={`nav-link ${activeTab === 'overview' ? 'active' : ''}`} 
-                  onClick={() => setActiveTab('overview')}
-                >
+                <button type="button" className={`nav-link ${activeTab === 'overview' ? 'active' : ''}`} onClick={() => setActiveTab('overview')}>
                   Overview
                 </button>
               </li>
               <li className="nav-item" role="presentation">
-                <button 
-                  className={`nav-link ${activeTab === 'activity' ? 'active' : ''}`} 
-                  onClick={() => setActiveTab('activity')}
-                >
+                <button type="button" className={`nav-link ${activeTab === 'preferences' ? 'active' : ''}`} onClick={() => setActiveTab('preferences')}>
+                  Preferences
+                </button>
+              </li>
+              <li className="nav-item" role="presentation">
+                <button type="button" className={`nav-link ${activeTab === 'security' ? 'active' : ''}`} onClick={() => setActiveTab('security')}>
+                  Security
+                </button>
+              </li>
+              <li className="nav-item" role="presentation">
+                <button type="button" className={`nav-link ${activeTab === 'activity' ? 'active' : ''}`} onClick={() => setActiveTab('activity')}>
                   Activity Logs
                 </button>
               </li>
             </ul>
 
-            {feedback.visible && (
-              <div className={`learners-settings-feedback is-${feedback.tone}`}>
-                {feedback.message}
-              </div>
-            )}
-
             <div className="tab-content learners-settings-tab-content">
-              {/* OVERVIEW TAB */}
-              {activeTab === 'overview' && (
+              {loading ? (
+                <article className="learners-settings-panel">
+                  <div className="learners-settings-empty-state learners-settings-activity-empty">
+                    <strong>Loading settings</strong>
+                    <span>Loading your profile, preferences, certificates, and account status.</span>
+                  </div>
+                </article>
+              ) : null}
+
+              {!loading && activeTab === 'overview' && (
                 <section className="tab-pane fade show active">
                   <article className="learners-settings-panel">
                     <div className="learners-settings-panel-head">
                       <h3>Profile Information</h3>
-                      <button type="button" className="learners-settings-edit-btn" onClick={() => setIsOverviewEditing(!isOverviewEditing)}>
+                      <button type="button" className="learners-settings-edit-btn" onClick={() => setIsBasicEditing((current) => !current)}>
                         <img src={bPencil} alt="Edit" />
-                        <span>{isOverviewEditing ? 'Editing' : 'Edit'}</span>
+                        <span>{isBasicEditing ? 'Editing' : 'Edit'}</span>
                       </button>
                     </div>
 
@@ -409,15 +748,21 @@ function LearnersSettings() {
                           <label>Full Name</label>
                           <img src={acInn} alt="Info" />
                         </div>
-                        <input type="text" className="learners-settings-field-value learners-settings-field-control" value={zenithForm.name} onChange={(e) => setZenithForm({ ...zenithForm, name: e.target.value })} disabled={!isOverviewEditing} />
+                        <input
+                          type="text"
+                          className="learners-settings-field-value learners-settings-field-control"
+                          value={basicDraft.name}
+                          onChange={(event) => setBasicDraft((current) => ({ ...current, name: event.target.value }))}
+                          disabled={!isBasicEditing}
+                        />
                       </div>
 
                       <div className="learners-settings-field">
                         <div className="learners-settings-field-head">
-                          <label>E-mail</label>
+                          <label>Email</label>
                           <img src={acInn} alt="Info" />
                         </div>
-                        <input type="email" className="learners-settings-field-value learners-settings-field-control" value={zenithForm.email} onChange={(e) => setZenithForm({ ...zenithForm, email: e.target.value })} disabled={!isOverviewEditing} />
+                        <input type="email" className="learners-settings-field-value learners-settings-field-control" value={profile.email} readOnly disabled />
                       </div>
 
                       <div className="learners-settings-field">
@@ -427,20 +772,13 @@ function LearnersSettings() {
                         </div>
                         <label className="learners-settings-field-value learners-settings-field-control learners-settings-phone-value">
                           <img src={rwandaIcon} alt="Rwanda" />
-                          <input type="tel" value={zenithForm.phone} onChange={(e) => setZenithForm({ ...zenithForm, phone: e.target.value })} disabled={!isOverviewEditing} />
+                          <input
+                            type="tel"
+                            value={basicDraft.phone}
+                            onChange={(event) => setBasicDraft((current) => ({ ...current, phone: event.target.value }))}
+                            disabled={!isBasicEditing}
+                          />
                         </label>
-                      </div>
-
-                      <div className="learners-settings-field">
-                        <div className="learners-settings-field-head">
-                          <label>User Type</label>
-                          <img src={acInn} alt="Info" />
-                        </div>
-                        <select className="learners-settings-field-value learners-settings-field-control" value={zenithForm.userType} onChange={(e) => setZenithForm({ ...zenithForm, userType: e.target.value })} disabled={!isOverviewEditing}>
-                          <option>Learner</option>
-                          <option>Creator</option>
-                          <option>Contributor</option>
-                        </select>
                       </div>
 
                       <div className="learners-settings-field">
@@ -448,103 +786,318 @@ function LearnersSettings() {
                           <label>Role</label>
                           <img src={acInn} alt="Info" />
                         </div>
-                        <input type="text" className="learners-settings-field-value learners-settings-field-control" value={zenithForm.role} onChange={(e) => setZenithForm({ ...zenithForm, role: e.target.value })} disabled={!isOverviewEditing} />
+                        <input
+                          type="text"
+                          className="learners-settings-field-value learners-settings-field-control"
+                          value={basicDraft.role}
+                          onChange={(event) => setBasicDraft((current) => ({ ...current, role: event.target.value }))}
+                          disabled={!isBasicEditing}
+                        />
+                      </div>
+
+                      <div className="learners-settings-field">
+                        <div className="learners-settings-field-head">
+                          <label>Visibility</label>
+                          <img src={acInn} alt="Info" />
+                        </div>
+                        <div className="dropdown w-100">
+                          <button
+                            type="button"
+                            className="learners-settings-field-value learners-settings-field-control pref-bs-dropdown w-100 d-flex align-items-center dropdown-toggle"
+                            data-bs-toggle="dropdown"
+                            aria-expanded="false"
+                            disabled={!isBasicEditing}
+                          >
+                            <div className="d-flex align-items-center gap-2">
+                              <span>{basicDraft.visibility === 'private' ? 'Private' : 'Public'}</span>
+                            </div>
+                          </button>
+                          {isBasicEditing && (
+                            <ul className="dropdown-menu w-100 shadow-sm border-0">
+                              <li>
+                                <button className="dropdown-item" type="button" onClick={() => setBasicDraft((c) => ({ ...c, visibility: 'public' }))}>
+                                  Public
+                                </button>
+                              </li>
+                              <li>
+                                <button className="dropdown-item" type="button" onClick={() => setBasicDraft((c) => ({ ...c, visibility: 'private' }))}>
+                                  Private
+                                </button>
+                              </li>
+                            </ul>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="learners-settings-field">
+                        <div className="learners-settings-field-head">
+                          <label>Location</label>
+                          <img src={acInn} alt="Info" />
+                        </div>
+                        <input
+                          type="text"
+                          className="learners-settings-field-value learners-settings-field-control"
+                          value={basicDraft.location}
+                          onChange={(event) => setBasicDraft((current) => ({ ...current, location: event.target.value }))}
+                          disabled={!isBasicEditing}
+                        />
                       </div>
 
                       <div className="learners-settings-field is-full learners-settings-notification-field">
                         <div className="learners-settings-field-head">
-                          <label>Send Notification To</label>
-                          <button 
-                            type="button" 
-                            className={`learners-settings-switch ${notificationsEnabled ? 'is-on' : ''}`} 
-                            onClick={() => { setNotificationsEnabled(!notificationsEnabled); showFeedback(!notificationsEnabled ? 'Notifications enabled.' : 'Notifications muted.', !notificationsEnabled ? 'success' : 'warning'); }}
-                            aria-pressed={notificationsEnabled}
-                          ></button>
+                          <label>Account settings</label>
+                          <img src={acInn} alt="Info" />
                         </div>
-                        <div className={`learners-settings-notification-options ${!notificationsEnabled ? 'is-disabled' : ''}`}>
-                          <label><input type="checkbox" defaultChecked disabled={!notificationsEnabled} onChange={() => showFeedback('Notification preferences updated.', 'success')} /> <span>Email</span></label>
-                          <label><input type="checkbox" defaultChecked disabled={!notificationsEnabled} onChange={() => showFeedback('Notification preferences updated.', 'success')} /> <span>Message (Telephone)</span></label>
+                        <div className="learners-settings-notification-options">
+                          <label>
+                            <button
+                              type="button"
+                              className={`learners-settings-switch ${basicDraft.availableToHire ? 'is-on' : ''}`}
+                              onClick={() => setBasicDraft((current) => ({ ...current, availableToHire: !current.availableToHire }))}
+                              aria-pressed={basicDraft.availableToHire}
+                            />
+                            <span>Available to hire</span>
+                          </label>
+                          <label>
+                            <button
+                              type="button"
+                              className={`learners-settings-switch ${basicDraft.emailNotifications ? 'is-on' : ''}`}
+                              onClick={() => setBasicDraft((current) => ({ ...current, emailNotifications: !current.emailNotifications }))}
+                              aria-pressed={basicDraft.emailNotifications}
+                            />
+                            <span>Email notifications</span>
+                          </label>
                         </div>
                       </div>
                     </div>
 
-                    <button type="button" className="learners-settings-save-btn" onClick={handleSaveOverview} disabled={!isOverviewEditing}>Save</button>
-                  </article>
-
-                  <article className="learners-settings-panel">
-                    <div className="learners-settings-panel-head">
-                      <h3>Security &amp; Privacy</h3>
-                      <button type="button" className="learners-settings-ghost-btn" onClick={() => setIsResetPanelOpen(!isResetPanelOpen)}>
-                        <img src={resetIcon} alt="Reset" />
-                        <span>Reset Password</span>
+                    <div className="learners-settings-inline-actions" style={{ marginTop: 18 }}>
+                      <button type="button" className="learners-settings-inline-save" onClick={saveBasicProfile} disabled={savingBasic}>
+                        {savingBasic ? 'Saving...' : 'Save profile'}
+                      </button>
+                      <button type="button" className="learners-settings-inline-cancel" onClick={() => setIsBasicEditing(false)}>
+                        Cancel
                       </button>
                     </div>
-
-                    <div className="learners-settings-field is-full">
-                      <div className="learners-settings-field-head">
-                        <label>Password</label>
-                        <img src={acInn} alt="Info" />
-                      </div>
-                      <div className="learners-settings-field-value learners-settings-password-value">
-                        <input type={showPassword ? 'text' : 'password'} className="learners-settings-field-control is-plain" value="StrongPass2026" readOnly />
-                        <button type="button" className="learners-settings-icon-btn" onClick={() => setShowPassword(!showPassword)}>
-                          <img src={acEye} alt="Show password" />
-                        </button>
-                      </div>
-                    </div>
-
-                    {isResetPanelOpen && (
-                      <div className="learners-settings-reset-panel">
-                        <div className="learners-settings-inline-input-row is-stack learners-settings-reset-fields">
-                          <input type="password" className="learners-settings-inline-input" placeholder="New password" value={passwordDraft.new} onChange={(e) => setPasswordDraft({ ...passwordDraft, new: e.target.value })} />
-                          <input type="password" className="learners-settings-inline-input" placeholder="Confirm password" value={passwordDraft.confirm} onChange={(e) => setPasswordDraft({ ...passwordDraft, confirm: e.target.value })} />
-                        </div>
-                        <div className="learners-settings-inline-actions">
-                          <button type="button" className="learners-settings-inline-save" onClick={handlePasswordReset}>Update password</button>
-                          <button type="button" className="learners-settings-inline-cancel" onClick={() => { setIsResetPanelOpen(false); setPasswordDraft({ new: '', confirm: '' }); }}>Cancel</button>
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="learners-settings-callout is-security">
-                      <div className="learners-settings-callout-icon">✓</div>
-                      <div className="learners-settings-callout-copy">
-                        <strong>Secure Your Account</strong>
-                        <p>Two-factor authentication adds an extra layer of security to your account. To log in, in addition you'll need to provide a 6 digit code</p>
-                      </div>
-                      <button 
-                        type="button" 
-                        className={`learners-settings-callout-btn ${twoFactorEnabled ? 'is-active' : ''}`} 
-                        onClick={() => { setTwoFactorEnabled(!twoFactorEnabled); showFeedback(!twoFactorEnabled ? 'Two-factor prompts enabled.' : 'Two-factor prompts disabled.', !twoFactorEnabled ? 'success' : 'warning'); }}
-                      >
-                        {twoFactorEnabled ? 'Enabled' : 'Enable'}
-                      </button>
-                    </div>
-
-                    <div className="learners-settings-subtitle">Account Privacy</div>
-
-                    <div className="learners-settings-callout is-warning">
-                      <div className="learners-settings-callout-icon">!</div>
-                      <div className="learners-settings-callout-copy">
-                        <strong>You Are Deactivating Your Account</strong>
-                        <p>For extra security, this requires you to confirm your email or phone number when you reset your password. <a href="/" onClick={(e) => { e.preventDefault(); document.querySelector('.learners-settings-confirm-row').scrollIntoView({ behavior: 'smooth', block: 'center' }); showFeedback('Review the confirmation toggle before changing account privacy.', 'warning'); }}>Learn more</a></p>
-                      </div>
-                    </div>
-
-                    <label className="learners-settings-confirm-row">
-                      <input type="checkbox" checked={deactivateConfirmed} onChange={(e) => setDeactivateConfirmed(e.target.checked)} />
-                      <span>I confirm my account deactivation</span>
-                    </label>
-
-                    <button type="button" className="learners-settings-danger-btn" disabled={!deactivateConfirmed} onClick={handleToggleAccountStatus}>
-                      {apexProfile.status === 'Inactive' ? 'Reactivate Account' : 'Deactivate Account'}
-                    </button>
                   </article>
                 </section>
               )}
 
-              {/* ACTIVITY TAB */}
-              {activeTab === 'activity' && (
+              {!loading && activeTab === 'preferences' && (
+                <section className="tab-pane fade show active">
+                  <article className="learners-settings-panel">
+                    <div className="learners-settings-panel-head">
+                      <h3>Preferences</h3>
+                      <button type="button" className="learners-settings-edit-btn" onClick={() => setIsPreferencesEditing((current) => !current)}>
+                        <img src={bPencil} alt="Edit" />
+                        <span>{isPreferencesEditing ? 'Editing' : 'Edit'}</span>
+                      </button>
+                    </div>
+
+                    <div className="learners-settings-form-grid">
+                      <div className="learners-settings-field">
+                        <div className="learners-settings-field-head">
+                          <label>Language</label>
+                          <img src={acInn} alt="Info" />
+                        </div>
+                        <div className="dropdown w-100">
+                          <button
+                            type="button"
+                            className="learners-settings-field-value learners-settings-field-control pref-bs-dropdown w-100 d-flex align-items-center dropdown-toggle"
+                            data-bs-toggle="dropdown"
+                            aria-expanded="false"
+                            disabled={!isPreferencesEditing}
+                          >
+                            <div className="d-flex align-items-center gap-2">
+                              <span className="pref-icon">{languageOptions.find((o) => o.value === preferencesDraft.language)?.icon || '🌐'}</span>
+                              <span>{languageOptions.find((o) => o.value === preferencesDraft.language)?.label || 'Language'}</span>
+                            </div>
+                          </button>
+                          {isPreferencesEditing && (
+                            <ul className="dropdown-menu w-100 shadow-sm border-0">
+                              {languageOptions.map((option) => (
+                                <li key={option.value}>
+                                  <button className="dropdown-item" type="button" onClick={() => setPreferencesDraft((c) => ({ ...c, language: option.value }))}>
+                                    <span className="me-2">{option.icon}</span>
+                                    {option.label}
+                                  </button>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="learners-settings-field">
+                        <div className="learners-settings-field-head">
+                          <label>Timezone</label>
+                          <img src={acInn} alt="Info" />
+                        </div>
+                        <div className="dropdown w-100">
+                          <button
+                            type="button"
+                            className="learners-settings-field-value learners-settings-field-control pref-bs-dropdown w-100 d-flex align-items-center dropdown-toggle"
+                            data-bs-toggle="dropdown"
+                            aria-expanded="false"
+                            disabled={!isPreferencesEditing}
+                          >
+                            <span>{timezoneOptions.find((o) => o.value === preferencesDraft.timezone)?.label || 'Timezone'}</span>
+                          </button>
+                          {isPreferencesEditing && (
+                            <ul className="dropdown-menu w-100 shadow-sm border-0">
+                              {timezoneOptions.map((option) => (
+                                <li key={option.value}>
+                                  <button className="dropdown-item" type="button" onClick={() => setPreferencesDraft((c) => ({ ...c, timezone: option.value }))}>
+                                    {option.label}
+                                  </button>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="learners-settings-field">
+                        <div className="learners-settings-field-head">
+                          <label>Currency</label>
+                          <img src={acInn} alt="Info" />
+                        </div>
+                        <div className="dropdown w-100">
+                          <button
+                            type="button"
+                            className="learners-settings-field-value learners-settings-field-control pref-bs-dropdown w-100 d-flex align-items-center dropdown-toggle"
+                            data-bs-toggle="dropdown"
+                            aria-expanded="false"
+                            disabled={!isPreferencesEditing}
+                          >
+                            <div className="d-flex align-items-center gap-2">
+                              <span className="pref-icon currency-badge">{currencyOptions.find((o) => o.value === preferencesDraft.currency)?.icon || '$'}</span>
+                              <span>{currencyOptions.find((o) => o.value === preferencesDraft.currency)?.label || 'Currency'}</span>
+                            </div>
+                          </button>
+                          {isPreferencesEditing && (
+                            <ul className="dropdown-menu w-100 shadow-sm border-0">
+                              {currencyOptions.map((option) => (
+                                <li key={option.value}>
+                                  <button className="dropdown-item" type="button" onClick={() => setPreferencesDraft((c) => ({ ...c, currency: option.value }))}>
+                                    <span className="me-2">{option.icon}</span>
+                                    {option.label}
+                                  </button>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="learners-settings-field is-full learners-settings-notification-field">
+                        <div className="learners-settings-field-head">
+                          <label>Visibility switches</label>
+                          <img src={acInn} alt="Info" />
+                        </div>
+                        <div className="learners-settings-notification-options">
+                          <label>
+                            <button
+                              type="button"
+                              className={`learners-settings-switch ${preferencesDraft.showListNames ? 'is-on' : ''}`}
+                              onClick={() => setPreferencesDraft((current) => ({ ...current, showListNames: !current.showListNames }))}
+                              aria-pressed={preferencesDraft.showListNames}
+                              disabled={!isPreferencesEditing}
+                            />
+                            <span>Show list names</span>
+                          </label>
+                          <label>
+                            <button
+                              type="button"
+                              className={`learners-settings-switch ${preferencesDraft.showLinkedTaskNames ? 'is-on' : ''}`}
+                              onClick={() => setPreferencesDraft((current) => ({ ...current, showLinkedTaskNames: !current.showLinkedTaskNames }))}
+                              aria-pressed={preferencesDraft.showLinkedTaskNames}
+                              disabled={!isPreferencesEditing}
+                            />
+                            <span>Show linked task names</span>
+                          </label>
+                          <label>
+                            <button
+                              type="button"
+                              className={`learners-settings-switch ${preferencesDraft.emailVisibility ? 'is-on' : ''}`}
+                              onClick={() => setPreferencesDraft((current) => ({ ...current, emailVisibility: !current.emailVisibility }))}
+                              aria-pressed={preferencesDraft.emailVisibility}
+                              disabled={!isPreferencesEditing}
+                            />
+                            <span>Email visibility</span>
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="learners-settings-inline-actions" style={{ marginTop: 18 }}>
+                      <button type="button" className="learners-settings-inline-save" onClick={savePreferences} disabled={savingPreferences}>
+                        {savingPreferences ? 'Saving...' : 'Save preferences'}
+                      </button>
+                      <button type="button" className="learners-settings-inline-cancel" onClick={() => setIsPreferencesEditing(false)}>
+                        Cancel
+                      </button>
+                    </div>
+                  </article>
+                </section>
+              )}
+
+              {!loading && activeTab === 'security' && (
+                <section className="tab-pane fade show active">
+                  <article className="learners-settings-panel">
+                    <div className="learners-settings-panel-head">
+                      <h3>Security options and account status</h3>
+                      <button type="button" className="learners-settings-ghost-btn" onClick={() => navigate('/academia/learner/account')}>
+                        <img src={resetIcon} alt="Account" />
+                        <span>Open account page</span>
+                      </button>
+                    </div>
+
+                    <div className="learners-settings-form-grid">
+                      <div className="learners-settings-field is-full">
+                        <div className="learners-settings-field-head">
+                          <label>Password</label>
+                          <img src={acInn} alt="Info" />
+                        </div>
+                        <div className="learners-settings-field-value learners-settings-password-value">
+                          <input type="password" className="learners-settings-field-control is-plain" value="Managed from your account settings" readOnly />
+                          <button type="button" className="learners-settings-icon-btn" onClick={() => navigate('/academia/learner/account')}>
+                            <img src={acEye} alt="Open account" />
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="learners-settings-field">
+                        <div className="learners-settings-field-head">
+                          <label>Account status</label>
+                          <img src={acInn} alt="Info" />
+                        </div>
+                        <div className="learners-settings-field-value">{isAccountActive ? 'Active' : 'Inactive'}</div>
+                      </div>
+
+                      <div className="learners-settings-field">
+                        <div className="learners-settings-field-head">
+                          <label>Two-factor authentication</label>
+                          <img src={acInn} alt="Info" />
+                        </div>
+                        <div className="learners-settings-field-value">{is2FAEnabled ? 'Enabled' : 'Disabled'}</div>
+                      </div>
+
+                      <div className="learners-settings-field is-full">
+                        <div className="learners-settings-callout is-security">
+                          <div className="learners-settings-callout-icon">✓</div>
+                          <div className="learners-settings-callout-copy">
+                            <strong>Security options summary</strong>
+                            <p>Password updates, 2FA changes, and recovery flows should be handled from the account page or the security options below.</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </article>
+                </section>
+              )}
+
+              {!loading && activeTab === 'activity' && (
                 <section className="tab-pane fade show active">
                   <article className="learners-settings-panel learners-settings-activity-panel">
                     <div className="learners-settings-activity-head">
@@ -557,12 +1110,12 @@ function LearnersSettings() {
                             <img src={drop1} alt="Dropdown" />
                           </button>
                           <ul className="dropdown-menu learners-settings-activity-filter-menu">
-                            {['This week', 'Last week', 'This month'].map((filterOption) => (
+                            {activityFilters.map((filterOption) => (
                               <li key={filterOption}>
-                                <button 
-                                  className={`dropdown-item ${activityFilter === filterOption ? 'active' : ''}`} 
-                                  type="button" 
-                                  onClick={() => { setActivityFilter(filterOption); showFeedback(`Activity filter set to ${filterOption}.`, 'success'); }}
+                                <button
+                                  className={`dropdown-item ${activityFilter === filterOption ? 'active' : ''}`}
+                                  type="button"
+                                  onClick={() => setActivityFilter(filterOption)}
                                 >
                                   {filterOption}
                                 </button>
@@ -570,51 +1123,52 @@ function LearnersSettings() {
                             ))}
                           </ul>
                         </div>
-                        <button type="button" className="learners-settings-activity-clear-btn" onClick={() => { setGenesisLogs([]); showFeedback('Recent activity cleared from the page.', 'success'); }}>
-                          <img src={trashIcon} alt="Clear" />
-                          <span>Clear all</span>
+
+                        <button type="button" className="learners-settings-activity-clear-btn" onClick={loadSettings}>
+                          <img src={trashIcon} alt="Refresh" />
+                          <span>Refresh</span>
                         </button>
                       </div>
                     </div>
 
                     <div className="learners-settings-activity-list">
-                      {genesisLogs.length === 0 ? (
+                      {visibleActivityItems.length === 0 ? (
                         <div className="learners-settings-activity-empty">
-                          <strong>No recent activity</strong>
-                          <span>New payments, retakes, and account events will appear here.</span>
+                          <strong>No recent account activity</strong>
+                          <span>Documents, certificates, and payment methods will appear here once your account has activity.</span>
                         </div>
                       ) : (
-                        genesisLogs.map((husk) => (
-                          <article key={husk.id} className={`learners-settings-activity-item learners-settings-activity-item-${husk.tone} ${reviewedLogs.includes(husk.id) ? 'is-reviewed' : ''}`}>
+                        visibleActivityItems.map((item) => (
+                          <article key={item.id} className={`learners-settings-activity-item learners-settings-activity-item-${item.tone} ${reviewedActivityIds.includes(item.id) ? 'is-reviewed' : ''}`}>
                             <div className="learners-settings-activity-item-copy">
                               <div className="learners-settings-activity-meta">
-                                <span>{husk.date}</span>
-                                <span className="learners-settings-activity-meta-dot"></span>
-                                <span>{husk.type}</span>
+                                <span>{formatDate(item.date)}</span>
+                                <span className="learners-settings-activity-meta-dot" />
+                                <span>{item.type}</span>
                               </div>
                               <p className="learners-settings-activity-line">
-                                <strong>{husk.title}</strong>
-                                <span>{husk.body}</span>
+                                <strong>{item.title}</strong>
+                                <span>{item.body}</span>
                               </p>
-                              {husk.footerStrong && (
-                                <p className="learners-settings-activity-foot">
-                                  <span>{husk.footerPrefix}</span>
-                                  <strong>{husk.footerStrong}</strong>
-                                </p>
-                              )}
                             </div>
+
                             <div className="learners-settings-activity-menu">
-                              <button 
-                                type="button" 
-                                className="learners-settings-activity-menu-btn" 
-                                onClick={() => setOpenActivityMenuId(openActivityMenuId === husk.id ? null : husk.id)}
-                                aria-expanded={openActivityMenuId === husk.id}
+                              <button
+                                type="button"
+                                className="learners-settings-activity-menu-btn"
+                                onClick={() => setOpenActivityMenuId((current) => (current === item.id ? null : item.id))}
+                                aria-expanded={openActivityMenuId === item.id}
                               >
                                 <img src={dotsVertical} alt="Menu" />
                               </button>
-                              <div className="learners-settings-activity-popover" hidden={openActivityMenuId !== husk.id}>
-                                <button type="button" onClick={() => handleMarkReviewed(husk.id)}>Mark reviewed</button>
-                                <button type="button" onClick={() => handleRemoveLog(husk.id)}>Remove</button>
+
+                              <div className="learners-settings-activity-popover" hidden={openActivityMenuId !== item.id}>
+                                <button type="button" onClick={() => handleActivityAction(item.id, 'review')}>
+                                  Mark reviewed
+                                </button>
+                                <button type="button" onClick={() => handleActivityAction(item.id, 'hide')}>
+                                  Hide
+                                </button>
                               </div>
                             </div>
                           </article>
@@ -624,11 +1178,9 @@ function LearnersSettings() {
                   </article>
                 </section>
               )}
-
             </div>
           </div>
         </section>
-
       </section>
     </LearnersPageShell>
   );

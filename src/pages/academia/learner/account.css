@@ -314,9 +314,16 @@
     gap: 14px;
     background: #FFFFFF;
     border: 1px solid #ECEFF5;
-    border-radius: 6px;
-    padding: 10px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.03); /* Soft shadow from screenshot */
+    border-radius: 14px;
+    padding: 16px;
+    box-shadow: 0 10px 24px rgba(7, 20, 55, 0.06);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.learners-account-file-card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 14px 28px rgba(7, 20, 55, 0.08);
+    border-color: #DDE3EE;
 }
 
 .file-type-icon {
@@ -337,6 +344,98 @@
     color: #A0A7B8;
     font-size: 12px;
     margin-top: 2px;
+}
+
+.payment-methods-grid {
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+.payment-method-card {
+    align-items: flex-start;
+    /* min-height: 118px; */
+    padding-right: 54px;
+}
+
+.payment-method-card .file-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.payment-method-card .file-meta strong {
+    font-size: 15px;
+    font-weight: 600;
+}
+
+.payment-method-card .file-meta small:last-child {
+    color: #4B5675;
+}
+
+.payment-method-actions {
+    position: absolute;
+    right: 14px;
+    top: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.payment-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 12px;
+    border-radius: 999px;
+    border: 1px solid #D9DFF0;
+    background: #F8FAFD;
+    color: #4B5675;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1;
+    cursor: pointer;
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.payment-pill:hover {
+    border-color: #C8D1E2;
+    background: #F2F5FA;
+}
+
+.payment-pill.is-primary {
+    border-color: #450468;
+    background: linear-gradient(180deg, #5C1A7A 0%, #450468 100%);
+    color: #FFFFFF;
+    box-shadow: 0 8px 16px rgba(69, 4, 104, 0.18);
+}
+
+.payment-pill-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: currentColor;
+    opacity: 0.7;
+    flex: 0 0 auto;
+}
+
+.payment-pill.is-primary .payment-pill-dot {
+    opacity: 1;
+}
+
+.payment-method-card .file-remove-badge {
+    position: static;
+    width: 28px;
+    height: 28px;
+    margin-left: 2px;
+    background: #F7F8FC;
+    border-color: #E4E9F3;
+    color: #71809B;
+}
+
+.payment-method-card .file-remove-badge:hover {
+    background: #FFF1F2;
+    border-color: #FECDD3;
+    color: #E11D48;
 }
 
 /* The floating close button */

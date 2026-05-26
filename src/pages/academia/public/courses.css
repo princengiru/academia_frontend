@@ -9,7 +9,7 @@
     border-radius: 6px;
     background:
         linear-gradient(270deg, rgba(69, 4, 104, 0.6) 0%, rgba(0, 0, 0, 0.6) 100%),
-        url("../../assets/imgs/ac-hr.jpg") center/cover no-repeat;
+        url("../../../assets/imgs/ac-hr.jpg") center/cover no-repeat;
     min-height: 250px;
     display: flex;
     flex-direction: column;
@@ -357,7 +357,7 @@
 
 .courses-page .accordion-button::after {
     content: "";
-    background-image: url("../../assets/icons/accordion.svg");
+    background-image: url("../../../assets/icons/accordion.svg");
     background-repeat: no-repeat;
     background-size: 12px 12px;
     width: 15px;
@@ -368,7 +368,7 @@
 }
 
 .courses-page .accordion-button:not(.collapsed)::after {
-    background-image: url("../../assets/icons/accordion.svg"); /* 👈 Apply it again here */
+    background-image: url("../../../assets/icons/accordion.svg"); /* 👈 Apply it again here */
     transform: rotate(180deg);
 }
 

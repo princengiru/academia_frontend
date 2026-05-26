@@ -219,6 +219,25 @@ export default function Account() {
     isPrimary: true,
   });
 
+  const normalizePaymentMethods = (methods) => {
+    if (!Array.isArray(methods)) {
+      return [];
+    }
+
+    return methods.map((method) => ({
+      id: method?.id ?? method?._id ?? `${method?.paymentType || 'payment'}-${Date.now()}`,
+      paymentType: method?.paymentType || method?.payment_type || 'other',
+      paymentProvider: method?.paymentProvider || method?.payment_provider || '',
+      accountHolderName: method?.accountHolderName || method?.account_holder_name || 'Saved payment method',
+      accountNumber: method?.accountNumber || method?.account_number || null,
+      phoneNumber: method?.phoneNumber || method?.phone_number || null,
+      cardLastFour: method?.cardLastFour || method?.card_last_four || null,
+      expiryDate: method?.expiryDate || method?.expiry_date || null,
+      isPrimary: Boolean(method?.isPrimary ?? method?.is_primary),
+      isActive: Boolean(method?.isActive ?? method?.is_active),
+    }));
+  };
+
   const pushFeedback = (message, type = 'success') => {
     if (feedbackTimerRef.current) {
       window.clearTimeout(feedbackTimerRef.current);
@@ -325,7 +344,7 @@ export default function Account() {
           throw new Error(data.message || 'Failed to load payment methods');
         }
 
-        setPaymentMethods(Array.isArray(data?.data?.paymentMethods) ? data.data.paymentMethods : []);
+        setPaymentMethods(normalizePaymentMethods(data?.data?.paymentMethods));
       } catch (error) {
         setProfileError(error.message || 'Failed to load payment methods');
       } finally {
@@ -517,36 +536,61 @@ export default function Account() {
     setProfileSaving(true);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/profile/complete`, {
+      const nameResponse = await fetch(`${API_BASE_URL}/api/auth/profile`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          name: basicProfile.name,
-          phone: basicProfile.phone,
-          role: basicProfile.role,
-          visibility: basicProfile.visibility,
-          availableToHire: switchState.availability,
-          emailNotifications: switchState.emailSystemUpdates,
-        }),
+        body: JSON.stringify({ name: basicProfile.name }),
       });
 
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to save profile');
+      const nameData = await nameResponse.json();
+      if (!nameResponse.ok) {
+        throw new Error(nameData.message || 'Failed to save name');
       }
 
-      const user = data?.data?.user || {};
-        setBasicProfile((currentState) => ({
+      const nameUser = nameData?.data || {};
+      setBasicProfile((currentState) => ({
         ...currentState,
-        name: user.name || currentState.name,
-        phone: user.phone || currentState.phone,
-        role: user.role || currentState.role,
-        visibility: user.visibility || currentState.visibility,
-        avatar: user.avatar ? resolveAssetUrl(user.avatar) : currentState.avatar,
+        name: nameUser.name || currentState.name,
+        avatar: nameUser.avatar ? resolveAssetUrl(nameUser.avatar) : currentState.avatar,
       }));
+
+      const hasRequiredProfileFields = Boolean(basicProfile.phone && basicProfile.role && basicProfile.visibility);
+      if (hasRequiredProfileFields) {
+        const response = await fetch(`${API_BASE_URL}/api/profile/complete`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            name: basicProfile.name,
+            phone: basicProfile.phone,
+            role: basicProfile.role,
+            visibility: basicProfile.visibility,
+            availableToHire: switchState.availability,
+            emailNotifications: switchState.emailSystemUpdates,
+          }),
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.message || 'Failed to save profile');
+        }
+
+        const user = data?.data?.user || {};
+        setBasicProfile((currentState) => ({
+          ...currentState,
+          name: user.name || currentState.name,
+          phone: user.phone || currentState.phone,
+          role: user.role || currentState.role,
+          visibility: user.visibility || currentState.visibility,
+          avatar: user.avatar ? resolveAssetUrl(user.avatar) : currentState.avatar,
+        }));
+      }
+
       pushFeedback('Basic settings saved successfully.');
     } catch (error) {
       pushFeedback(error.message || 'Failed to save profile', 'error');
@@ -995,7 +1039,7 @@ export default function Account() {
         throw new Error(data.message || 'Failed to save payment method');
       }
 
-      setPaymentMethods(Array.isArray(data?.data?.paymentMethods) ? data.data.paymentMethods : []);
+      setPaymentMethods(normalizePaymentMethods(data?.data?.paymentMethods));
       setPaymentMethodForm((currentState) => ({
         ...currentState,
         paymentProvider: '',
@@ -1035,7 +1079,7 @@ export default function Account() {
         throw new Error(data.message || 'Failed to update primary payment method');
       }
 
-      setPaymentMethods(Array.isArray(data?.data?.paymentMethods) ? data.data.paymentMethods : paymentMethods);
+      setPaymentMethods(normalizePaymentMethods(data?.data?.paymentMethods));
       pushFeedback('Primary payment method updated.');
     } catch (error) {
       pushFeedback(error.message || 'Failed to update payment method', 'error');
@@ -1062,7 +1106,7 @@ export default function Account() {
         throw new Error(data.message || 'Failed to delete payment method');
       }
 
-      setPaymentMethods(Array.isArray(data?.data?.paymentMethods) ? data.data.paymentMethods : []);
+      setPaymentMethods(normalizePaymentMethods(data?.data?.paymentMethods));
       pushFeedback('Payment method deleted.');
     } catch (error) {
       pushFeedback(error.message || 'Failed to delete payment method', 'error');
@@ -1804,6 +1848,7 @@ export default function Account() {
                     </div>
                     <div className="payment-method-actions">
                       <button type="button" className={method.isPrimary ? 'payment-pill is-primary' : 'payment-pill'} onClick={() => handlePrimaryPaymentMethod(method.id)}>
+                        <span className="payment-pill-dot" />
                         {method.isPrimary ? 'Primary' : 'Make primary'}
                       </button>
                       <button type="button" className="file-remove-badge" aria-label={`Delete ${method.accountHolderName}`} onClick={() => handleDeletePaymentMethod(method.id)}>

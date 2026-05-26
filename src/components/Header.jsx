@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { NavLink } from 'react-router-dom';
+import { Link, NavLink, useNavigate } from 'react-router-dom';
 import logoIcon from '../assets/icons/logo.svg';
 import follow1Icon from '../assets/icons/follow1.svg';
 import follow2Icon from '../assets/icons/follow2.svg';
@@ -53,6 +53,7 @@ const categories = ['Business', 'Academia', 'News', 'Jobs', 'Marketing'];
 
 function Header() {
   const [activeCourseGroup, setActiveCourseGroup] = useState(0);
+  const navigate = useNavigate();
 
   return (
     <header className="site-header">
@@ -68,7 +69,7 @@ function Header() {
           <a href="#">News</a>
           <a href="#">Magazine</a>
           <a href="#">Job Portal</a>
-          <a href="#">Academia</a>
+          <NavLink to="/academia/index">Academia</NavLink>
         </div>
 
         <div className="first-part-h-r" aria-label="Social links">
@@ -149,9 +150,9 @@ function Header() {
             </div>
           </div>
 
-          <a href="/academia/journals">Journals &amp; Projects</a>
+          <NavLink to="/academia/journals">Journals &amp; Projects</NavLink>
           <a href="#">Community Feed</a>
-          <a href="/academia/rewards">Rewards</a>
+          <NavLink to="/academia/rewards">Rewards</NavLink>
         </nav>
 
         <div className="second-part-h-links" aria-label="Header actions">
@@ -174,9 +175,9 @@ function Header() {
             </ul>
           </div>
 
-          <div className="second-part-h-link user-h" role="button" tabIndex={0} onClick={() => window.location.assign('/accounts/register-gonaraza?login=1')} onKeyDown={(e) => e.key === 'Enter' && window.location.assign('/accounts/register-gonaraza?login=1')}>
+          <Link className="second-part-h-link user-h" to="/academia/auth/signin" aria-label="Sign in">
             <img src={accountIcon} alt="" />
-          </div>
+          </Link>
 
           <div className="second-part-h-link open-cat" role="button" tabIndex={0} data-bs-toggle="offcanvas" data-bs-target="#offcanvasExample" aria-controls="offcanvasExample">
             <img src={ccIcon} alt="" />
@@ -302,7 +303,7 @@ function Header() {
           <div className="offcanvas-header-logo">
             <img src={logoIcon} alt="" />
           </div>
-          <button type="button" onClick={() => window.location.assign('/academia/auth/signin')}>
+          <button type="button" onClick={() => navigate('/academia/auth/signin')}>
             <img src={opIcon} alt="" />
             <span>Sign In</span>
           </button>

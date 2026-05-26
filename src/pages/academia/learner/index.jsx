@@ -5,13 +5,6 @@ import { Pagination } from 'swiper/modules';
 import 'swiper/css';
 import 'swiper/css/pagination';
 import defaultProfile from '../../../assets/imgs/default-profile.png';
-import discover1 from '../../../assets/imgs/discover1.webp';
-import discover2 from '../../../assets/imgs/discover2.webp';
-import discover3 from '../../../assets/imgs/discover3.webp';
-import discover4 from '../../../assets/imgs/discover4.webp';
-import discover5 from '../../../assets/imgs/discover5.webp';
-import discover6 from '../../../assets/imgs/discover6.webp';
-import itemImg from '../../../assets/imgs/item.jpg';
 import acSav from '../../../assets/icons/ac-sav.svg';
 import wExitRight from '../../../assets/icons/w-exit-right.svg';
 import badge1 from '../../../assets/icons/badge-1.svg';
@@ -36,22 +29,6 @@ const calendarItems = [
   { date: '10', title: 'ICT', num: '3', total: '5', time: '03:00 PM' },
 ];
 
-const courseCards = [
-  { image: discover1, pct: 35, title: 'Software Development' },
-  { image: discover2, pct: 15, title: 'Content Creation' },
-  { image: discover3, pct: 25, title: 'Geo-Biological Course' },
-  { image: discover4, pct: 10, title: 'Golf Basic to know' },
-  { image: discover5, pct: 55, title: 'Hockey Game BASIC' },
-  { image: discover6, pct: 35, title: "AMATEGEKO Y'IMIHANDA" },
-];
-
-const recommendedCourses = Array.from({ length: 6 }, () => ({
-  title: 'Software Development',
-  author: 'Emma Fragrance',
-  description: 'Lorem ipsum dolor sit amet, dipisi consectetur adipisi elit…',
-  startsOn: 'Jan 4th 2026',
-}));
-
 function LearnersIndex() {
   const navigate = useNavigate();
   
@@ -59,6 +36,10 @@ function LearnersIndex() {
   const [profile, setProfile] = useState({});
   const [profileCompletion, setProfileCompletion] = useState(0);
   const [stats, setStats] = useState({ completed: 0, inProgress: 0, notStarted: 0, avgProgress: 0 });
+  const [coursesLoading, setCoursesLoading] = useState(true);
+  const [enrolledCourses, setEnrolledCourses] = useState([]);
+  const [recommendedCourses, setRecommendedCourses] = useState([]);
+  const [courseFilter, setCourseFilter] = useState('in_progress');
   const handleCourseClick = () => {
     navigate('/academia/learner/course-part');
   };
@@ -83,7 +64,7 @@ function LearnersIndex() {
           name: user.name || user.email || 'Learner',
           email: user.email || '',
           role: user.role || 'learner',
-          avatar: user.avatar ? (user.avatar.startsWith('http') || user.avatar.startsWith('/')) ? user.avatar : `${API_BASE_URL}/${user.avatar}` : defaultProfile,
+          avatar: resolveAssetUrl(user.avatar),
           location: user.address?.city || user.address?.town || '',
           badges: user.badges || 0,
         });
@@ -109,6 +90,74 @@ function LearnersIndex() {
 
     loadProfile();
   }, []);
+
+  useEffect(() => {
+    const loadDashboard = async () => {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setCoursesLoading(false);
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/dashboard/student`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const body = await res.json();
+        if (!res.ok) throw new Error(body.message || 'Failed to load student dashboard');
+
+        setEnrolledCourses(Array.isArray(body?.data?.enrolledCourses) ? body.data.enrolledCourses : []);
+        setRecommendedCourses(Array.isArray(body?.data?.recentCourses) ? body.data.recentCourses : []);
+
+        const dashboardStats = body?.data?.stats || {};
+        setStats({
+          completed: dashboardStats.completed || 0,
+          inProgress: dashboardStats.inProgress || 0,
+          notStarted: dashboardStats.notStarted || 0,
+          avgProgress: dashboardStats.averageProgress || 0,
+        });
+      } catch (error) {
+        setEnrolledCourses([]);
+        setRecommendedCourses([]);
+      } finally {
+        setCoursesLoading(false);
+      }
+    };
+
+    loadDashboard();
+  }, []);
+
+  const resolveAssetUrl = (value) => {
+    if (!value) return defaultProfile;
+    if (value.startsWith('http://') || value.startsWith('https://') || value.startsWith('data:')) return value;
+    if (value.startsWith('/')) return `${API_BASE_URL}${value}`;
+    return `${API_BASE_URL}/${value}`;
+  };
+
+  const mappedCourses = enrolledCourses.map((course) => ({
+    id: course.id,
+    title: course.title || 'Untitled course',
+    author: course.instructor_name || 'Academia',
+    image: resolveAssetUrl(course.thumbnail),
+    pct: Number(course.progress_percentage || 0),
+    chapters: `${course.completed_chapters || 0} of ${course.total_chapters || 0} Chapters`,
+    endsOn: course.enrolled_at ? `Enrolled on ${new Date(course.enrolled_at).toLocaleDateString()}` : 'Recently enrolled',
+    status: course.status || (Number(course.progress_percentage || 0) >= 100 ? 'completed' : Number(course.progress_percentage || 0) > 0 ? 'in_progress' : 'not_started'),
+  }));
+
+  const filteredCourses = mappedCourses.filter((course) => {
+    if (courseFilter === 'all') return true;
+    return course.status === courseFilter;
+  });
+
+  const mappedRecommended = recommendedCourses.map((course) => ({
+    id: course.id,
+    title: course.title || 'Untitled course',
+    author: course.instructor_name || 'Academia',
+    description: course.description || 'No description available yet.',
+    image: resolveAssetUrl(course.thumbnail),
+    startsOn: course.enrolled_at ? `Enrolled on ${new Date(course.enrolled_at).toLocaleDateString()}` : 'Recently added',
+  }));
 
   return (
     <>
@@ -139,7 +188,14 @@ function LearnersIndex() {
           <div className="learners-card learners-profile-card learners-profile-card--hero">
             <div className="learners-profile-hero" style={{ '--progress': profileCompletion }}>
                 <div className="learners-progress-avatar">
-                  <img src={profileLoading ? defaultProfile : profile.avatar} alt={profile.name || 'Learner'} />
+                  <img
+                    src={profileLoading ? defaultProfile : profile.avatar}
+                    alt={profile.name || 'Learner'}
+                    onError={(event) => {
+                      event.currentTarget.onerror = null;
+                      event.currentTarget.src = defaultProfile;
+                    }}
+                  />
                   <span className="learners-progress-badge">{profileLoading ? '...' : `${profileCompletion}%`}</span>
                 </div>
 
@@ -171,19 +227,19 @@ function LearnersIndex() {
           <div className="learners-card learners-stats-card">
             <div className="learners-profile-stats">
               <div className="learners-stat">
-                <h4>4</h4>
+                <h4>{stats.completed}</h4>
                 <p>Completed</p>
               </div>
               <div className="learners-stat">
-                <h4>2</h4>
+                <h4>{stats.inProgress}</h4>
                 <p>In Progress</p>
               </div>
               <div className="learners-stat">
-                <h4>0</h4>
+                <h4>{stats.notStarted}</h4>
                 <p>Not Started</p>
               </div>
               <div className="learners-stat">
-                <h4>34%</h4>
+                <h4>{`${Math.round(stats.avgProgress || 0)}%`}</h4>
                 <p>Average Progress</p>
               </div>
             </div>
@@ -271,59 +327,78 @@ function LearnersIndex() {
             <div className="dropdown learners-filter">
               <button className="learners-filter-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                 <img src={acFf} alt="" />
-                <span>In Progress</span>
+                <span>
+                  {courseFilter === 'all' ? 'All' : courseFilter === 'completed' ? 'Completed' : courseFilter === 'not_started' ? 'Not Started' : 'In Progress'}
+                </span>
                 <img src={drop1} alt="" />
               </button>
               <ul className="dropdown-menu dropdown-menu-end learners-filter-menu">
-                <li><a className="dropdown-item" href="#" onClick={(event) => event.preventDefault()}>All</a></li>
-                <li><a className="dropdown-item" href="#" onClick={(event) => event.preventDefault()}>In Progress</a></li>
-                <li><a className="dropdown-item" href="#" onClick={(event) => event.preventDefault()}>Completed</a></li>
-                <li><a className="dropdown-item" href="#" onClick={(event) => event.preventDefault()}>Not Started</a></li>
+                <li><a className={`dropdown-item ${courseFilter === 'all' ? 'active' : ''}`} href="#" onClick={(event) => { event.preventDefault(); setCourseFilter('all'); }}>All</a></li>
+                <li><a className={`dropdown-item ${courseFilter === 'in_progress' ? 'active' : ''}`} href="#" onClick={(event) => { event.preventDefault(); setCourseFilter('in_progress'); }}>In Progress</a></li>
+                <li><a className={`dropdown-item ${courseFilter === 'completed' ? 'active' : ''}`} href="#" onClick={(event) => { event.preventDefault(); setCourseFilter('completed'); }}>Completed</a></li>
+                <li><a className={`dropdown-item ${courseFilter === 'not_started' ? 'active' : ''}`} href="#" onClick={(event) => { event.preventDefault(); setCourseFilter('not_started'); }}>Not Started</a></li>
               </ul>
             </div>
           </div>
 
           <div className="learners-courses-grid">
-            {courseCards.map((course) => (
-              <div
-                key={course.title}
-                className="learners-course-card"
-                style={{ backgroundImage: `url(${course.image})` }}
-                onClick={handleCourseClick}
-              >
-                <div className="learners-course-overlay">
-                  <div className="learners-course-badge" style={{ '--pct': course.pct }}>
-                    {course.pct}%
-                  </div>
-                  <div className="learners-course-actions">
-                    <button type="button" aria-label="Open" onClick={(e) => { e.stopPropagation(); handleCourseClick(); }}>
-                      <img src={leAr} alt="Open" />
-                    </button>
-                  </div>
-                  <div className="learners-course-info">
-                    <p className="learners-course-author">Emma Fragrance</p>
-                    <h5>{course.title}</h5>
-                    <div className="learners-course-footer">
-                      <span>Ends on: Jun 4th 2026</span>
-                      <span>9 of 20 Chapters</span>
+            {coursesLoading ? (
+              <div className="learners-card learners-empty-state">
+                <h3>Loading courses...</h3>
+                <p>Please wait while we fetch your enrolled courses.</p>
+              </div>
+            ) : filteredCourses.length > 0 ? (
+              filteredCourses.map((course) => (
+                <div
+                  key={course.id}
+                  className="learners-course-card"
+                  style={{ backgroundImage: `url(${course.image})` }}
+                  onClick={handleCourseClick}
+                >
+                  <div className="learners-course-overlay">
+                    <div className="learners-course-badge" style={{ '--pct': course.pct }}>
+                      {course.pct}%
+                    </div>
+                    <div className="learners-course-actions">
+                      <button type="button" aria-label="Open" onClick={(e) => { e.stopPropagation(); handleCourseClick(); }}>
+                        <img src={leAr} alt="Open" />
+                      </button>
+                    </div>
+                    <div className="learners-course-info">
+                      <p className="learners-course-author">{course.author}</p>
+                      <h5>{course.title}</h5>
+                      <div className="learners-course-footer">
+                        <span>{course.endsOn}</span>
+                        <span>{course.chapters}</span>
+                      </div>
                     </div>
                   </div>
                 </div>
+              ))
+            ) : (
+              <div className="learners-card learners-empty-state learners-empty-state--courses">
+                <h3>No courses for this filter</h3>
+                <p>Try another filter or browse courses to start learning.</p>
+                <button type="button" className="learners-btn learners-btn-primary" onClick={() => navigate('/academia/learner/courses')}>
+                  <span>Browse courses</span>
+                </button>
               </div>
-            ))}
+            )}
           </div>
 
-          <div className="learners-pagination">
-            <button type="button" onClick={(event) => event.preventDefault()}>
-              <img src={acLe2} alt="Previous" />
-            </button>
-            <button type="button" onClick={(event) => event.preventDefault()}>1</button>
-            <button type="button" className="active" onClick={(event) => event.preventDefault()}>2</button>
-            <button type="button" onClick={(event) => event.preventDefault()}>…</button>
-            <button type="button" aria-label="Next" onClick={(event) => event.preventDefault()}>
-              <img src={acRi} alt="Next" />
-            </button>
-          </div>
+          {!coursesLoading && filteredCourses.length > 0 && (
+            <div className="learners-pagination">
+              <button type="button" onClick={(event) => event.preventDefault()}>
+                <img src={acLe2} alt="Previous" />
+              </button>
+              <button type="button" onClick={(event) => event.preventDefault()}>1</button>
+              <button type="button" className="active" onClick={(event) => event.preventDefault()}>2</button>
+              <button type="button" onClick={(event) => event.preventDefault()}>…</button>
+              <button type="button" aria-label="Next" onClick={(event) => event.preventDefault()}>
+                <img src={acRi} alt="Next" />
+              </button>
+            </div>
+          )}
         </div>
 
         <div className="col-12 col-xl-4">
@@ -332,28 +407,43 @@ function LearnersIndex() {
               <h2>Recommended</h2>
               <p>Course Available to learn</p>
             </div>
-            <a className="learners-seeall" href="courses.php">See All</a>
+            <a className="learners-seeall" href="#" onClick={(event) => { event.preventDefault(); navigate('/academia/learner/courses'); }}>See All</a>
           </div>
 
           <div className="learners-recommended">
-            {recommendedCourses.map((course, index) => (
-              <a className="learners-reco-item" href="#" key={`${course.title}-${index}`} onClick={(event) => { event.preventDefault(); handleCourseClick(); }}>
-                <div className="learners-reco-thumb">
-                  <img src={itemImg} alt="Course" />
-                </div>
-                <div className="learners-reco-text">
-                  <h6>{course.title}</h6>
-                  <p>{course.author}</p>
-                  <small>{course.description}</small>
-                  <div className="learners-reco-foot">
-                    <span className="learners-reco-starts">Starts : {course.startsOn}</span>
-                    <span className="learners-reco-arrow" aria-hidden="true">
-                      <img src={acRi} alt="" />
-                    </span>
+            {coursesLoading ? (
+              <div className="learners-card learners-empty-state learners-empty-state--compact">
+                <h3>Loading recommendations...</h3>
+                <p>Please wait while we fetch suitable courses for you.</p>
+              </div>
+            ) : mappedRecommended.length > 0 ? (
+              mappedRecommended.map((course) => (
+                <a className="learners-reco-item" href="#" key={course.id} onClick={(event) => { event.preventDefault(); handleCourseClick(); }}>
+                  <div className="learners-reco-thumb">
+                    <img src={course.image} alt="Course" />
                   </div>
-                </div>
-              </a>
-            ))}
+                  <div className="learners-reco-text">
+                    <h6>{course.title}</h6>
+                    <p>{course.author}</p>
+                    <small>{course.description}</small>
+                    <div className="learners-reco-foot">
+                      <span className="learners-reco-starts">{course.startsOn}</span>
+                      <span className="learners-reco-arrow" aria-hidden="true">
+                        <img src={acRi} alt="" />
+                      </span>
+                    </div>
+                  </div>
+                </a>
+              ))
+            ) : (
+              <div className="learners-card learners-empty-state learners-empty-state--compact">
+                <h3>No recommendations yet</h3>
+                <p>Recommended courses will appear here as you enroll and progress.</p>
+                <button type="button" className="learners-btn learners-btn-primary" onClick={() => navigate('/academia/learner/courses')}>
+                  <span>Browse courses</span>
+                </button>
+              </div>
+            )}
           </div>
         </div>
         </div>

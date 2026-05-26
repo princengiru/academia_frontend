@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useState } from 'react';
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { NavLink, Outlet, Navigate, useNavigate } from 'react-router-dom';
 import './learners-layout.css';
 import learnersBrandIcon from '../../assets/icons/Favicon.svg';
 import learnersSearchIcon from '../../assets/icons/magnifier.svg';
@@ -20,6 +20,7 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 function LearnersLayout() {
   const navigate = useNavigate();
+  const token = localStorage.getItem('token');
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [profileLoading, setProfileLoading] = useState(true);
   const [profileSummary, setProfileSummary] = useState({
@@ -49,14 +50,12 @@ function LearnersLayout() {
   };
   const linkClassName = ({ isActive }) => (isActive ? 'active-menu' : '');
 
+  if (!token) {
+    return <Navigate to="/academia/auth/signin" replace />;
+  }
+
   useEffect(() => {
     const loadProfile = async () => {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        navigate('/academia/auth/signin', { replace: true });
-        return;
-      }
-
       try {
         const response = await fetch(`${API_BASE_URL}/api/profile`, {
           headers: {
@@ -94,7 +93,7 @@ function LearnersLayout() {
     };
 
     loadProfile();
-  }, [navigate]);
+  }, [navigate, token]);
 
   const truncateName = (name, max = 18) => {
     if (!name) return '';
