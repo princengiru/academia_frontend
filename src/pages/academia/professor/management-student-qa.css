@@ -483,8 +483,8 @@
   flex: 0 0 auto;
   min-height: 36px;
   border-radius: 8px;
-  border: 1px solid #E5EAF2 !important;
-  background: #FFFFFF !important;
+  border: none !important;
+  background: transparent !important;
   padding: 0 14px !important;
   display: inline-flex !important;
   align-items: center;
