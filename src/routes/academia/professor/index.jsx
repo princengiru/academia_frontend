@@ -7,6 +7,7 @@ import ViewProject from '../../../pages/academia/professor/ViewProject';
 import Performance from '../../../pages/academia/professor/Performance';
 import Management from '../../../pages/academia/professor/Management';
 import ManagementSchedule from '../../../pages/academia/professor/ManagementSchedule';
+import ManagementLessonsRanks from '../../../pages/academia/professor/ManagementLessonsRanks';
 function AcademiaProfessorRoutes() {
   // Provide a top-level route so DashboardHome renders without the AcademiaLayout wrapper.
   // Keep URL as /academia/professor per request.
@@ -20,6 +21,7 @@ function AcademiaProfessorRoutes() {
       <Route path="academia/professor/performance" element={<Performance />} />
       <Route path="academia/professor/management" element={<Management />} />
       <Route path="academia/professor/management-schedule" element={<ManagementSchedule />} />
+      <Route path="academia/professor/management-lessons-ranks" element={<ManagementLessonsRanks />} />
     </>
   );
 }
