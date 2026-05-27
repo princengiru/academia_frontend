@@ -6,6 +6,7 @@ import AcademiaAuthLayout from '../../layouts/academia/AuthLayout';
 import AcademiaAuthRoutes from './auth';
 import AcademiaPublicRoutes from './public';
 import AcademiaLearnerRoutes from './learner';
+import AcademiaProfessorRoutes from './professor';
 
 function AcademiaRoutes() {
   return (
@@ -27,6 +28,9 @@ function AcademiaRoutes() {
       <Route path="academia/auth" element={<AcademiaAuthLayout />}>
         {AcademiaAuthRoutes()}
       </Route>
+
+      {/* Professor pages — top-level so ProfessorLayout controls header */}
+      {AcademiaProfessorRoutes()}
     </>
   );
 }
