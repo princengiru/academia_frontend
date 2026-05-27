@@ -1,57 +1,97 @@
 import React from 'react';
 
 const HOASidebar = ({ currentPage }) => {
-  const checkActive = (slug) => (currentPage === slug ? 'is-active' : '');
+  const checkActive = (slug) => (currentPage === slug ? 'active' : '');
   const preventDefault = (e) => e.preventDefault();
 
   return (
     <aside className="hoa-sidebar">
-      <div className="hoa-sidebar-header">
-        <div className="hoa-brand">
-          <img src="/assets/icons/Favicon.svg" alt="Gonaraza" className="hoa-brand-icon" />
-          <div className="hoa-brand-text">
-            <h6>Gonaraza.com</h6>
-            <p>All in one digital marketing</p>
+      
+      {/* 1. NEW: Unified Top Header Spanning Both Columns */}
+      <div className="sidebar-top-header">
+        <div className="brand-logo">
+          <img src="/assets/icons/Favicon.svg" alt="Gonaraza" />
+        </div>
+        <div className="brand-text">
+          <h6>Gonaraza.com</h6>
+          <p>All in one digital marketing</p>
+        </div>
+        <button className="sidebar-toggle" aria-label="Toggle Sidebar">
+          <img src="/assets/icons/unfold.svg" alt="Toggle" style={{ width: '16px' }} />
+        </button>
+      </div>
+
+      {/* 2. Bottom Section Split into Left and Right Columns */}
+      <div className="sidebar-bottom-section">
+        
+        {/* Left Column: First Links */}
+        <div className="first-links">
+          <div className="sidebar-body">
+            <a href="/hoa" className={checkActive('index') || checkActive('learners') || checkActive('tutors') || checkActive('reports') ? 'selected' : ''}>
+              <button aria-label="Dashboard">
+                <img src="/assets/icons/home-2.svg" alt="Dashboard" />
+              </button>
+            </a>
+            <a href="#" onClick={preventDefault}>
+              <button aria-label="Management">
+                <img src="/assets/icons/bill2.svg" alt="Management" />
+              </button>
+            </a>
+            <a href="#" onClick={preventDefault}>
+              <button aria-label="Reports">
+                <img src="/assets/icons/agent2.svg" alt="Reports" />
+              </button>
+            </a>
+            <a href="#" onClick={preventDefault}>
+              <button aria-label="Chat">
+                <img src="/assets/icons/tsidebar2-1.svg" alt="Chat" />
+              </button>
+            </a>
+          </div>
+
+          <div className="sidebar-footer">
+            <a href="#" onClick={preventDefault}>
+              <button aria-label="Help & FAQs">
+                <img src="/assets/icons/tsidebar7-1.svg" alt="Help" />
+              </button>
+            </a>
+            <a href="/hoa/settings" className={checkActive('settings') ? 'selected' : ''}>
+              <button aria-label="Settings">
+                <img src="/assets/icons/ss1.svg" alt="Settings" />
+              </button>
+            </a>
+            <button className="js-logout-btn no-logout-text" aria-label="Logout">
+              <img src="/assets/icons/exit-right.svg" alt="Logout" />
+            </button>
           </div>
         </div>
-        <button className="hoa-sidebar-toggle" aria-label="Toggle Sidebar">
-          <img src="/assets/icons/left1.svg" alt="" />
-        </button>
-      </div>
 
-      <div className="hoa-sidebar-search">
-        <img src="/assets/icons/magnifier.svg" alt="" aria-hidden="true" />
-        <input type="search" placeholder="Search any tab..." />
-      </div>
+        {/* Right Column: Second Links */}
+        <div className="second-links">
+          <div className="links-container">
+            <form onSubmit={preventDefault}>
+              <img src="/assets/icons/magnifier.svg" alt="Search" className="search-icon" />
+              <input type="search" placeholder="Search any tab ..." />
+            </form>
+            
+            <div className="links-list">
+              <h6>DASHBOARD</h6>
+              <a href="/hoa" className={checkActive('index')}>
+                <span>Home</span>
+              </a>
+              <a href="/hoa/learners" className={checkActive('learners')}>
+                <span>Learners</span>
+              </a>
+              <a href="/hoa/tutors" className={checkActive('tutors')}>
+                <span>Tutors</span>
+              </a>
+              <a href="/hoa/reports" className={checkActive('reports')}>
+                <span>Reports</span>
+              </a>
+            </div>
+          </div>
+        </div>
 
-      <div className="hoa-sidebar-nav">
-        <span className="hoa-nav-label">DASHBOARD</span>
-        
-        <a href="/hoa" className={`hoa-nav-link ${checkActive('index')}`}>
-          <img src="/assets/icons/home-2.svg" alt="" />
-          <span>Home</span>
-        </a>
-        <a href="/hoa/learners" className={`hoa-nav-link ${checkActive('learners')}`}>
-          <img src="/assets/icons/users.svg" alt="" />
-          <span>Learners</span>
-        </a>
-        <a href="/hoa/tutors" className={`hoa-nav-link ${checkActive('tutors')}`}>
-          <img src="/assets/icons/lea3.svg" alt="" />
-          <span>Tutors</span>
-        </a>
-        <a href="/hoa/reports" className={`hoa-nav-link ${checkActive('reports')}`}>
-          <img src="/assets/icons/charts.svg" alt="" />
-          <span>Reports</span>
-        </a>
-      </div>
-
-      <div className="hoa-sidebar-footer">
-        <a href="/hoa/settings" className="hoa-nav-link" aria-label="Settings">
-          <img src="/assets/icons/setting-2.svg" alt="" />
-        </a>
-        <button className="hoa-user-btn" aria-label="Profile">
-          <img src="/assets/imgs/default-profile.png" alt="Profile" />
-        </button>
       </div>
     </aside>
   );

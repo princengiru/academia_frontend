@@ -1,4 +1,6 @@
 import React from 'react';
+import hoatopicon1 from '../../../assets/icons/hoatopicon1.svg';
+import hoatopicon2 from '../../../assets/icons/hoatopicon2.svg';
 
 const HOATopbar = () => {
   const preventDefault = (e) => e.preventDefault();
@@ -11,20 +13,24 @@ const HOATopbar = () => {
 
       <div className="hoa-topbar-center">
         <div className="hoa-topbar-search">
-          <img src="/assets/icons/magnifier.svg" alt="" />
+          <img src="/assets/icons/magnifier.svg" alt="Search icon" />
           <input type="search" placeholder="Search" />
         </div>
       </div>
 
       <div className="hoa-topbar-right">
-        <button className="hoa-icon-btn"><img src="/assets/icons/file.svg" alt="Docs" /></button>
-        <button className="hoa-icon-btn"><img src="/assets/icons/header-grid.svg" alt="Apps" /></button>
+        <button className="hoa-icon-btn">
+          <img src={hoatopicon1} alt="Notifications" />
+        </button>
+        <button className="hoa-icon-btn">
+          <img src={hoatopicon2} alt="Apps" />
+        </button>
         
         <div className="hoa-lang-selector">
           <img src="/assets/icons/rwanda.svg" alt="RW" />
           <span>RW</span>
-          <span className="hoa-lang-sep">|</span>
-          <span>EN</span>
+          {/* Removed the vertical separator to match the design */}
+          <span style={{marginLeft: '4px'}}>EN</span>
           <img src="/assets/icons/drop1.svg" alt="Dropdown" className="hoa-caret" />
         </div>
 
