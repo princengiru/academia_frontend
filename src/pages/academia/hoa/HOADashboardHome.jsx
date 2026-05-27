@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import HOALayout from '../../components/layouts/HOALayout/HOALayout';
+import HOALayout from '../../../components/layouts/HOALayout/HOALayout';
 import './hoa-dashboard-home.css';
 
 const HOADashboardHome = () => {

@@ -7,6 +7,7 @@ import AcademiaAuthRoutes from './auth';
 import AcademiaPublicRoutes from './public';
 import AcademiaLearnerRoutes from './learner';
 import AcademiaProfessorRoutes from './professor';
+import AcademiaHOARoutes from './hoa';
 
 function AcademiaRoutes() {
   return (
@@ -31,6 +32,9 @@ function AcademiaRoutes() {
 
       {/* Professor pages — top-level so ProfessorLayout controls header */}
       {AcademiaProfessorRoutes()}
+
+      {/* HOA pages — top-level so HOALayout controls header */}
+      {AcademiaHOARoutes()}
     </>
   );
 }
