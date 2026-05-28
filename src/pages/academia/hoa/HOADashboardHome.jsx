@@ -1,7 +1,25 @@
 import React from 'react';
 import HOALayout from '../../../components/layouts/HOALayout/HOALayout';
 import './hoa-dashboard-home.css';
-
+import hoadollar from '../../../assets/icons/hoadollar.svg';
+import hoausflag from '../../../assets/icons/hoausflag.svg';
+import hoadowncaret from '../../../assets/icons/hoadowncaret.svg';
+import hoaincrease from '../../../assets/icons/hoaincrease.svg';
+import hoadecrease from '../../../assets/icons/hoadecrease.svg';
+import hoasquaregrid from '../../../assets/icons/hoasquaregrid.svg';
+import hoalistgrid from '../../../assets/icons/hoalistgrid.svg';
+import hoafilter from '../../../assets/icons/hoafilter.svg';
+import hoaadd from '../../../assets/icons/hoaadd.svg';
+import hoasearch from '../../../assets/icons/hoasearch.svg';
+import hoapdffile from '../../../assets/icons/hoapdffile.svg';
+import hoaimagefile from '../../../assets/icons/hoaimagefile.svg';
+import hoadocfile from '../../../assets/icons/hoadocfile.svg';
+import hoaopenfile from '../../../assets/icons/hoaopenfile.svg';
+import hoaviewall from '../../../assets/icons/hoaviewall.svg';
+import hoacancel from '../../../assets/icons/hoacancel.svg';
+import hoaapprove from '../../../assets/icons/hoaapprove.svg';
+import hoanext from '../../../assets/icons/hoanext.svg';
+import hoaprev from '../../../assets/icons/hoaprev.svg';
 const HOADashboardHome = () => {
   const preventDefault = (e) => e.preventDefault();
 
@@ -106,7 +124,7 @@ const HOADashboardHome = () => {
         </div>
         <div className="sub-stat">
           <h4>19.32</h4>
-          <p>Average Score <span className="trend down">↘ -4.5%</span></p>
+          <p>Average Score <span className="trend down"> <img src={hoadecrease} alt="Decrease" /> -4.5%</span></p>
         </div>
         <div className="sub-stat">
           <h4>84</h4>
@@ -114,7 +132,7 @@ const HOADashboardHome = () => {
         </div>
         <div className="sub-stat">
           <h4>4.6</h4>
-          <p>Avg. Rating <span className="trend up">↗ +4.1</span></p>
+          <p>Avg. Rating <span className="trend up"> <img src={hoaincrease} alt="Increase" /> +4.1</span></p>
         </div>
       </div>
 
@@ -127,15 +145,15 @@ const HOADashboardHome = () => {
         
         <div className="revenue-amount-box outline-box">
           <div className="icon-circle">
-            <span style={{color: '#A1A5B7', fontWeight: 'bold'}}>$</span>
+            <span style={{color: '#A1A5B7', fontWeight: 'bold'}}> <img src={hoadollar} alt="Dollar" />   </span>
           </div>
           <div className="amount-details">
             <div className="amt-row">
               <h3>+ 2.8K <span>USD</span></h3>
-              <img src="/assets/icons/fake-usa-flag.svg" alt="US" className="flag" />
-              <img src="/assets/icons/fake-caret-down.svg" alt="Drop" className="caret" />
+              <img src={hoausflag} alt="US" className="flag" />
+              <img src={hoadowncaret} alt="Drop" className="caret" />
             </div>
-            <p>TOTAL REVENUE <span className="trend up">↗ +40.1%</span></p>
+            <p>TOTAL REVENUE <span className="trend up"> <img src={hoaincrease} alt="Increase" /> +40.1%</span></p>
           </div>
         </div>
 
@@ -167,15 +185,15 @@ const HOADashboardHome = () => {
           </div>
           <div className="revenue-amount-box outline-box">
             <div className="icon-circle">
-              <span style={{color: '#A1A5B7', fontWeight: 'bold'}}>$</span>
+              <span style={{color: '#A1A5B7', fontWeight: 'bold'}}> <img src={hoadollar} alt="Dollar" />   </span>
             </div>
             <div className="amount-details">
               <div className="amt-row">
                 <h3>+ 2.8K <span>USD</span></h3>
-                <img src="/assets/icons/fake-usa-flag.svg" alt="US" className="flag" />
-                <img src="/assets/icons/fake-caret-down.svg" alt="Drop" className="caret" />
+                <img src={hoausflag} alt="US" className="flag" />
+                <img src={hoadowncaret} alt="Drop" className="caret" />
               </div>
-              <p>TOTAL REVENUE <span className="trend up">↗ +40.1%</span></p>
+              <p>TOTAL REVENUE <span className="trend up"> <img src={hoaincrease} alt="Increase" /> +40.1%</span></p>
             </div>
           </div>
           <div className="split-footer-stats">
@@ -191,15 +209,15 @@ const HOADashboardHome = () => {
           </div>
           <div className="revenue-amount-box outline-box">
             <div className="icon-circle">
-              <span style={{color: '#A1A5B7', fontWeight: 'bold'}}>$</span>
+              <span style={{color: '#A1A5B7', fontWeight: 'bold'}}> <img src={hoadollar} alt="Dollar" />     </span>
             </div>
             <div className="amount-details">
               <div className="amt-row">
                 <h3>+ 2.8K <span>USD</span></h3>
-                <img src="/assets/icons/fake-usa-flag.svg" alt="US" className="flag" />
-                <img src="/assets/icons/fake-caret-down.svg" alt="Drop" className="caret" />
+                <img src={hoausflag} alt="US" className="flag" />
+                <img src={hoadowncaret} alt="Drop" className="caret" />
               </div>
-              <p>TOTAL REVENUE <span className="trend up">↗ +40.1%</span></p>
+              <p>TOTAL REVENUE <span className="trend up"> <img src={hoaincrease} alt="Increase" /> +40.1%</span></p>
             </div>
           </div>
           <div className="split-footer-stats">
@@ -217,18 +235,18 @@ const HOADashboardHome = () => {
         </div>
         <div className="approvals-actions">
           <div className="search-box">
-            <img src="/assets/icons/fake-search.svg" alt="" />
+            <img src={hoasearch} alt="" />
             <input type="text" placeholder="Search videos..." />
           </div>
           <div className="view-toggles">
-            <button className="active"><img src="/assets/icons/fake-grid-view.svg" alt="Grid" /></button>
-            <button><img src="/assets/icons/fake-list-view.svg" alt="List" /></button>
+            <button className="active"><img src={hoasquaregrid} alt="Grid" /></button>
+            <button><img src={hoalistgrid} alt="List" /></button>
           </div>
           <button className="hoa-btn-light-purple">
-            <img src="/assets/icons/fake-filter-purple.svg" alt="" /> Filters
+            <img src={hoafilter} alt="" /> Filters
           </button>
           <button className="hoa-btn-light-purple">
-            <span className="plus-icon">+</span> Add new Tutor
+            <img src={hoaadd} alt="" /> Add new Tutor
           </button>
         </div>
       </div>
@@ -257,24 +275,24 @@ const HOADashboardHome = () => {
             <div className="approval-file-box">
               <div className="file-info-group">
                 <div className="file-icon-box">
-                  <img src={req.fileIcon} alt="File" />
+                  <img src={hoapdffile} alt="File" />
                 </div>
                 <div className="file-info">
                   <strong>{req.fileCount} Files Uploaded</strong>
-                  <a href="#">View All &gt;</a>
+                  <a href="#">View All <img src={hoaviewall} alt="" /></a>
                 </div>
               </div>
               <button className="open-btn">
-                <img src="/assets/icons/fake-open-link.svg" alt="Open" />
+                <img src={hoaopenfile} alt="Open" />
               </button>
             </div>
 
             <div className="approval-action-row">
               <button className="btn-cancel">
-                <span className="cross">×</span> Cancel
+                <span className="cross"><img src={hoacancel} alt="Cancel" /></span> Cancel
               </button>
               <button className="btn-approve">
-                <span className="check">✓</span> Approve
+                <span className="check"><img src={hoaapprove} alt="Approve" /></span> Approve
               </button>
             </div>
             
@@ -284,14 +302,14 @@ const HOADashboardHome = () => {
 
       {/* Pagination */}
       <div className="hoa-pagination">
-        <button className="page-nav"><img src="/assets/icons/fake-chevron-left.svg" alt="Prev" /></button>
+        <button className="page-nav"><img src={hoaprev} alt="Prev" /></button>
         <button className="page-num">1</button>
         <button className="page-num active">2</button>
         <button className="page-num">3</button>
         <button className="page-num">4</button>
         <button className="page-num">5</button>
         <span className="page-dots">...</span>
-        <button className="page-nav"><img src="/assets/icons/fake-chevron-right.svg" alt="Next" /></button>
+        <button className="page-nav"><img src={hoanext} alt="Next" /></button>
       </div>
 
     </HOALayout>
