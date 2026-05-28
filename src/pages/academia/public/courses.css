@@ -291,6 +291,42 @@
     overflow: auto;
 }
 
+.courses-page .filters-sidebar-head{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 0 15px;
+}
+
+.courses-page .filters-sidebar-head h3{
+    margin: 0;
+    font-family: Inter;
+    font-size: 16px;
+    font-weight: 700;
+    color: #0F172A;
+}
+
+.courses-page .filters-sidebar-head button,
+.courses-page .courses-clear-btn{
+    border: none;
+    background: transparent;
+    color: #450468;
+    font-family: Inter;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 0;
+    cursor: pointer;
+}
+
+.courses-page .courses-clear-btn{
+    padding: 0 10px;
+    border-radius: 999px;
+    background: #45046810;
+    height: 38px;
+    align-self: center;
+}
+
 .courses-page .accordion{
     width: 100%;
     background-color: transparent;
@@ -660,7 +696,8 @@ input[type="checkbox"]:focus {
     align-items: center;
 }
 
-.courses-page .filters-grid-b .pagination div p{
+.courses-page .filters-grid-b .pagination div p,
+.courses-page .filters-grid-b .pagination div button{
     width: 30px;
     height: 30px;
     text-align: center;
@@ -671,10 +708,14 @@ input[type="checkbox"]:focus {
     border-radius: 6px;
     font-size: 14px;
     transition: all 0.3s ease;
+    background: transparent;
+    border: 0;
 }
 
 .courses-page .filters-grid-b .pagination div p.active,
-.courses-page .filters-grid-b .pagination div p:hover{
+.courses-page .filters-grid-b .pagination div p:hover,
+.courses-page .filters-grid-b .pagination div button.active,
+.courses-page .filters-grid-b .pagination div button:hover{
     background-color: #450468;
     color: white;
 }
@@ -689,6 +730,11 @@ input[type="checkbox"]:focus {
     border-radius: 6px;
     min-width: 30px;
     background-color: transparent;
+}
+
+.courses-page .filters-grid-b .pagination button:disabled{
+    opacity: 0.4;
+    cursor: not-allowed;
 }
 
 

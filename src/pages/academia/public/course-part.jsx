@@ -1,4 +1,5 @@
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useMemo, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import acFilterIcon from '../../../assets/icons/ac-ff.svg';
 import acFiltersIcon from '../../../assets/icons/ac-fi.svg';
 import acLeIcon from '../../../assets/icons/ac-le.svg';
@@ -14,30 +15,124 @@ import './course-part.css';
 
 function AcademiaCoursePart() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
+  const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
+  const [courseData, setCourseData] = useState(null);
+  const [relatedTopics, setRelatedTopics] = useState([]);
+  const [dataLoading, setDataLoading] = useState(true);
+  const [selectedMode, setSelectedMode] = useState('All');
+  const [chapterPage, setChapterPage] = useState(1);
+  const chaptersPerPage = 4;
 
   const courseTypes = ['All Courses', 'Certificates', 'Diplomas', 'Degrees', 'Workshops'];
   const sortOptions = ['Newest', 'Top papers', 'Past Papers', 'Most Downloaded'];
   const filterToggleOptions = ['All', 'Free', 'Paid'];
 
-  const courseParts = Array.from({ length: 6 }, (_, index) => ({
-    id: index,
-    title: 'An Operadic Approach to Internal Structures',
-    author: 'Dr. Xavier KABARANGA',
-    description:
-      'Statistics is the branch of mathematics that deals with the collection, analysis, interpretation, presentation, and organization of data. It provides methodologies for making inferences about populations based on sample data, enabling researchers to quantify uncertainty and variability in empirical findings... Read more',
-  }));
+  const courseId = searchParams.get('courseId');
 
-  const relatedTopics = Array.from({ length: 6 }, (_, index) => ({
-    id: index,
-    title: 'Linear Algebra',
-    papersCount: 14,
-    icon: index % 2 === 0 ? acPpIcon : acLockIcon,
-    isLocked: index % 2 === 1,
-  }));
+  const courseParts = useMemo(() => {
+    const chapters = courseData?.chapters || [];
 
-  const handleViewPaper = () => navigate('/academia/read-contents');
-  const handleRelatedTopic = () => navigate('/academia/courses');
-  const handleBackToCourses = () => navigate('/academia/courses');
+    return chapters.map((chapter, index) => ({
+      id: chapter.id || index,
+      title: chapter.title || chapter.name || `Chapter ${index + 1}`,
+      author: courseData?.instructor_name || courseData?.author_name || 'Academia Team',
+      description: chapter.description || chapter.summary || courseData?.description || '',
+    }));
+  }, [courseData]);
+
+  const totalChapterPages = Math.max(1, Math.ceil(courseParts.length / chaptersPerPage));
+  const visibleCourseParts = courseParts.slice((chapterPage - 1) * chaptersPerPage, chapterPage * chaptersPerPage);
+  const chapterPageNumbers = (() => {
+    const visible = 5;
+    const start = Math.max(1, Math.min(chapterPage - 2, totalChapterPages - visible + 1));
+    const end = Math.min(totalChapterPages, start + visible - 1);
+    const pages = [];
+
+    for (let page = start; page <= end; page += 1) {
+      pages.push(page);
+    }
+
+    return pages;
+  })();
+
+  const handleViewPaper = (chapterId) => navigate(`/academia/read-contents?courseId=${courseData?.id || courseId || ''}&chapterId=${chapterId || ''}`);
+  const handleRelatedTopic = (topicId) => navigate(`/academia/course-part?courseId=${topicId}`);
+  const handleBackToCourses = () => {
+    if (window.history.length > 1) {
+      navigate(-1);
+      return;
+    }
+
+    navigate('/academia/courses');
+  };
+
+  useEffect(() => {
+    let mounted = true;
+
+    const loadCourse = async () => {
+      try {
+        setDataLoading(true);
+
+        let resolvedCourseId = courseId;
+
+        if (!resolvedCourseId) {
+          const listResponse = await fetch(`${API_BASE_URL}/api/courses/public/available?page=1&limit=1`);
+          const listBody = await listResponse.json().catch(() => ({}));
+          const firstCourse = Array.isArray(listBody?.data) ? listBody.data[0] : Array.isArray(listBody) ? listBody[0] : null;
+          resolvedCourseId = firstCourse?.id || firstCourse?._id || firstCourse?.course_id || '';
+        }
+
+        if (!resolvedCourseId) {
+          if (mounted) {
+            setCourseData(null);
+            setRelatedTopics([]);
+          }
+          return;
+        }
+
+        const [courseResponse, relatedResponse] = await Promise.all([
+          fetch(`${API_BASE_URL}/api/courses/${resolvedCourseId}`),
+          fetch(`${API_BASE_URL}/api/courses/public/available?page=1&limit=6`),
+        ]);
+
+        const courseBody = await courseResponse.json().catch(() => ({}));
+        const relatedBody = await relatedResponse.json().catch(() => ({}));
+
+        if (!mounted) return;
+
+        const course = courseBody?.data || courseBody;
+        const relatedList = Array.isArray(relatedBody?.data) ? relatedBody.data : Array.isArray(relatedBody) ? relatedBody : [];
+
+        setCourseData(course || null);
+        setChapterPage(1);
+        setRelatedTopics(
+          relatedList
+            .filter((item) => String(item.id || item._id || item.course_id) !== String(course?.id || resolvedCourseId))
+            .slice(0, 6)
+        );
+      } catch (error) {
+        if (mounted) {
+          setCourseData(null);
+          setRelatedTopics([]);
+        }
+      } finally {
+        if (mounted) setDataLoading(false);
+      }
+    };
+
+    loadCourse();
+
+    return () => {
+      mounted = false;
+    };
+  }, [API_BASE_URL, courseId]);
+
+  useEffect(() => {
+    setChapterPage(1);
+  }, [courseData?.id]);
 
   return (
     <div className="course-part-page">
@@ -46,16 +141,10 @@ function AcademiaCoursePart() {
         <div className="hero-sec-inner">
           <div className="hsi-contents">
             <div className="hsi-contents-h">
-              <h1>Courses</h1>
+              <h1>{courseData?.title || 'Courses'}</h1>
             </div>
             <div className="hsi-contents-b">
-              <p>
-                Lorem ipsum dolor sit amet consectetur adipisicing elit.
-                Nobis eaque sit aperiam? Hic eaque unde nobis nisi aut
-                minus quas quod aliquid et minima. Omnis quidem iure ex itaque nemo
-                Nobis eaque sit aperiam? Hic eaque unde nobis nisi aut
-                minus quas quod aliquid et minima. Omnis quidem iure ex itaque nemo!
-              </p>
+              <p>{courseData?.description || 'Loading course details from the backend...'}</p>
             </div>
           </div>
         </div>
@@ -117,9 +206,9 @@ function AcademiaCoursePart() {
             <img src={acLeIcon} alt="Back" />
           </button>
           <div>
-            <p>Mathematics & Science</p>
+            <p>{courseData?.category || 'Academia'}</p>
             <span>/</span>
-            <span>Algebra</span>
+            <span>{courseData?.level || courseData?.education_level || 'Course details'}</span>
             <span>/</span>
           </div>
         </div>
@@ -127,11 +216,11 @@ function AcademiaCoursePart() {
         {/* Selected Filter Info */}
         <div className="filters-grid-b-sel">
           <div className="filters-grid-b-sel-h">
-            <h1>Algebra</h1>
+            <h1>{courseData?.title || 'Course details'}</h1>
             <div>
               <p>
                 <img src={acUsIcon} alt="Users" />
-                <span>12.7K Followers</span>
+                <span>{courseData?.enrolled_users || courseData?.enrollment_count || 0} Students</span>
               </p>
               <button>
                 <span>Follow</span>
@@ -140,12 +229,7 @@ function AcademiaCoursePart() {
             </div>
           </div>
           <div className="filters-grid-b-sel-b">
-            <p>
-              Statistics is the branch of mathematics that deals with the collection, analysis, interpretation,
-              presentation, and organization of data. It provides methodologies for making inferences about
-              populations based on sample data, enabling researchers to quantify uncertainty and variability in
-              empirical findings.
-            </p>
+            <p>{courseData?.description || 'This course is loading from the backend.'}</p>
           </div>
         </div>
 
@@ -157,7 +241,13 @@ function AcademiaCoursePart() {
               <h2>Key research themes</h2>
             </div>
             <div className="mcgl-b">
-              {courseParts.map((part) => (
+              {dataLoading ? (
+                <div className="course-part">
+                  <div className="course-part-b">
+                    <p>Loading chapters...</p>
+                  </div>
+                </div>
+              ) : visibleCourseParts.length > 0 ? visibleCourseParts.map((part) => (
                 <div key={part.id} className="course-part">
                   <div className="course-part-h">
                     <div>
@@ -165,11 +255,11 @@ function AcademiaCoursePart() {
                       <p>By {part.author}</p>
                     </div>
                     <div>
-                      <button type="button" onClick={handleViewPaper}>
+                      <button type="button" onClick={() => handleViewPaper(part.id)}>
                         <img src={acBookIcon} alt="View" />
                         <span>View Paper</span>
                       </button>
-                      <button>
+                      <button type="button">
                         <img src={acDlIcon} alt="Download" />
                         <span>Download</span>
                       </button>
@@ -179,11 +269,17 @@ function AcademiaCoursePart() {
                     <p>{part.description}</p>
                   </div>
                 </div>
-              ))}
+              )) : (
+                <div className="course-part">
+                  <div className="course-part-b">
+                    <p>No chapters found for this course.</p>
+                  </div>
+                </div>
+              )}
 
               {/* Pagination */}
               <div className="pagination">
-                <button>
+                <button type="button" onClick={() => setChapterPage((page) => Math.max(1, page - 1))} disabled={chapterPage <= 1}>
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     width="14"
@@ -201,13 +297,13 @@ function AcademiaCoursePart() {
                   </svg>
                 </button>
                 <div>
-                  {[1, 2, 3, 4, 5].map((num) => (
-                    <p key={num} className={num === 3 ? 'active' : ''}>
+                  {chapterPageNumbers.map((num) => (
+                    <button key={num} type="button" className={num === chapterPage ? 'active' : ''} onClick={() => setChapterPage(num)}>
                       {num}
-                    </p>
+                    </button>
                   ))}
                 </div>
-                <button>
+                <button type="button" onClick={() => setChapterPage((page) => Math.min(totalChapterPages, page + 1))} disabled={chapterPage >= totalChapterPages}>
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     width="14"
@@ -234,24 +330,31 @@ function AcademiaCoursePart() {
               <h2>Related Subtopics</h2>
             </div>
             <div className="mcgr-b">
-              {relatedTopics.map((topic) => (
-                <div key={topic.id} className="fgbl-item" onClick={handleRelatedTopic} style={{ cursor: 'pointer' }}>
+              {relatedTopics.length > 0 ? relatedTopics.map((topic) => (
+                <div key={topic.id || topic._id || topic.course_id} className="fgbl-item" onClick={() => handleRelatedTopic(topic.id || topic._id || topic.course_id)} style={{ cursor: 'pointer' }}>
                   <div className="fgbl-item-l">
-                    <h4>{topic.title}</h4>
+                    <h4>{topic.title || topic.name}</h4>
                     <p>
-                      <span>{topic.papersCount} Papers</span>
+                      <span>{topic.total_chapters || topic.papersCount || 0} Chapters</span>
                       <span>|</span>
-                      <span>{topic.papersCount} Papers</span>
+                      <span>{Number(topic.price) === 0 ? 'Free' : 'Paid'}</span>
                     </p>
                   </div>
                   <div className="fgbl-item-r">
                     <button>
                       <span>Follow</span>
-                      <img src={topic.icon} alt={topic.isLocked ? 'Locked' : 'Plus'} />
+                      <img src={Number(topic.price) === 0 ? acPpIcon : acLockIcon} alt={Number(topic.price) === 0 ? 'Plus' : 'Locked'} />
                     </button>
                   </div>
                 </div>
-              ))}
+              )) : (
+                <div className="fgbl-item fgbl-empty">
+                  <div className="fgbl-item-l">
+                    <h4>No related courses</h4>
+                    <p>We couldn’t find more public courses right now.</p>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

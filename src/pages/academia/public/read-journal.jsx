@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Swiper from 'swiper';
 import { Navigation } from 'swiper/modules';
@@ -15,7 +15,7 @@ import acSideEyeIcon from '../../../assets/icons/ac-eye.svg';
 import acSideHeartIcon from '../../../assets/icons/ac-her2.svg';
 import acSmsIcon from '../../../assets/icons/ac-sms.svg';
 import acSendIcon from '../../../assets/icons/ac-send.svg';
-import profImage from '../../../assets/imgs/prof.jpg';
+import learnersProfileImage from '../../../assets/imgs/default-profile.png';
 import journalImage from '../../../assets/imgs/journal.jpg';
 import acHrImage from '../../../assets/imgs/ac-hr.jpg';
 import acJrImage from '../../../assets/imgs/ac-jr.jpg';
@@ -24,95 +24,108 @@ import glImage from '../../../assets/imgs/gl.jpg';
 import cat1Image from '../../../assets/imgs/cat1.jpg';
 import './read-journal.css';
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
+const resolveProjectImage = (value, fallback = journalImage) => {
+  if (!value) {
+    return fallback;
+  }
+
+  if (value.startsWith('http://') || value.startsWith('https://') || value.startsWith('data:')) {
+    return value;
+  }
+
+  return `${API_BASE_URL}${value}`;
+};
+
+const normalizeProject = (project) => {
+  if (!project) {
+    return null;
+  }
+
+  return {
+    ...project,
+    id: project.id || project._id || project.project_id,
+    title: project.title || project.name || 'Project',
+    abstract: project.abstract || project.description || '',
+    thumbnail_url: project.thumbnail_url || project.thumbnail || project.image || null,
+    file_url: project.file_url || project.document_url || project.project_file || null,
+    user_name: project.user_name || project.author_name || project.author || 'Author',
+    user_avatar: project.user_avatar || project.author_avatar || project.avatar || null,
+    user_id: project.user_id || project.author_id || project.userId || null,
+    user_role: project.user_role || project.role || 'UI/UX Designer',
+    likes_count: project.likes_count ?? project.likes ?? 0,
+    views_count: project.views_count ?? project.views ?? 0,
+    feedback_count: project.feedback_count ?? project.feedbacks_count ?? project.feedbacks ?? 0,
+    created_at: project.created_at || project.createdAt || null,
+  };
+};
+
+const normalizeProjectComment = (comment) => {
+  if (!comment) {
+    return null;
+  }
+
+  return {
+    id: comment.id || comment.comment_id,
+    author: comment.user_name || comment.author_name || comment.author || 'Author',
+    avatar: comment.user_avatar || comment.author_avatar || null,
+    text: comment.content || comment.comment || '',
+    time: comment.created_at ? new Date(comment.created_at).toLocaleDateString() : 'Just now',
+  };
+};
+
 function AcademiaReadJournal() {
   const navigate = useNavigate();
-
-  const comments = Array.from({ length: 10 }, (_, index) => ({
-    id: index,
-    author: 'Mr. Anderson',
-    time: '1 Day ago',
-    text:
-      'Long before you sit dow to put digital pen to paper you need to make sure you have to sit down and write. I’ll show you how to write a great blog post in five simple steps that people will actually want to read. Ready?',
-  }));
-
-  const relatedProjects = [
-    {
-      id: 0,
-      author: 'Jose Carine',
-      likes: '11',
-      views: '1.1K',
-      title: 'Build your software & engineering dream career',
-      image: journalImage,
-    },
-    {
-      id: 1,
-      author: 'Noah Karemera',
-      likes: '13',
-      views: '1.4K',
-      title: 'Data storytelling for engineering teams',
-      image: acHrImage,
-    },
-    {
-      id: 2,
-      author: 'Aline Uwase',
-      likes: '9',
-      views: '980',
-      title: 'How to structure your first research project',
-      image: acJrImage,
-    },
-    {
-      id: 3,
-      author: 'Ishimwe Pierre',
-      likes: '17',
-      views: '2.2K',
-      title: 'Practical design systems for product teams',
-      image: acStrImage,
-    },
-    {
-      id: 4,
-      author: 'Diane M.',
-      likes: '15',
-      views: '1.9K',
-      title: 'Writing clear docs that developers actually use',
-      image: glImage,
-    },
-    {
-      id: 5,
-      author: 'Eric N.',
-      likes: '12',
-      views: '1.3K',
-      title: 'Career roadmap for software engineers in 2026',
-      image: cat1Image,
-    },
-  ];
+  const feedbackSectionRef = useRef(null);
+  const [projectData, setProjectData] = useState(null);
+  const [relatedProjects, setRelatedProjects] = useState([]);
+  const [comments, setComments] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [commentsLoading, setCommentsLoading] = useState(true);
+  const [isLiked, setIsLiked] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
+  const [isFollowingAuthor, setIsFollowingAuthor] = useState(false);
+  const [actionLoading, setActionLoading] = useState(false);
 
   useEffect(() => {
-    const moreFromSwiper = new Swiper('.more-from-grid', {
-      modules: [Navigation],
-      slidesPerView: 'auto',
-      spaceBetween: 20,
-      navigation: {
-        nextEl: '.more-from-grid .swiper-button-next',
-        prevEl: '.more-from-grid .swiper-button-prev',
-      },
-      breakpoints: {
-        0: {
-          slidesPerView: 1,
-          spaceBetween: 15,
-        },
-        769: {
-          slidesPerView: 5,
+    const moreFromContainer = document.querySelector('.more-from-grid');
+    const moreFromSwiper = moreFromContainer
+      ? new Swiper(moreFromContainer, {
+          modules: [Navigation],
+          slidesPerView: 'auto',
           spaceBetween: 20,
-        },
-      },
-    });
+          navigation: {
+            nextEl: '.more-from-grid .swiper-button-next',
+            prevEl: '.more-from-grid .swiper-button-prev',
+          },
+          breakpoints: {
+            0: {
+              slidesPerView: 1,
+              spaceBetween: 15,
+            },
+            769: {
+              slidesPerView: 5,
+              spaceBetween: 20,
+            },
+          },
+        })
+      : null;
 
     const resizeGridItem = (item) => {
       const grid = document.querySelector('.main-content-grid-r');
+      if (!grid || !item) {
+        return;
+      }
+
       const rowHeight = parseInt(window.getComputedStyle(grid).getPropertyValue('grid-auto-rows'));
       const rowGap = parseInt(window.getComputedStyle(grid).getPropertyValue('gap'));
 
       const img = item.querySelector('img');
+      if (!img) {
+        return;
+      }
+
       const height = img.getBoundingClientRect().height;
 
       const rowSpan = Math.ceil((height + rowGap) / (rowHeight + rowGap));
@@ -134,12 +147,240 @@ function AcademiaReadJournal() {
     return () => {
       window.removeEventListener('load', resizeAll);
       window.removeEventListener('resize', resizeAll);
-      moreFromSwiper.destroy();
+      moreFromSwiper?.destroy();
     };
   }, []);
 
-  const handleBack = () => navigate('/academia/journals');
+  useEffect(() => {
+    let mounted = true;
+
+    const loadProject = async () => {
+      setLoading(true);
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const projectId = params.get('id');
+
+        const [projectRes, projectsRes] = await Promise.all([
+          projectId ? fetch(`${API_BASE_URL}/api/projects/${projectId}`) : Promise.resolve(null),
+          fetch(`${API_BASE_URL}/api/projects`),
+        ]);
+
+        const projectBody = projectRes ? await projectRes.json().catch(() => ({})) : {};
+        const projectsBody = await projectsRes.json().catch(() => ({}));
+
+        if (!mounted) return;
+
+        const currentProject = normalizeProject(projectBody?.data || projectBody || null);
+        const allProjects = (Array.isArray(projectsBody?.data) ? projectsBody.data : (Array.isArray(projectsBody) ? projectsBody : []))
+          .map((project) => normalizeProject(project))
+          .filter(Boolean);
+
+        const resolvedProject = currentProject || allProjects[0] || null;
+        setProjectData(resolvedProject);
+        setRelatedProjects(allProjects.filter((item) => String(item.id) !== String(resolvedProject?.id)).slice(0, 6));
+
+        const token = localStorage.getItem('token');
+        if (token && resolvedProject?.id) {
+          const [likeStatusRes, saveStatusRes, followStatusRes] = await Promise.all([
+            fetch(`${API_BASE_URL}/api/projects/${resolvedProject.id}/likes/check`, {
+              headers: { Authorization: `Bearer ${token}` },
+            }).catch(() => null),
+            fetch(`${API_BASE_URL}/api/projects/${resolvedProject.id}/saves/check`, {
+              headers: { Authorization: `Bearer ${token}` },
+            }).catch(() => null),
+            resolvedProject.user_id
+              ? fetch(`${API_BASE_URL}/api/followers/check?followingId=${resolvedProject.user_id}`, {
+                  headers: { Authorization: `Bearer ${token}` },
+                }).catch(() => null)
+              : Promise.resolve(null),
+          ]);
+
+          if (likeStatusRes?.ok) {
+            const likeStatusBody = await likeStatusRes.json().catch(() => ({}));
+            setIsLiked(Boolean(likeStatusBody?.data?.hasLiked));
+          }
+
+          if (saveStatusRes?.ok) {
+            const saveStatusBody = await saveStatusRes.json().catch(() => ({}));
+            setIsSaved(Boolean(saveStatusBody?.data?.hasSaved));
+          }
+
+          if (followStatusRes?.ok) {
+            const followStatusBody = await followStatusRes.json().catch(() => ({}));
+            setIsFollowingAuthor(Boolean(followStatusBody?.data?.is_following));
+          }
+        }
+
+        if (resolvedProject?.id) {
+          setCommentsLoading(true);
+          try {
+            const commentsRes = await fetch(`${API_BASE_URL}/api/projects/${resolvedProject.id}/comments?limit=10&offset=0`);
+            const commentsBody = await commentsRes.json().catch(() => ({}));
+            const commentList = Array.isArray(commentsBody?.data)
+              ? commentsBody.data
+              : Array.isArray(commentsBody)
+                ? commentsBody
+                : [];
+
+            if (mounted) {
+              setComments(commentList.map((comment) => normalizeProjectComment(comment)).filter(Boolean));
+            }
+          } catch (commentError) {
+            if (mounted) {
+              setComments([]);
+            }
+          } finally {
+            if (mounted) setCommentsLoading(false);
+          }
+        } else if (mounted) {
+          setComments([]);
+          setCommentsLoading(false);
+        }
+      } catch (error) {
+        if (mounted) {
+          setProjectData(null);
+          setRelatedProjects([]);
+          setComments([]);
+        }
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
+
+    loadProject();
+
+    return () => { mounted = false; };
+  }, []);
+
+  const handleBack = () => {
+    if (window.history.length > 1) {
+      navigate(-1);
+      return;
+    }
+
+    navigate('/academia/journals');
+  };
   const handleAuthor = () => navigate('/academia/author');
+  const projectId = projectData?.id;
+  const projectAuthor = projectData?.user_name || 'Dr. Xavier KABARANGA';
+  const projectTitle = projectData?.title || 'An Operadic Approach to Internal Structures';
+  const projectAbstract = projectData?.abstract || 'Statistics is the branch of mathematics that deals with the collection, analysis, interpretation, presentation, and organization of data. It provides methodologies for making inferences about populations based on sample data, enabling researchers to quantify uncertainty and variability in empirical findings... Read more';
+  const projectThumbnail = resolveProjectImage(projectData?.thumbnail_url, journalImage);
+  const feedbackCount = projectData?.feedback_count || comments.length || 0;
+
+  const requireSignIn = () => navigate('/academia/auth/signin');
+
+  const handleToggleLike = async () => {
+    if (!projectId) return;
+    const token = localStorage.getItem('token');
+    if (!token) {
+      requireSignIn();
+      return;
+    }
+
+    setActionLoading(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/projects/${projectId}/likes`, {
+        method: isLiked ? 'DELETE' : 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(body.message || 'Failed to update like');
+      setIsLiked(Boolean(body?.data?.liked));
+    } catch (error) {
+      console.error('Toggle like error:', error);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleToggleSave = async () => {
+    if (!projectId) return;
+    const token = localStorage.getItem('token');
+    if (!token) {
+      requireSignIn();
+      return;
+    }
+
+    setActionLoading(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/projects/${projectId}/saves`, {
+        method: isSaved ? 'DELETE' : 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(body.message || 'Failed to update save');
+      setIsSaved(Boolean(body?.data?.saved));
+    } catch (error) {
+      console.error('Toggle save error:', error);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleToggleFollow = async () => {
+    const followingId = projectData?.user_id;
+    if (!followingId) return;
+    const token = localStorage.getItem('token');
+    if (!token) {
+      requireSignIn();
+      return;
+    }
+
+    setActionLoading(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/followers`, {
+        method: isFollowingAuthor ? 'DELETE' : 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ followingId }),
+      });
+
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(body.message || 'Failed to update follow status');
+      setIsFollowingAuthor(Boolean(body?.data?.is_following ?? !isFollowingAuthor));
+    } catch (error) {
+      console.error('Toggle follow error:', error);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleShare = async () => {
+    const shareUrl = window.location.href;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: projectTitle, text: projectAbstract, url: shareUrl });
+        return;
+      } catch (error) {
+        if (error?.name === 'AbortError') return;
+      }
+    }
+
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+    } catch (error) {
+      console.error('Share copy failed:', error);
+    }
+  };
+
+  const handleOpenTools = () => {
+    const target = projectData?.file_url || projectData?.thumbnail_url || projectThumbnail;
+    if (!target) return;
+
+    const resolvedTarget = target.startsWith('http') || target.startsWith('/') || target.startsWith('data:') || target.startsWith('blob:')
+      ? target
+      : `${API_BASE_URL}${target}`;
+    window.open(resolvedTarget, '_blank', 'noopener,noreferrer');
+  };
+
+  const scrollToFeedbacks = () => {
+    feedbackSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
 
   return (
     <div className="academia-read-journal-page">
@@ -149,9 +390,9 @@ function AcademiaReadJournal() {
             <img src={acLeftIcon} alt="Left" />
           </button>
           <div>
-            <p>Mathematics & Science</p>
+            <p>{projectData?.category || 'Journals'}</p>
             <span>/</span>
-            <span>Algebra</span>
+            <span>Project details</span>
             <span>/</span>
           </div>
         </div>
@@ -159,16 +400,16 @@ function AcademiaReadJournal() {
         <div className="course-part">
           <div className="course-part-h">
             <div>
-              <h5>An Operadic Approach to Internal Structures</h5>
+              <h5>{loading ? 'Loading…' : projectTitle}</h5>
               <div className="course-part-h-p">
                 <div className="course-part-h-img">
-                  <img src={profImage} alt="Author" />
+                  <img src={resolveProjectImage(projectData?.user_avatar, learnersProfileImage)} alt="Author" />
                 </div>
                 <div className="course-part-h-text">
                   <div>
-                    <h6>By Dr. Xavier KABARANGA</h6>
+                    <h6>By {projectAuthor}</h6>
                     <p>|</p>
-                    <p>UI/UX Designer</p>
+                    <p>{projectData?.user_role || projectData?.role || 'UI/UX Designer'}</p>
                   </div>
                   <div>
                     <a href="/academia/author">Team owners</a>
@@ -194,12 +435,7 @@ function AcademiaReadJournal() {
 
           <div className="course-part-b">
             <h5>Abstract</h5>
-            <p>
-              Statistics is the branch of mathematics that deals with the collection, analysis, interpretation,
-              presentation, and organization of data. It provides methodologies for making inferences about
-              populations based on sample data, enabling researchers to quantify uncertainty and variability in
-              empirical findings... Read more
-            </p>
+            <p>{projectAbstract}</p>
           </div>
         </div>
       </section>
@@ -207,20 +443,27 @@ function AcademiaReadJournal() {
       <section className="main-content">
         <div className="main-content-grid">
           <div className="main-content-grid-l">
-            <div className="mcgl-comp">
+            <div className="mcgl-comp" role="button" tabIndex={0} onClick={handleToggleFollow} style={{ cursor: 'pointer' }}>
               <div className="mcgl-comp-t fir-st">
                 <div>
-                  <img src={profImage} alt="Author" />
+                    <img src={resolveProjectImage(projectData?.user_avatar, learnersProfileImage)} alt="Author" />
                 </div>
-                <button type="button" onClick={handleAuthor}>
+                <button
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    handleToggleFollow();
+                  }}
+                  disabled={actionLoading}
+                >
                   <img src={acFollowIcon} alt="Follow" />
                 </button>
               </div>
               <div>
-                <label>Follow</label>
+                <label>{isFollowingAuthor ? 'Following' : 'Follow'}</label>
               </div>
             </div>
-            <div className="mcgl-comp">
+            <div className="mcgl-comp" role="button" tabIndex={0} onClick={handleOpenTools} style={{ cursor: 'pointer' }}>
               <div className="mcgl-comp-t">
                 <div>
                   <img src={acSide1Icon} alt="Tools" />
@@ -230,38 +473,38 @@ function AcademiaReadJournal() {
                 <label>Tools</label>
               </div>
             </div>
-            <div className="mcgl-comp">
+            <div className="mcgl-comp" role="button" tabIndex={0} onClick={handleToggleSave} style={{ cursor: 'pointer' }}>
               <div className="mcgl-comp-t">
                 <div>
                   <img src={acSide2Icon} alt="Save" />
                 </div>
               </div>
               <div>
-                <label>Save</label>
+                <label>{isSaved ? 'Saved' : 'Save'}</label>
               </div>
             </div>
-            <div className="mcgl-comp">
+            <div className="mcgl-comp" role="button" tabIndex={0} onClick={handleToggleLike} style={{ cursor: 'pointer' }}>
               <div className="mcgl-comp-t">
                 <div>
                   <img src={acSide3Icon} alt="Like" />
                 </div>
               </div>
               <div>
-                <label>Like</label>
+                <label>{isLiked ? 'Liked' : 'Like'}</label>
               </div>
             </div>
-            <div className="mcgl-comp">
+            <div className="mcgl-comp" role="button" tabIndex={0} onClick={scrollToFeedbacks} style={{ cursor: 'pointer' }}>
               <div className="mcgl-comp-t">
                 <div>
                   <img src={acSide4Icon} alt="Feedbacks" />
                 </div>
-                <p>123</p>
+                <p>{feedbackCount}</p>
               </div>
               <div>
                 <label>Feedbacks</label>
               </div>
             </div>
-            <div className="mcgl-comp">
+            <div className="mcgl-comp" role="button" tabIndex={0} onClick={handleShare} style={{ cursor: 'pointer' }}>
               <div className="mcgl-comp-t">
                 <div>
                   <img src={acSide5Icon} alt="Share" />
@@ -278,13 +521,13 @@ function AcademiaReadJournal() {
               <div>
                 <div className="course-part-h-p">
                   <div className="course-part-h-img">
-                    <img src={profImage} alt="Author" />
+                    <img src={resolveProjectImage(projectData?.user_avatar, learnersProfileImage)} alt="Author" />
                   </div>
                   <div className="course-part-h-text">
                     <div>
-                      <h6>By Dr. Xavier KABARANGA</h6>
+                      <h6>By {projectAuthor}</h6>
                       <p>|</p>
-                      <p>UI/UX Designer</p>
+                      <p>{projectData?.user_role || projectData?.role || 'UI/UX Designer'}</p>
                     </div>
                     <div>
                       <a href="/academia/author">Team owners</a>
@@ -308,7 +551,7 @@ function AcademiaReadJournal() {
 
             {relatedProjects.map((item) => (
               <div key={item.id} className="mcgr-item">
-                <img src={item.image} alt={item.title} />
+                <img src={item.thumbnail_url ? (item.thumbnail_url.startsWith('http') ? item.thumbnail_url : `${API_BASE_URL}${item.thumbnail_url}`) : journalImage} alt={item.title || 'Project'} />
               </div>
             ))}
           </div>
@@ -318,45 +561,45 @@ function AcademiaReadJournal() {
       <section className="author">
         <div className="author-inner">
           <div className="author-img">
-            <img src={profImage} alt="Author" />
+            <img src={resolveProjectImage(projectData?.user_avatar, learnersProfileImage)} alt="Author" />
           </div>
           <div className="author-name">
-            <h6>Xavera KABARANGA</h6>
+            <h6>{projectAuthor}</h6>
             <p>|</p>
-            <p>UI/UX Designer</p>
+            <p>{projectData?.user_role || projectData?.role || 'UI/UX Designer'}</p>
           </div>
           <div className="author-stats">
             <div>
               <img src={acSide3Icon} alt="Likes" />
-              <span>11.1K</span>
+              <span>{projectData?.likes_count || '11.1K'}</span>
             </div>
             <div>
               <img src={acSideEyeIcon} alt="Views" />
-              <span>11</span>
+              <span>{projectData?.views_count || '11'}</span>
             </div>
             <div>
               <img src={acSide4Icon} alt="Feedbacks" />
-              <span>11</span>
+              <span>{projectData?.feedback_count || '11'}</span>
             </div>
           </div>
           <div className="author-text">
             <p>Published on</p>
             <p>|</p>
-            <p>12 Jan 2029</p>
+            <p>{projectData ? new Date(projectData.created_at || Date.now()).toLocaleDateString() : '12 Jan 2029'}</p>
           </div>
         </div>
       </section>
 
-      <section className="main-content">
+      <section className="main-content" ref={feedbackSectionRef}>
         <div className="more-from">
           <div>
             <h3>More from</h3>
             <div className="more-from-p">
               <div className="more-from-img">
-                <img src={profImage} alt="Author" />
+                <img src={resolveProjectImage(projectData?.user_avatar, learnersProfileImage)} alt="Author" />
               </div>
               <div className="more-from-text">
-                <h6>Team Owners</h6>
+                <h6>{projectAuthor}</h6>
                 <button type="button" onClick={handleAuthor}>Follow All</button>
               </div>
             </div>
@@ -371,38 +614,45 @@ function AcademiaReadJournal() {
 
         <div className="swiper more-from-grid">
           <div className="swiper-wrapper">
-            {relatedProjects.map((item) => (
+            {relatedProjects.length > 0 ? relatedProjects.map((item) => (
               <div key={item.id} className="swiper-slide">
-                <div className="journal" onClick={() => navigate('/academia/read-journal')} style={{ cursor: 'pointer' }}>
+                <div className="journal" onClick={() => navigate(`/academia/read-journal?id=${item.id}`)} style={{ cursor: 'pointer' }}>
                   <div className="journal-img">
-                    <img src={item.image} alt={item.title} />
+                    <img src={resolveProjectImage(item.thumbnail_url, journalImage)} alt={item.title || 'Project'} />
                   </div>
                   <div className="journal-info">
                     <div className="journal-info-h">
                       <div>
                         <span>By</span>
-                        <p>{item.author}</p>
+                        <p>{item.user_name || 'Author'}</p>
                       </div>
                       <div>
                         <div>
                           <button type="button">
                             <img src={acSideHeartIcon} alt="Likes" />
-                            <span>{item.likes}</span>
+                            <span>{item.likes_count}</span>
                           </button>
                           <button type="button">
                             <img src={acSideEyeIcon} alt="Views" />
-                            <span>{item.views}</span>
+                            <span>{item.views_count}</span>
                           </button>
                         </div>
                       </div>
                     </div>
                     <div className="journal-info-b">
-                      <p>{item.title}</p>
+                      <p>{item.title || 'Project'}</p>
                     </div>
                   </div>
                 </div>
               </div>
-            ))}
+            )) : (
+              <div className="swiper-slide">
+                <div className="mcgr-empty">
+                  <h4>No related projects yet</h4>
+                  <p>When more public projects are available, they will appear here.</p>
+                </div>
+              </div>
+            )}
           </div>
           <div className="swiper-button-prev js-btn"></div>
           <div className="swiper-button-next js-btn"></div>
@@ -425,7 +675,7 @@ function AcademiaReadJournal() {
               <div className="mcnd-l-b-h">
                 <button type="button">
                   <img src={acSide1Icon} alt="Comments" />
-                  <span>8 Comments</span>
+                  <span>{feedbackCount} Comments</span>
                 </button>
                 <button type="button">
                   <img src={acSide3Icon} alt="Likes" />
@@ -437,20 +687,35 @@ function AcademiaReadJournal() {
                 </button>
               </div>
               <div className="mcnd-l-b-b">
-                {comments.map((comment) => (
-                  <div key={comment.id} className="comment">
-                    <div className="comment-img">
-                      <img src={profImage} alt="Comment author" />
-                    </div>
+                {commentsLoading ? (
+                  <div className="comment comment-empty">
                     <div className="comment-text">
-                      <div>
-                        <h6>{comment.author}</h6>
-                        <span>{comment.time}</span>
-                      </div>
-                      <p>{comment.text}</p>
+                      <p>Loading feedbacks…</p>
                     </div>
                   </div>
-                ))}
+                ) : comments.length > 0 ? (
+                  comments.map((comment) => (
+                    <div key={comment.id} className="comment">
+                      <div className="comment-img">
+                        <img src={resolveProjectImage(comment.avatar, learnersProfileImage)} alt="Comment author" />
+                      </div>
+                      <div className="comment-text">
+                        <div>
+                          <h6>{comment.author}</h6>
+                          <span>{comment.time}</span>
+                        </div>
+                        <p>{comment.text}</p>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="comment comment-empty">
+                    <div className="comment-text">
+                      <h6>No feedbacks yet</h6>
+                      <p>Be the first to leave a comment on this project.</p>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -460,34 +725,51 @@ function AcademiaReadJournal() {
               <h3>Related Projects</h3>
             </div>
             <div className="mcnd-r-b">
-              {relatedProjects.map((item) => (
-                <div key={item.id} className="related-item">
-                  <div className="related-item-img">
-                    <img src={item.image} alt={item.title} />
-                  </div>
-                  <div className="related-item-l">
-                    <div className="related-item-l-t">
-                      <div>
-                        <label>By</label>
-                        <h6>{item.author}</h6>
+              {relatedProjects.length > 0 ? relatedProjects.map((item) => {
+                const thumb = item.thumbnail_url
+                  ? (item.thumbnail_url.startsWith('http') ? item.thumbnail_url : `${API_BASE_URL}${item.thumbnail_url}`)
+                  : journalImage;
+                const author = item.user_name || item.author_name || item.author || 'Author';
+                const likes = item.likes_count ?? item.likes ?? '0';
+                const views = item.views_count ?? item.views ?? '0';
+
+                return (
+                  <div key={item.id || item._id} className="related-item">
+                    <div className="related-item-img">
+                      <img src={thumb} alt={item.title || 'Project'} />
+                    </div>
+                    <div className="related-item-l">
+                      <div className="related-item-l-t">
+                        <div>
+                          <label>By</label>
+                          <h6>{author}</h6>
+                        </div>
+                        <div>
+                          <p>
+                            <img src={acSide3Icon} alt="Likes" />
+                            <span>{likes}</span>
+                          </p>
+                          <p>
+                            <img src={acSideEyeIcon} alt="Views" />
+                            <span>{views}</span>
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <p>
-                          <img src={acSide3Icon} alt="Likes" />
-                          <span>{item.likes}</span>
-                        </p>
-                        <p>
-                          <img src={acSideEyeIcon} alt="Views" />
-                          <span>{item.views}</span>
-                        </p>
+                      <div className="related-item-l-b">
+                        <p>{item.title || 'Project'}</p>
                       </div>
                     </div>
+                  </div>
+                );
+              }) : (
+                <div className="related-item related-item-empty">
+                  <div className="related-item-l">
                     <div className="related-item-l-b">
-                      <p>{item.title}</p>
+                      <p>No related projects right now.</p>
                     </div>
                   </div>
                 </div>
-              ))}
+              )}
             </div>
             <div className="mcnd-r-CTA">
               <button type="button">See more</button>

@@ -264,6 +264,40 @@
     color: #6A7287;
 }
 
+.academia-author-page .mcgl-empty-state,
+.academia-author-page .author-empty-panel,
+.academia-author-page .author-empty-swiper {
+    border: 1px dashed #DBDFE9;
+    border-radius: 12px;
+    background: #FCFCFC;
+    padding: 22px;
+    text-align: center;
+}
+
+.academia-author-page .mcgl-empty-state p,
+.academia-author-page .author-empty-panel p,
+.academia-author-page .author-empty-swiper p {
+    margin: 0;
+    font-family: Inter;
+    font-size: 13px;
+    line-height: 18px;
+    color: #6A7287;
+}
+
+.academia-author-page .author-empty-panel h4,
+.academia-author-page .author-empty-swiper h4 {
+    margin: 0 0 6px;
+    font-family: Inter;
+    font-weight: 600;
+    font-size: 16px;
+    line-height: 20px;
+    color: #071437;
+}
+
+.academia-author-page .author-empty-card {
+    cursor: default;
+}
+
 .academia-author-page .main-content-grid-r {
     display: grid;
     grid-template-columns: repeat(4, 1fr);

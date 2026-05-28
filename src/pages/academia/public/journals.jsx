@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import acFilterIcon from '../../../assets/icons/ac-ff.svg';
 import acFiltersIcon from '../../../assets/icons/ac-fi.svg';
 import ddwIcon from '../../../assets/icons/ddw.svg';
@@ -8,6 +9,7 @@ import acSmsIcon from '../../../assets/icons/ac-sms.svg';
 import acSendIcon from '../../../assets/icons/ac-send.svg';
 import './journals.css';
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 
 function AcademiaJournals() {
@@ -26,13 +28,33 @@ function AcademiaJournals() {
     'Travel',
   ];
 
-  const journals = Array.from({ length: 5 }, (_, index) => ({
-    id: index,
-    author: 'Fabrice',
-    title: 'Build your software & engineering dream career',
-    likes: '10.6K',
-    views: '10.6K',
-  }));
+  const [journals, setJournals] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const loadProjects = async () => {
+      setLoading(true);
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/projects`);
+        const body = await response.json().catch(() => ({}));
+        if (!mounted) return;
+        const data = Array.isArray(body?.data) ? body.data : (Array.isArray(body) ? body : []);
+        setJournals(data);
+      } catch (error) {
+        if (mounted) setJournals([]);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
+
+    loadProjects();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   return (
     <div className="academia-journals-page">
@@ -116,48 +138,8 @@ function AcademiaJournals() {
 
       <section className="main-content-new">
         <div className="main-content-grid">
-          {journals.map((journal) => (
-            <div
-              key={journal.id}
-              className="journal"
-              role="button"
-              tabIndex={0}
-              onClick={() => window.location.href = '/academia/read-journal'}
-              onKeyDown={(event) => event.key === 'Enter' && (window.location.href = '/academia/read-journal')}
-            >
-              <div className="journal-img">
-                <img src={journalImage} alt="Journal" />
-              </div>
-              <div className="journal-info">
-                <div className="journal-info-h">
-                  <div>
-                    <span>By</span>
-                    <p>{journal.author}</p>
-                  </div>
-                  <div>
-                    <div>
-                      <button type="button">
-                        <img src={acHer2Icon} alt="" />
-                        <span>{journal.likes}</span>
-                      </button>
-                      <button type="button">
-                        <img src={acEyeIcon} alt="" />
-                        <span>{journal.views}</span>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-                <div className="journal-info-b">
-                  <p>{journal.title}</p>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <div className="main-content-grid skeletons" aria-hidden="true">
-          {Array.from({ length: 5 }).map((_, index) => (
-            <div key={index} className="journal skeleton-journal">
+          {loading && Array.from({ length: 5 }).map((_, index) => (
+            <div key={`journal-skeleton-${index}`} className="journal skeleton-journal">
               <div className="journal-img skeleton-img" />
               <div className="journal-info">
                 <div className="journal-info-h">
@@ -177,7 +159,52 @@ function AcademiaJournals() {
               </div>
             </div>
           ))}
+
+          {!loading && journals.map((journal) => (
+            <div
+              key={journal.id || journal._id}
+              className="journal"
+              role="button"
+              tabIndex={0}
+              onClick={() => window.location.href = `/academia/read-journal?id=${journal.id || journal._id}`}
+              onKeyDown={(event) => event.key === 'Enter' && (window.location.href = `/academia/read-journal?id=${journal.id || journal._id}`)}
+            >
+              <div className="journal-img">
+                <img src={journal.thumbnail_url ? (journal.thumbnail_url.startsWith('http') ? journal.thumbnail_url : `${API_BASE_URL}${journal.thumbnail_url}`) : journalImage} alt="Journal" />
+              </div>
+              <div className="journal-info">
+                <div className="journal-info-h">
+                  <div>
+                    <span>By</span>
+                    <p>{journal.user_name || journal.author_name || journal.author || 'Author'}</p>
+                  </div>
+                  <div>
+                    <div>
+                      <button type="button">
+                        <img src={acHer2Icon} alt="" />
+                        <span>{journal.likes_count || journal.likes || '0'}</span>
+                      </button>
+                      <button type="button">
+                        <img src={acEyeIcon} alt="" />
+                        <span>{journal.views_count || journal.views || '0'}</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <div className="journal-info-b">
+                  <p>{journal.title || 'Project'}</p>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
+
+        {!loading && journals.length === 0 && (
+          <div className="journal-empty">
+            <h3>No projects yet</h3>
+            <p>There are no public projects to show right now.</p>
+          </div>
+        )}
       </section>
 
       <section className="newsletter-sec">
