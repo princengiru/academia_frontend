@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import HOALayout from '../../../components/layouts/HOALayout/HOALayout';
 import './hoa-dashboard-home.css';
 import hoadollar from '../../../assets/icons/hoadollar.svg';
@@ -29,20 +29,26 @@ import hoasparklinegreen from '../../../assets/icons/hoasparklinegreen.svg';
 import hoasparklinered from '../../../assets/icons/hoasparklinered.svg';
 import hoarefresh from '../../../assets/icons/hoarefresh.svg';
 import hoagoto from '../../../assets/icons/hoagoto.svg';
+import hoaupdowncaret from '../../../assets/icons/hoaupdowncaret.svg';
+
 const HOADashboardHome = () => {
   const preventDefault = (e) => e.preventDefault();
+  
+  // State for toggling between 'grid' and 'list'
+  const [viewMode, setViewMode] = useState('list'); 
 
-  // Placeholder data for Approvals Grid
+  // Updated Data to match image types and icons
   const approvalRequests = [
-    { id: 1, name: 'Alexis Ndayamabje Froduard', location: 'Rwanda', status: 'In Progress', statusColor: 'gray', date: 'Tue 12 Jan 2024', role: 'Tutor', fileCount: 4, fileIcon: '/assets/icons/fake-pdf.svg' },
-    { id: 2, name: 'Alexis Ndayamabje Froduard', location: 'Rwanda', status: 'Approve', statusColor: 'green', date: 'Tue 12 Jan 2024', role: 'Tutor', fileCount: 1, fileIcon: '/assets/icons/fake-file.svg' },
-    { id: 3, name: 'Alexis Ndayamabje Froduard', location: 'Rwanda', status: 'Cancelled', statusColor: 'red', date: 'Tue 12 Jan 2024', role: 'Tutor', fileCount: 1, fileIcon: '/assets/icons/fake-doc.svg' },
-    { id: 4, name: 'Alexis Ndayamabje Froduard', location: 'Rwanda', status: 'Completed', statusColor: 'green', date: 'Tue 12 Jan 2024', role: 'Tutor', fileCount: 1, fileIcon: '/assets/icons/fake-image.svg' },
-    { id: 5, name: 'Alexis Ndayamabje Froduard', location: 'Rwanda', status: 'In Progress', statusColor: 'gray', date: 'Tue 12 Jan 2024', role: 'Tutor', fileCount: 1, fileIcon: '/assets/icons/fake-pdf-red.svg' },
-    { id: 6, name: 'Alexis Ndayamabje Froduard', location: 'Rwanda', status: 'Cancelled', statusColor: 'red', date: 'Tue 12 Jan 2024', role: 'Tutor', fileCount: 1, fileIcon: '/assets/icons/fake-lines.svg' },
-    { id: 7, name: 'Alexis Ndayamabje Froduard', location: 'Rwanda', status: 'Completed', statusColor: 'green', date: 'Tue 12 Jan 2024', role: 'Tutor', fileCount: 1, fileIcon: '/assets/icons/fake-xls.svg' },
-    { id: 8, name: 'Alexis Ndayamabje Froduard', location: 'Rwanda', status: 'Cancelled', statusColor: 'red', date: 'Tue 12 Jan 2024', role: 'Tutor', fileCount: 1, fileIcon: '/assets/icons/fake-image.svg' },
-    { id: 9, name: 'Alexis Ndayamabje Froduard', location: 'Rwanda', status: 'In Progress', statusColor: 'gray', date: 'Tue 12 Jan 2024', role: 'Tutor', fileCount: 1, fileIcon: '/assets/icons/fake-image.svg' },
+    { id: 1, name: 'Alexis Ndayamabje Froduard', location: 'Rwanda', status: 'Completed', statusColor: 'green', date: '12 Jan 2024', role: 'Tutor', fileCount: 1, fileIcon: hoapdffile },
+    { id: 2, name: 'Nagy Tímea', location: 'Russia', status: 'Cancelled', statusColor: 'red', date: '12 Jan 2024', role: 'Tutor', fileCount: 5, fileIcon: hoaimagefile },
+    { id: 3, name: 'Illés Éva', location: 'America', status: 'In Progress', statusColor: 'gray', date: '12 Jan 2024', role: 'Tutor', fileCount: 1, fileIcon: hoadocfile },
+    { id: 4, name: 'Halász Emese', location: 'Burundi', status: 'Completed', statusColor: 'green', date: '12 Jan 2024', role: 'Tutor', fileCount: 1, fileIcon: hoaimagefile },
+    { id: 5, name: 'Soós Annamária', location: 'Rwanda', status: 'Completed', statusColor: 'green', date: '12 Jan 2024', role: 'Tutor', fileCount: 1, fileIcon: hoadocfile },
+    { id: 6, name: 'Varga Dóra', location: 'Rwanda', status: 'Completed', statusColor: 'green', date: '12 Jan 2024', role: 'Tutor', fileCount: 1, fileIcon: hoaxlsfile },
+    { id: 7, name: 'Hajdú Dominika', location: 'Rwanda', status: 'Completed', statusColor: 'green', date: '12 Jan 2024', role: 'Tutor', fileCount: 1, fileIcon: hoapdffile },
+    { id: 8, name: 'Kiss Dorka', location: 'Rwanda', status: 'Completed', statusColor: 'green', date: '12 Jan 2024', role: 'Tutor', fileCount: 1, fileIcon: hoaxlsfile },
+    { id: 9, name: 'Virág Mercédesz', location: 'Mexico', status: 'Completed', statusColor: 'green', date: '12 Jan 2024', role: 'Tutor', fileCount: 1, fileIcon: hoaimagefile },
+    { id: 10, name: 'László Cintia', location: 'America', status: 'Completed', statusColor: 'green', date: '12 Jan 2024', role: 'Tutor', fileCount: 1, fileIcon: hoaimagefile },
   ];
 
   return (
@@ -96,7 +102,7 @@ const HOADashboardHome = () => {
           </div>
           <div className="stat-body">
             <div>
-              <h3>193K</h3>
+              <h3>19.32</h3>
               <p>Total Uploads</p>
             </div>
             <img src={hoasparklinered} alt="Sparkline" className="sparkline" />
@@ -153,7 +159,7 @@ const HOADashboardHome = () => {
           <a href="#" className="manage-link">Manage funds <img src={hoaviewall} style={{width: '5.2px', height: '9.2px'}} alt="" /></a>
         </div>
         
-        <div className="revenue-amount-box outline-box" style={{width: '300px', 'border-radius': '8px'}}>
+        <div className="revenue-amount-box outline-box" style={{width: '300px', borderRadius: '8px'}}>
           <div className="icon-circle">
             <span style={{color: '#A1A5B7', fontWeight: 'bold'}}> <img src={hoadollar} alt="Dollar" />   </span>
           </div>
@@ -248,10 +254,23 @@ const HOADashboardHome = () => {
             <img src={hoasearch} alt="" />
             <input type="text" placeholder="Search videos..." />
           </div>
+          
+          {/* Functional View Toggles */}
           <div className="view-toggles">
-            <button className="active"><img src={hoasquaregrid} alt="Grid" /></button>
-            <button><img src={hoalistgrid} alt="List" /></button>
+            <button 
+              className={viewMode === 'grid' ? 'active' : ''} 
+              onClick={() => setViewMode('grid')}
+            >
+              <img src={hoasquaregrid} alt="Grid" />
+            </button>
+            <button 
+              className={viewMode === 'list' ? 'active' : ''} 
+              onClick={() => setViewMode('list')}
+            >
+              <img src={hoalistgrid} alt="List" />
+            </button>
           </div>
+          
           <button className="hoa-btn-light-purple">
             <img src={hoafilter} alt="" /> Filters
           </button>
@@ -261,65 +280,140 @@ const HOADashboardHome = () => {
         </div>
       </div>
 
-      {/* Approvals Grid */}
-      <div className="hoa-grid-3">
-        {approvalRequests.map((req) => (
-          <div key={req.id} className="hoa-card hoa-approval-card">
-            
-            <div className="approval-user-row">
-              <img src="/assets/imgs/default-profile.png" alt="Avatar" className="avatar" />
-              <div className="user-meta">
-                <h5>{req.name}</h5>
-                <p>{req.location}</p>
-              </div>
-              <span className={`status-pill pill-${req.statusColor}`}>
-                <span className="dot"></span> {req.status}
-              </span>
-            </div>
-
-            <div className="approval-date-row">
-              <span className="date"><strong>{req.date.split(' ')[0]}</strong> {req.date.substring(4)}</span>
-              <span className="role">~ {req.role}</span>
-            </div>
-
-            <div className="approval-file-box">
-              <div className="file-info-group">
-                <div className="file-icon-box">
-                  <img src={hoapdffile} alt="File" />
+      {/* Conditional Rendering of Grid vs List */}
+      {viewMode === 'grid' ? (
+        <div className="hoa-grid-3">
+          {approvalRequests.map((req) => (
+            <div key={req.id} className="hoa-card hoa-approval-card">
+              
+              <div className="approval-user-row">
+                <img src="/assets/imgs/default-profile.png" alt="Avatar" className="avatar" />
+                <div className="user-meta">
+                  <h5>{req.name}</h5>
+                  <p>{req.location}</p>
                 </div>
-                <div className="file-info">
-                  <strong><label htmlFor="file-count">{req.fileCount}</label> Files Uploaded</strong>
-                  <a href="#">View All <img src={hoaviewall} style={{width: '4px', height: '8px'}}  alt="" /></a>
-                </div>
+                <span className={`status-pill pill-${req.statusColor}`}>
+                  <span className="dot"></span> {req.status}
+                </span>
               </div>
-              <button className="open-btn">
-                <img src={hoaopenfile} alt="Open" />
-              </button>
-            </div>
 
-            <div className="approval-action-row">
-              <button className="btn-cancel">
-                <span className="cross"><img src={hoacancel} alt="Cancel" /></span> Cancel
-              </button>
-              <button className="btn-approve">
-                <span className="check"><img src={hoaapprove} alt="Approve" /></span> Approve
-              </button>
+              <div className="approval-date-row">
+                <span className="date"><strong>{req.date.split(' ')[0]}</strong> {req.date.substring(3)}</span>
+                <span className="role">~ {req.role}</span>
+              </div>
+
+              <div className="approval-file-box">
+                <div className="file-info-group">
+                  <div className="file-icon-box">
+                    <img src={req.fileIcon} alt="File" />
+                  </div>
+                  <div className="file-info">
+                    <strong><label htmlFor="file-count">{req.fileCount}</label> Files Uploaded</strong>
+                    <a href="#" onClick={preventDefault}>View All <img src={hoaviewall} style={{width: '4px', height: '8px'}}  alt="" /></a>
+                  </div>
+                </div>
+                <button className="open-btn">
+                  <img src={hoaopenfile} alt="Open" />
+                </button>
+              </div>
+
+              <div className="approval-action-row">
+                <button className="btn-cancel">
+                  <span className="cross"><img src={hoacancel} alt="Cancel" /></span> Cancel
+                </button>
+                <button className="btn-approve">
+                  <span className="check"><img src={hoaapprove} alt="Approve" /></span> Approve
+                </button>
+              </div>
+              
             </div>
-            
+          ))}
+        </div>
+      ) : (
+        // List Layout Implementation
+        <div className="hoa-list-container">
+          <table className="hoa-list-table">
+            <thead>
+              <tr>
+                <th><div className="th-content minus-btn-container"><div className="minus-icon">-</div></div></th>
+                <th><div className="th-content">Student Details (34) <span className="sort-icon"><img src={hoaupdowncaret} alt="Sort" /></span></div></th>
+                <th><div className="th-content">Role <span className="sort-icon"><img src={hoaupdowncaret} style={{width: '11px', height: '11px'}} alt="Sort" /></span></div></th>
+                <th><div className="th-content"> Date <span className="sort-icon"><img src={hoaupdowncaret} style={{width: '11px', height: '11px'}} alt="Sort" /></span></div></th>
+                <th><div className="th-content">Assessment Type <span className="sort-icon"><img src={hoaupdowncaret} style={{width: '11px', height: '11px'}} alt="Sort" /></span></div></th>
+                <th><div className="th-content">Status <span className="sort-icon"><img src={hoaupdowncaret} style={{width: '11px', height: '11px'}} alt="Sort" /></span></div></th>
+                <th><div className="th-content">Action <span className="sort-icon"><img src={hoaupdowncaret} style={{width: '11px', height: '11px'}} alt="Sort" /></span></div></th>
+              </tr>
+            </thead>
+            <tbody>
+              {approvalRequests.map((req) => (
+                <tr key={req.id}>
+                  <td><input type="checkbox" className="hoa-checkbox" /></td>
+                  <td>
+                    <div className="list-user-col">
+                      <div className="user-meta">
+                        <h5>{req.name}</h5>
+                        <p>{req.location}</p>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="fw-600">{req.role}</td>
+                  <td className="fw-500">{req.date}</td>
+                  <td>
+                    <div className="list-file-col">
+                      <img src={req.fileIcon} alt="File" className="list-file-icon" />
+                      <div className="file-info">
+                        <strong><label>{req.fileCount}</label> Files Uploaded</strong>
+                        <a href="#" onClick={preventDefault}>View All <img src={hoaviewall} style={{width: '5px', height: '8px'}} alt="View All"  /></a>
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <span className={`status-pill pill-${req.statusColor}`}>
+                      <span className="dot"></span> {req.status}
+                    </span>
+                  </td>
+                  <td>
+                    <div className="list-actions-col">
+                      <button className="btn-icon-cancel"><img src={hoacancel} alt="X" /></button>
+                      <button className="btn-icon-approve"><img src={hoaapprove} alt="V" /></button>
+                      <button className="btn-icon-more">⋮</button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Pagination Container Matching The Design */}
+      <div className={`hoa-pagination-container ${viewMode === 'list' ? 'list-pagination' : ''}`}>
+        {viewMode === 'list' && (
+          <div className="pagination-left">
+             Show 
+             <select className="pagination-select">
+               <option>5</option>
+               <option>10</option>
+             </select>
+             per page
           </div>
-        ))}
-      </div>
-
-      {/* Pagination */}
-      <div className="hoa-pagination">
-        <button className="page-nav"><img src={hoaprev} alt="Prev" /></button>
-        <button className="page-num">1</button>
-        <button className="page-num active">2</button>
-        <button className="page-num">3</button>
-        <button className="page-num">4</button>
-        <button className="page-num">5</button>
-        <span className="page-dots">...</span>
-        <button className="page-nav"><img src={hoanext} alt="Next" /></button>
+        )}
+        
+        <div className="hoa-pagination">
+          {viewMode === 'list' && <span className="page-range">1-10 of 5</span>}
+          <button className="page-nav"><img src={hoaprev} alt="Prev" /></button>
+          <button className="page-num active">1</button>
+          <button className="page-num">2</button>
+          <button className="page-num">3</button>
+          {viewMode === 'grid' && (
+             <>
+               <button className="page-num">4</button>
+               <button className="page-num">5</button>
+               <span className="page-dots">...</span>
+             </>
+          )}
+          <button className="page-nav"><img src={hoanext} alt="Next" /></button>
+        </div>
       </div>
 
     </HOALayout>
