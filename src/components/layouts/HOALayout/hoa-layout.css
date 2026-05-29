@@ -6,7 +6,8 @@ body[data-role="hoa"] {
   font-family: 'Poppins', 'Inter', sans-serif;
   color: #071437;
   height: 100%;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 body[data-role="hoa"] * {
@@ -16,8 +17,9 @@ body[data-role="hoa"] * {
 body[data-role="hoa"] .hoa-dashboard-wrapper {
   display: flex;
   gap: 0;
+  align-items: flex-start;
   width: 100vw;
-  height: 100vh;
+  min-height: 100vh;
 }
 
 /* =========================================
@@ -34,6 +36,8 @@ body[data-role="hoa"] .hoa-sidebar {
   background-color: transparent;
   height: 100vh;
   min-height: 100vh;
+  position: sticky;
+  top: 0;
 }
 
 /* --- Unified Top Header --- */
@@ -251,7 +255,7 @@ body[data-role="hoa"] .links-list a.active img {
 /* Make the entire right pane white to allow seamless topbar/content transition */
 body[data-role="hoa"] .hoa-main-container {
   width: calc(100% - 280px);
-  height: 100vh;
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
   background-color: #FFFFFF;
@@ -367,7 +371,7 @@ body[data-role="hoa"] .hoa-topbar {
 /* Content Area - Fixed height issue causing layout overflow */
 body[data-role="hoa"] .hoa-content-area {
   flex: 1;
-  overflow-y: auto;
+  overflow-y: visible;
   overflow-x: hidden;
   background-color: transparent;
   display: flex;
