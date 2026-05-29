@@ -181,6 +181,7 @@ const HOADashboardHome = () => {
       </div>
 
       {/* Gross Revenue Section (Not a card, floats on background) */}
+      <div className="hoa-dashboard-revenue-container">
       <div className="hoa-revenue-section">
         <div className="section-header">
           <span className="section-title">GROSS REVENUE</span>
@@ -218,6 +219,7 @@ const HOADashboardHome = () => {
           <span><i className="dot color-certs"></i> Certificates</span>
           <span><i className="dot color-tax"></i> Tax</span>
         </div>
+      </div>
       </div>
 
       {/* Split Stats: Learners vs Tutors */}

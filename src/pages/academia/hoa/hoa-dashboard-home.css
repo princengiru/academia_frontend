@@ -8,9 +8,9 @@
 
 .hoa-page-header h1 {
   margin: 0;
-  font-size: 24px;
+  font-size: 20px;
   font-weight: 700;
-  color: #071437;
+  color: #000000;
 }
 
 .hoa-header-actions {
@@ -24,11 +24,12 @@
   align-items: center;
   gap: 8px;
   font-size: 11px;
-  color: #A1A5B7;
-  border: 1px solid #EEF1F6;
+  color: #64748B;
+  border: 1px solid #DBDFE9;
   padding: 6px 14px;
-  border-radius: 20px; 
-  background: #FFF;
+  border-radius: 4px; 
+  background: #FCFCFC;
+  height: 40px;
 }
 
 .hoa-update-status .sync-icon {
@@ -37,26 +38,27 @@
 }
 
 .hoa-update-status .dot {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
-  background: #22C55E;
+  background: #17C653;
 }
 
 /* Base Buttons */
 .hoa-btn-primary {
   background: #450468;
-  color: #FFF;
+  color: #FFFFFF;
   border: none;
   padding: 10px 18px;
-  border-radius: 8px;
-  font-size: 13px;
-  font-weight: 600;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
   display: inline-flex;
   align-items: center;
   gap: 8px;
   cursor: pointer;
   transition: opacity 0.2s;
+  height: 40px;
 }
 
 .hoa-btn-primary:hover { opacity: 0.9; }
@@ -87,6 +89,13 @@
   border-radius: 9px;
   padding: 12px;
   margin-bottom: 20px;
+}
+.hoa-dashboard-revenue-container {
+  background: #FAFAFA;
+  border: 1px solid #FAFAFA;
+  border-radius: 2px;
+  padding: 12px;
+  margin-bottom: 40px;
 }
 
 /* Grids & Cards */
@@ -196,8 +205,6 @@
 .manage-link { font-size: 12px; font-weight: 600; color: #450468; text-decoration: none; }
 
 /* Revenue Section (No Card Wrapper) */
-.hoa-revenue-section { margin-bottom: 40px; }
-
 .revenue-amount-box.outline-box {
   display: flex;
   align-items: center;
@@ -260,7 +267,7 @@
 }
 
 /* Split Stats Footer */
-.hoa-split-stat { padding: 24px; }
+.hoa-split-stat { padding: 24px; background: #FAFAFA; border: 1px solid #FAFAFA; border-radius: 2px; display: flex; flex-direction: column; justify-content: space-between; }
 .split-footer-stats {
   display: flex; gap: 24px; font-size: 13px; color: #4B5675; margin-top: -13px;
 }
