@@ -14,12 +14,21 @@ import hoasearch from '../../../assets/icons/hoasearch.svg';
 import hoapdffile from '../../../assets/icons/hoapdffile.svg';
 import hoaimagefile from '../../../assets/icons/hoaimagefile.svg';
 import hoadocfile from '../../../assets/icons/hoadocfile.svg';
+import hoaxlsfile from '../../../assets/icons/hoaxlsfile.svg';
 import hoaopenfile from '../../../assets/icons/hoaopenfile.svg';
 import hoaviewall from '../../../assets/icons/hoaviewall.svg';
 import hoacancel from '../../../assets/icons/hoacancel.svg';
 import hoaapprove from '../../../assets/icons/hoaapprove.svg';
 import hoanext from '../../../assets/icons/hoanext.svg';
 import hoaprev from '../../../assets/icons/hoaprev.svg';
+import hoagrowth1 from '../../../assets/icons/hoagrowth1.svg';
+import hoagrowth2 from '../../../assets/icons/hoagrowth2.svg';
+import hoaprojects from '../../../assets/icons/hoaprojects.svg';
+import hoacertificates from '../../../assets/icons/hoacertificates.svg';
+import hoasparklinegreen from '../../../assets/icons/hoasparklinegreen.svg';
+import hoasparklinered from '../../../assets/icons/hoasparklinered.svg';
+import hoarefresh from '../../../assets/icons/hoarefresh.svg';
+import hoagoto from '../../../assets/icons/hoagoto.svg';
 const HOADashboardHome = () => {
   const preventDefault = (e) => e.preventDefault();
 
@@ -44,45 +53,45 @@ const HOADashboardHome = () => {
         <h1>Dashboard</h1>
         <div className="hoa-header-actions">
           <span className="hoa-update-status">
-            <img src="/assets/icons/fake-sync.svg" alt="" className="sync-icon" /> 
+            <img src={hoarefresh} alt="" className="sync-icon" /> 
             Data updated every 5min 
             <span className="dot"></span>
           </span>
           <button className="hoa-btn-primary">
-            Go to website <img src="/assets/icons/fake-exit-white.svg" alt="" />
+            Go to website <img src={hoagoto} alt="" />
           </button>
         </div>
       </div>
-
+      <div className="hoa-dashboard-stats-container">
       {/* Top Main Stats (4 Cards) */}
       <div className="hoa-grid-4">
         <div className="hoa-card hoa-stat-main">
           <div className="stat-top">
-            <span><img src="/assets/icons/fake-bar-chart.svg" alt="" /> Growth</span>
+            <span><img src={hoagrowth1} alt="Growth" /> Growth</span>
           </div>
           <div className="stat-body">
             <div>
               <h3>+ 2.8K</h3>
               <p>Students In Total</p>
             </div>
-            <img src="/assets/icons/fake-sparkline-green.svg" alt="Sparkline" className="sparkline" />
+            <img src={hoasparklinegreen} alt="Sparkline" className="sparkline" />
           </div>
         </div>
         <div className="hoa-card hoa-stat-main">
           <div className="stat-top">
-            <span><img src="/assets/icons/fake-bar-chart.svg" alt="" /> Growth</span>
+            <span><img src={hoagrowth2} alt="Growth" /> Growth</span>
           </div>
           <div className="stat-body">
             <div>
               <h3>+ 2.8K</h3>
               <p>Tutors In Total</p>
             </div>
-            <img src="/assets/icons/fake-sparkline-green.svg" alt="Sparkline" className="sparkline" />
+            <img src={hoasparklinegreen} alt="Sparkline" className="sparkline" />
           </div>
         </div>
         <div className="hoa-card hoa-stat-main">
           <div className="stat-top">
-            <span><img src="/assets/icons/fake-folder.svg" alt="" /> Projects</span>
+            <span><img src={hoaprojects} alt="Projects" /> Projects</span>
             <a href="#">Manage Projects</a>
           </div>
           <div className="stat-body">
@@ -90,12 +99,12 @@ const HOADashboardHome = () => {
               <h3>193K</h3>
               <p>Total Uploads</p>
             </div>
-            <img src="/assets/icons/fake-sparkline-red.svg" alt="Sparkline" className="sparkline" />
+            <img src={hoasparklinered} alt="Sparkline" className="sparkline" />
           </div>
         </div>
         <div className="hoa-card hoa-stat-main">
           <div className="stat-top">
-            <span><img src="/assets/icons/fake-medal.svg" alt="" /> Certificates</span>
+            <span><img src={hoacertificates} alt="Certificates" /> Certificates</span>
             <a href="#">Manage Certificates</a>
           </div>
           <div className="stat-body">
@@ -103,7 +112,7 @@ const HOADashboardHome = () => {
               <h3>3</h3>
               <p>Total Issued</p>
             </div>
-            <img src="/assets/icons/fake-sparkline-green.svg" alt="Sparkline" className="sparkline" />
+            <img src={hoasparklinegreen} alt="Sparkline" className="sparkline" />
           </div>
         </div>
       </div>
@@ -135,15 +144,16 @@ const HOADashboardHome = () => {
           <p>Avg. Rating <span className="trend up"> <img src={hoaincrease} alt="Increase" /> +4.1</span></p>
         </div>
       </div>
+      </div>
 
       {/* Gross Revenue Section (Not a card, floats on background) */}
       <div className="hoa-revenue-section">
         <div className="section-header">
           <span className="section-title">GROSS REVENUE</span>
-          <a href="#" className="manage-link">Manage funds &gt;</a>
+          <a href="#" className="manage-link">Manage funds <img src={hoaviewall} style={{width: '5.2px', height: '9.2px'}} alt="" /></a>
         </div>
         
-        <div className="revenue-amount-box outline-box">
+        <div className="revenue-amount-box outline-box" style={{width: '300px', 'border-radius': '8px'}}>
           <div className="icon-circle">
             <span style={{color: '#A1A5B7', fontWeight: 'bold'}}> <img src={hoadollar} alt="Dollar" />   </span>
           </div>
@@ -181,7 +191,7 @@ const HOADashboardHome = () => {
         <div className="hoa-card hoa-split-stat">
           <div className="section-header">
             <span className="section-title">LEARNER'S STATS</span>
-            <a href="#" className="manage-link">See Details &gt;</a>
+            <a href="#" className="manage-link">See Details <img src={hoaviewall} style={{width: '5.2px', height: '9.2px'}} alt="" /></a>
           </div>
           <div className="revenue-amount-box outline-box">
             <div className="icon-circle">
@@ -205,7 +215,7 @@ const HOADashboardHome = () => {
         <div className="hoa-card hoa-split-stat">
           <div className="section-header">
             <span className="section-title">TUTOR'S STATS</span>
-            <a href="#" className="manage-link">See Details &gt;</a>
+            <a href="#" className="manage-link">See Details <img src={hoaviewall} style={{width: '5.2px', height: '9.2px'}} alt="" /></a>
           </div>
           <div className="revenue-amount-box outline-box">
             <div className="icon-circle">
@@ -278,8 +288,8 @@ const HOADashboardHome = () => {
                   <img src={hoapdffile} alt="File" />
                 </div>
                 <div className="file-info">
-                  <strong>{req.fileCount} Files Uploaded</strong>
-                  <a href="#">View All <img src={hoaviewall} alt="" /></a>
+                  <strong><label htmlFor="file-count">{req.fileCount}</label> Files Uploaded</strong>
+                  <a href="#">View All <img src={hoaviewall} style={{width: '4px', height: '8px'}}  alt="" /></a>
                 </div>
               </div>
               <button className="open-btn">
