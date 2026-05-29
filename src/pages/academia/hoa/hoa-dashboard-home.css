@@ -393,6 +393,15 @@
   gap: 6px;
 }
 
+.minus-select-button {
+  width: 100%;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
 .minus-btn-container {
   justify-content: center;
 }
@@ -476,6 +485,10 @@
   align-items: center;
 }
 
+.action-menu-wrapper {
+  position: relative;
+}
+
 .btn-icon-cancel, .btn-icon-approve, .btn-icon-more {
   width: 28px;
   height: 28px;
@@ -501,6 +514,35 @@
 
 .btn-icon-more { background: #FFFFFF; border: 1px solid #EEF1F6; color: #A1A5B7; font-weight: bold; font-size: 14px; padding-bottom: 4px;}
 
+.action-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 148px;
+  background: #FFFFFF;
+  border: 1px solid #EEF1F6;
+  border-radius: 12px;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.12);
+  padding: 6px;
+  z-index: 5;
+}
+
+.action-dropdown-item {
+  width: 100%;
+  border: none;
+  background: transparent;
+  text-align: left;
+  padding: 10px 12px;
+  border-radius: 8px;
+  color: #071437;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.action-dropdown-item:hover {
+  background: #F8FAFC;
+}
+
 /* ---- Updated Pagination Container for List Match ---- */
 .hoa-pagination-container {
   display: flex;
@@ -522,13 +564,59 @@
   color: #78829D;
 }
 
-.pagination-select {
+.page-size-dropdown {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.page-size-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   border: 1px solid #EEF1F6;
-  border-radius: 4px;
-  padding: 4px 8px;
+  border-radius: 8px;
+  padding: 4px 10px;
+  background: #FFFFFF;
   font-size: 13px;
   color: #4B5675;
   outline: none;
+  cursor: pointer;
+}
+
+.page-size-button img {
+  width: 10px;
+  height: 10px;
+}
+
+.page-size-menu {
+  position: absolute;
+  left: 0;
+  top: calc(100% + 8px);
+  min-width: 100%;
+  background: #FFFFFF;
+  border: 1px solid #EEF1F6;
+  border-radius: 10px;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.12);
+  padding: 6px;
+  z-index: 5;
+}
+
+.page-size-option {
+  display: block;
+  width: 100%;
+  border: none;
+  background: transparent;
+  text-align: left;
+  padding: 8px 10px;
+  border-radius: 8px;
+  color: #071437;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.page-size-option:hover {
+  background: #F8FAFC;
 }
 
 .page-range {

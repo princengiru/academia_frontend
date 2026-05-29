@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import HOALayout from '../../../components/layouts/HOALayout/HOALayout';
 import './hoa-dashboard-home.css';
 import hoadollar from '../../../assets/icons/hoadollar.svg';
@@ -35,7 +35,35 @@ const HOADashboardHome = () => {
   const preventDefault = (e) => e.preventDefault();
   
   // State for toggling between 'grid' and 'list'
-  const [viewMode, setViewMode] = useState('list'); 
+  const [viewMode, setViewMode] = useState('list');
+  const [selectedRows, setSelectedRows] = useState([]);
+  const [pageSize, setPageSize] = useState('5');
+  const [isPageSizeOpen, setIsPageSizeOpen] = useState(false);
+  const [openActionRowId, setOpenActionRowId] = useState(null);
+
+  const pageSizeOptions = ['5', '10', '25'];
+  const actionMenuItems = ['View details', 'Approve', 'Reject'];
+
+  const toggleRowSelection = (rowId) => {
+    setSelectedRows((currentRows) => (
+      currentRows.includes(rowId)
+        ? currentRows.filter((selectedRowId) => selectedRowId !== rowId)
+        : [...currentRows, rowId]
+    ));
+  };
+
+  const clearSelectedRows = () => {
+    setSelectedRows([]);
+  };
+
+  const handlePageSizeSelect = (value) => {
+    setPageSize(value);
+    setIsPageSizeOpen(false);
+  };
+
+  const toggleRowActionMenu = (rowId) => {
+    setOpenActionRowId((currentRowId) => (currentRowId === rowId ? null : rowId));
+  };
 
   // Updated Data to match image types and icons
   const approvalRequests = [
@@ -335,7 +363,11 @@ const HOADashboardHome = () => {
           <table className="hoa-list-table">
             <thead>
               <tr>
-                <th><div className="th-content minus-btn-container"><div className="minus-icon">-</div></div></th>
+                <th>
+                  <button type="button" className="th-content minus-btn-container minus-select-button" onClick={clearSelectedRows} aria-label="Deselect all selected rows">
+                    <div className="minus-icon">-</div>
+                  </button>
+                </th>
                 <th><div className="th-content">Student Details (34) <span className="sort-icon"><img src={hoaupdowncaret} alt="Sort" /></span></div></th>
                 <th><div className="th-content">Role <span className="sort-icon"><img src={hoaupdowncaret} style={{width: '11px', height: '11px'}} alt="Sort" /></span></div></th>
                 <th><div className="th-content"> Date <span className="sort-icon"><img src={hoaupdowncaret} style={{width: '11px', height: '11px'}} alt="Sort" /></span></div></th>
@@ -347,7 +379,14 @@ const HOADashboardHome = () => {
             <tbody>
               {approvalRequests.map((req) => (
                 <tr key={req.id}>
-                  <td><input type="checkbox" className="hoa-checkbox" /></td>
+                  <td>
+                    <input
+                      type="checkbox"
+                      className="hoa-checkbox"
+                      checked={selectedRows.includes(req.id)}
+                      onChange={() => toggleRowSelection(req.id)}
+                    />
+                  </td>
                   <td>
                     <div className="list-user-col">
                       <div className="user-meta">
@@ -376,7 +415,27 @@ const HOADashboardHome = () => {
                     <div className="list-actions-col">
                       <button className="btn-icon-cancel"><img src={hoacancel} alt="X" /></button>
                       <button className="btn-icon-approve"><img src={hoaapprove} alt="V" /></button>
-                      <button className="btn-icon-more">⋮</button>
+                      <div className="action-menu-wrapper">
+                        <button
+                          type="button"
+                          className="btn-icon-more"
+                          onClick={() => toggleRowActionMenu(req.id)}
+                          aria-haspopup="menu"
+                          aria-expanded={openActionRowId === req.id}
+                          aria-label="More actions"
+                        >
+                          ⋮
+                        </button>
+                        {openActionRowId === req.id && (
+                          <div className="action-dropdown" role="menu">
+                            {actionMenuItems.map((item) => (
+                              <button key={item} type="button" className="action-dropdown-item" onClick={() => setOpenActionRowId(null)}>
+                                {item}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </td>
                 </tr>
@@ -391,10 +450,27 @@ const HOADashboardHome = () => {
         {viewMode === 'list' && (
           <div className="pagination-left">
              Show 
-             <select className="pagination-select">
-               <option>5</option>
-               <option>10</option>
-             </select>
+             <div className="page-size-dropdown">
+               <button
+                 type="button"
+                 className="page-size-button"
+                 onClick={() => setIsPageSizeOpen((currentOpen) => !currentOpen)}
+                 aria-haspopup="listbox"
+                 aria-expanded={isPageSizeOpen}
+               >
+                 {pageSize}
+                 <img src={hoadowncaret} alt="" />
+               </button>
+               {isPageSizeOpen && (
+                 <div className="page-size-menu" role="listbox">
+                   {pageSizeOptions.map((option) => (
+                     <button key={option} type="button" className="page-size-option" onClick={() => handlePageSizeSelect(option)}>
+                       {option}
+                     </button>
+                   ))}
+                 </div>
+               )}
+             </div>
              per page
           </div>
         )}
