@@ -1,8 +1,16 @@
-import React from 'react';
+import { NavLink } from 'react-router-dom';
 
 const HOASidebar = ({ currentPage }) => {
-  const checkActive = (slug) => (currentPage === slug ? 'active' : '');
   const preventDefault = (e) => e.preventDefault();
+  const dashboardPages = ['index', 'learners', 'tutors', 'reports', 'settings'];
+  const getIconClassName = ({ isActive }) => (isActive || dashboardPages.includes(currentPage) ? 'selected' : '');
+  const getSidebarLinkClassName = ({ isActive, isPending }) => {
+    if (isPending) {
+      return '';
+    }
+
+    return isActive ? 'active' : '';
+  };
 
   return (
     <aside className="hoa-sidebar">
@@ -27,11 +35,11 @@ const HOASidebar = ({ currentPage }) => {
         {/* Left Column: First Links */}
         <div className="first-links">
           <div className="sidebar-body">
-            <a href="/hoa" className={checkActive('index') || checkActive('learners') || checkActive('tutors') || checkActive('reports') ? 'selected' : ''}>
+            <NavLink to="/academia/hoa" end className={getIconClassName}>
               <button aria-label="Dashboard">
                 <img src="/assets/icons/home-2.svg" alt="Dashboard" />
               </button>
-            </a>
+            </NavLink>
             <a href="#" onClick={preventDefault}>
               <button aria-label="Management">
                 <img src="/assets/icons/bill2.svg" alt="Management" />
@@ -55,11 +63,11 @@ const HOASidebar = ({ currentPage }) => {
                 <img src="/assets/icons/tsidebar7-1.svg" alt="Help" />
               </button>
             </a>
-            <a href="/hoa/settings" className={checkActive('settings') ? 'selected' : ''}>
+            <NavLink to="/academia/hoa/settings" className={getIconClassName}>
               <button aria-label="Settings">
                 <img src="/assets/icons/ss1.svg" alt="Settings" />
               </button>
-            </a>
+            </NavLink>
             <button className="js-logout-btn no-logout-text" aria-label="Logout">
               <img src="/assets/icons/exit-right.svg" alt="Logout" />
             </button>
@@ -76,18 +84,18 @@ const HOASidebar = ({ currentPage }) => {
             
             <div className="links-list">
               <h6>DASHBOARD</h6>
-              <a href="/hoa" className={checkActive('index')}>
+              <NavLink to="/academia/hoa" end className={getSidebarLinkClassName}>
                 <span>Home</span>
-              </a>
-              <a href="/hoa/learners" className={checkActive('learners')}>
+              </NavLink>
+              <NavLink to="/academia/hoa/learners" className={getSidebarLinkClassName}>
                 <span>Learners</span>
-              </a>
-              <a href="/hoa/tutors" className={checkActive('tutors')}>
+              </NavLink>
+              <NavLink to="/academia/hoa/tutors" className={getSidebarLinkClassName}>
                 <span>Tutors</span>
-              </a>
-              <a href="/hoa/reports" className={checkActive('reports')}>
+              </NavLink>
+              <NavLink to="/academia/hoa/reports" className={getSidebarLinkClassName}>
                 <span>Reports</span>
-              </a>
+              </NavLink>
             </div>
           </div>
         </div>
