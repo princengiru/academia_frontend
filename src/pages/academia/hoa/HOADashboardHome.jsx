@@ -40,9 +40,21 @@ const HOADashboardHome = () => {
   const [pageSize, setPageSize] = useState('5');
   const [isPageSizeOpen, setIsPageSizeOpen] = useState(false);
   const [openActionRowId, setOpenActionRowId] = useState(null);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [openFlagDropdown, setOpenFlagDropdown] = useState(null);
+  const [flagSelections, setFlagSelections] = useState({
+    revenue: { label: 'US', flag: hoausflag },
+    learner: { label: 'US', flag: hoausflag },
+    tutor: { label: 'US', flag: hoausflag },
+  });
 
   const pageSizeOptions = ['5', '10', '25'];
   const actionMenuItems = ['View details', 'Approve', 'Reject'];
+  const flagOptions = [
+    { label: 'US', flag: hoausflag },
+    { label: 'RW', flag: '/assets/icons/rwanda.svg' },
+  ];
+  const filterOptions = ['All requests', 'Completed', 'Pending', 'Rejected'];
 
   const toggleRowSelection = (rowId) => {
     setSelectedRows((currentRows) => (
@@ -63,6 +75,54 @@ const HOADashboardHome = () => {
 
   const toggleRowActionMenu = (rowId) => {
     setOpenActionRowId((currentRowId) => (currentRowId === rowId ? null : rowId));
+  };
+
+  const toggleFlagDropdown = (key) => {
+    setOpenFlagDropdown((currentKey) => (currentKey === key ? null : key));
+  };
+
+  const selectFlagOption = (key, option) => {
+    setFlagSelections((currentSelections) => ({
+      ...currentSelections,
+      [key]: option,
+    }));
+    setOpenFlagDropdown(null);
+  };
+
+  const renderFlagDropdown = (key) => {
+    const selectedFlag = flagSelections[key];
+
+    return (
+      <div className="flag-dropdown-wrapper">
+        <button
+          type="button"
+          className="flag-dropdown-trigger"
+          onClick={() => toggleFlagDropdown(key)}
+          aria-haspopup="listbox"
+          aria-expanded={openFlagDropdown === key}
+        >
+          <img src={selectedFlag.flag} alt={selectedFlag.label} className="flag-icon" />
+          <span>{selectedFlag.label}</span>
+          <img src={hoadowncaret} alt="Open language options" className="flag-dropdown-caret" />
+        </button>
+
+        {openFlagDropdown === key && (
+          <div className="flag-dropdown-menu" role="listbox">
+            {flagOptions.map((option) => (
+              <button
+                key={option.label}
+                type="button"
+                className={`flag-dropdown-option ${selectedFlag.label === option.label ? 'active' : ''}`}
+                onClick={() => selectFlagOption(key, option)}
+              >
+                <img src={option.flag} alt={option.label} className="flag-icon" />
+                <span>{option.label}</span>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    );
   };
 
   // Updated Data to match image types and icons
@@ -195,8 +255,7 @@ const HOADashboardHome = () => {
           <div className="amount-details">
             <div className="amt-row">
               <h3>+ 2.8K <span>USD</span></h3>
-              <img src={hoausflag} alt="US" className="flag" />
-              <img src={hoadowncaret} alt="Drop" className="caret" />
+              {renderFlagDropdown('revenue')}
             </div>
             <p>TOTAL REVENUE <span className="trend up"> <img src={hoaincrease} alt="Increase" /> +40.1%</span></p>
           </div>
@@ -236,8 +295,7 @@ const HOADashboardHome = () => {
             <div className="amount-details">
               <div className="amt-row">
                 <h3>+ 2.8K <span>USD</span></h3>
-                <img src={hoausflag} alt="US" className="flag" />
-                <img src={hoadowncaret} alt="Drop" className="caret" />
+                {renderFlagDropdown('learner')}
               </div>
               <p>TOTAL REVENUE <span className="trend up"> <img src={hoaincrease} alt="Increase" /> +40.1%</span></p>
             </div>
@@ -260,8 +318,7 @@ const HOADashboardHome = () => {
             <div className="amount-details">
               <div className="amt-row">
                 <h3>+ 2.8K <span>USD</span></h3>
-                <img src={hoausflag} alt="US" className="flag" />
-                <img src={hoadowncaret} alt="Drop" className="caret" />
+                {renderFlagDropdown('tutor')}
               </div>
               <p>TOTAL REVENUE <span className="trend up"> <img src={hoaincrease} alt="Increase" /> +40.1%</span></p>
             </div>
@@ -301,9 +358,26 @@ const HOADashboardHome = () => {
             </button>
           </div>
           
-          <button className="hoa-btn-light-purple">
-            <img src={hoafilter} alt="" /> Filters
-          </button>
+          <div className="hoa-filter-dropdown-wrapper">
+            <button
+              type="button"
+              className="hoa-btn-light-purple hoa-filter-trigger"
+              onClick={() => setIsFilterOpen((currentOpen) => !currentOpen)}
+              aria-haspopup="menu"
+              aria-expanded={isFilterOpen}
+            >
+              <img src={hoafilter} alt="" /> Filters
+            </button>
+            {isFilterOpen && (
+              <div className="hoa-filter-dropdown" role="menu">
+                {filterOptions.map((option) => (
+                  <button key={option} type="button" className="hoa-filter-option" onClick={() => setIsFilterOpen(false)}>
+                    {option}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
           <button className="hoa-btn-light-purple">
             <img src={hoaadd} alt="" /> Add new Tutor
           </button>

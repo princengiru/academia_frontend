@@ -339,10 +339,72 @@ body[data-role="hoa"] .hoa-topbar {
   font-size: 12px;
   font-weight: 500;
   cursor: pointer;
+  position: relative;
 }
 
-.hoa-lang-selector img:first-child { width: 16px; }
+.hoa-lang-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #FFFFFF;
+  border: 1px solid #EEF1F6;
+  border-radius: 8px;
+  padding: 4px 8px;
+  color: #4B5675;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.hoa-lang-trigger img:first-child {
+  width: 16px;
+  height: 16px;
+}
+
+.hoa-lang-trigger:focus {
+  box-shadow: 0 0 0 4px rgba(69,4,104,0.06);
+}
+
 .hoa-caret { width: 10px; opacity: 0.5; }
+
+.hoa-lang-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 120px;
+  background: #FFFFFF;
+  border: 1px solid #EEF1F6;
+  border-radius: 8px;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.12);
+  padding: 4px;
+  z-index: 10;
+}
+
+.hoa-lang-option {
+  width: 100%;
+  border: none;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  color: #071437;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.hoa-lang-option:hover {
+  background: #F8FAFC;
+}
+
+.hoa-lang-option img {
+  width: 16px;
+  height: 16px;
+}
 
 .hoa-user-profile {
   display: flex;

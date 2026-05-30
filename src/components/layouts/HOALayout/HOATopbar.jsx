@@ -1,9 +1,23 @@
-import React from 'react';
+import { useState } from 'react';
 import hoatopicon1 from '../../../assets/icons/hoatopicon1.svg';
 import hoatopicon2 from '../../../assets/icons/hoatopicon2.svg';
+import hoausflag from '../../../assets/icons/hoausflag.svg';
+import hoadowncaret from '../../../assets/icons/hoadowncaret.svg';
+
+const languageOptions = [
+  { label: 'RW', flag: '/assets/icons/rwanda.svg' },
+  { label: 'EN', flag: hoausflag },
+  { label: 'FR', flag: '/assets/icons/france.svg' },
+];
 
 const HOATopbar = () => {
-  const preventDefault = (e) => e.preventDefault();
+  const [isLanguageOpen, setIsLanguageOpen] = useState(false);
+  const [activeLanguage, setActiveLanguage] = useState(languageOptions[0]);
+
+  const handleLanguageSelect = (option) => {
+    setActiveLanguage(option);
+    setIsLanguageOpen(false);
+  };
 
   return (
     <header className="hoa-topbar">
@@ -27,11 +41,32 @@ const HOATopbar = () => {
         </button>
         
         <div className="hoa-lang-selector">
-          <img src="/assets/icons/rwanda.svg" alt="RW" />
-          <span>RW</span>
-          {/* Removed the vertical separator to match the design */}
-          <span style={{marginLeft: '4px'}}>EN</span>
-          <img src="/assets/icons/drop1.svg" alt="Dropdown" className="hoa-caret" />
+          <button
+            type="button"
+            className="hoa-lang-trigger"
+            onClick={() => setIsLanguageOpen((currentOpen) => !currentOpen)}
+            aria-haspopup="listbox"
+            aria-expanded={isLanguageOpen}
+          >
+            <img src={activeLanguage.flag} alt={activeLanguage.label} />
+            <span>{activeLanguage.label}</span>
+            <img src={hoadowncaret} alt="Dropdown" className="hoa-caret" />
+          </button>
+          {isLanguageOpen && (
+            <div className="hoa-lang-dropdown" role="listbox">
+              {languageOptions.map((option) => (
+                <button
+                  key={option.label}
+                  type="button"
+                  className="hoa-lang-option"
+                  onClick={() => handleLanguageSelect(option)}
+                >
+                  <img src={option.flag} alt={option.label} />
+                  <span>{option.label}</span>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="hoa-user-profile">

@@ -83,6 +83,44 @@
 .hoa-btn-light-purple img { width: 14px; }
 .hoa-btn-light-purple .plus-icon { font-size: 16px; font-weight: 500; }
 
+.hoa-filter-dropdown-wrapper {
+  position: relative;
+  display: inline-flex;
+}
+
+.hoa-filter-trigger {
+  position: relative;
+}
+
+.hoa-filter-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 180px;
+  background: #FFFFFF;
+  border: 1px solid #EEF1F6;
+  border-radius: 8px;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.12);
+  padding: 4px;
+  z-index: 10;
+}
+
+.hoa-filter-option {
+  width: 100%;
+  border: none;
+  background: transparent;
+  text-align: left;
+  padding: 8px 10px;
+  border-radius: 8px;
+  color: #071437;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.hoa-filter-option:hover {
+  background: #F8FAFC;
+}
+
 .hoa-dashboard-stats-container {
   background: #FAFAFA;
   border: 1px solid #FAFAFA;
@@ -232,6 +270,88 @@
 .amount-details .caret { width: 9px; height: 9px;  }
 .amount-details .caret:hover { opacity: 0.8; cursor: pointer; }
 .amount-details p { margin: 0; font-size: 10px; color: #64748B; font-weight: 600; text-transform: uppercase; }
+
+.flag-dropdown-wrapper {
+  position: relative;
+  display: inline-flex;
+  gap: 4px;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  padding: 0;
+  gap: 6px;
+  font-size: 12px;
+  border-radius: 999px;
+  background: #FFFFFF;
+  padding: 4px 8px;
+  color: #4B5675;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.flag-dropdown-wrapper .flag-dropdown-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #FFFFFF;
+  border: none;
+  border-radius: 8px;
+  padding: 4px 8px;
+  color: #4B5675;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+
+.flag-icon {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.flag-dropdown-caret {
+  width: 10px;
+  height: 10px;
+  opacity: 0.55;
+}
+
+.flag-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 116px;
+  background: #FFFFFF;
+  border: 1px solid #EEF1F6;
+  border-radius: 8px;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.12);
+  padding: 4px;
+  z-index: 10;
+}
+
+.flag-dropdown-option {
+  width: 100%;
+  border: none;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  color: #071437;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.flag-dropdown-option.active,
+.flag-dropdown-option:hover {
+  background: #F8FAFC;
+}
 
 /* Progress Bar */
 .revenue-progress-bar {
@@ -519,7 +639,9 @@
 .btn-icon-approve { background: #F8F5FF; border-color: #7239EA33; }
 .btn-icon-approve img { width: 12px; }
 
-.btn-icon-more { background: #FFFFFF; border: 1px solid #EEF1F6; color: #A1A5B7; font-weight: bold; font-size: 14px; padding-bottom: 4px;}
+.btn-icon-more { background: #FFFFFF; border: 1px solid #EEF1F6; color: #A1A5B7; font-weight: 700; font-size: 14px; padding: 0; }
+.btn-icon-more img { width: 12px; height: 12px; }
+.btn-icon-more:focus { box-shadow: 0 0 0 4px rgba(69,4,104,0.06); outline: none; }
 
 .action-dropdown {
   position: absolute;
