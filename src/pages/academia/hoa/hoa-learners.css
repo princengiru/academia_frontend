@@ -985,11 +985,11 @@ td.status-col {
 }
 
 .bullet-sep {
-  color: #A1A5B7;
+  color: #64748B;
 }
 
 .profile-email {
-  color: #A1A5B7;
+  color: #78829D;
 }
 
 .profile-actions {
@@ -1017,20 +1017,29 @@ td.status-col {
 /* Modal Stats Row */
 .modal-stats-row {
   display: flex;
-  border: 1px solid #EEF1F6;
+  background: #FFFFFF;
+  border: 1px solid #F1F1F4;
   border-radius: 12px;
   margin-bottom: 30px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+
 }
 
 .mod-stat {
+  position: relative;
   flex: 1;
   padding: 20px;
   text-align: center;
-  border-right: 1px solid #EEF1F6;
 }
 
-.mod-stat:last-child {
-  border-right: none;
+.mod-stat:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 15%;
+  height: 70%;
+  width: 1px;
+  background: #EEF1F6;
 }
 
 .mod-stat h3 {
@@ -1048,6 +1057,8 @@ td.status-col {
   align-items: center;
   justify-content: center;
   gap: 4px;
+  font-weight: 400;
+  white-space: nowrap;
 }
 
 /* Modal Tabs */
