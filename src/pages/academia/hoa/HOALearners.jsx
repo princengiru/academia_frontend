@@ -22,6 +22,16 @@ import hoagrayadd from '../../../assets/icons/hoagrayadd.svg';
 import hoagrayphone from '../../../assets/icons/hoagrayphone.svg';
 import hoagraymail from '../../../assets/icons/hoagraymail.svg';
 import hoaverticaldots from '../../../assets/icons/hoaverticaldots.svg';
+import hoadownload from '../../../assets/icons/hoadownload.svg';
+import hoaknot from '../../../assets/icons/hoaknot.svg';
+import hoapdffile from '../../../assets/icons/hoapdffile.svg';
+import hoadownloadall from '../../../assets/icons/hoadownloadall.svg';
+import hoaleftarrow from '../../../assets/icons/hoaleftarrow.svg';
+import hoarightarrow from '../../../assets/icons/hoarightarrow.svg';
+import hoausericon from '../../../assets/icons/hoausericon.svg';
+import hoalocation from '../../../assets/icons/hoalocation.svg';
+import hoabriefcase from '../../../assets/icons/hoabriefcase.svg';
+import hoafollowers from '../../../assets/icons/hoafollowers.svg';
 
 
 const HOALearners = () => {
@@ -569,11 +579,11 @@ const HOALearners = () => {
                     </div>
                     <div className="hoa-pagination">
                       <span className="page-range">1-10 of 5</span>
-                      <button className="page-nav"><img src={hoaprev} alt="Prev" /></button>
+                      <button className="page-nav"><img src={hoaleftarrow} style={{width: '15px',}} alt="Prev" /></button>
                       <button className="page-num">1</button>
                       <button className="page-num active">2</button>
                       <button className="page-num">3</button>
-                      <button className="page-nav"><img src={hoanext} alt="Next" /></button>
+                      <button className="page-nav"><img src={hoarightarrow} style={{width: '15px'}} alt="Next" /></button>
                     </div>
                   </div>
 
@@ -583,7 +593,7 @@ const HOALearners = () => {
                       <p style={{ margin: '0', fontSize: '12px', color: '#A1A5B7' }}>Files & Certificate</p>
                     </div>
                     <button className="hoa-btn-light-purple" style={{ gap: '8px' }}>
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M21 15V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V15M7 10L12 15M12 15L17 10M12 15V3" stroke="#450468" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                      <img src={hoadownloadall} alt="" />
                       Download All
                     </button>
                   </div>
@@ -593,17 +603,16 @@ const HOALearners = () => {
                       <div key={doc.id} className="doc-card">
                         <div className="doc-info">
                           {doc.type === 'ribbon' ? (
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 15C15.866 15 19 11.866 19 8C19 4.13401 15.866 1 12 1C8.13401 1 5 4.13401 5 8C5 11.866 8.13401 15 12 15Z" stroke="#7239EA" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /><path d="M8.21 13.89L7 23L12 20L17 23L15.79 13.88" stroke="#7239EA" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                            <img src={hoaknot} alt="" />
                           ) : (
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" fill="#F8285A" /><path d="M14 2V8H20" fill="#D81A48" /><text x="7" y="16" fill="white" fontSize="6" fontWeight="bold">PDF</text></svg>
-                          )}
+                          <img src={hoapdffile} alt="" />)}
                           <div>
                             <h4>{doc.name}</h4>
                             <p>{doc.size}</p>
                           </div>
                         </div>
                         <button className="download-btn">
-                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M21 15V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V15M7 10L12 15M12 15L17 10M12 15V3" stroke="#A1A5B7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                          <img src={hoadownload} alt="" />  
                         </button>
                       </div>
                     ))}
@@ -618,9 +627,9 @@ const HOALearners = () => {
                     <div className="info-col">
                       <h4>Profile Info</h4>
                       <ul>
-                        <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="5" stroke="#A1A5B7" strokeWidth="2" /><path d="M20 21C20 16.5817 16.4183 13 12 13C7.58172 13 4 16.5817 4 21" stroke="#A1A5B7" strokeWidth="2" /></svg> UI UX Design</li>
-                        <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M20 7H4C2.89543 7 2 7.89543 2 9V19C2 20.1046 2.89543 21 4 21H20C21.1046 21 22 20.1046 22 19V9C22 7.89543 21.1046 7 20 7Z" stroke="#A1A5B7" strokeWidth="2" /><path d="M16 7V5C16 3.89543 15.1046 3 14 3H10C8.89543 3 8 3.89543 8 5V7" stroke="#A1A5B7" strokeWidth="2" /></svg> 6 yrs experience</li>
-                        <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M21 10C21 17 12 23 12 23C12 23 3 17 3 10C3 7.61305 3.94821 5.32387 5.63604 3.63604C7.32387 1.94821 9.61305 1 12 1C14.3869 1 16.6761 1.94821 18.364 3.63604C20.0518 5.32387 21 7.61305 21 10Z" stroke="#A1A5B7" strokeWidth="2" /><circle cx="12" cy="10" r="3" stroke="#A1A5B7" strokeWidth="2" /></svg> Kigali, Rwanda</li>
+                        <li><img src={hoausericon} alt="" /> UI UX Design</li>
+                        <li><img src={hoabriefcase} alt="" /> 6 yrs experience</li>
+                        <li><img src={hoalocation} alt="" /> Kigali, Rwanda</li>
                       </ul>
                     </div>
                     <div className="info-col">
@@ -647,7 +656,7 @@ const HOALearners = () => {
                       <p style={{ margin: '0', fontSize: '13px', color: '#A1A5B7' }}><strong>100</strong> Projects in total</p>
                     </div>
                     <button className="follower-btn">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M16 21V19C16 17.9391 15.5786 16.9217 14.8284 16.1716C14.0783 15.4214 13.0609 15 12 15H5C3.93913 15 2.92172 15.4214 2.17157 16.1716C1.42143 16.9217 1 17.9391 1 19V21M16 7A4 4 0 118 7A4 4 0 0116 7ZM23 21V19C22.9986 18.1189 22.7093 17.2647 22.18 16.57C21.6507 15.8753 20.9126 15.3813 20.08 15.17M16 3.13A4.001 4.001 0 0123 7A4.001 4.001 0 0116 10.87" stroke="#071437" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                      <img src={hoafollowers} alt="" />
                       <strong>129</strong> Followers
                     </button>
                   </div>

@@ -852,7 +852,7 @@ td.status-col {
 
 .hoa-modal-drawer {
   background: #FFFFFF;
-  width: 800px;
+  width: 950px;
   height: 100%;
   box-shadow: -10px 0 40px rgba(0, 0, 0, 0.1);
   border-radius: 16px 0 0 16px;
@@ -1105,10 +1105,11 @@ td.status-col {
 .mod-table th {
   background: #FFFFFF;
   border-top: 1px solid #EEF1F6;
+  padding: 12px 10px;
 }
 
 .mod-table td {
-  padding: 12px 20px;
+  padding: 12px 10px;
 }
 
 .mod-status-pill {
@@ -1176,8 +1177,10 @@ td.status-col {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border: 1px solid #EEF1F6;
-  border-radius: 8px;
+  background: #FFFFFF;
+  border: 1px solid #F1F1F4;
+  border-radius: 4px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
   padding: 16px;
 }
 
@@ -1259,12 +1262,12 @@ td.status-col {
   display: flex;
   align-items: center;
   gap: 8px;
-  background: #F8FAFC;
-  border: 1px solid #EEF1F6;
+  background: #FFFFFF;
+  border: 1px solid #DBDFE9;
   border-radius: 6px;
   padding: 8px 12px;
   font-size: 13px;
-  color: #071437;
+  color: #4B5675;
   cursor: pointer;
 }
 
