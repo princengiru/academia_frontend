@@ -32,6 +32,7 @@ import hoausericon from '../../../assets/icons/hoausericon.svg';
 import hoalocation from '../../../assets/icons/hoalocation.svg';
 import hoabriefcase from '../../../assets/icons/hoabriefcase.svg';
 import hoafollowers from '../../../assets/icons/hoafollowers.svg';
+import hoaproject from '../../../assets/imgs/hoaproject.png';
 
 
 const HOALearners = () => {
@@ -43,6 +44,14 @@ const HOALearners = () => {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [openFlagDropdown, setOpenFlagDropdown] = useState(null);
   const [hoverData, setHoverData] = useState({ chartId: null, text: '', tooltipClass: '', x: 0, y: 0 });
+  const [likedProjects, setLikedProjects] = useState({});
+
+  const toggleProjectLike = (idx) => {
+    setLikedProjects((prev) => ({
+      ...prev,
+      [idx]: !prev[idx]
+    }));
+  };
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -579,11 +588,11 @@ const HOALearners = () => {
                     </div>
                     <div className="hoa-pagination">
                       <span className="page-range">1-10 of 5</span>
-                      <button className="page-nav"><img src={hoaleftarrow} style={{width: '15px',}} alt="Prev" /></button>
+                      <button className="page-nav"><img src={hoaleftarrow} style={{ width: '15px', }} alt="Prev" /></button>
                       <button className="page-num">1</button>
                       <button className="page-num active">2</button>
                       <button className="page-num">3</button>
-                      <button className="page-nav"><img src={hoarightarrow} style={{width: '15px'}} alt="Next" /></button>
+                      <button className="page-nav"><img src={hoarightarrow} style={{ width: '15px' }} alt="Next" /></button>
                     </div>
                   </div>
 
@@ -605,14 +614,14 @@ const HOALearners = () => {
                           {doc.type === 'ribbon' ? (
                             <img src={hoaknot} alt="" />
                           ) : (
-                          <img src={hoapdffile} alt="" />)}
+                            <img src={hoapdffile} alt="" />)}
                           <div>
                             <h4>{doc.name}</h4>
                             <p>{doc.size}</p>
                           </div>
                         </div>
                         <button className="download-btn">
-                          <img src={hoadownload} alt="" />  
+                          <img src={hoadownload} alt="" />
                         </button>
                       </div>
                     ))}
@@ -643,9 +652,9 @@ const HOALearners = () => {
                     <div className="info-col text-right-align">
                       <h4>Projects Stats</h4>
                       <ul className="stats-list">
-                        <li><span>Project Views</span> <strong>1,345,780</strong></li>
-                        <li><span>Project Likes</span> <strong>236,890</strong></li>
-                        <li><span>Project Feedbacks</span> <strong>103,006</strong></li>
+                        <li><span>Project Views</span> 1,345,780</li>
+                        <li><span>Project Likes</span> 236,890</li>
+                        <li><span>Project Feedbacks</span> 103,006</li>
                       </ul>
                     </div>
                   </div>
@@ -660,15 +669,18 @@ const HOALearners = () => {
                       <strong>129</strong> Followers
                     </button>
                   </div>
-
                   <div className="projects-grid">
                     {modalProjects.map((proj, idx) => (
                       <div key={idx} className="project-card">
-                        <div className="proj-img" style={{ backgroundImage: `url(${proj.image})` }}></div>
+                        <div className="proj-img" style={{ backgroundImage: `url(${hoaproject})` }}></div>
                         <div className="proj-meta">
                           <span className="author">By <a href="#" onClick={preventDefault}>{proj.author}</a></span>
                           <div className="proj-stats">
-                            <span className="stat-like"><svg width="12" height="12" viewBox="0 0 24 24" fill="#F8285A"><path d="M20.84 4.61A5.5 5.5 0 0012 5.67A5.5 5.5 0 003.16 4.61C2.5 5.28 2 6.2 2 7.21C2 8.23 2.5 9.15 3.16 9.83L12 18.67L20.84 9.83C21.5 9.15 22 8.23 22 7.21C22 6.2 21.5 5.28 20.84 4.61Z" /></svg> {proj.likes}</span>
+                            <span className="stat-like" onClick={() => toggleProjectLike(idx)} style={{ cursor: 'pointer' }}>
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill={likedProjects[idx] ? "#F8285A" : "#A1A5B7"}>
+                                <path d="M20.84 4.61A5.5 5.5 0 0012 5.67A5.5 5.5 0 003.16 4.61C2.5 5.28 2 6.2 2 7.21C2 8.23 2.5 9.15 3.16 9.83L12 18.67L20.84 9.83C21.5 9.15 22 8.23 22 7.21C22 6.2 21.5 5.28 20.84 4.61Z" />
+                              </svg> {proj.likes}
+                            </span>
                             <span className="stat-view"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#A1A5B7" strokeWidth="2"><path d="M1 12S5 4 12 4S23 12 23 12S19 20 12 20S1 12 1 12Z" /><circle cx="12" cy="12" r="3" /></svg> {proj.views}</span>
                           </div>
                         </div>
