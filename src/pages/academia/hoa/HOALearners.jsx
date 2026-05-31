@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import HOALayout from '../../../components/layouts/HOALayout/HOALayout';
 import './hoa-learners.css'; // Using the newly separated CSS file
 
@@ -28,15 +28,28 @@ const HOALearners = () => {
   const [hoverData, setHoverData] = useState({ chartId: null, text: '', tooltipClass: '', x: 0, y: 0 });
   
   const [flagSelections, setFlagSelections] = useState({
-    syllabus: { label: '', flag: '/assets/icons/rwanda.svg' },
-    courses: { label: '', flag: '/assets/icons/rwanda.svg' },
+    syllabus: { label: 'RWF', flag: rwanda },
+    courses: { label: 'RWF', flag: rwanda },
   });
+
+  const [exchangeRate, setExchangeRate] = useState(1350);
+
+  useEffect(() => {
+    fetch('https://open.er-api.com/v6/latest/RWF')
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.rates && data.rates.USD) {
+          setExchangeRate(1 / data.rates.USD);
+        }
+      })
+      .catch(err => console.error("Failed to fetch exchange rate", err));
+  }, []);
 
   const pageSizeOptions = ['5', '10', '25'];
   const filterOptions = ['All Learners', 'Active', 'Inactive'];
   const flagOptions = [
-    { label: '', flag: '/assets/icons/rwanda.svg' },
-    { label: '', flag: hoausflag },
+    { label: 'RWF', flag: rwanda },
+    { label: 'USD', flag: hoausflag },
   ];
 
   const toggleRowSelection = (rowId) => {
@@ -122,14 +135,27 @@ const HOALearners = () => {
     );
   };
 
-  const renderFlagDropdown = (key, valueText) => {
+  const formatRevenue = (baseAmountRWF, currency) => {
+    if (currency === 'USD') {
+      const amountUSD = baseAmountRWF / exchangeRate;
+      if (amountUSD >= 1000000) return `${(amountUSD / 1000000).toFixed(1)}M USD`;
+      if (amountUSD >= 1000) return `${(amountUSD / 1000).toFixed(1)}K USD`;
+      return `${amountUSD.toFixed(2)} USD`;
+    }
+    if (baseAmountRWF >= 1000000) return `${(baseAmountRWF / 1000000).toFixed(1)}M RWF`;
+    if (baseAmountRWF >= 1000) return `${(baseAmountRWF / 1000).toFixed(1)}K RWF`;
+    return `${baseAmountRWF} RWF`;
+  };
+
+  const renderFlagDropdown = (key, baseValueRWF) => {
     const selectedFlag = flagSelections[key];
+    const displayValue = formatRevenue(baseValueRWF, selectedFlag.label);
 
     return (
       <div className="hoa-revenue-dropdown-box">
         <span className="revenue-label">Total Revenue</span>
         <div className="revenue-value-picker">
-          <span className="revenue-value">{valueText}</span>
+          <span className="revenue-value">{displayValue}</span>
           <div className="flag-dropdown-wrapper">
             <button
               type="button"
@@ -140,10 +166,17 @@ const HOALearners = () => {
               <img src={hoadowncaret} alt="drop" className="flag-dropdown-caret" />
             </button>
             {openFlagDropdown === key && (
-              <div className="flag-dropdown-menu">
+              <div className="flag-dropdown-menu" style={{ minWidth: '80px', padding: '4px' }}>
                 {flagOptions.map((option, idx) => (
-                  <button key={idx} type="button" className="flag-dropdown-option" onClick={() => selectFlagOption(key, option)}>
+                  <button 
+                    key={idx} 
+                    type="button" 
+                    className="flag-dropdown-option" 
+                    onClick={() => selectFlagOption(key, option)}
+                    style={{ display: 'flex', alignItems: 'center', width: '100%', padding: '6px 8px', border: 'none', background: 'transparent', cursor: 'pointer' }}
+                  >
                     <img src={option.flag} alt="flag" className="flag-icon" />
+                    <span style={{ marginLeft: '8px', fontSize: '13px', color: '#4B5675', fontWeight: '500' }}>{option.label}</span>
                   </button>
                 ))}
               </div>
@@ -248,7 +281,7 @@ const HOALearners = () => {
               <span><strong>34.4 H</strong> Avg. Learning Hours</span>
             </div>
 
-            {renderFlagDropdown('syllabus', '9.6M RWF')}
+            {renderFlagDropdown('syllabus', 9600000)}
           </div>
 
           {/* Online Courses Stats Card */}
@@ -279,7 +312,7 @@ const HOALearners = () => {
               <span><strong>34.4 H</strong> Avg. Learning Hours</span>
             </div>
 
-            {renderFlagDropdown('courses', '9.6M RWF')}
+            {renderFlagDropdown('courses', 9600000)}
           </div>
 
         </div>
