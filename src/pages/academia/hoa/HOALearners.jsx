@@ -25,6 +25,7 @@ const HOALearners = () => {
   const [isPageSizeOpen, setIsPageSizeOpen] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [openFlagDropdown, setOpenFlagDropdown] = useState(null);
+  const [hoverData, setHoverData] = useState({ chartId: null, text: '', tooltipClass: '', x: 0, y: 0 });
   
   const [flagSelections, setFlagSelections] = useState({
     syllabus: { label: '', flag: '/assets/icons/rwanda.svg' },
@@ -63,6 +64,62 @@ const HOALearners = () => {
       [key]: option,
     }));
     setOpenFlagDropdown(null);
+  };
+
+  const handleMouseMove = (e, chartId, seg) => {
+    const svgRect = e.target.closest('svg').getBoundingClientRect();
+    const x = e.clientX - svgRect.left;
+    const y = e.clientY - svgRect.top;
+    setHoverData({ chartId, text: seg.tooltipText, tooltipClass: seg.tooltipClass, x, y });
+  };
+  
+  const handleMouseLeave = () => {
+    setHoverData({ chartId: null, text: '', tooltipClass: '', x: 0, y: 0 });
+  };
+
+  const renderDonut = (chartId, segments) => {
+    const radius = 38;
+    const strokeWidth = 16;
+    
+    let currentOffsetPercent = 0;
+    
+    return (
+      <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+        <svg viewBox="0 0 100 100" className="donut-svg">
+          {segments.map((seg, idx) => {
+            const dashPercent = seg.percent;
+            const offsetPercent = -currentOffsetPercent;
+            currentOffsetPercent += seg.percent;
+
+            return (
+              <circle
+                key={idx}
+                cx="50"
+                cy="50"
+                r={radius}
+                fill="none"
+                stroke={seg.color}
+                strokeWidth={strokeWidth}
+                strokeDasharray={`${dashPercent} 100`}
+                strokeDashoffset={offsetPercent}
+                pathLength="100"
+                style={{ cursor: 'pointer', transition: 'opacity 0.2s' }}
+                onMouseMove={(e) => handleMouseMove(e, chartId, seg)}
+                onMouseLeave={handleMouseLeave}
+              />
+            );
+          })}
+        </svg>
+        {hoverData.chartId === chartId && (
+          <div 
+            className={`donut-tooltip ${hoverData.tooltipClass || ''}`} 
+            style={{ top: `${hoverData.y + 10}px`, left: `${hoverData.x + 10}px` }}
+          >
+            {hoverData.text}
+          </div>
+        )}
+      </div>
+    );
   };
 
   const renderFlagDropdown = (key, valueText) => {
@@ -169,11 +226,14 @@ const HOALearners = () => {
             
             <div className="chart-body-row">
               <div className="donut-wrapper">
-                <div className="donut-chart syllabus-donut">
-                  <div className="donut-inner"></div>
+                <div className="donut-chart">
+                  {renderDonut('syllabus', [
+                    { percent: 35, color: '#1B84FF', tooltipText: '34.4K Free' }, // Blue
+                    { percent: 15, color: '#F6B100', tooltipText: '23 Download' }, // Yellow
+                    { percent: 25, color: '#17C653', tooltipText: '34.4 Readers' }, // Green
+                    { percent: 25, color: '#E4E4E7', tooltipText: 'Other' }, // Gray
+                  ])}
                 </div>
-                <div className="donut-tooltip">23 Download</div>
-                <div className="cursor-pointer"></div>
               </div>
               
               <div className="chart-legend">
@@ -197,11 +257,14 @@ const HOALearners = () => {
             
             <div className="chart-body-row">
               <div className="donut-wrapper">
-                <div className="donut-chart courses-donut">
-                  <div className="donut-inner"></div>
+                <div className="donut-chart">
+                  {renderDonut('courses', [
+                    { percent: 35, color: '#17C653', tooltipText: '34.4K Free' },
+                    { percent: 10, color: '#F6B100', tooltipText: '23 Failed', tooltipClass: 'tooltip-failed' },
+                    { percent: 40, color: '#1B84FF', tooltipText: '4.4K Paid' },
+                    { percent: 15, color: '#E4E4E7', tooltipText: 'Other' },
+                  ])}
                 </div>
-                <div className="donut-tooltip tooltip-failed">23 Failed</div>
-                <div className="cursor-pointer"></div>
               </div>
               
               <div className="chart-legend">
