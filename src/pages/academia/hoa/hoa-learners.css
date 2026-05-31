@@ -554,8 +554,9 @@
 .status-pill {
   font-size: 10px; font-weight: 600; padding: 4px 10px; border-radius: 20px; 
   display: inline-flex; align-items: center;  border: 1px solid transparent;
+  white-space: nowrap;
 }
-.status-pill .dot { width: 6px; height: 6px; border-radius: 50%; }
+.status-pill .dot { width: 6px; height: 6px; border-radius: 50%; margin-right: 4px; }
 
 .pill-gray { background: #F9F9F9; color: #78829D; border-color: #DBDFE9; }
 .pill-gray .dot { background: #78829D; }
@@ -587,6 +588,21 @@
   width: 14px;
   height: 14px;
   opacity: 0.5;
+}
+
+.status-col {
+  width: 1%;
+  white-space: nowrap;
+  padding-right: 8px !important; 
+}
+
+td.status-col {
+  text-align: right;
+}
+
+.action-col {
+  width: 1%;
+  padding-left: 0 !important; 
 }
 
 

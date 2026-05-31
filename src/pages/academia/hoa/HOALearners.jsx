@@ -268,14 +268,14 @@ const HOALearners = () => {
                   <div className="minus-icon">-</div>
                 </button>
               </th>
-              <th><div className="th-content">Student Details (34) <span className="sort-icon"><img src={hoaupdowncaret} alt="Sort" /></span></div></th>
+              <th style={{ width: '100%' }}><div className="th-content">Student Details (34) <span className="sort-icon"><img src={hoaupdowncaret} alt="Sort" /></span></div></th>
               <th className="text-center"><div className="th-content justify-center">Avg. Score <span className="sort-icon"><img src={hoaupdowncaret} alt="Sort" /></span></div></th>
               <th className="text-center"><div className="th-content justify-center">Attempts <span className="sort-icon"><img src={hoaupdowncaret} alt="Sort" /></span></div></th>
               <th className="text-center"><div className="th-content justify-center">Downloads <span className="sort-icon"><img src={hoaupdowncaret} alt="Sort" /></span></div></th>
               <th className="text-center"><div className="th-content justify-center">Certificates <span className="sort-icon"><img src={hoaupdowncaret} alt="Sort" /></span></div></th>
               <th className="text-center"><div className="th-content justify-center">Tot. Paid (USD) <span className="sort-icon"><img src={hoaupdowncaret} alt="Sort" /></span></div></th>
-              <th><div className="th-content">Status <span className="sort-icon"><img src={hoaupdowncaret} alt="Sort" /></span></div></th>
-              <th></th> {/* Empty th for link action */}
+              <th className="status-col"><div className="th-content">Status <span className="sort-icon"><img src={hoaupdowncaret} alt="Sort" /></span></div></th>
+              <th className="action-col"></th> {/* Empty th for link action */}
             </tr>
           </thead>
           <tbody>
@@ -304,12 +304,12 @@ const HOALearners = () => {
                 <td className="fw-500 text-center">{req.downloads}</td>
                 <td className="fw-500 text-center">{req.certs}</td>
                 <td className="fw-600 text-center">{req.paid}</td>
-                <td>
+                <td className="status-col">
                   <span className={`status-pill pill-${req.statusColor}`}>
                     <span className="dot"></span> {req.status}
                   </span>
                 </td>
-                <td>
+                <td className="action-col">
                   <a href="#" className="table-link-icon" onClick={preventDefault}>
                      <img src={hoaopenview} alt="Open" /> 
                   </a>
