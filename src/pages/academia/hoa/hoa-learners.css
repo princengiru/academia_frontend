@@ -1483,7 +1483,6 @@ td.status-col {
 
 .ticket-card {
   border: 1px solid #EEF1F6;
-  border-radius: 8px;
   overflow: hidden;
   background: #FFFFFF;
   border-left-width: 4px;
