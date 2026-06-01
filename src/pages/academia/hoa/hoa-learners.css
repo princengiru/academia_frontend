@@ -1542,17 +1542,20 @@ td.status-col {
 
 .st-solved {
   background: #EAFFF1;
-  color: #17C653;
+  color: #04B440;
+  border: 1px solid #17C65333;
 }
 
 .st-unsolved {
   background: #FFEEF3;
-  color: #F8285A;
+  color: #D81A48;
+  border: 1px solid #F8285A;
 }
 
 .st-review {
-  background: #F8FAFC;
-  color: #1B84FF;
+  background: #EFF6FF;
+  color: #056EE9;
+  border: 1px solid #1B84FF33;
 }
 
 .ticket-body {
