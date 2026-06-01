@@ -760,7 +760,10 @@ const HOALearners = () => {
                           <strong>Ticket No : #TKT1204567</strong>
                           <span>CC : maxsmith@gonaraza.com</span>
                         </div>
-                        <div className="ticket-status st-solved">Solved <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ transform: openTickets[1] ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}><path d="M6 9l6 6 6-6"/></svg></div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                          <div className="ticket-status st-solved">Solved</div>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#78829D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ transform: openTickets[1] ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}><path d="M6 9l6 6 6-6"/></svg>
+                        </div>
                       </div>
 
                       {openTickets[1] && (
@@ -805,7 +808,10 @@ const HOALearners = () => {
                           <strong>Ticket No : #TKT1204567</strong>
                           <span>CC : maxsmith@gonaraza.com</span>
                         </div>
-                        <div className="ticket-status st-unsolved">Unsolved <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ transform: openTickets[2] ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}><path d="M6 9l6 6 6-6"/></svg></div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                          <div className="ticket-status st-unsolved">Unsolved</div>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#78829D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ transform: openTickets[2] ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}><path d="M6 9l6 6 6-6"/></svg>
+                        </div>
                       </div>
                       {openTickets[2] && (
                         <div className="ticket-body">
@@ -821,7 +827,10 @@ const HOALearners = () => {
                           <strong>Ticket No : #TKT1204567</strong>
                           <span>CC : maxsmith@gonaraza.com</span>
                         </div>
-                        <div className="ticket-status st-review">In Review <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ transform: openTickets[3] ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}><path d="M6 9l6 6 6-6"/></svg></div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                          <div className="ticket-status st-review">In Review</div>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#78829D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ transform: openTickets[3] ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}><path d="M6 9l6 6 6-6"/></svg>
+                        </div>
                       </div>
                       {openTickets[3] && (
                         <div className="ticket-body">
