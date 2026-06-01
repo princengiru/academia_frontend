@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import HOALayout from '../../../components/layouts/HOALayout/HOALayout';
-import './hoa-learners.css';
+import './hoa-tutors.css';
 
 import hoausflag from '../../../assets/icons/hoausflag.svg';
 import hoadowncaret from '../../../assets/icons/hoadowncaret.svg';
@@ -38,7 +38,7 @@ import hoavbadge from '../../../assets/icons/hoavbadge.svg';
 import hoareply from '../../../assets/icons/hoareply.svg';
 
 
-const HOALearners = () => {
+const HOATutors = () => {
   const preventDefault = (e) => e.preventDefault();
 
   const [selectedRows, setSelectedRows] = useState([]);
@@ -133,112 +133,24 @@ const HOALearners = () => {
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => setIsModalOpen(false);
 
-  const renderDonut = (chartId, segments) => {
-    const radius = 38;
-    const strokeWidth = 16;
-    let currentOffsetPercent = 0;
 
-    return (
-      <div style={{ position: 'relative', width: '100%', height: '100%' }}>
-        <svg viewBox="0 0 100 100" className="donut-svg">
-          {segments.map((seg, idx) => {
-            const dashPercent = seg.percent;
-            const offsetPercent = -currentOffsetPercent;
-            currentOffsetPercent += seg.percent;
 
-            return (
-              <circle
-                key={idx}
-                cx="50"
-                cy="50"
-                r={radius}
-                fill="none"
-                stroke={seg.color}
-                strokeWidth={strokeWidth}
-                strokeDasharray={`${dashPercent} 100`}
-                strokeDashoffset={offsetPercent}
-                pathLength="100"
-                style={{ cursor: 'pointer', transition: 'opacity 0.2s' }}
-                onMouseMove={(e) => handleMouseMove(e, chartId, seg)}
-                onMouseLeave={handleMouseLeave}
-              />
-            );
-          })}
-        </svg>
-        {hoverData.chartId === chartId && (
-          <div
-            className={`donut-tooltip ${hoverData.tooltipClass || ''}`}
-            style={{ top: `${hoverData.y + 10}px`, left: `${hoverData.x + 10}px` }}
-          >
-            {hoverData.text}
-          </div>
-        )}
-      </div>
-    );
-  };
-
-  const formatRevenue = (baseAmountRWF, currency) => {
-    if (currency === 'USD') {
-      const amountUSD = baseAmountRWF / exchangeRate;
-      if (amountUSD >= 1000000) return `${(amountUSD / 1000000).toFixed(1)}M USD`;
-      if (amountUSD >= 1000) return `${(amountUSD / 1000).toFixed(1)}K USD`;
-      return `${amountUSD.toFixed(2)} USD`;
-    }
-    if (baseAmountRWF >= 1000000) return `${(baseAmountRWF / 1000000).toFixed(1)}M RWF`;
-    if (baseAmountRWF >= 1000) return `${(baseAmountRWF / 1000).toFixed(1)}K RWF`;
-    return `${baseAmountRWF} RWF`;
-  };
-
-  const renderFlagDropdown = (key, baseValueRWF) => {
-    const selectedFlag = flagSelections[key];
-    const displayValue = formatRevenue(baseValueRWF, selectedFlag.label);
-
-    return (
-      <div className="hoa-revenue-dropdown-box">
-        <span className="revenue-label">Total Revenue</span>
-        <div className="revenue-value-picker">
-          <span className="revenue-value">{displayValue}</span>
-          <div className="flag-dropdown-wrapper">
-            <button type="button" className="flag-dropdown-trigger" onClick={() => toggleFlagDropdown(key)}>
-              <img src={selectedFlag.flag} alt="flag" className="flag-icon" />
-              <img src={hoadowncaret} alt="drop" className="flag-dropdown-caret" />
-            </button>
-            {openFlagDropdown === key && (
-              <div className="flag-dropdown-menu" style={{ minWidth: '80px', padding: '4px' }}>
-                {flagOptions.map((option, idx) => (
-                  <button
-                    key={idx} type="button" className="flag-dropdown-option"
-                    onClick={() => selectFlagOption(key, option)}
-                    style={{ display: 'flex', alignItems: 'center', width: '100%', padding: '6px 8px', border: 'none', background: 'transparent', cursor: 'pointer' }}
-                  >
-                    <img src={option.flag} alt="flag" className="flag-icon" />
-                    <span style={{ marginLeft: '8px', fontSize: '13px', color: '#4B5675', fontWeight: '500' }}>{option.label}</span>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  const learnersData = [
-    { id: 1, name: 'Alexis Ndayamabje Froduard', location: 'Rwanda', flag: '/assets/icons/rwanda.svg', score: '34.67', attempts: 3, downloads: 3, certs: 3, paid: '222.3 USD', status: 'Paid', statusColor: 'green' },
-    { id: 2, name: 'Nagy Tímea', location: 'Russia', flag: '/assets/icons/rwanda.svg', score: '35.45', attempts: 23, downloads: 23, certs: 23, paid: '222.3 USD', status: 'Unpaid', statusColor: 'red' },
-    { id: 3, name: 'Illés Éva', location: 'America', flag: hoausflag, score: '---', attempts: '---', downloads: '---', certs: '---', paid: '0 USD', status: 'In Progress', statusColor: 'gray' },
-    { id: 4, name: 'Halász Emese', location: 'Burundi', flag: '/assets/icons/rwanda.svg', score: '19.52', attempts: 123, downloads: 123, certs: 123, paid: '23.4 USD', status: 'Paid', statusColor: 'green' },
-    { id: 5, name: 'Soós Annamária', location: 'Rwanda', flag: '/assets/icons/rwanda.svg', score: '67.43', attempts: 4, downloads: 4, certs: 4, paid: '748.3 USD', status: 'Paid', statusColor: 'green' },
+  const tutorsData = [
+    { id: 1, name: 'Alexis Ndayamabje Froduard', location: 'Rwanda', flag: rwanda, phone: '+250 0000 000 00', email: 'alexisndayamabjefroduard@gonaraza.com', role: 'UI/UX Designer', uploads: '3', paid: '222.3 USD', status: 'Completed', statusColor: 'green' },
+    { id: 2, name: 'Nagy Tímea', location: 'Russia', flag: rwanda, phone: '+240 0000 000 00', email: 'alexisndayamabjefroduard@gonaraza.com', role: 'Computer Engineer', uploads: '23', paid: '222.3 USD', status: 'Not-Checked', statusColor: 'red' },
+    { id: 3, name: 'Illés Éva', location: 'America', flag: hoausflag, phone: '+156 0000 000 00', email: 'alexisndayamabjefroduard@gonaraza.com', role: 'Computer Engineer', uploads: '---', paid: '0 USD', status: 'In review', statusColor: 'gray' },
+    { id: 4, name: 'Halász Emese', location: 'Burundi', flag: rwanda, phone: '+255 0000 000 00', email: 'alexisndayamabjefroduard@gonaraza.com', role: 'Computer Engineer', uploads: '123', paid: '23.4 USD', status: 'Completed', statusColor: 'green' },
+    { id: 5, name: 'Soós Annamária', location: 'Rwanda', flag: rwanda, phone: '+250 0000 000 00', email: 'alexisndayamabjefroduard@gonaraza.com', role: 'Computer Engineer', uploads: '4', paid: '748.3 USD', status: 'Completed', statusColor: 'green' },
   ];
 
   // Modal Dummy Data
   const modalLessons = [
-    { id: 1, title: 'Javascript Fundamental Quiz', date: '12 Jan 2024', tutor: 'Alexis Ndayamabje Froduard', score: '34.67', type: 'Course', duration: '4 Weeks', attempts: '3', status: 'Passed', statusType: 'passed' },
-    { id: 2, title: 'Javascript Fundamental Quiz', date: '12 Jan 2024', tutor: 'Eustolia B. Sadiq', score: '35.45', type: 'Course', duration: '4 Weeks', attempts: '23', status: 'Failed', statusType: 'failed' },
-    { id: 3, title: 'Javascript Fundamental Quiz', date: '12 Jan 2024', tutor: 'Addie V. Biela', score: '---', type: 'Course', duration: '4 Weeks', attempts: '---', status: 'Retake', statusType: 'retake' },
-    { id: 4, title: 'Javascript Fundamental Quiz', date: '12 Jan 2024', tutor: 'Elvira E. Aus', score: '-- --', type: 'Syllabus', duration: '251 Pages', attempts: '123', status: 'Paid', statusType: 'paid' },
-    { id: 5, title: 'Javascript Fundamental Quiz', date: '12 Jan 2024', tutor: 'Jacalyn K. Hanaburgh', score: '-- --', type: 'Syllabus', duration: '251 Pages', attempts: '4', status: 'Paid', statusType: 'paid' },
-    { id: 6, title: 'Javascript Fundamental Quiz', date: '12 Jan 2024', tutor: 'Margert J. Swon', score: '-- --', type: 'Syllabus', duration: '251 Pages', attempts: '4', status: 'Free', statusType: 'free' },
+    { id: 1, title: 'Javascript Fundamental Quiz', date: '12 Jan 2024', type: 'Course', duration: '4 Weeks', students: '231', views: '2.4K Views', amount: '222.3 USD', amountSub: '23', certs: '6', score: '12.34 %', feeStatus: 'Free', feeAmount: '0 USD', feeColor: '#7239EA', status: 'Uploaded', statusType: 'paid' },
+    { id: 2, title: 'Javascript Fundamental Quiz', date: '12 Jan 2024', type: 'Course', duration: '4 Weeks', students: '231', views: '2.4K Views', amount: '222.3 USD', amountSub: '23', certs: '6', score: '12.34 %', feeStatus: 'Paid', feeAmount: '35 USD', feeColor: '#17C653', status: 'Not Published', statusType: 'failed' },
+    { id: 3, title: 'Javascript Fundamental Quiz', date: '12 Jan 2024', type: 'Course', duration: '4 Weeks', students: '231', views: '2.4K Views', amount: '222.3 USD', amountSub: '23', certs: '6', score: '12.34 %', feeStatus: 'Paid', feeAmount: '---', feeColor: '#17C653', status: 'In Progress', statusType: 'retake' },
+    { id: 4, title: 'Javascript Fundamental Quiz', date: '12 Jan 2024', type: 'Syllabus', duration: '251 Pages', students: '231', views: '2.4K Views', amount: '222.3 USD', amountSub: '23', certs: '6', score: '12.34 %', feeStatus: 'Free', feeAmount: '0 USD', feeColor: '#7239EA', status: 'Uploaded', statusType: 'paid' },
+    { id: 5, title: 'Javascript Fundamental Quiz', date: '12 Jan 2024', type: 'Syllabus', duration: '251 Pages', students: '231', views: '2.4K Views', amount: '222.3 USD', amountSub: '23', certs: '6', score: '12.34 %', feeStatus: 'Free', feeAmount: '0 USD', feeColor: '#7239EA', status: 'Uploaded', statusType: 'paid' },
+    { id: 6, title: 'Javascript Fundamental Quiz', date: '12 Jan 2024', type: 'Syllabus', duration: '251 Pages', students: '231', views: '2.4K Views', amount: '222.3 USD', amountSub: '23', certs: '6', score: '12.34 %', feeStatus: 'Paid', feeAmount: '35 USD', feeColor: '#17C653', status: 'Uploaded', statusType: 'paid' },
   ];
 
   const modalDocuments = [
@@ -261,7 +173,7 @@ const HOALearners = () => {
 
       {/* Page Header */}
       <div className="hoa-page-header">
-        <h1>Learners</h1>
+        <h1>Tutors</h1>
         <div className="hoa-header-actions">
           <span className="hoa-update-status">
             <img src={hoarefresh} alt="" className="sync-icon" /> Data updated every 5min <span className="dot"></span>
@@ -275,77 +187,63 @@ const HOALearners = () => {
       {/* Stats Container */}
       <div className="hoa-dashboard-stats-container">
         <div className="hoa-card hoa-secondary-stats-row">
-          <div className="sub-stat"><h4>13.3M</h4><p>Syllabus Downloads</p></div>
-          <div className="sub-stat"><h4>204</h4><p>Online Learners</p></div>
-          <div className="sub-stat"><h4>13</h4><p>Competent Learners</p></div>
-          <div className="sub-stat"><h4>4.6</h4><p>NYC Learners</p></div>
-          <div className="sub-stat"><h4>19.32</h4><p>Average Score <span className="trend down"> <img src={hoadecrease} alt="" /> -4.5%</span></p></div>
-          <div className="sub-stat"><h4>84</h4><p>Certificates <span className="trend up"> <img src={hoaincrease} alt="" /> +4.1</span></p></div>
+          <div className="sub-stat"><h4>132</h4><p>Total Tutors</p></div>
+          <div className="sub-stat"><h4>13.3M</h4><p>Syllabus Uploads</p></div>
+          <div className="sub-stat"><h4>204</h4><p>Online Courses</p></div>
+          <div className="sub-stat">
+            <h4 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>19.3M <span style={{ fontSize: '11px', color: '#A1A5B7', fontWeight: 500 }}>RWF <img src={rwanda} alt="rwf" style={{ width: '12px' }}/> <img src={hoadowncaret} alt="drop" /></span></h4>
+            <p>Upload Payments <span className="trend down"> <img src={hoadecrease} alt="" /> -4.5%</span></p>
+          </div>
+          <div className="sub-stat">
+            <h4 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>843.5K <span style={{ fontSize: '11px', color: '#A1A5B7', fontWeight: 500 }}>RWF <img src={rwanda} alt="rwf" style={{ width: '12px' }}/> <img src={hoadowncaret} alt="drop" /></span></h4>
+            <p>Amount Paid <span className="trend up"> <img src={hoaincrease} alt="" /> +4.1</span></p>
+          </div>
         </div>
       </div>
 
       <div className="hoa-dashboard-charts-container">
         <div className="hoa-grid-2">
-          {/* Syllabus Stats Card */}
-          <div className="hoa-card hoa-chart-card">
-            <div className="section-title">SYLLABUS'S STATS</div>
-            <div className="chart-body-row">
-              <div className="donut-wrapper">
-                <div className="donut-chart">
-                  {renderDonut('syllabus', [
-                    { percent: 35, color: '#1B84FF', tooltipText: '34.4K Free' },
-                    { percent: 15, color: '#F6B100', tooltipText: '23 Download' },
-                    { percent: 25, color: '#17C653', tooltipText: '34.4 Readers' },
-                    { percent: 25, color: '#E4E4E7', tooltipText: 'Other' },
-                  ])}
-                </div>
-              </div>
-              <div className="chart-legend">
-                <div className="legend-item"><span className="dot" style={{ background: '#1B84FF' }}></span> <strong>34.4K</strong> Free Downloads</div>
-                <div className="legend-item"><span className="dot" style={{ background: '#FFC700' }}></span> <strong>4.4K</strong> Paid Downloads</div>
-                <div className="legend-item"><span className="dot" style={{ background: '#17C653' }}></span> <strong>34.4</strong> Online Readers</div>
-              </div>
+          {/* ONLINE LEARNERS'S STATUS */}
+          <div className="hoa-card" style={{ padding: '24px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+              <div className="section-title" style={{ margin: 0 }}>ONLINE LEARNERS'S STATUS</div>
+              <div style={{ border: '1px solid #EEF1F6', padding: '4px 8px', borderRadius: '4px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px', color: '#78829D' }}>This Week <img src={hoadowncaret} alt="drop" /></div>
             </div>
-            <div className="chart-footer-stats">
-              <span><strong>38.8K</strong> Total Downloads</span>
-              <span><strong>34.4 H</strong> Avg. Learning Hours</span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #EEF1F6', paddingBottom: '24px', marginBottom: '24px' }}>
+              <div><h3 style={{ margin: 0, fontSize: '20px', color: '#071437' }}>578 <span style={{ fontSize: '10px', color: '#17C653', background: '#EAFFF1', padding: '2px 4px', borderRadius: '4px', verticalAlign: 'middle' }}>+1.6%</span></h3><p style={{ margin: '4px 0 0', fontSize: '13px', color: '#A1A5B7' }}>Present</p></div>
+              <div><h3 style={{ margin: 0, fontSize: '20px', color: '#071437' }}>213 <span style={{ fontSize: '10px', color: '#F8285A', background: '#FFF5F8', padding: '2px 4px', borderRadius: '4px', verticalAlign: 'middle' }}>-0.6%</span></h3><p style={{ margin: '4px 0 0', fontSize: '13px', color: '#A1A5B7' }}>Absent</p></div>
+              <div><h3 style={{ margin: 0, fontSize: '20px', color: '#071437' }}>45 <span style={{ fontSize: '10px', color: '#A1A5B7', background: '#F9F9F9', padding: '2px 4px', borderRadius: '4px', verticalAlign: 'middle' }}>+0.0%</span></h3><p style={{ margin: '4px 0 0', fontSize: '13px', color: '#A1A5B7' }}>Events</p></div>
             </div>
-            {renderFlagDropdown('syllabus', 9600000)}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '13px', color: '#A1A5B7' }}>Total Revenue</span>
+              <div style={{ border: '1px solid #7239EA33', padding: '4px 8px', borderRadius: '4px', fontSize: '12px', color: '#7239EA', background: '#F8F5FF', display: 'flex', alignItems: 'center', gap: '4px' }}>9.6M RWF <img src={rwanda} style={{ width: '12px', margin: '0 2px' }} alt="rwf"/> <img src={hoadowncaret} alt="drop" /></div>
+            </div>
           </div>
 
-          {/* Online Courses Stats Card */}
-          <div className="hoa-card hoa-chart-card">
-            <div className="section-title" style={{ marginBottom: '20px' }}>ONLINE COURSES'S STATS</div>
-            <div className="chart-body-row">
-              <div className="donut-wrapper">
-                <div className="donut-chart">
-                  {renderDonut('courses', [
-                    { percent: 35, color: '#17C653', tooltipText: '34.4K Free' },
-                    { percent: 10, color: '#F6B100', tooltipText: '23 Failed', tooltipClass: 'tooltip-failed' },
-                    { percent: 40, color: '#1B84FF', tooltipText: '4.4K Paid' },
-                    { percent: 15, color: '#E4E4E7', tooltipText: 'Other' },
-                  ])}
-                </div>
-              </div>
-              <div className="chart-legend">
-                <div className="legend-item"><span className="dot" style={{ background: '#1B84FF' }}></span> <strong>34.4K</strong> Free Courses</div>
-                <div className="legend-item"><span className="dot" style={{ background: '#FFC700' }}></span> <strong>4.4K</strong> Paid Courses</div>
-                <div className="legend-item"><span className="dot" style={{ background: '#17C653' }}></span> <strong>34.4</strong> Avg. Active students</div>
-              </div>
+          {/* TUTOR'S STATUS */}
+          <div className="hoa-card" style={{ padding: '24px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+              <div className="section-title" style={{ margin: 0 }}>TUTOR'S STATUS</div>
+              <div style={{ border: '1px solid #EEF1F6', padding: '4px 8px', borderRadius: '4px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px', color: '#78829D' }}>This Week <img src={hoadowncaret} alt="drop" /></div>
             </div>
-            <div className="chart-footer-stats">
-              <span><strong>38.8K</strong> Total Learners</span>
-              <span><strong>34.4 H</strong> Avg. Learning Hours</span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #EEF1F6', paddingBottom: '24px', marginBottom: '24px' }}>
+              <div><h3 style={{ margin: 0, fontSize: '20px', color: '#071437' }}>578 <span style={{ fontSize: '10px', color: '#17C653', background: '#EAFFF1', padding: '2px 4px', borderRadius: '4px', verticalAlign: 'middle' }}>+1.6%</span></h3><p style={{ margin: '4px 0 0', fontSize: '13px', color: '#A1A5B7' }}>Active</p></div>
+              <div><h3 style={{ margin: 0, fontSize: '20px', color: '#071437' }}>213 <span style={{ fontSize: '10px', color: '#F8285A', background: '#FFF5F8', padding: '2px 4px', borderRadius: '4px', verticalAlign: 'middle' }}>-0.6%</span></h3><p style={{ margin: '4px 0 0', fontSize: '13px', color: '#A1A5B7' }}>Offline</p></div>
+              <div><h3 style={{ margin: 0, fontSize: '20px', color: '#071437' }}>45 <span style={{ fontSize: '10px', color: '#A1A5B7', background: '#F9F9F9', padding: '2px 4px', borderRadius: '4px', verticalAlign: 'middle' }}>+0.0%</span></h3><p style={{ margin: '4px 0 0', fontSize: '13px', color: '#A1A5B7' }}>Projects</p></div>
             </div>
-            {renderFlagDropdown('courses', 9600000)}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '13px', color: '#A1A5B7' }}>Total Revenue</span>
+              <div style={{ border: '1px solid #7239EA33', padding: '4px 8px', borderRadius: '4px', fontSize: '12px', color: '#7239EA', background: '#F8F5FF', display: 'flex', alignItems: 'center', gap: '4px' }}>9.6M RWF <img src={rwanda} style={{ width: '12px', margin: '0 2px' }} alt="rwf"/> <img src={hoadowncaret} alt="drop" /></div>
+            </div>
           </div>
+
         </div>
       </div>
 
       {/* List Header */}
       <div className="hoa-approvals-header">
         <div>
-          <h2>Learners</h2>
+          <h2>Tutors</h2>
           <p>Online Course & Past Papers</p>
         </div>
         <div className="approvals-actions">
@@ -374,7 +272,7 @@ const HOALearners = () => {
         </div>
       </div>
 
-      {/* Learners List Layout */}
+      {/* Tutors List Layout */}
       <div className="hoa-list-container">
         <table className="hoa-list-table learners-table">
           <thead>
@@ -384,18 +282,17 @@ const HOALearners = () => {
                   <div className="minus-icon">-</div>
                 </button>
               </th>
-              <th style={{ width: '35%' }}><div className="th-content">Student Details (34) <span className="sort-icon"><img src={hoaupdowncaret} alt="Sort" /></span></div></th>
-              <th className="text-center" style={{ whiteSpace: 'nowrap' }}><div className="th-content justify-center">Avg. Score <span className="sort-icon"><img src={hoaupdowncaret} alt="Sort" /></span></div></th>
-              <th className="text-center" style={{ whiteSpace: 'nowrap' }}><div className="th-content justify-center">Attempts <span className="sort-icon"><img src={hoaupdowncaret} alt="Sort" /></span></div></th>
-              <th className="text-center" style={{ whiteSpace: 'nowrap' }}><div className="th-content justify-center">Downloads <span className="sort-icon"><img src={hoaupdowncaret} alt="Sort" /></span></div></th>
-              <th className="text-center" style={{ whiteSpace: 'nowrap' }}><div className="th-content justify-center">Certificates <span className="sort-icon"><img src={hoaupdowncaret} alt="Sort" /></span></div></th>
-              <th className="text-center" style={{ whiteSpace: 'nowrap' }}><div className="th-content justify-center">Tot. Paid (USD) <span className="sort-icon"><img src={hoaupdowncaret} alt="Sort" /></span></div></th>
+              <th style={{ width: '25%' }}><div className="th-content">Tutor Details (34) <span className="sort-icon"><img src={hoaupdowncaret} alt="Sort" /></span></div></th>
+              <th style={{ width: '25%' }}><div className="th-content">Contact Info <span className="sort-icon"><img src={hoaupdowncaret} alt="Sort" /></span></div></th>
+              <th className="text-center" style={{ whiteSpace: 'nowrap' }}><div className="th-content justify-center">Role <span className="sort-icon"><img src={hoaupdowncaret} alt="Sort" /></span></div></th>
+              <th className="text-center" style={{ whiteSpace: 'nowrap' }}><div className="th-content justify-center">Uploads <span className="sort-icon"><img src={hoaupdowncaret} alt="Sort" /></span></div></th>
+              <th className="text-center" style={{ whiteSpace: 'nowrap' }}><div className="th-content justify-center">Amount Paid <span className="sort-icon"><img src={hoaupdowncaret} alt="Sort" /></span></div></th>
               <th className="status-col"><div className="th-content">Status <span className="sort-icon"><img src={hoaupdowncaret} alt="Sort" /></span></div></th>
               <th className="action-col"></th>
             </tr>
           </thead>
           <tbody>
-            {learnersData.map((req) => (
+            {tutorsData.map((req) => (
               <tr key={req.id}>
                 <td>
                   <input type="checkbox" className="hoa-checkbox" checked={selectedRows.includes(req.id)} onChange={() => toggleRowSelection(req.id)} />
@@ -410,10 +307,14 @@ const HOALearners = () => {
                     </div>
                   </div>
                 </td>
-                <td className="fw-600 text-center" style={{ whiteSpace: 'nowrap' }}>{req.score}</td>
-                <td className="fw-500 text-center" style={{ whiteSpace: 'nowrap' }}>{req.attempts}</td>
-                <td className="fw-500 text-center" style={{ whiteSpace: 'nowrap' }}>{req.downloads}</td>
-                <td className="fw-500 text-center" style={{ whiteSpace: 'nowrap' }}>{req.certs}</td>
+                <td>
+                  <div className="user-meta">
+                    <h5 style={{ fontWeight: 600 }}>{req.phone}</h5>
+                    <p style={{ fontSize: '11px', color: '#A1A5B7' }}>{req.email}</p>
+                  </div>
+                </td>
+                <td className="fw-600 text-center" style={{ whiteSpace: 'nowrap' }}>{req.role}</td>
+                <td className="fw-500 text-center" style={{ whiteSpace: 'nowrap' }}>{req.uploads}</td>
                 <td className="fw-600 text-center" style={{ whiteSpace: 'nowrap' }}>{req.paid}</td>
                 <td className="status-col">
                   <span className={`status-pill pill-${req.statusColor}`}>
@@ -470,7 +371,7 @@ const HOALearners = () => {
             <button className="modal-back-btn" onClick={closeModal}>
               <img src={hoagoback} alt="" />
             </button>
-            <h2>Learner Preview</h2>
+            <h2>Tutors Preview</h2>
             <div className="modal-header-actions">
               <span className="hoa-update-status" style={{ border: '1px solid #EEF1F6' }}>
                 <img src={hoarefresh} alt="" className="sync-icon" /> Data updated every 1 hr <span className="dot" style={{ background: '#17C653' }}></span>
@@ -482,49 +383,92 @@ const HOALearners = () => {
           <div className="modal-content-area">
 
             {/* User Profile Info */}
-            <div className="modal-profile-box">
-              <div className="profile-left">
-                <img src="/assets/imgs/default-profile.png" alt="Avatar" className="profile-avatar" />
-                <div className="profile-details">
-                  <div className="profile-name-row">
-                    <h3>John Doe</h3>
-                    <span className="badge-active">Active</span>
-                    <span className="badge-icon">
-                      <img src={hoauserbadge} alt="" /> 6
-                    </span>
+            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '20px', marginBottom: '24px' }}>
+              
+              {/* Profile Card */}
+              <div style={{ background: '#FFFFFF', border: '1px solid #EEF1F6', borderRadius: '8px', padding: '24px', position: 'relative', overflow: 'hidden' }}>
+                <div style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, background: 'url(/assets/imgs/hexagon-pattern.svg) no-repeat right top', opacity: 0.1, pointerEvents: 'none' }}></div>
+                
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', position: 'relative', zIndex: 1, marginBottom: '20px' }}>
+                  <img src="/assets/imgs/default-profile.png" alt="Avatar" style={{ width: '64px', height: '64px', borderRadius: '50%', objectFit: 'cover' }} />
+                  <button style={{ background: '#F8F5FF', color: '#7239EA', border: '1px solid #7239EA33', padding: '4px 12px', borderRadius: '4px', fontSize: '12px', fontWeight: 500, cursor: 'pointer' }}>View Details</button>
+                </div>
+                
+                <div style={{ display: 'grid', gap: '12px', position: 'relative', zIndex: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <span style={{ width: '80px', color: '#78829D', fontSize: '13px' }}>Full name :</span>
+                    <strong style={{ color: '#071437', fontSize: '15px' }}>John Doe</strong>
                   </div>
-                  <div className="profile-meta-row">
-                    <span className="badge-missing">UI/UX Designer</span> {/* Used for role per tab 2 */}
-                    <span className="bullet-sep">•</span>
-                    <span className="profile-email">johndoe@gonaraza.com</span>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                      <span style={{ width: '80px', color: '#78829D', fontSize: '13px' }}>Total Paid :</span>
+                      <strong style={{ color: '#071437', fontSize: '15px', display: 'flex', alignItems: 'center', gap: '4px' }}>2,340,044 <span style={{ fontSize: '11px', color: '#A1A5B7', fontWeight: 500 }}>RWF <img src={rwanda} alt="rwf" style={{ width: '12px' }}/> <img src={hoadowncaret} alt="drop" /></span></strong>
+                    </div>
+                    <span style={{ border: '1px solid #EEF1F6', borderRadius: '4px', padding: '4px 8px', fontSize: '11px', color: '#78829D' }}>johndoe@gonaraza.com</span>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '20px', position: 'relative', zIndex: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ color: '#1B84FF', background: '#EFF6FF', border: '1px solid #1B84FF33', padding: '2px 8px', borderRadius: '4px', fontSize: '12px', fontWeight: 600 }}>Active</span>
+                    <span style={{ color: '#7239EA', background: '#F8F5FF', border: '1px solid #7239EA33', padding: '2px 8px', borderRadius: '4px', fontSize: '12px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}><img src={hoauserbadge} alt="" /> 6</span>
+                    <span style={{ color: '#F6B100', background: '#FFF8E1', border: '1px solid #F6B10033', padding: '2px 8px', borderRadius: '4px', fontSize: '12px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>⭐ 3.4</span>
+                  </div>
+                  <div className="profile-actions" style={{ gap: '4px' }}>
+                    <button className="icon-btn" style={{ width: '28px', height: '28px' }}><img src={hoagrayadd} alt="" /></button>
+                    <button className="icon-btn" style={{ width: '28px', height: '28px' }}><img src={hoagrayphone} alt="" /></button>
+                    <button className="icon-btn" style={{ width: '28px', height: '28px' }}><img src={hoagraymail} alt="" /></button>
+                    <button className="icon-btn" style={{ width: '28px', height: '28px' }}><img src={hoaverticaldots} alt="" /></button>
                   </div>
                 </div>
               </div>
-              <div className="profile-actions">
-                <button className="icon-btn"><img src={hoagrayadd} alt="" /></button>
-                <button className="icon-btn"><img src={hoagrayphone} alt="" /></button>
-                <button className="icon-btn"><img src={hoagraymail} alt="" /></button>
-                <button className="icon-btn"><img src={hoaverticaldots} alt="" /></button>
+
+              {/* Info List */}
+              <div style={{ background: '#FAFAFA', borderRadius: '8px', padding: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', alignItems: 'center', fontSize: '13px' }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '120px', color: '#78829D' }}><img src={hoausericon} alt="dept" style={{ opacity: 0.5 }} /> Department</span>
+                  <span style={{ color: '#071437', fontWeight: 500 }}>IT</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', fontSize: '13px' }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '120px', color: '#78829D' }}><img src={hoabriefcase} alt="role" style={{ opacity: 0.5 }} /> Role</span>
+                  <span style={{ color: '#071437', fontWeight: 500 }}>Software Engineer</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', fontSize: '13px' }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '120px', color: '#78829D' }}><img src={hoalocation} alt="syll" style={{ opacity: 0.5 }} /> Syllabus</span>
+                  <span style={{ color: '#071437', fontWeight: 500 }}>12</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', fontSize: '13px' }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '120px', color: '#78829D' }}><img src={hoalocation} alt="courses" style={{ opacity: 0.5 }} /> Online Courses</span>
+                  <span style={{ color: '#071437', fontWeight: 500 }}>2</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', fontSize: '13px' }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '120px', color: '#78829D' }}><img src={hoalocation} alt="proj" style={{ opacity: 0.5 }} /> Projects</span>
+                  <span style={{ color: '#071437', fontWeight: 500 }}>14</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', fontSize: '13px' }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '120px', color: '#78829D' }}><img src={hoafollowers} alt="stud" style={{ opacity: 0.5 }} /> Total Students</span>
+                  <span style={{ color: '#071437', fontWeight: 500 }}>234</span>
+                </div>
               </div>
             </div>
 
             {/* Modal Stats Row */}
-            <div className="modal-stats-row">
-              <div className="mod-stat">
-                <h3>13.3K</h3>
-                <p>Total Downloads</p>
+            <div className="modal-stats-row" style={{ borderBottom: 'none', paddingBottom: 0, marginBottom: '24px' }}>
+              <div className="mod-stat" style={{ borderRight: '1px solid #EEF1F6', paddingRight: '20px' }}>
+                <h3 style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>+ 2.8K <span style={{ fontSize: '11px', color: '#A1A5B7', fontWeight: 500 }}>USD <img src={hoausflag} alt="usd" style={{ width: '12px' }}/> <img src={hoadowncaret} alt="drop" /></span></h3>
+                <p>Downloads Income</p>
               </div>
-              <div className="mod-stat">
-                <h3>13</h3>
-                <p>Total Online Courses</p>
+              <div className="mod-stat" style={{ borderRight: '1px solid #EEF1F6', padding: '0 20px' }}>
+                <h3 style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>+ 2.8K <span style={{ fontSize: '11px', color: '#A1A5B7', fontWeight: 500 }}>USD <img src={hoausflag} alt="usd" style={{ width: '12px' }}/> <img src={hoadowncaret} alt="drop" /></span></h3>
+                <p>Courses Income</p>
               </div>
-              <div className="mod-stat">
-                <h3>19.32</h3>
-                <p>Avg. Learning hours <span className="trend down"> <img src={hoadecrease} alt="" /> -4.5%</span></p>
+              <div className="mod-stat" style={{ borderRight: '1px solid #EEF1F6', padding: '0 20px' }}>
+                <h3 style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>2,340,044 <span style={{ fontSize: '11px', color: '#A1A5B7', fontWeight: 500 }}>RWF <img src={rwanda} alt="rwf" style={{ width: '12px' }}/> <img src={hoadowncaret} alt="drop" /></span></h3>
+                <p>Upload Amount</p>
               </div>
-              <div className="mod-stat">
-                <h3>4</h3>
-                <p>Total Projects</p>
+              <div className="mod-stat" style={{ paddingLeft: '20px' }}>
+                <h3 style={{ fontSize: '15px', marginTop: '6px' }}>23 - March - 2026 <span style={{ fontSize: '11px', color: '#78829D', fontWeight: 500 }}>14:00:45</span></h3>
+                <p>Date Joined</p>
               </div>
             </div>
 
@@ -547,9 +491,11 @@ const HOALearners = () => {
                         <tr>
                           <th style={{ width: '40px' }}><div className="minus-icon" style={{ margin: '0 auto' }}>-</div></th>
                           <th><div className="th-content">Course Details (34) <span className="sort-icon"><img src={hoaupdowncaret} alt="" /></span></div></th>
-                          <th><div className="th-content">Tutor & Avg. Score (23) <span className="sort-icon"><img src={hoaupdowncaret} alt="" /></span></div></th>
-                          <th><div className="th-content">Course Type <span className="sort-icon"><img src={hoaupdowncaret} alt="" /></span></div></th>
-                          <th className="text-center"><div className="th-content justify-center">Attempts & Visits <span className="sort-icon"><img src={hoaupdowncaret} alt="" /></span></div></th>
+                          <th><div className="th-content">Type <span className="sort-icon"><img src={hoaupdowncaret} alt="" /></span></div></th>
+                          <th><div className="th-content">Tot. Students <span className="sort-icon"><img src={hoaupdowncaret} alt="" /></span></div></th>
+                          <th><div className="th-content">Tot. Amount & Visits <span className="sort-icon"><img src={hoaupdowncaret} alt="" /></span></div></th>
+                          <th><div className="th-content">Certificates & Avg. Score <span className="sort-icon"><img src={hoaupdowncaret} alt="" /></span></div></th>
+                          <th><div className="th-content">Charging Fee <img src={hoausflag} alt="" style={{ width: '12px', margin: '0 4px' }} /> <span className="sort-icon"><img src={hoaupdowncaret} alt="" /></span></div></th>
                           <th className="status-col"><div className="th-content">Status <span className="sort-icon"><img src={hoaupdowncaret} alt="" /></span></div></th>
                         </tr>
                       </thead>
@@ -565,21 +511,37 @@ const HOALearners = () => {
                             </td>
                             <td>
                               <div className="user-meta">
-                                <h5 style={{ fontWeight: '500' }}>{les.tutor}</h5>
+                                <h5 style={{ fontWeight: '500' }}>{les.type}</h5>
+                                <p style={{ fontSize: '11px', color: '#A1A5B7' }}>{les.duration}</p>
+                              </div>
+                            </td>
+                            <td>
+                              <div className="user-meta">
+                                <h5 style={{ fontWeight: '600' }}>{les.students}</h5>
+                                <p style={{ fontSize: '11px', color: '#A1A5B7' }}>{les.views}</p>
+                              </div>
+                            </td>
+                            <td>
+                              <div className="user-meta">
+                                <h5 style={{ fontWeight: '600' }}>{les.amount}</h5>
+                                <p style={{ fontSize: '11px', color: '#A1A5B7' }}>{les.amountSub}</p>
+                              </div>
+                            </td>
+                            <td>
+                              <div className="user-meta">
+                                <h5 style={{ fontWeight: '600' }}>{les.certs}</h5>
                                 <p style={{ fontSize: '11px', color: '#A1A5B7' }}>{les.score}</p>
                               </div>
                             </td>
                             <td>
                               <div className="user-meta">
-                                <h5 style={{ fontWeight: '500' }}>{les.type}</h5>
-                                <p style={{ fontSize: '11px', color: '#A1A5B7' }}>{les.duration}</p>
+                                <h5 style={{ fontWeight: '600', color: les.feeColor }}>{les.feeStatus}</h5>
+                                <p style={{ fontSize: '11px', color: '#A1A5B7' }}>{les.feeAmount}</p>
                               </div>
                             </td>
-                            <td className="fw-600 text-center">{les.attempts}</td>
                             <td className="status-col">
                               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'flex-end' }}>
                                 <span className={`mod-status-pill st-${les.statusType}`}>{les.status}</span>
-                                <button className="icon-more-btn">⋮</button>
                               </div>
                             </td>
                           </tr>
@@ -864,4 +826,4 @@ const HOALearners = () => {
   );
 };
 
-export default HOALearners;
+export default HOATutors;
