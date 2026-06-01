@@ -33,6 +33,7 @@ import hoalocation from '../../../assets/icons/hoalocation.svg';
 import hoabriefcase from '../../../assets/icons/hoabriefcase.svg';
 import hoafollowers from '../../../assets/icons/hoafollowers.svg';
 import hoaproject from '../../../assets/imgs/hoaproject.png';
+import hoacalendar from '../../../assets/icons/hoacalendar.svg';
 
 
 const HOALearners = () => {
@@ -56,6 +57,13 @@ const HOALearners = () => {
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('lessons'); // 'lessons', 'projects', 'activity'
+  
+  const [openTickets, setOpenTickets] = useState({ 1: true });
+  const [fullScreenImage, setFullScreenImage] = useState(null);
+
+  const toggleTicket = (id) => {
+    setOpenTickets(prev => ({ ...prev, [id]: !prev[id] }));
+  };
 
   const [flagSelections, setFlagSelections] = useState({
     syllabus: { label: 'RWF', flag: rwanda },
@@ -705,102 +713,121 @@ const HOALearners = () => {
                       <span className="badge-high">High</span>
                     </div>
                   </div>
+                  <h4 style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '24px 0 20px 0', color: '#071437', fontSize: '16px',fontWeight:600 }}>
+                    <img src={hoacalendar} alt="calendar" />
+                    Upcoming Activity
+                  </h4>
 
-                  <div className="upcoming-activity-card">
-                    <div className="card-top">
-                      <h4 style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '0', color: '#450468' }}>
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="18" rx="2" ry="2" stroke="#450468" strokeWidth="2" /><path d="M16 2V6M8 2V6M3 10H21" stroke="#450468" strokeWidth="2" /></svg>
-                        Upcoming Activity
-                      </h4>
+                  <div className="upcoming-activity-card" style={{ background: '#FAFAFA', borderRadius: '2px', padding: '20px' }}>
+                    <div className="event-row" style={{ marginTop: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <h5 style={{ margin: 0, fontSize: '15px', color: '#071437', fontWeight: 600 }}>Event Name</h5>
+                      <span className="event-status" style={{ border: '1px solid #17C65333', borderRadius: '4px', padding: '4px 8px', background: '#EAFFF1', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: '#04B440', fontWeight: 600 }}>Approved <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M6 9L12 15L18 9" stroke="#17C653" strokeWidth="2" /></svg></span>
                     </div>
 
-                    <div className="event-row">
-                      <h5>Event Name</h5>
-                      <span className="event-status">Approved <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M6 9L12 15L18 9" stroke="#17C653" strokeWidth="2" /></svg></span>
-                    </div>
-
-                    <p className="event-desc">
+                    <p className="event-desc" style={{ fontSize: '13px', color: '#78829D', lineHeight: 1.5, margin: '16px 0 0 0' }}>
                       Statistics is the branch of mathematics that deals with the collection, analysis, interpretation, presentation, and organization of data. It provides methodologies for making inferences about populations based on sample data, enabling researchers to quantify uncertainty and variability in empirical findings.
                     </p>
-
-                    <div className="event-forms">
-                      <div className="form-group">
-                        <label>Reminder</label>
-                        <div className="form-select">No Reminder <img src={hoadowncaret} alt="" /></div>
+                    <div className="event-forms" style={{ display: 'flex', background: '#FFFFFF', padding: '12px', borderRadius: '2px', border: '1px solid #F1F1F4', marginTop: '10px' }}>
+                      <div className="form-group border-right" style={{ flex: 1, borderRight: '1px solid #EEF1F6', paddingRight: '16px' }}>
+                        <label style={{ fontSize: '11px', color: '#A1A5B7', marginBottom: '8px', display: 'block' }}>Reminder</label>
+                        <div className="form-select borderless" style={{ border: 'none', background: 'transparent', padding: '0', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: '#071437', fontWeight: 600 }}>No Reminder <img src={hoadowncaret} alt="" /></div>
                       </div>
-                      <div className="form-group">
-                        <label>Task Priority</label>
-                        <div className="form-select priority-select"><span className="dot" style={{ background: '#7239EA' }}></span> High <img src={hoadowncaret} alt="" /></div>
+                      <div className="form-group border-right" style={{ flex: 1, borderRight: '1px solid #EEF1F6', padding: '0 16px' }}>
+                        <label style={{ fontSize: '11px', color: '#A1A5B7', marginBottom: '8px', display: 'block' }}>Task Priority</label>
+                        <div className="form-select borderless" style={{ border: '1px solid #7239EA33', background: '#F8F5FF', padding: '8px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: '#7239EA', width: '75px', height: '24px', borderRadius: '30px' }}><span className="dot" style={{ background: '#7239EA', width: '6px', height: '6px', borderRadius: '50%', display: 'inline-block' }}></span> High <img src={hoadowncaret} alt="" /></div>
                       </div>
-                      <div className="form-group">
-                        <label>Assigned To</label>
-                        <div className="form-select assigned-select">
-                          <img src="https://via.placeholder.com/20" alt="" className="tiny-avatar" /> Esther Howard <img src={hoadowncaret} alt="" />
+                      <div className="form-group" style={{ flex: 1, paddingLeft: '16px' }}>
+                        <label style={{ fontSize: '11px', color: '#A1A5B7', marginBottom: '8px', display: 'block' }}>Assigned To</label>
+                        <div className="form-select borderless" style={{ border: 'none', background: 'transparent', padding: '0', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: '#071437', fontWeight: 600 }}>
+                          <img src="/assets/imgs/default-profile.png" alt="" className="tiny-avatar" style={{ borderRadius: '50%' }} /> Esther Howard <img src={hoadowncaret} alt="" />
                         </div>
                       </div>
                     </div>
-
-                    <div className="event-nav">
-                      <button className="nav-circle"><img src={hoaprev} alt="" /></button>
-                      <button className="nav-circle"><img src={hoanext} alt="" /></button>
+                    <div className="event-nav" style={{ display: 'flex', justifyContent: 'center', gap: '12px', marginTop: '20px' }}>
+                      <button className="nav-circle" style={{ width: '32px', height: '32px', borderRadius: '50%', border: '1px solid #EEF1F6', background: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}><img src={hoaprev} alt="" /></button>
+                      <button className="nav-circle" style={{ width: '32px', height: '32px', borderRadius: '50%', border: '1px solid #EEF1F6', background: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}><img src={hoanext} alt="" /></button>
                     </div>
                   </div>
+
 
                   <div className="qa-section">
                     <h4 style={{ fontSize: '14px', color: '#071437', margin: '30px 0 15px 0' }}>Questions & Answers</h4>
 
                     {/* Ticket 1 */}
-                    <div className="ticket-card border-green">
-                      <div className="ticket-header">
+                    <div className={`ticket-card border-green ${!openTickets[1] ? 'collapsed' : ''}`}>
+                      <div className="ticket-header" onClick={() => toggleTicket(1)} style={{ cursor: 'pointer' }}>
                         <div className="ticket-meta">
                           <strong>Ticket No : #TKT1204567</strong>
                           <span>CC : maxsmith@gonaraza.com</span>
                         </div>
-                        <div className="ticket-status st-solved">Solved <img src={hoaupdowncaret} alt="" /></div>
+                        <div className="ticket-status st-solved">Solved <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ transform: openTickets[1] ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}><path d="M6 9l6 6 6-6"/></svg></div>
                       </div>
 
-                      <div className="ticket-body">
-                        <div className="ticket-user">
-                          <img src="https://via.placeholder.com/40" alt="" />
-                          <div>
-                            <strong>Max Smith <svg width="12" height="12" viewBox="0 0 24 24" fill="#17C653"><circle cx="12" cy="12" r="10" /><path d="M8 12L11 15L16 9" stroke="white" strokeWidth="2" /></svg> <span className="role-badge">Professor</span></strong>
-                            <span>maxsmith@gonaraza.com</span>
+                      {openTickets[1] && (
+                        <div className="ticket-body">
+                          <div className="ticket-user">
+                            <img src="/assets/imgs/default-profile.png" alt="" className="tiny-avatar" style={{ borderRadius: '50%' }} />
+                            <div>
+                              <strong>Max Smith <svg width="12" height="12" viewBox="0 0 24 24" fill="#17C653"><circle cx="12" cy="12" r="10" /><path d="M8 12L11 15L16 9" stroke="white" strokeWidth="2" /></svg> <span className="role-badge">Professor</span></strong>
+                              <span>maxsmith@gonaraza.com</span>
+                            </div>
+                          </div>
+                          <div className="ticket-content">
+                            <p>Ads is not displaying and i paid for all fees, 3 batches please help me as soon as possible.</p>
+                            <div className="ticket-attachment" style={{ display: 'flex', gap: '8px', margin: '16px 0' }}>
+                              <div style={{ paddingTop: '8px' }}>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#A1A5B7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 14L4 9l5-5" /><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5v0a5.5 5.5 0 0 1-5.5 5.5H11" /></svg>
+                              </div>
+                              <div 
+                                className="attach-img" 
+                                style={{ backgroundImage: `url(${hoaproject})`, backgroundSize: 'cover', backgroundPosition: 'center', height: '100px', width: '140px', borderRadius: '6px', border: '1px solid #DBDFE9', cursor: 'pointer', position: 'relative', overflow: 'hidden' }}
+                                onClick={() => setFullScreenImage(hoaproject)}
+                              >
+                                <div style={{ position: 'absolute', bottom: 0, right: 0, background: 'rgba(0,0,0,0.5)', width: '24px', height: '24px', borderTopLeftRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
+                                </div>
+                              </div>
+                            </div>
+                            <p>Ads is not displaying and i paid for all fees, 3 batches please help me as soon as possible.</p>
+                          </div>
+                          <div className="ticket-actions">
+                            <button><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M14 9V5C14 4.20435 13.6839 3.44129 13.1213 2.87868C12.5587 2.31607 11.7956 2 11 2L7 11V22H18.28C18.7623 22.0055 19.2304 21.8364 19.5979 21.524C19.9654 21.2116 20.2077 20.7769 20.28 20.3L21.66 11.3C21.7035 11.0134 21.6842 10.7207 21.6033 10.4423C21.5225 10.1638 21.3821 9.90629 21.1919 9.68751C21.0016 9.46873 20.7661 9.29393 20.5016 9.17522C20.2371 9.0565 19.95 8.99672 19.66 9H14Z" stroke="#7239EA" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /><path d="M7 22H3C2.46957 22 1.96086 21.7893 1.58579 21.4142C1.21071 21.0391 1 20.5304 1 20V13C1 12.4696 1.21071 11.9609 1.58579 11.5858C1.96086 11.2107 2.46957 11 3 11H7V22Z" stroke="#7239EA" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg> <span style={{ color: '#7239EA', fontWeight: '600' }}>Yes</span></button>
+                            <button><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M10 15V19C10 19.7956 10.3161 20.5587 10.8787 21.1213C11.4413 21.6839 12.2044 22 13 22L17 13V2H5.72C5.23773 1.99451 4.76961 2.16358 4.40212 2.47597C4.03463 2.78836 3.79234 3.22312 3.72 3.7L2.34 12.7C2.29653 12.9866 2.31575 13.2793 2.39665 13.5577C2.47754 13.8362 2.61794 14.0937 2.80814 14.3125C2.99834 14.5313 3.23389 14.7061 3.49836 14.8248C3.76284 14.9435 4.05001 15.0033 4.34 15H10Z" stroke="#A1A5B7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /><path d="M17 2H21C21.5304 2 22.0391 2.21071 22.4142 2.58579C22.7893 2.96086 23 3.46957 23 4V11C23 11.5304 22.7893 12.0391 22.4142 12.4142C22.0391 12.7893 21.5304 13 21 13H17V2Z" stroke="#A1A5B7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg> <span style={{ color: '#A1A5B7' }}>No</span></button>
                           </div>
                         </div>
-                        <div className="ticket-content">
-                          <p>Ads is not displaying and i paid for all fees, 3 batches please help me as soon as possible.</p>
-                          <div className="ticket-attachment">
-                            <div className="attach-img" style={{ background: '#F1F1F4', height: '80px', width: '120px', borderRadius: '6px', margin: '10px 0', border: '1px solid #DBDFE9' }}></div>
-                          </div>
-                          <p>Ads is not displaying and i paid for all fees, 3 batches please help me as soon as possible.</p>
-                        </div>
-                        <div className="ticket-actions">
-                          <button><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M14 9V5C14 4.20435 13.6839 3.44129 13.1213 2.87868C12.5587 2.31607 11.7956 2 11 2L7 11V22H18.28C18.7623 22.0055 19.2304 21.8364 19.5979 21.524C19.9654 21.2116 20.2077 20.7769 20.28 20.3L21.66 11.3C21.7035 11.0134 21.6842 10.7207 21.6033 10.4423C21.5225 10.1638 21.3821 9.90629 21.1919 9.68751C21.0016 9.46873 20.7661 9.29393 20.5016 9.17522C20.2371 9.0565 19.95 8.99672 19.66 9H14Z" stroke="#7239EA" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /><path d="M7 22H3C2.46957 22 1.96086 21.7893 1.58579 21.4142C1.21071 21.0391 1 20.5304 1 20V13C1 12.4696 1.21071 11.9609 1.58579 11.5858C1.96086 11.2107 2.46957 11 3 11H7V22Z" stroke="#7239EA" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg> <span style={{ color: '#7239EA', fontWeight: '600' }}>Yes</span></button>
-                          <button><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M10 15V19C10 19.7956 10.3161 20.5587 10.8787 21.1213C11.4413 21.6839 12.2044 22 13 22L17 13V2H5.72C5.23773 1.99451 4.76961 2.16358 4.40212 2.47597C4.03463 2.78836 3.79234 3.22312 3.72 3.7L2.34 12.7C2.29653 12.9866 2.31575 13.2793 2.39665 13.5577C2.47754 13.8362 2.61794 14.0937 2.80814 14.3125C2.99834 14.5313 3.23389 14.7061 3.49836 14.8248C3.76284 14.9435 4.05001 15.0033 4.34 15H10Z" stroke="#A1A5B7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /><path d="M17 2H21C21.5304 2 22.0391 2.21071 22.4142 2.58579C22.7893 2.96086 23 3.46957 23 4V11C23 11.5304 22.7893 12.0391 22.4142 12.4142C22.0391 12.7893 21.5304 13 21 13H17V2Z" stroke="#A1A5B7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg> <span style={{ color: '#A1A5B7' }}>No</span></button>
-                        </div>
-                      </div>
+                      )}
                     </div>
 
                     {/* Ticket 2 */}
-                    <div className="ticket-card border-red collapsed">
-                      <div className="ticket-header">
+                    <div className={`ticket-card border-red ${!openTickets[2] ? 'collapsed' : ''}`}>
+                      <div className="ticket-header" onClick={() => toggleTicket(2)} style={{ cursor: 'pointer' }}>
                         <div className="ticket-meta">
                           <strong>Ticket No : #TKT1204567</strong>
                           <span>CC : maxsmith@gonaraza.com</span>
                         </div>
-                        <div className="ticket-status st-unsolved">Unsolved <img src={hoadowncaret} alt="" /></div>
+                        <div className="ticket-status st-unsolved">Unsolved <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ transform: openTickets[2] ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}><path d="M6 9l6 6 6-6"/></svg></div>
                       </div>
+                      {openTickets[2] && (
+                        <div className="ticket-body">
+                          <div className="ticket-content"><p>Ticket 2 content goes here.</p></div>
+                        </div>
+                      )}
                     </div>
 
                     {/* Ticket 3 */}
-                    <div className="ticket-card border-blue collapsed">
-                      <div className="ticket-header">
+                    <div className={`ticket-card border-blue ${!openTickets[3] ? 'collapsed' : ''}`}>
+                      <div className="ticket-header" onClick={() => toggleTicket(3)} style={{ cursor: 'pointer' }}>
                         <div className="ticket-meta">
                           <strong>Ticket No : #TKT1204567</strong>
                           <span>CC : maxsmith@gonaraza.com</span>
                         </div>
-                        <div className="ticket-status st-review">In Review <img src={hoadowncaret} alt="" /></div>
+                        <div className="ticket-status st-review">In Review <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ transform: openTickets[3] ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}><path d="M6 9l6 6 6-6"/></svg></div>
                       </div>
+                      {openTickets[3] && (
+                        <div className="ticket-body">
+                          <div className="ticket-content"><p>Ticket 3 content goes here.</p></div>
+                        </div>
+                      )}
                     </div>
 
                   </div>
@@ -812,6 +839,12 @@ const HOALearners = () => {
         </div>
       </div>
 
+      {fullScreenImage && (
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.8)', zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <button onClick={() => setFullScreenImage(null)} style={{ position: 'absolute', top: '20px', right: '30px', background: 'none', border: 'none', color: 'white', fontSize: '40px', cursor: 'pointer', padding: '10px' }}>&times;</button>
+          <img src={fullScreenImage} alt="Full Screen" style={{ maxWidth: '90%', maxHeight: '90%', borderRadius: '8px', objectFit: 'contain' }} />
+        </div>
+      )}
     </HOALayout>
   );
 };
