@@ -1,7 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import ProfessorLayout from '../../../components/layouts/ProfessorLayout/ProfessorLayout';
 import './management-schedule.css';
+import EmptyState from '../../../components/EmptyState/EmptyState';
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 // Helpers for Calendar and Time
 const startOfWeek = (date) => {
@@ -29,6 +32,23 @@ const formatWeekRange = (weekStart) => {
 };
 
 const pad2 = (value) => String(value).padStart(2, '0');
+
+const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+
+const formatTime12h = (value) => {
+  const hours24 = value.getHours();
+  const minutes = pad2(value.getMinutes());
+  const meridiem = hours24 >= 12 ? 'PM' : 'AM';
+  let hour12 = hours24 % 12;
+  if (hour12 === 0) hour12 = 12;
+  return `${pad2(hour12)}:${minutes} ${meridiem}`;
+};
+
+const diffInDays = (a, b) => {
+  const utcA = Date.UTC(a.getFullYear(), a.getMonth(), a.getDate());
+  const utcB = Date.UTC(b.getFullYear(), b.getMonth(), b.getDate());
+  return Math.round((utcA - utcB) / 86400000);
+};
 
 const formatInputDateTime = (date) => {
   const month = date.getMonth() + 1;
@@ -100,13 +120,9 @@ const ManagementSchedule = () => {
 
   const scheduleHours = ['6:00', '7:00', '8:00', '9:00', '10:00', '11:00', '12:00'];
 
-  const scheduleEvents = [
-    { id: 1, title: 'Math Explanation', startTime: '06:00 AM', endTime: '08:00 AM', status: 'In Review', statusTone: 'review', attendees: 43, tone: 'lavender', colStart: 2, colSpan: 1, rowStart: 2, rowSpan: 1 },
-    { id: 2, title: 'Reading Workshop', startTime: '07:00 AM', endTime: '10:00 AM', status: 'Confirmed', statusTone: 'confirmed', attendees: 28, tone: 'mint', colStart: 3, colSpan: 1, rowStart: 3, rowSpan: 3 },
-    { id: 3, title: 'Science Lab', startTime: '08:00 AM', endTime: '11:00 AM', status: 'In Review', statusTone: 'review', attendees: 19, tone: 'blue', colStart: 4, colSpan: 1, rowStart: 4, rowSpan: 3 },
-    { id: 4, title: 'Writing Clinic', startTime: '09:00 AM', endTime: '10:00 PM', status: 'Draft', statusTone: 'draft', attendees: 16, tone: 'rose', colStart: 5, colSpan: 1, rowStart: 5, rowSpan: 1 },
-    { id: 5, title: 'Weekly Check-in', startTime: '10:00 AM', endTime: '01:00 PM', status: 'Confirmed', statusTone: 'confirmed', attendees: 24, tone: 'sand', colStart: 6, colSpan: 1, rowStart: 6, rowSpan: 3 },
-  ];
+  const [events, setEvents] = useState([]);
+  const [eventsLoading, setEventsLoading] = useState(true);
+  const [eventsError, setEventsError] = useState('');
 
   // --- Schedule Week Navigation State ---
   const [weekStartDate, setWeekStartDate] = useState(startOfWeek(new Date()));
@@ -131,6 +147,11 @@ const ManagementSchedule = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [eventStatus, setEventStatus] = useState('In-Review');
   const [isStatusMenuOpen, setIsStatusMenuOpen] = useState(false);
+
+  const [eventName, setEventName] = useState('');
+  const [eventSubtitle, setEventSubtitle] = useState('');
+  const [eventDescription, setEventDescription] = useState('');
+  const [durationMinutes, setDurationMinutes] = useState(60);
 
   // Time Picker State
   const [isTimePickerOpen, setIsTimePickerOpen] = useState(false);
@@ -200,6 +221,121 @@ const ManagementSchedule = () => {
       setUploadedFiles(prev => [...prev, ...Array.from(files)]);
     }
   };
+
+  useEffect(() => {
+    let mounted = true;
+    const token = localStorage.getItem('token');
+
+    const loadEvents = async () => {
+      setEventsLoading(true);
+      setEventsError('');
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/events/created/my?limit=100&offset=0`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data?.message || 'Failed to load schedule events');
+        }
+
+        if (!mounted) return;
+        setEvents(Array.isArray(data?.data) ? data.data : []);
+      } catch (error) {
+        if (mounted) setEventsError(error.message || 'Failed to load schedule events');
+      } finally {
+        if (mounted) setEventsLoading(false);
+      }
+    };
+
+    loadEvents();
+    return () => { mounted = false; };
+  }, []);
+
+  // Create event handler
+  const handleCreateEvent = async () => {
+    if (!eventName || !selectedDate) {
+      return alert('Please provide an event name and time');
+    }
+
+    const token = localStorage.getItem('token');
+    const payload = {
+      name: eventName,
+      subtitle: eventSubtitle,
+      description: eventDescription,
+      status: eventStatus.toLowerCase().replace(/ /g, '_'),
+      event_datetime: selectedDate.toISOString(),
+      duration_minutes: Number(durationMinutes) || 60,
+    };
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/events`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.message || 'Failed to create event');
+
+      // Prepend created event and close modal
+      const created = data?.data || null;
+      if (created) setEvents(prev => [created, ...prev]);
+      setIsModalOpen(false);
+      // reset modal fields
+      setEventName(''); setEventSubtitle(''); setEventDescription(''); setDurationMinutes(60);
+    } catch (err) {
+      alert(err.message || 'Failed to create event');
+    }
+  };
+
+  const scheduleEvents = useMemo(() => {
+    const weekStart = startOfWeek(weekStartDate);
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekEnd.getDate() + 7);
+
+    return events
+      .map((event) => {
+        const startsAt = new Date(event.event_datetime);
+        const durationMinutes = Number(event.duration_minutes || 60);
+        const endsAt = event.end_datetime ? new Date(event.end_datetime) : new Date(startsAt.getTime() + durationMinutes * 60000);
+        const dayOffset = diffInDays(startsAt, weekStart);
+        const hour = startsAt.getHours();
+        const minutes = startsAt.getMinutes();
+        const dayColumn = clamp(dayOffset + 2, 2, 8);
+        const hourIndex = clamp(hour - 6, 0, scheduleHours.length - 1);
+        const rowStart = hourIndex + 2;
+        const rowSpan = Math.max(1, Math.ceil(Math.max(30, (endsAt - startsAt) / 60000) / 60));
+        const tone = event.status === 'confirmed' || event.status === 'scheduled'
+          ? 'mint'
+          : event.status === 'draft'
+            ? 'rose'
+            : event.status === 'completed'
+              ? 'sand'
+              : 'lavender';
+
+        return {
+          id: event.id,
+          title: event.name,
+          startTime: formatTime12h(startsAt),
+          endTime: formatTime12h(endsAt),
+          status: event.status ? event.status.replace(/_/g, ' ') : 'scheduled',
+          statusTone: event.status === 'draft' ? 'draft' : (event.status === 'completed' ? 'confirmed' : 'review'),
+          attendees: Number(event.total_registrations || 0),
+          tone,
+          colStart: dayColumn,
+          colSpan: 1,
+          rowStart,
+          rowSpan,
+          minutes,
+        };
+      })
+      .filter(event => {
+        const startsAt = new Date(events.find(item => item.id === event.id)?.event_datetime);
+        return startsAt >= weekStart && startsAt < weekEnd;
+      });
+  }, [events, weekStartDate]);
 
   return (
     <ProfessorLayout currentPage="management">
@@ -281,6 +417,25 @@ const ManagementSchedule = () => {
           </header>
 
           <section className="prof-schedule-board" aria-label="Weekly calendar">
+            {eventsLoading && (
+              <div className="prof-schedule-board-state">Loading schedule...</div>
+            )}
+
+            {!eventsLoading && eventsError && (
+              <div className="prof-schedule-board-state is-error">Error: {eventsError}</div>
+            )}
+
+            {!eventsLoading && !eventsError && scheduleEvents.length === 0 && (
+              <div style={{ padding: '2rem', textAlign: 'center' }}>
+                <img src="/assets/icons/empty-calendar.svg" alt="No events" style={{ width: 96, height: 96, opacity: 0.95 }} />
+                <h3 style={{ marginTop: '.5rem' }}>No events this week</h3>
+                <p style={{ margin: 0, color: 'var(--muted, #666)', maxWidth: 520, marginLeft: 'auto', marginRight: 'auto' }}>There are no scheduled events for the selected week. Create an event to populate your schedule.</p>
+                <div style={{ marginTop: '.75rem' }}>
+                  <button className="learners-btn learners-btn-primary" onClick={(e) => { e.preventDefault(); setIsModalOpen(true); }}>Add Event</button>
+                </div>
+              </div>
+            )}
+
             <div className="prof-schedule-grid">
               <div className="prof-schedule-corner">Hour</div>
 
@@ -380,7 +535,7 @@ const ManagementSchedule = () => {
                 
                 <label className="prof-schedule-modal-field prof-schedule-modal-field--full">
                   <span>Event name</span>
-                  <input type="text" defaultValue="Math Explanation" />
+                  <input type="text" value={eventName} onChange={(e) => setEventName(e.target.value)} placeholder="Event title" />
                 </label>
 
                 <div className="prof-schedule-modal-row">
@@ -462,7 +617,7 @@ const ManagementSchedule = () => {
 
                 <label className="prof-schedule-modal-field prof-schedule-modal-field--full">
                   <span>Event Subtitle</span>
-                  <textarea rows="4" placeholder="Type something..."></textarea>
+                  <input type="text" value={eventSubtitle} onChange={(e) => setEventSubtitle(e.target.value)} placeholder="Optional subtitle" />
                 </label>
 
                 <div className="prof-schedule-modal-field prof-schedule-modal-field--full">
@@ -499,10 +654,17 @@ const ManagementSchedule = () => {
                     <small>{uploadedFiles.length > 0 ? 'Ready to upload' : 'Upload case files, if any.'}</small>
                   </span>
                 </label>
+                <label className="prof-schedule-modal-field prof-schedule-modal-field--full">
+                  <span>Event Description</span>
+                  <textarea rows="4" value={eventDescription} onChange={(e) => setEventDescription(e.target.value)} placeholder="Type something..."></textarea>
+                </label>
               </div>
             </div>
 
-            <button type="button" className="prof-schedule-modal-submit" onClick={() => setIsModalOpen(false)}>Done</button>
+            <div className="prof-schedule-modal-actions">
+              <button type="button" className="prof-schedule-modal-cancel" onClick={() => setIsModalOpen(false)}>Cancel</button>
+              <button type="button" className="prof-schedule-modal-submit" onClick={handleCreateEvent}>Create Event</button>
+            </div>
           </div>
         </div>
       </div>

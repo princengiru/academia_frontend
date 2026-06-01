@@ -1,7 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import ProfessorLayout from '../../../components/layouts/ProfessorLayout/ProfessorLayout';
 import './management-lessons-ranks.css';
+import EmptyState from '../../../components/EmptyState/EmptyState';
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 const ManagementLessonsRanks = () => {
   const preventDefault = (e) => e.preventDefault();
@@ -16,29 +19,56 @@ const ManagementLessonsRanks = () => {
     { id: 'management-student-qa', label: 'Student Q&A' },
   ];
 
-  // --- Grid Data & Pagination State ---
-  const allCards = [
-    { id: 1, price: 'Free', rank: '#1', type: 'Syllabus', title: 'Software Development', followers: '234', created: 'Jan 4th 2026', image: '/assets/imgs/aca.png' },
-    { id: 2, price: '$5 / Month', rank: '#89', type: 'Online Course', title: 'Software Development', followers: '234', created: 'Jan 4th 2026', image: '/assets/imgs/ac-on.jpg' },
-    { id: 3, price: '$5 / Month', rank: '#212', type: 'Syllabus', title: 'Software Development', followers: '234', created: 'Jan 4th 2026', image: '/assets/imgs/ac-jr.jpg' },
-    { id: 4, price: 'Free', rank: '#1', type: 'Syllabus', title: 'Software Development', followers: '234', created: 'Jan 4th 2026', image: '/assets/imgs/prof.jpg' },
-    { id: 5, price: '$5 / Month', rank: '#1', type: 'Syllabus', title: 'Software Development', followers: '234', created: 'Jan 4th 2026', image: '/assets/imgs/morn.jpg' },
-    { id: 6, price: 'Free', rank: '#901', type: 'Online Course', title: 'Software Development', followers: '17', created: 'Jan 4th 2026', image: '/assets/imgs/ac-on.jpg' },
-    { id: 7, price: '$5 / Month', rank: '#1', type: 'Syllabus', title: 'Software Development', followers: '234', created: 'Jan 4th 2026', image: '/assets/imgs/journal.jpg' },
-    { id: 8, price: '$5 / Month', rank: '#1', type: 'Syllabus', title: 'Software Development', followers: '234', created: 'Jan 4th 2026', image: '/assets/imgs/newnew.jpg' },
-    { id: 9, price: '$5 / Month', rank: '#1', type: 'Syllabus', title: 'Software Development', followers: '234', created: 'Jan 4th 2026', image: '/assets/imgs/aca.png' },
-    { id: 10, price: '$5 / Month', rank: '#120', type: 'Online Course', title: 'Software Development', followers: '17', created: 'Jan 4th 2026', image: '/assets/imgs/new1.webp' },
-    { id: 11, price: '$5 / Month', rank: '#1', type: 'Syllabus', title: 'Software Development', followers: '234', created: 'Jan 4th 2026', image: '/assets/imgs/magazine.jpg' },
-    { id: 12, price: '$5 / Month', rank: '#1', type: 'Syllabus', title: 'Software Development', followers: '234', created: 'Jan 4th 2026', image: '/assets/imgs/eg.webp' },
-  ];
+  // --- Grid Data & Pagination State (server-driven) ---
+  const [items, setItems] = useState([]);
+  const [itemsLoading, setItemsLoading] = useState(true);
+  const [itemsError, setItemsError] = useState('');
 
   // Filters State
   const [activeFilter, setActiveFilter] = useState('All');
+  const [searchTerm, setSearchTerm] = useState('');
   
-  // Pagination logic (reused pattern from earlier)
+  // Pagination logic
   const [pageSize, setPageSize] = useState(5);
-  const [currentPage, setCurrentPage] = useState(2); // Set to 2 initially as per original HTML
-  const totalPages = Math.ceil(allCards.length / pageSize);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const totalPages = Math.max(1, Math.ceil((totalItems || items.length) / pageSize));
+  
+  useEffect(() => {
+    let mounted = true;
+    const token = localStorage.getItem('token');
+
+    const load = async () => {
+      setItemsLoading(true);
+      setItemsError('');
+      try {
+        const params = new URLSearchParams();
+        params.set('page', String(currentPage));
+        params.set('limit', String(pageSize));
+        if (searchTerm) params.set('q', searchTerm);
+        if (activeFilter && activeFilter !== 'All') params.set('type', activeFilter.toLowerCase());
+
+        const res = await fetch(`${API_BASE_URL}/api/dashboard/lessons-history?${params.toString()}`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        const body = await res.json();
+        if (!res.ok) throw new Error(body.message || 'Failed to load lessons');
+
+        if (!mounted) return;
+        const data = body?.data || [];
+        const pagination = body?.pagination || {};
+        setItems(Array.isArray(data) ? data : []);
+        setTotalItems(Number(pagination.total || data.length));
+      } catch (err) {
+        if (mounted) setItemsError(err.message || 'Failed to load lessons');
+      } finally {
+        if (mounted) setItemsLoading(false);
+      }
+    };
+
+    load();
+    return () => { mounted = false; };
+  }, [currentPage, pageSize, searchTerm, activeFilter]);
   
   // Notice: Because the original HTML has a separate pager up top that goes 1, 2, 3, 4, 5, 
   // I am providing dummy functional buttons to match the visual. 
@@ -95,7 +125,7 @@ const ManagementLessonsRanks = () => {
           <div className="assessments-hero-actions">
             <div className="assessments-search">
               <img src="/assets/icons/magnifier.svg" alt="Search" />
-              <input type="search" placeholder="Search Assignments..." aria-label="Search Assignments" />
+              <input type="search" placeholder="Search lessons..." aria-label="Search lessons" value={searchTerm} onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }} />
             </div>
 
             <button type="button" className="assessments-create-btn" onClick={preventDefault}>
@@ -146,27 +176,42 @@ const ManagementLessonsRanks = () => {
 
         {/* Image Grid */}
         <section className="prof-lesson-ranks-grid">
-          {allCards.map((card) => (
-            <article key={card.id} className="prof-lesson-rank-card">
-              <img className="prof-lesson-rank-bg" src={card.image} alt={card.title} />
-
-              <div className="prof-lesson-rank-overlay">
-                <span className="prof-lesson-rank-price">{card.price}</span>
-                <span className="prof-lesson-rank-badge">{card.rank}</span>
-
-                <div className="prof-lesson-rank-copy">
-                  <small>{card.type}</small>
-                  <h3>{card.title}</h3>
-                  <p>Followers : {card.followers}</p>
-                  <p>Created on : {card.created}</p>
-                </div>
-
-                <a className="prof-lesson-rank-open" href="#" onClick={preventDefault} aria-label="Open lesson">
-                  <img src="/assets/icons/ac-en.svg" alt="" />
-                </a>
+          {itemsLoading ? (
+            <div className="prof-lesson-ranks-loading">Loading lessons...</div>
+          ) : itemsError ? (
+            <div className="prof-lesson-ranks-loading is-error">Error: {itemsError}</div>
+          ) : items.length === 0 ? (
+            <div style={{ padding: '2rem', textAlign: 'center' }}>
+              <img src="/assets/icons/empty-lessons.svg" alt="No lessons" style={{ width: 96, height: 96, opacity: 0.95 }} />
+              <h3 style={{ marginTop: '.5rem' }}>No lessons yet</h3>
+              <p style={{ margin: 0, color: 'var(--muted, #666)', maxWidth: 520, marginLeft: 'auto', marginRight: 'auto' }}>You haven't published any lessons yet. Create a course or syllabus to see it here.</p>
+              <div style={{ marginTop: '.75rem' }}>
+                <Link to="/academia/professor/prepare-course" className="learners-btn learners-btn-primary">Create course</Link>
               </div>
-            </article>
-          ))}
+            </div>
+          ) : (
+            items.map((card) => (
+              <article key={card.id} className="prof-lesson-rank-card">
+                <img className="prof-lesson-rank-bg" src={card.thumbnail || '/assets/imgs/aca.png'} alt={card.title} />
+
+                <div className="prof-lesson-rank-overlay">
+                  <span className="prof-lesson-rank-price">{card.price_label || (card.price ? `$${card.price}` : 'Free')}</span>
+                  <span className="prof-lesson-rank-badge">{`#${card.rank || card.id}`}</span>
+
+                  <div className="prof-lesson-rank-copy">
+                    <small>{card.type || card.category || 'Course'}</small>
+                    <h3>{card.title || card.name}</h3>
+                    <p>Followers : {card.followers || card.enrollments || 0}</p>
+                    <p>Created on : {card.created_at ? new Date(card.created_at).toLocaleDateString() : ''}</p>
+                  </div>
+
+                  <a className="prof-lesson-rank-open" href="#" onClick={preventDefault} aria-label="Open lesson">
+                    <img src="/assets/icons/ac-en.svg" alt="" />
+                  </a>
+                </div>
+              </article>
+            ))
+          )}
         </section>
 
         {/* Footers / Pagination */}

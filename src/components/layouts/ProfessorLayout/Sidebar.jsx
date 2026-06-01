@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 
-const Sidebar = ({ currentPage }) => {
+const Sidebar = ({ currentPage, profileLoading, profileSummary, profileCompletion, profileError, onLogout }) => {
   const checkActive = (slug) => (currentPage === slug ? 'active-menu' : '');
   const preventDefault = (e) => e.preventDefault();
 
@@ -68,6 +68,21 @@ const Sidebar = ({ currentPage }) => {
         </button>
       </div>
 
+      <div className="prof-sidebar-progress">
+        <div className="prof-sidebar-progress-head">
+          <h6>Profile completion</h6>
+          <strong>{profileLoading ? '...' : `${profileCompletion}%`}</strong>
+        </div>
+        <p>
+          {profileLoading
+            ? 'Loading profile data from the backend.'
+            : profileError || 'Backed by your saved profile data.'}
+        </p>
+        <div className="progress" role="progressbar" aria-label="Profile completion" aria-valuenow={profileCompletion} aria-valuemin="0" aria-valuemax="100">
+          <div className="progress-bar" style={{ width: `${profileCompletion}%` }}></div>
+        </div>
+      </div>
+
       <div className="sidebar-advertise prof-sidebar-advertise">
         <h6>Advertise your projects.</h6>
         <p>Do you have a business and your clients don't know where to find you ?</p>
@@ -77,18 +92,18 @@ const Sidebar = ({ currentPage }) => {
       <div className="prof-sidebar-profile">
         <div className="prof-sidebar-profile-left">
           <div className="prof-sidebar-profile-img">
-            <img src="/assets/imgs/default-profile.png" alt="Profile" />
+            <img src={profileSummary?.avatar || '/assets/imgs/default-profile.png'} alt="Profile" />
           </div>
           <div className="prof-sidebar-profile-text">
-            <h6>Hi, Emmanuel</h6>
-            <p>Personal User</p>
+            <h6>{profileLoading ? 'Loading...' : `Hi, ${profileSummary?.name || 'Professor'}`}</h6>
+            <p>{profileLoading ? 'Please wait' : profileSummary?.role || 'instructor'}</p>
           </div>
         </div>
         <div className="prof-sidebar-profile-right">
           <Link to="/academia/professor/settings" className="prof-icon-btn" aria-label="Settings">
             <img src="/assets/icons/setting-2.svg" alt="Settings" />
           </Link>
-          <button type="button" className="prof-icon-btn" aria-label="Logout" onClick={preventDefault}>
+          <button type="button" className="prof-icon-btn" aria-label="Logout" onClick={onLogout || preventDefault}>
             <img src="/assets/icons/exit-right.svg" alt="Logout" />
           </button>
         </div>

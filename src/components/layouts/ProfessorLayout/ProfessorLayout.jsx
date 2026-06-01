@@ -1,4 +1,5 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useLayoutEffect, useState } from 'react';
+import { Navigate, useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Topbar from './Topbar';
 import Footer from './Footer';
@@ -8,16 +9,133 @@ import './client-layout.css';
 import './learners-layout.css'; // Keep if you want fallback/shared utilities accessible
 import './prof-layout.css';
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const defaultProfileImage = '/assets/imgs/default-profile.png';
+
 const ProfessorLayout = ({ children, currentPage }) => {
+  const navigate = useNavigate();
+  const token = localStorage.getItem('token');
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [profileLoading, setProfileLoading] = useState(true);
+  const [profileSummary, setProfileSummary] = useState({
+    name: '',
+    email: '',
+    role: '',
+    avatar: defaultProfileImage,
+  });
+  const [profileCompletion, setProfileCompletion] = useState(0);
+  const [profileError, setProfileError] = useState('');
+
+  const openLogoutModal = (event) => {
+    if (event && event.preventDefault) event.preventDefault();
+    setShowLogoutModal(true);
+  };
+
+  const cancelLogout = () => setShowLogoutModal(false);
+
+  const confirmLogout = () => {
+    try {
+      localStorage.clear();
+    } catch (error) {
+      // ignore storage cleanup issues
+    }
+
+    setShowLogoutModal(false);
+    navigate('/academia/auth/signin');
+  };
+
+  const truncateName = (name, max = 18) => {
+    if (!name) return '';
+    if (name.length <= max) return name;
+    return `${name.slice(0, max - 1).trimEnd()}…`;
+  };
+
+  const resolveAssetUrl = (value) => {
+    if (!value) return defaultProfileImage;
+    if (value.startsWith('http://') || value.startsWith('https://') || value.startsWith('data:')) return value;
+    if (value.startsWith('/')) return `${API_BASE_URL}${value}`;
+    return `${API_BASE_URL}/${value}`;
+  };
   
-  useEffect(() => {
-    // 1. When a professor page loads, add the data-role attribute to the body
-    document.body.setAttribute('data-role', 'prof');
-    
-    // 2. Cleanup: When the user navigates away to a non-professor page, remove it.
-    // This strictly isolates your CSS so body[data-role="prof"] only triggers here.
+  useLayoutEffect(() => {
+    const html = document.documentElement;
+    const body = document.body;
+    const previousHtmlHeight = html.style.height;
+    const previousHtmlOverflow = html.style.overflow;
+    const previousHtmlRole = html.getAttribute('data-role');
+    const previousBodyRole = body.getAttribute('data-role');
+
+    html.style.height = '100%';
+    html.style.overflow = 'hidden';
+    html.setAttribute('data-role', 'prof');
+    body.setAttribute('data-role', 'prof');
+
     return () => {
-      document.body.removeAttribute('data-role');
+      html.style.height = previousHtmlHeight;
+      html.style.overflow = previousHtmlOverflow;
+
+      if (previousHtmlRole === null) {
+        html.removeAttribute('data-role');
+      } else {
+        html.setAttribute('data-role', previousHtmlRole);
+      }
+
+      if (previousBodyRole === null) {
+        body.removeAttribute('data-role');
+      } else {
+        body.setAttribute('data-role', previousBodyRole);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!token) {
+      setProfileLoading(false);
+      return;
+    }
+
+    let mounted = true;
+
+    const loadProfile = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/profile`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.message || 'Failed to load profile');
+        }
+
+        if (!mounted) return;
+
+        const user = data?.data?.user || {};
+        setProfileSummary({
+          name: user.name || user.email || 'Professor',
+          email: user.email || '',
+          role: user.role || 'instructor',
+          avatar: resolveAssetUrl(user.avatar),
+        });
+        setProfileCompletion(Number(data?.data?.profilePercentage || 0));
+        setProfileError('');
+      } catch (error) {
+        if (mounted) {
+          setProfileError(error.message || 'Failed to load profile');
+        }
+      } finally {
+        if (mounted) {
+          setProfileLoading(false);
+        }
+      }
+    };
+
+    loadProfile();
+
+    return () => {
+      mounted = false;
     };
   }, []);
 
@@ -39,18 +157,42 @@ const ProfessorLayout = ({ children, currentPage }) => {
     return () => clearTimeout(t);
   }, []);
 
+  if (!token) {
+    return <Navigate to="/academia/auth/signin" replace />;
+  }
+
   return (
     <div className="dashboard">
-      <Sidebar currentPage={currentPage} />
+      <Sidebar
+        currentPage={currentPage}
+        profileLoading={profileLoading}
+        profileSummary={profileSummary}
+        profileCompletion={profileCompletion}
+        profileError={profileError}
+        onLogout={openLogoutModal}
+      />
       
       <section className="right-container">
-        <Topbar />
+        <Topbar profileLoading={profileLoading} profileSummary={profileSummary} />
         
         <div className="prof-content">
           {/* Inject the specific page content here */}
           {children}
           <Footer />
         </div>
+
+        {showLogoutModal && (
+          <div className="modal-overlay" role="dialog" aria-modal="true" aria-label="Confirm logout">
+            <div className="logout-modal">
+              <h4>Confirm Logout</h4>
+              <p>Are you sure you want to log out?</p>
+              <div className="logout-modal-buttons">
+                <button type="button" className="logout-cancel" onClick={cancelLogout}>Cancel</button>
+                <button type="button" className="logout-confirm" onClick={confirmLogout}>Logout</button>
+              </div>
+            </div>
+          </div>
+        )}
         
       </section>
     </div>

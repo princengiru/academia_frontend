@@ -1,0 +1,46 @@
+.empty-state {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  padding: 28px;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+.empty-state-illustration {
+  width: 84px;
+  height: 84px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.empty-state-copy h3 {
+  margin: 0 0 6px 0;
+  font-size: 18px;
+  color: #111827;
+}
+.empty-state-copy p {
+  margin: 0 0 12px 0;
+  color: #6b7280;
+  font-size: 14px;
+}
+.empty-state-actions {
+  display: flex;
+  gap: 8px;
+}
+.empty-state-btn {
+  border: 1px solid transparent;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+}
+.empty-state-btn.primary {
+  background: #0f172a;
+  color: #fff;
+}
+.empty-state-btn.secondary {
+  background: transparent;
+  color: #374151;
+  border-color: #e5e7eb;
+}
