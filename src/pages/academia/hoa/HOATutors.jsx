@@ -204,36 +204,52 @@ const HOATutors = () => {
       <div className="hoa-dashboard-charts-container">
         <div className="hoa-grid-2">
           {/* ONLINE LEARNERS'S STATUS */}
-          <div className="hoa-card" style={{ padding: '24px' }}>
+          <div className="hoa-card" style={{ padding: '24px', background: '#FAFAFA', border: '1px solid #FAFAFA' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
               <div className="section-title" style={{ margin: 0 }}>ONLINE LEARNERS'S STATUS</div>
-              <div style={{ border: '1px solid #EEF1F6', padding: '4px 8px', borderRadius: '4px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px', color: '#78829D' }}>This Week <img src={hoadowncaret} alt="drop" /></div>
+              <div style={{ border: '1px solid #EEF1F6', padding: '4px 8px', borderRadius: '4px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px', color: '#78829D', background: '#FFFFFF' }}>This Week <img src={hoadowncaret} alt="drop" /></div>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #EEF1F6', paddingBottom: '24px', marginBottom: '24px' }}>
-              <div><h3 style={{ margin: 0, fontSize: '20px', color: '#071437' }}>578 <span style={{ fontSize: '10px', color: '#17C653', background: '#EAFFF1', padding: '2px 4px', borderRadius: '4px', verticalAlign: 'middle' }}>+1.6%</span></h3><p style={{ margin: '4px 0 0', fontSize: '13px', color: '#A1A5B7' }}>Present</p></div>
-              <div><h3 style={{ margin: 0, fontSize: '20px', color: '#071437' }}>213 <span style={{ fontSize: '10px', color: '#F8285A', background: '#FFF5F8', padding: '2px 4px', borderRadius: '4px', verticalAlign: 'middle' }}>-0.6%</span></h3><p style={{ margin: '4px 0 0', fontSize: '13px', color: '#A1A5B7' }}>Absent</p></div>
-              <div><h3 style={{ margin: 0, fontSize: '20px', color: '#071437' }}>45 <span style={{ fontSize: '10px', color: '#A1A5B7', background: '#F9F9F9', padding: '2px 4px', borderRadius: '4px', verticalAlign: 'middle' }}>+0.0%</span></h3><p style={{ margin: '4px 0 0', fontSize: '13px', color: '#A1A5B7' }}>Events</p></div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', background: '#FFFFFF', border: '1px solid #EEF1F6', borderRadius: '8px', padding: '16px 24px', marginBottom: '24px' }}>
+              <div style={{ flex: 1, borderRight: '1px solid #EEF1F6' }}>
+                <h3 style={{ margin: 0, fontSize: '20px', color: '#071437' }}>578 <span style={{ fontSize: '10px', color: '#17C653', background: '#EAFFF1', padding: '2px 4px', borderRadius: '4px', verticalAlign: 'middle' }}>+1.6%</span></h3><p style={{ margin: '4px 0 0', fontSize: '13px', color: '#A1A5B7' }}>Present</p>
+              </div>
+              <div style={{ flex: 1, borderRight: '1px solid #EEF1F6', paddingLeft: '24px' }}>
+                <h3 style={{ margin: 0, fontSize: '20px', color: '#071437' }}>213 <span style={{ fontSize: '10px', color: '#F8285A', background: '#FFF5F8', padding: '2px 4px', borderRadius: '4px', verticalAlign: 'middle' }}>-0.6%</span></h3><p style={{ margin: '4px 0 0', fontSize: '13px', color: '#A1A5B7' }}>Absent</p>
+              </div>
+              <div style={{ flex: 1, paddingLeft: '24px' }}>
+                <h3 style={{ margin: 0, fontSize: '20px', color: '#071437' }}>45 <span style={{ fontSize: '10px', color: '#A1A5B7', background: '#F9F9F9', padding: '2px 4px', borderRadius: '4px', verticalAlign: 'middle' }}>+0.0%</span></h3><p style={{ margin: '4px 0 0', fontSize: '13px', color: '#A1A5B7' }}>Events</p>
+              </div>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: '13px', color: '#A1A5B7' }}>Total Revenue</span>
-              <div style={{ border: '1px solid #7239EA33', padding: '4px 8px', borderRadius: '4px', fontSize: '12px', color: '#7239EA', background: '#F8F5FF', display: 'flex', alignItems: 'center', gap: '4px' }}>9.6M RWF <img src={rwanda} style={{ width: '12px', margin: '0 2px' }} alt="rwf"/> <img src={hoadowncaret} alt="drop" /></div>
+              <span style={{ fontSize: '13px', color: '#78829D', fontWeight: 500 }}>Total Revenue</span>
+              <div style={{ border: '1px solid #EEF1F6', padding: '4px 8px', borderRadius: '4px', fontSize: '12px', color: '#450468', background: '#FFFFFF', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                9.6M RWF <img src={rwanda} style={{ width: '12px', margin: '0 2px' }} alt="rwf"/> <img src={hoadowncaret} alt="drop" />
+              </div>
             </div>
           </div>
 
           {/* TUTOR'S STATUS */}
-          <div className="hoa-card" style={{ padding: '24px' }}>
+          <div className="hoa-card" style={{ padding: '24px', background: '#FAFAFA', border: '1px solid #FAFAFA' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
               <div className="section-title" style={{ margin: 0 }}>TUTOR'S STATUS</div>
-              <div style={{ border: '1px solid #EEF1F6', padding: '4px 8px', borderRadius: '4px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px', color: '#78829D' }}>This Week <img src={hoadowncaret} alt="drop" /></div>
+              <div style={{ border: '1px solid #EEF1F6', padding: '4px 8px', borderRadius: '4px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px', color: '#78829D', background: '#FFFFFF' }}>This Week <img src={hoadowncaret} alt="drop" /></div>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #EEF1F6', paddingBottom: '24px', marginBottom: '24px' }}>
-              <div><h3 style={{ margin: 0, fontSize: '20px', color: '#071437' }}>578 <span style={{ fontSize: '10px', color: '#17C653', background: '#EAFFF1', padding: '2px 4px', borderRadius: '4px', verticalAlign: 'middle' }}>+1.6%</span></h3><p style={{ margin: '4px 0 0', fontSize: '13px', color: '#A1A5B7' }}>Active</p></div>
-              <div><h3 style={{ margin: 0, fontSize: '20px', color: '#071437' }}>213 <span style={{ fontSize: '10px', color: '#F8285A', background: '#FFF5F8', padding: '2px 4px', borderRadius: '4px', verticalAlign: 'middle' }}>-0.6%</span></h3><p style={{ margin: '4px 0 0', fontSize: '13px', color: '#A1A5B7' }}>Offline</p></div>
-              <div><h3 style={{ margin: 0, fontSize: '20px', color: '#071437' }}>45 <span style={{ fontSize: '10px', color: '#A1A5B7', background: '#F9F9F9', padding: '2px 4px', borderRadius: '4px', verticalAlign: 'middle' }}>+0.0%</span></h3><p style={{ margin: '4px 0 0', fontSize: '13px', color: '#A1A5B7' }}>Projects</p></div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', background: '#FFFFFF', border: '1px solid #EEF1F6', borderRadius: '8px', padding: '16px 24px', marginBottom: '24px' }}>
+              <div style={{ flex: 1, borderRight: '1px solid #EEF1F6' }}>
+                <h3 style={{ margin: 0, fontSize: '20px', color: '#071437' }}>578 <span style={{ fontSize: '10px', color: '#17C653', background: '#EAFFF1', padding: '2px 4px', borderRadius: '4px', verticalAlign: 'middle' }}>+1.6%</span></h3><p style={{ margin: '4px 0 0', fontSize: '13px', color: '#A1A5B7' }}>Active</p>
+              </div>
+              <div style={{ flex: 1, borderRight: '1px solid #EEF1F6', paddingLeft: '24px' }}>
+                <h3 style={{ margin: 0, fontSize: '20px', color: '#071437' }}>213 <span style={{ fontSize: '10px', color: '#F8285A', background: '#FFF5F8', padding: '2px 4px', borderRadius: '4px', verticalAlign: 'middle' }}>-0.6%</span></h3><p style={{ margin: '4px 0 0', fontSize: '13px', color: '#A1A5B7' }}>Offline</p>
+              </div>
+              <div style={{ flex: 1, paddingLeft: '24px' }}>
+                <h3 style={{ margin: 0, fontSize: '20px', color: '#071437' }}>45 <span style={{ fontSize: '10px', color: '#A1A5B7', background: '#F9F9F9', padding: '2px 4px', borderRadius: '4px', verticalAlign: 'middle' }}>+0.0%</span></h3><p style={{ margin: '4px 0 0', fontSize: '13px', color: '#A1A5B7' }}>Projects</p>
+              </div>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: '13px', color: '#A1A5B7' }}>Total Revenue</span>
-              <div style={{ border: '1px solid #7239EA33', padding: '4px 8px', borderRadius: '4px', fontSize: '12px', color: '#7239EA', background: '#F8F5FF', display: 'flex', alignItems: 'center', gap: '4px' }}>9.6M RWF <img src={rwanda} style={{ width: '12px', margin: '0 2px' }} alt="rwf"/> <img src={hoadowncaret} alt="drop" /></div>
+              <span style={{ fontSize: '13px', color: '#78829D', fontWeight: 500 }}>Total Revenue</span>
+              <div style={{ border: '1px solid #EEF1F6', padding: '4px 8px', borderRadius: '4px', fontSize: '12px', color: '#450468', background: '#FFFFFF', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                9.6M RWF <img src={rwanda} style={{ width: '12px', margin: '0 2px' }} alt="rwf"/> <img src={hoadowncaret} alt="drop" />
+              </div>
             </div>
           </div>
 
