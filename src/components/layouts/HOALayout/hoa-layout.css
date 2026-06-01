@@ -1,0 +1,516 @@
+/* Layout Shell Isolation */
+body[data-role="hoa"] {
+  margin: 0;
+  padding: 0;
+  background-color: #F6F6F9;
+  font-family: 'Poppins', 'Inter', sans-serif;
+  color: #071437;
+  height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+body[data-role="hoa"] * {
+  box-sizing: border-box;
+}
+
+body[data-role="hoa"] .hoa-dashboard-wrapper {
+  display: flex;
+  gap: 0;
+  align-items: flex-start;
+  width: 100vw;
+  min-height: 100vh;
+}
+
+/* =========================================
+   SIDEBAR LAYOUT
+   ========================================= */
+
+/* Sidebar Container */
+body[data-role="hoa"] .hoa-sidebar {
+  width: 280px;
+  max-width: 280px;
+  min-width: 280px;
+  display: flex;
+  flex-direction: column;
+  background-color: transparent;
+  height: 100vh;
+  min-height: 100vh;
+  position: sticky;
+  top: 0;
+}
+
+/* --- Unified Top Header --- */
+body[data-role="hoa"] .sidebar-top-header {
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid #DBDFE9;
+  padding: 20px 0;
+  width: 100%;
+}
+
+.sidebar-top-header .brand-logo {
+  width: 70px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.sidebar-top-header .brand-logo img {
+  width: 36px;
+  height: 36px;
+}
+
+.sidebar-top-header .brand-text {
+  flex: 1;
+  padding-left: 10px;
+}
+
+.sidebar-top-header .brand-text h6 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: #450468;
+}
+
+.sidebar-top-header .brand-text p {
+  margin: 0;
+  font-size: 10px;
+  color: #78829D;
+  margin-top: 2px;
+}
+
+.sidebar-top-header .sidebar-toggle {
+  background: transparent;
+  border: none;
+  padding-right: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+/* --- Bottom Section (Splits into 2 columns) --- */
+body[data-role="hoa"] .sidebar-bottom-section {
+  display: flex;
+  flex: 1;
+  overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+body[data-role="hoa"] .sidebar-bottom-section::-webkit-scrollbar {
+  display: none;
+}
+
+/* --- Left Column: First Links --- */
+body[data-role="hoa"] .first-links {
+  width: 70px;
+  min-width: 70px;
+  max-width: 70px;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid #DBDFE9;
+}
+
+.first-links .sidebar-body,
+.first-links .sidebar-footer {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  margin-top: 20px;
+}
+
+.first-links .sidebar-footer {
+  margin-top: auto;
+  padding: 0 0 20px;
+}
+
+.first-links .sidebar-body a,
+.first-links .sidebar-footer a {
+  text-decoration: none;
+}
+
+.first-links .sidebar-body button,
+.first-links .sidebar-footer button {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  outline: none;
+  background-color: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+  border-radius: 10px;
+  transition: all 0.2s ease;
+}
+
+.first-links .sidebar-body button img,
+.first-links .sidebar-footer button img {
+  width: 22px;
+  height: 22px;
+}
+
+.first-links .sidebar-body .selected button,
+.first-links .sidebar-footer .selected button {
+  background-color: white;
+  border: 1px solid #DBDFE9;
+}
+
+.first-links .sidebar-body .selected button img,
+.first-links .sidebar-footer .selected button img {
+  filter: invert(15%) sepia(85%) saturate(7400%) hue-rotate(277deg) brightness(85%) contrast(110%);
+}
+
+/* --- Right Column: Second Links --- */
+body[data-role="hoa"] .second-links {
+  width: 100%;
+}
+
+body[data-role="hoa"] .links-container {
+  padding: 20px 15px 30px 15px;
+  width: 100%;
+}
+
+/* Navigation Search Bar (Sidebar) */
+body[data-role="hoa"] .links-container form {
+  width: 100%;
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin-bottom: 25px;
+  border-bottom: 1px solid #DBDFE9;
+  padding-bottom: 10px;
+}
+
+body[data-role="hoa"] .links-container form input {
+  background-color: transparent;
+  outline: none;
+  width: 100%;
+  border: none;
+  font-size: 13px;
+  padding-left: 28px;
+  color: #78829D;
+}
+
+body[data-role="hoa"] .links-container form .search-icon {
+  position: absolute;
+  left: 4px;
+  top: 50%;
+  transform: translateY(-70%);
+  width: 16px;
+  opacity: 0.5;
+}
+
+/* Navigation Links */
+body[data-role="hoa"] .links-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+body[data-role="hoa"] .links-list h6 {
+  color: #78829D;
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+  padding-left: 14px;
+}
+
+body[data-role="hoa"] .links-list a {
+  color: #4B5675;
+  font-size: 14px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: all 0.2s ease;
+}
+
+body[data-role="hoa"] .links-list a img {
+  width: 18px;
+  opacity: 0.6;
+}
+
+body[data-role="hoa"] .links-list a.active,
+body[data-role="hoa"] .links-list a:hover {
+  background-color: #FFFFFF;
+  color: #450468;
+  font-weight: 500;
+}
+
+body[data-role="hoa"] .links-list a.active img {
+  opacity: 1;
+  filter: invert(15%) sepia(85%) saturate(7400%) hue-rotate(277deg) brightness(85%) contrast(110%);
+}
+
+/* =========================================
+   MAIN CONTAINER & LAYOUT (Rest of App)
+   ========================================= */
+
+/* Make the entire right pane white to allow seamless topbar/content transition */
+body[data-role="hoa"] .hoa-main-container {
+  width: calc(100% - 280px);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: #FFFFFF;
+}
+
+/* Topbar styles */
+body[data-role="hoa"] .hoa-topbar {
+  height: 70px;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 30px;
+  flex-shrink: 0;
+}
+
+.hoa-topbar-left h2 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.hoa-topbar-left h2 span {
+  color: #A1A5B7;
+  font-weight: 400;
+}
+
+/* Search Bar (Header) */
+.hoa-topbar-center .hoa-topbar-search {
+  display: flex;
+  align-items: center;
+  background: transparent;
+  border-bottom: 1px solid #E4E6EF;
+  padding: 8px 0;
+  width: 350px;
+}
+
+.hoa-topbar-search img {
+  width: 14px;
+  opacity: 0.5;
+  margin-right: 10px;
+}
+
+.hoa-topbar-search input {
+  border: none;
+  background: transparent;
+  width: 100%;
+  font-size: 13px;
+  outline: none;
+}
+
+.hoa-topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.hoa-icon-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  opacity: 0.6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hoa-icon-btn img {
+  width: 20px;
+  height: 20px;
+}
+
+.hoa-icon-btn:hover {
+  opacity: 1;
+}
+
+.hoa-lang-selector {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  position: relative;
+}
+
+.hoa-lang-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #FFFFFF;
+  border: 1px solid #EEF1F6;
+  border-radius: 8px;
+  padding: 4px 8px;
+  color: #4B5675;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.hoa-lang-trigger img:first-child {
+  width: 16px;
+  height: 16px;
+}
+
+.hoa-lang-trigger:focus {
+  box-shadow: 0 0 0 4px rgba(69,4,104,0.06);
+}
+
+.hoa-caret { width: 10px; opacity: 0.5; }
+
+.hoa-lang-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 120px;
+  background: #FFFFFF;
+  border: 1px solid #EEF1F6;
+  border-radius: 8px;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.12);
+  padding: 4px;
+  z-index: 10;
+}
+
+.hoa-lang-option {
+  width: 100%;
+  border: none;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  color: #071437;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.hoa-lang-option:hover {
+  background: #F8FAFC;
+}
+
+.hoa-lang-option img {
+  width: 16px;
+  height: 16px;
+}
+
+.hoa-user-profile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.hoa-user-avatar img {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+}
+
+.hoa-user-info h6 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.hoa-user-info p {
+  margin: 0;
+  font-size: 11px;
+  color: #A1A5B7;
+}
+
+/* Content Area - Fixed height issue causing layout overflow */
+body[data-role="hoa"] .hoa-content-area {
+  flex: 1;
+  overflow-y: visible;
+  overflow-x: hidden;
+  background-color: transparent;
+  display: flex;
+  flex-direction: column;
+  padding: 0 30px 30px 30px;
+}
+
+/* =========================================
+   FOOTER
+   ========================================= */
+body[data-role="hoa"] .hoa-footer {
+  display: flex !important;
+  flex-direction: row !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  flex-wrap: nowrap !important;
+  padding: 15px 30px;
+  background: #FFFFFF;
+  border-top: 1px solid #E4E6EF;
+  width: 100%;
+  flex-shrink: 0;
+}
+
+/* Force Logo and Text side-by-side */
+body[data-role="hoa"] .hoa-footer-brand {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 10px;
+}
+
+body[data-role="hoa"] .hoa-footer-brand img {
+  width: 24px;
+  height: 24px;
+  display: block;
+}
+
+body[data-role="hoa"] .hoa-footer-brand .brand-text {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+body[data-role="hoa"] .hoa-footer-brand .brand-text h6 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: #450468;
+}
+
+body[data-role="hoa"] .hoa-footer-brand .brand-text p {
+  margin: 0;
+  font-size: 10px;
+  color: #78829D;
+  margin-top: 2px;
+}
+
+body[data-role="hoa"] .hoa-footer-links {
+  font-size: 13px;
+  color: #4B5675;
+  display: flex;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 15px;
+  white-space: nowrap;
+}
+
+body[data-role="hoa"] .hoa-footer-links a {
+  color: #4B5675;
+  text-decoration: none;
+  transition: opacity 0.2s;
+}
+
+body[data-role="hoa"] .hoa-footer-links a:hover {
+  opacity: 0.8;
+}
+
+body[data-role="hoa"] .hoa-footer-links .sep {
+  color: #DBDFE9;
+}
