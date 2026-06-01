@@ -1,0 +1,5 @@
+const fs = require('fs');
+let content = fs.readFileSync('c:\\Users\\N.INCE\\AppData\\Roaming\\Code\\User\\workspaceStorage\\8ab674304027137c013b5d5a96820596\\GitHub.copilot-chat\\chat-session-resources\\cd5df668-ba93-4186-ae04-84b6e24dfb61\\call_MHxwa0dheDA5Wjl4bXk4UnMzZ1g__vscode-1779961998947\\content.txt', 'utf8');
+content = content.replace('      {/* Top Main Stats (4 Cards) */}', '      {/* Top Stats Wrapper */}\n      <div className="hoa-stats-bg-wrapper">\n      {/* Top Main Stats (4 Cards) */}');
+content = content.replace('      {/* Gross Revenue Section (Not a card, floats on background) */}', '      </div>\n\n      {/* Gross Revenue Section (Not a card, floats on background) */}');
+fs.writeFileSync('c:\\Users\\N.INCE\\Documents\\Gonaraza2\\src\\pages\\academia\\hoa\\HOADashboardHome.jsx', content, 'utf8');

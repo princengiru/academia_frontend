@@ -1,0 +1,55 @@
+import { Navigate, Route } from 'react-router-dom';
+import HOADashboardHome from '../../../pages/academia/hoa/HOADashboardHome';
+import HOALearners from '../../../pages/academia/hoa/HOALearners';
+import HOALayout from '../../../components/layouts/HOALayout/HOALayout';
+
+const HOAPlaceholderPage = ({ currentPage, title, description }) => (
+  <HOALayout currentPage={currentPage}>
+    <div style={{ padding: '12px 0 32px' }}>
+      <h1 style={{ margin: '0 0 8px', fontSize: '20px', fontWeight: 700, color: '#071437' }}>{title}</h1>
+      <p style={{ margin: 0, color: '#78829D', fontSize: '13px' }}>{description}</p>
+    </div>
+  </HOALayout>
+);
+
+function AcademiaHOARoutes() {
+  return (
+    <>
+      <Route path="academia/hoa" element={<HOADashboardHome />} />
+      <Route path="academia/hoa/learners" element={<HOALearners />} />
+      <Route
+        path="academia/hoa/tutors"
+        element={(
+          <HOAPlaceholderPage
+            currentPage="tutors"
+            title="Tutors"
+            description="Tutor management is not wired yet."
+          />
+        )}
+      />
+      <Route
+        path="academia/hoa/reports"
+        element={(
+          <HOAPlaceholderPage
+            currentPage="reports"
+            title="Reports"
+            description="Reports are not wired yet."
+          />
+        )}
+      />
+      <Route
+        path="academia/hoa/settings"
+        element={(
+          <HOAPlaceholderPage
+            currentPage="settings"
+            title="Settings"
+            description="Settings are not wired yet."
+          />
+        )}
+      />
+      <Route path="academia/hoa/*" element={<Navigate to="/academia/hoa" replace />} />
+    </>
+  );
+}
+
+export default AcademiaHOARoutes;
