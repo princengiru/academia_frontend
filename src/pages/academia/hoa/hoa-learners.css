@@ -1,3 +1,4 @@
+.hoa-learners-page {
 /* =========================================
    BASE LAYOUT & HEADER (LEARNERS PAGE)
 ========================================= */
@@ -1112,6 +1113,19 @@ td.status-col {
   padding: 12px 10px;
 }
 
+.mod-table .user-meta h5 {
+  margin: 0 0 2px 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: #071437;
+}
+
+.mod-table .user-meta p {
+  margin: 0;
+  font-size: 11px;
+  color: #A1A5B7;
+}
+
 .mod-status-pill {
   font-size: 10px;
   font-weight: 600;
@@ -1630,4 +1644,5 @@ td.status-col {
   gap: 6px;
   cursor: pointer;
   font-size: 12px;
+}
 }

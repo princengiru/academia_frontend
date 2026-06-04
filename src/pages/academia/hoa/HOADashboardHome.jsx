@@ -141,6 +141,7 @@ const HOADashboardHome = () => {
 
   return (
     <HOALayout currentPage="index">
+      <div className="hoa-dashboard-home-page">
       
       {/* Page Header */}
       <div className="hoa-page-header">
@@ -568,6 +569,7 @@ const HOADashboardHome = () => {
         </div>
       </div>
 
+      </div>
     </HOALayout>
   );
 };

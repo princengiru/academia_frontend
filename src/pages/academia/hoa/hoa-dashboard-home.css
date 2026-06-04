@@ -1,3 +1,4 @@
+.hoa-dashboard-home-page {
 /* Page Header */
 .hoa-page-header {
   display: flex;
@@ -758,4 +759,5 @@
 .hoa-pagination-container .hoa-pagination {
   margin-top: 0;
   margin-bottom: 0;
+}
 }

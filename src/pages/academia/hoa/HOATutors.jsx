@@ -170,6 +170,7 @@ const HOATutors = () => {
 
   return (
     <HOALayout currentPage="learners">
+      <div className="hoa-tutors-page">
 
       {/* Page Header */}
       <div className="hoa-page-header">
@@ -191,11 +192,11 @@ const HOATutors = () => {
           <div className="sub-stat"><h4>13.3M</h4><p>Syllabus Uploads</p></div>
           <div className="sub-stat"><h4>204</h4><p>Online Courses</p></div>
           <div className="sub-stat">
-            <h4 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>19.3M <span style={{ fontSize: '11px', color: '#A1A5B7', fontWeight: 500 }}>RWF <img src={rwanda} alt="rwf" style={{ width: '12px' }}/> <img src={hoadowncaret} alt="drop" /></span></h4>
+            <h4 className="flex-center-gap8">19.3M <span className="stat-currency">RWF <img src={rwanda} alt="rwf" className="currency-flag"/> <img src={hoadowncaret} alt="drop" /></span></h4>
             <p>Upload Payments <span className="trend down"> <img src={hoadecrease} alt="" /> -4.5%</span></p>
           </div>
           <div className="sub-stat">
-            <h4 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>843.5K <span style={{ fontSize: '11px', color: '#A1A5B7', fontWeight: 500 }}>RWF <img src={rwanda} alt="rwf" style={{ width: '12px' }}/> <img src={hoadowncaret} alt="drop" /></span></h4>
+            <h4 className="flex-center-gap8">843.5K <span className="stat-currency">RWF <img src={rwanda} alt="rwf" className="currency-flag"/> <img src={hoadowncaret} alt="drop" /></span></h4>
             <p>Amount Paid <span className="trend up"> <img src={hoaincrease} alt="" /> +4.1</span></p>
           </div>
         </div>
@@ -204,51 +205,51 @@ const HOATutors = () => {
       <div className="hoa-dashboard-charts-container">
         <div className="hoa-grid-2">
           {/* ONLINE LEARNERS'S STATUS */}
-          <div className="hoa-card" style={{ padding: '24px', background: '#FAFAFA', border: '1px solid #FAFAFA' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-              <div className="section-title" style={{ margin: 0 }}>ONLINE LEARNERS'S STATUS</div>
-              <div style={{ border: '1px solid #EEF1F6', padding: '4px 8px', borderRadius: '4px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px', color: '#78829D', background: '#FFFFFF' }}>This Week <img src={hoadowncaret} alt="drop" /></div>
+          <div className="hoa-card card-gray-bg">
+            <div className="flex-between-center mb-24">
+              <div className="section-title m-0">ONLINE LEARNERS'S STATUS</div>
+              <div className="hoa-week-dropdown">This Week <img src={hoadowncaret} alt="drop" /></div>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', background: '#FFFFFF', border: '1px solid #EEF1F6', borderRadius: '8px', padding: '16px 24px', marginBottom: '24px' }}>
-              <div style={{ flex: 1, borderRight: '1px solid #EEF1F6' }}>
-                <h3 style={{ margin: 0, fontSize: '20px', color: '#071437' }}>578 <span style={{ fontSize: '10px', color: '#17C653', background: '#EAFFF1', padding: '2px 4px', borderRadius: '4px', verticalAlign: 'middle' }}>+1.6%</span></h3><p style={{ margin: '4px 0 0', fontSize: '13px', color: '#A1A5B7' }}>Present</p>
+            <div className="hoa-stats-inner-card">
+              <div className="hoa-stat-col-bordered">
+                <h3 className="hoa-stat-val">578 <span className="hoa-stat-badge badge-green">+1.6%</span></h3><p className="hoa-stat-label">Present</p>
               </div>
-              <div style={{ flex: 1, borderRight: '1px solid #EEF1F6', paddingLeft: '24px' }}>
-                <h3 style={{ margin: 0, fontSize: '20px', color: '#071437' }}>213 <span style={{ fontSize: '10px', color: '#F8285A', background: '#FFF5F8', padding: '2px 4px', borderRadius: '4px', verticalAlign: 'middle' }}>-0.6%</span></h3><p style={{ margin: '4px 0 0', fontSize: '13px', color: '#A1A5B7' }}>Absent</p>
+              <div className="hoa-stat-col-bordered-padded">
+                <h3 className="hoa-stat-val">213 <span className="hoa-stat-badge badge-red">-0.6%</span></h3><p className="hoa-stat-label">Absent</p>
               </div>
-              <div style={{ flex: 1, paddingLeft: '24px' }}>
-                <h3 style={{ margin: 0, fontSize: '20px', color: '#071437' }}>45 <span style={{ fontSize: '10px', color: '#A1A5B7', background: '#F9F9F9', padding: '2px 4px', borderRadius: '4px', verticalAlign: 'middle' }}>+0.0%</span></h3><p style={{ margin: '4px 0 0', fontSize: '13px', color: '#A1A5B7' }}>Events</p>
+              <div className="hoa-stat-col-padded">
+                <h3 className="hoa-stat-val">45 <span className="hoa-stat-badge badge-gray">+0.0%</span></h3><p className="hoa-stat-label">Events</p>
               </div>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: '13px', color: '#78829D', fontWeight: 500 }}>Total Revenue</span>
-              <div style={{ border: '1px solid #EEF1F6', padding: '4px 8px', borderRadius: '4px', fontSize: '12px', color: '#450468', background: '#FFFFFF', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                9.6M RWF <img src={rwanda} style={{ width: '12px', margin: '0 2px' }} alt="rwf"/> <img src={hoadowncaret} alt="drop" />
+            <div className="flex-between-center">
+              <span className="hoa-revenue-label">Total Revenue</span>
+              <div className="hoa-revenue-dropdown">
+                9.6M RWF <img src={rwanda} className="currency-icon" alt="rwf"/> <img src={hoadowncaret} alt="drop" />
               </div>
             </div>
           </div>
 
           {/* TUTOR'S STATUS */}
-          <div className="hoa-card" style={{ padding: '24px', background: '#FAFAFA', border: '1px solid #FAFAFA' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-              <div className="section-title" style={{ margin: 0 }}>TUTOR'S STATUS</div>
-              <div style={{ border: '1px solid #EEF1F6', padding: '4px 8px', borderRadius: '4px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px', color: '#78829D', background: '#FFFFFF' }}>This Week <img src={hoadowncaret} alt="drop" /></div>
+          <div className="hoa-card card-gray-bg">
+            <div className="flex-between-center mb-24">
+              <div className="section-title m-0">TUTOR'S STATUS</div>
+              <div className="hoa-week-dropdown">This Week <img src={hoadowncaret} alt="drop" /></div>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', background: '#FFFFFF', border: '1px solid #EEF1F6', borderRadius: '8px', padding: '16px 24px', marginBottom: '24px' }}>
-              <div style={{ flex: 1, borderRight: '1px solid #EEF1F6' }}>
-                <h3 style={{ margin: 0, fontSize: '20px', color: '#071437' }}>578 <span style={{ fontSize: '10px', color: '#17C653', background: '#EAFFF1', padding: '2px 4px', borderRadius: '4px', verticalAlign: 'middle' }}>+1.6%</span></h3><p style={{ margin: '4px 0 0', fontSize: '13px', color: '#A1A5B7' }}>Active</p>
+            <div className="hoa-stats-inner-card">
+              <div className="hoa-stat-col-bordered">
+                <h3 className="hoa-stat-val">578 <span className="hoa-stat-badge badge-green">+1.6%</span></h3><p className="hoa-stat-label">Active</p>
               </div>
-              <div style={{ flex: 1, borderRight: '1px solid #EEF1F6', paddingLeft: '24px' }}>
-                <h3 style={{ margin: 0, fontSize: '20px', color: '#071437' }}>213 <span style={{ fontSize: '10px', color: '#F8285A', background: '#FFF5F8', padding: '2px 4px', borderRadius: '4px', verticalAlign: 'middle' }}>-0.6%</span></h3><p style={{ margin: '4px 0 0', fontSize: '13px', color: '#A1A5B7' }}>Offline</p>
+              <div className="hoa-stat-col-bordered-padded">
+                <h3 className="hoa-stat-val">213 <span className="hoa-stat-badge badge-red">-0.6%</span></h3><p className="hoa-stat-label">Offline</p>
               </div>
-              <div style={{ flex: 1, paddingLeft: '24px' }}>
-                <h3 style={{ margin: 0, fontSize: '20px', color: '#071437' }}>45 <span style={{ fontSize: '10px', color: '#A1A5B7', background: '#F9F9F9', padding: '2px 4px', borderRadius: '4px', verticalAlign: 'middle' }}>+0.0%</span></h3><p style={{ margin: '4px 0 0', fontSize: '13px', color: '#A1A5B7' }}>Projects</p>
+              <div className="hoa-stat-col-padded">
+                <h3 className="hoa-stat-val">45 <span className="hoa-stat-badge badge-gray">+0.0%</span></h3><p className="hoa-stat-label">Projects</p>
               </div>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: '13px', color: '#78829D', fontWeight: 500 }}>Total Revenue</span>
-              <div style={{ border: '1px solid #EEF1F6', padding: '4px 8px', borderRadius: '4px', fontSize: '12px', color: '#450468', background: '#FFFFFF', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                9.6M RWF <img src={rwanda} style={{ width: '12px', margin: '0 2px' }} alt="rwf"/> <img src={hoadowncaret} alt="drop" />
+            <div className="flex-between-center">
+              <span className="hoa-revenue-label">Total Revenue</span>
+              <div className="hoa-revenue-dropdown">
+                9.6M RWF <img src={rwanda} className="currency-icon" alt="rwf"/> <img src={hoadowncaret} alt="drop" />
               </div>
             </div>
           </div>
@@ -326,7 +327,7 @@ const HOATutors = () => {
                 <td>
                   <div className="user-meta">
                     <h5 style={{ fontWeight: 600 }}>{req.phone}</h5>
-                    <p style={{ fontSize: '11px', color: '#A1A5B7' }}>{req.email}</p>
+                    <p className="font-11-gray">{req.email}</p>
                   </div>
                 </td>
                 <td className="fw-600 text-center" style={{ whiteSpace: 'nowrap' }}>{req.role}</td>
@@ -389,8 +390,8 @@ const HOATutors = () => {
             </button>
             <h2>Tutors Preview</h2>
             <div className="modal-header-actions">
-              <span className="hoa-update-status" style={{ border: '1px solid #EEF1F6' }}>
-                <img src={hoarefresh} alt="" className="sync-icon" /> Data updated every 1 hr <span className="dot" style={{ background: '#17C653' }}></span>
+              <span className="hoa-update-status border-eef1f6">
+                <img src={hoarefresh} alt="" className="sync-icon" /> Data updated every 1 hr <span className="dot bg-green"></span>
               </span>
             </div>
           </div>
@@ -399,91 +400,91 @@ const HOATutors = () => {
           <div className="modal-content-area">
 
             {/* User Profile Info */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '20px', marginBottom: '24px' }}>
+            <div className="modal-profile-grid">
               
               {/* Profile Card */}
-              <div style={{ background: '#FFFFFF', border: '1px solid #EEF1F6', borderRadius: '8px', padding: '24px', position: 'relative', overflow: 'hidden' }}>
-                <div style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, background: 'url(/assets/imgs/hexagon-pattern.svg) no-repeat right top', opacity: 0.1, pointerEvents: 'none' }}></div>
+              <div className="modal-profile-card">
+                <div className="modal-profile-bg"></div>
                 
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', position: 'relative', zIndex: 1, marginBottom: '20px' }}>
-                  <img src="/assets/imgs/default-profile.png" alt="Avatar" style={{ width: '64px', height: '64px', borderRadius: '50%', objectFit: 'cover' }} />
-                  <button style={{ background: '#F8F5FF', color: '#7239EA', border: '1px solid #7239EA33', padding: '4px 12px', borderRadius: '4px', fontSize: '12px', fontWeight: 500, cursor: 'pointer' }}>View Details</button>
+                <div className="profile-top-row">
+                  <img src="/assets/imgs/default-profile.png" alt="Avatar" className="profile-lg-avatar" />
+                  <button className="btn-view-details">View Details</button>
                 </div>
                 
-                <div style={{ display: 'grid', gap: '12px', position: 'relative', zIndex: 1 }}>
+                <div className="profile-info-grid">
                   <div style={{ display: 'flex', alignItems: 'center' }}>
-                    <span style={{ width: '80px', color: '#78829D', fontSize: '13px' }}>Full name :</span>
-                    <strong style={{ color: '#071437', fontSize: '15px' }}>John Doe</strong>
+                    <span className="profile-label">Full name :</span>
+                    <strong className="profile-value">John Doe</strong>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <div style={{ display: 'flex', alignItems: 'center' }}>
-                      <span style={{ width: '80px', color: '#78829D', fontSize: '13px' }}>Total Paid :</span>
-                      <strong style={{ color: '#071437', fontSize: '15px', display: 'flex', alignItems: 'center', gap: '4px' }}>2,340,044 <span style={{ fontSize: '11px', color: '#A1A5B7', fontWeight: 500 }}>RWF <img src={rwanda} alt="rwf" style={{ width: '12px' }}/> <img src={hoadowncaret} alt="drop" /></span></strong>
+                      <span className="profile-label">Total Paid :</span>
+                      <strong className="profile-value-flex">2,340,044 <span className="stat-currency">RWF <img src={rwanda} alt="rwf" className="currency-flag"/> <img src={hoadowncaret} alt="drop" /></span></strong>
                     </div>
-                    <span style={{ border: '1px solid #EEF1F6', borderRadius: '4px', padding: '4px 8px', fontSize: '11px', color: '#78829D' }}>johndoe@gonaraza.com</span>
+                    <span className="profile-email-badge">johndoe@gonaraza.com</span>
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '20px', position: 'relative', zIndex: 1 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ color: '#1B84FF', background: '#EFF6FF', border: '1px solid #1B84FF33', padding: '2px 8px', borderRadius: '4px', fontSize: '12px', fontWeight: 600 }}>Active</span>
-                    <span style={{ color: '#7239EA', background: '#F8F5FF', border: '1px solid #7239EA33', padding: '2px 8px', borderRadius: '4px', fontSize: '12px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}><img src={hoauserbadge} alt="" /> 6</span>
-                    <span style={{ color: '#F6B100', background: '#FFF8E1', border: '1px solid #F6B10033', padding: '2px 8px', borderRadius: '4px', fontSize: '12px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>⭐ 3.4</span>
+                <div className="profile-bottom-row">
+                  <div className="flex-center-gap8">
+                    <span className="status-badge-blue">Active</span>
+                    <span className="status-badge-purple"><img src={hoauserbadge} alt="" /> 6</span>
+                    <span className="status-badge-yellow">⭐ 3.4</span>
                   </div>
-                  <div className="profile-actions" style={{ gap: '4px' }}>
-                    <button className="icon-btn" style={{ width: '28px', height: '28px' }}><img src={hoagrayadd} alt="" /></button>
-                    <button className="icon-btn" style={{ width: '28px', height: '28px' }}><img src={hoagrayphone} alt="" /></button>
-                    <button className="icon-btn" style={{ width: '28px', height: '28px' }}><img src={hoagraymail} alt="" /></button>
-                    <button className="icon-btn" style={{ width: '28px', height: '28px' }}><img src={hoaverticaldots} alt="" /></button>
+                  <div className="profile-actions gap-4">
+                    <button className="icon-btn icon-28"><img src={hoagrayadd} alt="" /></button>
+                    <button className="icon-btn icon-28"><img src={hoagrayphone} alt="" /></button>
+                    <button className="icon-btn icon-28"><img src={hoagraymail} alt="" /></button>
+                    <button className="icon-btn icon-28"><img src={hoaverticaldots} alt="" /></button>
                   </div>
                 </div>
               </div>
 
               {/* Info List */}
-              <div style={{ background: '#FAFAFA', borderRadius: '8px', padding: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                <div style={{ display: 'flex', alignItems: 'center', fontSize: '13px' }}>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '120px', color: '#78829D' }}><img src={hoausericon} alt="dept" style={{ opacity: 0.5 }} /> Department</span>
-                  <span style={{ color: '#071437', fontWeight: 500 }}>IT</span>
+              <div className="profile-info-list">
+                <div className="profile-info-row">
+                  <span className="profile-info-label"><img src={hoausericon} alt="dept" className="opacity-50" /> Department</span>
+                  <span className="profile-info-val">IT</span>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', fontSize: '13px' }}>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '120px', color: '#78829D' }}><img src={hoabriefcase} alt="role" style={{ opacity: 0.5 }} /> Role</span>
-                  <span style={{ color: '#071437', fontWeight: 500 }}>Software Engineer</span>
+                <div className="profile-info-row">
+                  <span className="profile-info-label"><img src={hoabriefcase} alt="role" className="opacity-50" /> Role</span>
+                  <span className="profile-info-val">Software Engineer</span>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', fontSize: '13px' }}>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '120px', color: '#78829D' }}><img src={hoalocation} alt="syll" style={{ opacity: 0.5 }} /> Syllabus</span>
-                  <span style={{ color: '#071437', fontWeight: 500 }}>12</span>
+                <div className="profile-info-row">
+                  <span className="profile-info-label"><img src={hoalocation} alt="syll" className="opacity-50" /> Syllabus</span>
+                  <span className="profile-info-val">12</span>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', fontSize: '13px' }}>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '120px', color: '#78829D' }}><img src={hoalocation} alt="courses" style={{ opacity: 0.5 }} /> Online Courses</span>
-                  <span style={{ color: '#071437', fontWeight: 500 }}>2</span>
+                <div className="profile-info-row">
+                  <span className="profile-info-label"><img src={hoalocation} alt="courses" className="opacity-50" /> Online Courses</span>
+                  <span className="profile-info-val">2</span>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', fontSize: '13px' }}>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '120px', color: '#78829D' }}><img src={hoalocation} alt="proj" style={{ opacity: 0.5 }} /> Projects</span>
-                  <span style={{ color: '#071437', fontWeight: 500 }}>14</span>
+                <div className="profile-info-row">
+                  <span className="profile-info-label"><img src={hoalocation} alt="proj" className="opacity-50" /> Projects</span>
+                  <span className="profile-info-val">14</span>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', fontSize: '13px' }}>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '120px', color: '#78829D' }}><img src={hoafollowers} alt="stud" style={{ opacity: 0.5 }} /> Total Students</span>
-                  <span style={{ color: '#071437', fontWeight: 500 }}>234</span>
+                <div className="profile-info-row">
+                  <span className="profile-info-label"><img src={hoafollowers} alt="stud" className="opacity-50" /> Total Students</span>
+                  <span className="profile-info-val">234</span>
                 </div>
               </div>
             </div>
 
             {/* Modal Stats Row */}
-            <div className="modal-stats-row" style={{ borderBottom: 'none', paddingBottom: 0, marginBottom: '24px' }}>
-              <div className="mod-stat" style={{ borderRight: '1px solid #EEF1F6', paddingRight: '20px' }}>
-                <h3 style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>+ 2.8K <span style={{ fontSize: '11px', color: '#A1A5B7', fontWeight: 500 }}>USD <img src={hoausflag} alt="usd" style={{ width: '12px' }}/> <img src={hoadowncaret} alt="drop" /></span></h3>
+            <div className="modal-stats-row modal-stats-row-no-border">
+              <div className="mod-stat mod-stat-br-pr">
+                <h3 className="flex-center-gap4">+ 2.8K <span className="stat-currency">USD <img src={hoausflag} alt="usd" className="icon-12"/> <img src={hoadowncaret} alt="drop" /></span></h3>
                 <p>Downloads Income</p>
               </div>
-              <div className="mod-stat" style={{ borderRight: '1px solid #EEF1F6', padding: '0 20px' }}>
-                <h3 style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>+ 2.8K <span style={{ fontSize: '11px', color: '#A1A5B7', fontWeight: 500 }}>USD <img src={hoausflag} alt="usd" style={{ width: '12px' }}/> <img src={hoadowncaret} alt="drop" /></span></h3>
+              <div className="mod-stat mod-stat-br-px">
+                <h3 className="flex-center-gap4">+ 2.8K <span className="stat-currency">USD <img src={hoausflag} alt="usd" className="icon-12"/> <img src={hoadowncaret} alt="drop" /></span></h3>
                 <p>Courses Income</p>
               </div>
-              <div className="mod-stat" style={{ borderRight: '1px solid #EEF1F6', padding: '0 20px' }}>
-                <h3 style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>2,340,044 <span style={{ fontSize: '11px', color: '#A1A5B7', fontWeight: 500 }}>RWF <img src={rwanda} alt="rwf" style={{ width: '12px' }}/> <img src={hoadowncaret} alt="drop" /></span></h3>
+              <div className="mod-stat mod-stat-br-px">
+                <h3 className="flex-center-gap4">2,340,044 <span className="stat-currency">RWF <img src={rwanda} alt="rwf" className="currency-flag"/> <img src={hoadowncaret} alt="drop" /></span></h3>
                 <p>Upload Amount</p>
               </div>
-              <div className="mod-stat" style={{ paddingLeft: '20px' }}>
-                <h3 style={{ fontSize: '15px', marginTop: '6px' }}>23 - March - 2026 <span style={{ fontSize: '11px', color: '#78829D', fontWeight: 500 }}>14:00:45</span></h3>
+              <div className="mod-stat mod-stat-pl">
+                <h3 className="font-15-mt6">23 - March - 2026 <span className="font-11-gray500">14:00:45</span></h3>
                 <p>Date Joined</p>
               </div>
             </div>
@@ -505,13 +506,13 @@ const HOATutors = () => {
                     <table className="hoa-list-table mod-table">
                       <thead>
                         <tr>
-                          <th style={{ width: '40px' }}><div className="minus-icon" style={{ margin: '0 auto' }}>-</div></th>
+                          <th className="w-40"><div className="minus-icon m-auto">-</div></th>
                           <th><div className="th-content">Course Details (34) <span className="sort-icon"><img src={hoaupdowncaret} alt="" /></span></div></th>
                           <th><div className="th-content">Type <span className="sort-icon"><img src={hoaupdowncaret} alt="" /></span></div></th>
                           <th><div className="th-content">Tot. Students <span className="sort-icon"><img src={hoaupdowncaret} alt="" /></span></div></th>
                           <th><div className="th-content">Tot. Amount & Visits <span className="sort-icon"><img src={hoaupdowncaret} alt="" /></span></div></th>
                           <th><div className="th-content">Certificates & Avg. Score <span className="sort-icon"><img src={hoaupdowncaret} alt="" /></span></div></th>
-                          <th><div className="th-content">Charging Fee <img src={hoausflag} alt="" style={{ width: '12px', margin: '0 4px' }} /> <span className="sort-icon"><img src={hoaupdowncaret} alt="" /></span></div></th>
+                          <th><div className="th-content">Charging Fee <img src={hoausflag} alt="" className="icon-12-mx4" /> <span className="sort-icon"><img src={hoaupdowncaret} alt="" /></span></div></th>
                           <th className="status-col"><div className="th-content">Status <span className="sort-icon"><img src={hoaupdowncaret} alt="" /></span></div></th>
                         </tr>
                       </thead>
@@ -522,41 +523,41 @@ const HOATutors = () => {
                             <td>
                               <div className="user-meta">
                                 <h5>{les.title}</h5>
-                                <p style={{ fontSize: '11px', color: '#A1A5B7' }}>{les.date}</p>
+                                <p className="font-11-gray">{les.date}</p>
                               </div>
                             </td>
                             <td>
                               <div className="user-meta">
-                                <h5 style={{ fontWeight: '500' }}>{les.type}</h5>
-                                <p style={{ fontSize: '11px', color: '#A1A5B7' }}>{les.duration}</p>
+                                <h5 className="fw-500">{les.type}</h5>
+                                <p className="font-11-gray">{les.duration}</p>
                               </div>
                             </td>
                             <td>
                               <div className="user-meta">
-                                <h5 style={{ fontWeight: '600' }}>{les.students}</h5>
-                                <p style={{ fontSize: '11px', color: '#A1A5B7' }}>{les.views}</p>
+                                <h5 className="fw-600">{les.students}</h5>
+                                <p className="font-11-gray">{les.views}</p>
                               </div>
                             </td>
                             <td>
                               <div className="user-meta">
-                                <h5 style={{ fontWeight: '600' }}>{les.amount}</h5>
-                                <p style={{ fontSize: '11px', color: '#A1A5B7' }}>{les.amountSub}</p>
+                                <h5 className="fw-600">{les.amount}</h5>
+                                <p className="font-11-gray">{les.amountSub}</p>
                               </div>
                             </td>
                             <td>
                               <div className="user-meta">
-                                <h5 style={{ fontWeight: '600' }}>{les.certs}</h5>
-                                <p style={{ fontSize: '11px', color: '#A1A5B7' }}>{les.score}</p>
+                                <h5 className="fw-600">{les.certs}</h5>
+                                <p className="font-11-gray">{les.score}</p>
                               </div>
                             </td>
                             <td>
                               <div className="user-meta">
                                 <h5 style={{ fontWeight: '600', color: les.feeColor }}>{les.feeStatus}</h5>
-                                <p style={{ fontSize: '11px', color: '#A1A5B7' }}>{les.feeAmount}</p>
+                                <p className="font-11-gray">{les.feeAmount}</p>
                               </div>
                             </td>
                             <td className="status-col">
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'flex-end' }}>
+                              <div className="flex-center-end-gap8">
                                 <span className={`mod-status-pill st-${les.statusType}`}>{les.status}</span>
                               </div>
                             </td>
@@ -566,30 +567,30 @@ const HOATutors = () => {
                     </table>
                   </div>
 
-                  <div className="hoa-pagination-container list-pagination" style={{ marginBottom: '40px' }}>
+                  <div className="hoa-pagination-container list-pagination mb-40">
                     <div className="pagination-left">
                       Show
-                      <div className="page-size-dropdown" style={{ margin: '0 8px' }}>
-                        <button type="button" className="page-size-button" style={{ padding: '2px 8px' }}>10 <img src={hoadowncaret} alt="" /></button>
+                      <div className="page-size-dropdown mx-8">
+                        <button type="button" className="page-size-button px-8-py-2">10 <img src={hoadowncaret} alt="" /></button>
                       </div>
                       per page
                     </div>
                     <div className="hoa-pagination">
                       <span className="page-range">1-10 of 5</span>
-                      <button className="page-nav"><img src={hoaleftarrow} style={{ width: '15px', }} alt="Prev" /></button>
+                      <button className="page-nav"><img src={hoaleftarrow} className="icon-15" alt="Prev" /></button>
                       <button className="page-num">1</button>
                       <button className="page-num active">2</button>
                       <button className="page-num">3</button>
-                      <button className="page-nav"><img src={hoarightarrow} style={{ width: '15px' }} alt="Next" /></button>
+                      <button className="page-nav"><img src={hoarightarrow} className="icon-15" alt="Next" /></button>
                     </div>
                   </div>
 
                   <div className="docs-header">
                     <div>
-                      <h3 style={{ margin: '0 0 4px 0', fontSize: '16px', color: '#071437' }}>Documents</h3>
-                      <p style={{ margin: '0', fontSize: '12px', color: '#A1A5B7' }}>Files & Certificate</p>
+                      <h3 className="mod-docs-title">Documents</h3>
+                      <p className="mod-docs-subtitle">Files & Certificate</p>
                     </div>
-                    <button className="hoa-btn-light-purple" style={{ gap: '8px' }}>
+                    <button className="hoa-btn-light-purple gap-8">
                       <img src={hoadownloadall} alt="" />
                       Download All
                     </button>
@@ -649,8 +650,8 @@ const HOATutors = () => {
 
                   <div className="projects-header">
                     <div>
-                      <h3 style={{ margin: '0 0 4px 0', fontSize: '18px', color: '#071437' }}>My Projects</h3>
-                      <p style={{ margin: '0', fontSize: '13px', color: '#A1A5B7' }}><strong>100</strong> Projects in total</p>
+                      <h3 className="mod-projects-title">My Projects</h3>
+                      <p className="mod-projects-subtitle"><strong>100</strong> Projects in total</p>
                     </div>
                     <button className="follower-btn">
                       <img src={hoafollowers} alt="" />
@@ -664,7 +665,7 @@ const HOATutors = () => {
                         <div className="proj-meta">
                           <span className="author">By <a href="#" onClick={preventDefault}>{proj.author}</a></span>
                           <div className="proj-stats">
-                            <span className="stat-like" onClick={() => toggleProjectLike(idx)} style={{ cursor: 'pointer' }}>
+                            <span className="stat-like" onClick={() => toggleProjectLike(idx)}>
                               <svg width="12" height="12" viewBox="0 0 24 24" fill={likedProjects[idx] ? "#F8285A" : "#A1A5B7"}>
                                 <path d="M20.84 4.61A5.5 5.5 0 0012 5.67A5.5 5.5 0 003.16 4.61C2.5 5.28 2 6.2 2 7.21C2 8.23 2.5 9.15 3.16 9.83L12 18.67L20.84 9.83C21.5 9.15 22 8.23 22 7.21C22 6.2 21.5 5.28 20.84 4.61Z" />
                               </svg> {proj.likes}
@@ -693,49 +694,49 @@ const HOATutors = () => {
                       <span className="badge-high">High</span>
                     </div>
                   </div>
-                  <h4 style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '24px 0 20px 0', color: '#071437', fontSize: '16px',fontWeight:600 }}>
+                  <h4 className="activity-title">
                     <img src={hoacalendar} alt="calendar" />
                     Upcoming Activity
                   </h4>
 
-                  <div className="upcoming-activity-card" style={{ background: '#FAFAFA', borderRadius: '2px', padding: '20px' }}>
-                    <div className="event-row" style={{ marginTop: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <h5 style={{ margin: 0, fontSize: '15px', color: '#071437', fontWeight: 600 }}>Event Name</h5>
-                      <span className="event-status" style={{ border: '1px solid #17C65333', borderRadius: '4px', padding: '4px 8px', background: '#EAFFF1', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: '#04B440', fontWeight: 600 }}>Approved <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M6 9L12 15L18 9" stroke="#17C653" strokeWidth="2" /></svg></span>
+                  <div className="upcoming-activity-card activity-card-bg">
+                    <div className="event-row activity-event-row">
+                      <h5 className="activity-event-name">Event Name</h5>
+                      <span className="event-status activity-status-approved">Approved <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M6 9L12 15L18 9" stroke="#17C653" strokeWidth="2" /></svg></span>
                     </div>
 
-                    <p className="event-desc" style={{ fontSize: '13px', color: '#78829D', lineHeight: 1.5, margin: '16px 0 0 0' }}>
+                    <p className="event-desc activity-event-desc">
                       Statistics is the branch of mathematics that deals with the collection, analysis, interpretation, presentation, and organization of data. It provides methodologies for making inferences about populations based on sample data, enabling researchers to quantify uncertainty and variability in empirical findings.
                     </p>
-                    <div className="event-forms" style={{ display: 'flex', background: '#FFFFFF', padding: '12px', borderRadius: '2px', border: '1px solid #F1F1F4', marginTop: '10px' }}>
-                      <div className="form-group border-right" style={{ flex: 1, borderRight: '1px solid #EEF1F6', paddingRight: '16px' }}>
-                        <label style={{ fontSize: '11px', color: '#A1A5B7', marginBottom: '8px', display: 'block' }}>Reminder</label>
-                        <div className="form-select borderless" style={{ border: 'none', background: 'transparent', padding: '0', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: '#071437', fontWeight: 600 }}>No Reminder <img src={hoadowncaret} alt="" /></div>
+                    <div className="event-forms activity-event-forms">
+                      <div className="form-group border-right activity-form-group-pr">
+                        <label className="activity-form-label">Reminder</label>
+                        <div className="form-select borderless activity-form-select-borderless">No Reminder <img src={hoadowncaret} alt="" /></div>
                       </div>
-                      <div className="form-group border-right" style={{ flex: 1, borderRight: '1px solid #EEF1F6', padding: '0 16px' }}>
-                        <label style={{ fontSize: '11px', color: '#A1A5B7', marginBottom: '8px', display: 'block' }}>Task Priority</label>
-                        <div className="form-select borderless" style={{ border: '1px solid #7239EA33', background: '#F8F5FF', padding: '8px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: '#7239EA', width: '75px', height: '24px', borderRadius: '30px' }}><span className="dot" style={{ background: '#7239EA', width: '6px', height: '6px', borderRadius: '50%', display: 'inline-block' }}></span> High <img src={hoadowncaret} alt="" /></div>
+                      <div className="form-group border-right activity-form-group-px">
+                        <label className="activity-form-label">Task Priority</label>
+                        <div className="form-select borderless activity-priority-badge"><span className="dot activity-priority-dot"></span> High <img src={hoadowncaret} alt="" /></div>
                       </div>
-                      <div className="form-group" style={{ flex: 1, paddingLeft: '16px' }}>
-                        <label style={{ fontSize: '11px', color: '#A1A5B7', marginBottom: '8px', display: 'block' }}>Assigned To</label>
-                        <div className="form-select borderless" style={{ border: 'none', background: 'transparent', padding: '0', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: '#071437', fontWeight: 600 }}>
-                          <img src="/assets/imgs/default-profile.png" alt="" className="tiny-avatar" style={{ borderRadius: '50%' }} /> Esther Howard <img src={hoadowncaret} alt="" />
+                      <div className="form-group activity-form-group-pl">
+                        <label className="activity-form-label">Assigned To</label>
+                        <div className="form-select borderless activity-form-select-borderless">
+                          <img src="/assets/imgs/default-profile.png" alt="" className="tiny-avatar rounded-circle" /> Esther Howard <img src={hoadowncaret} alt="" />
                         </div>
                       </div>
                     </div>
-                    <div className="event-nav" style={{ display: 'flex', justifyContent: 'center', gap: '12px', marginTop: '20px' }}>
-                      <button className="nav-circle" style={{ width: '32px', height: '32px', borderRadius: '50%', border: '1px solid #EEF1F6', background: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}><img src={hoaprev} alt="" /></button>
-                      <button className="nav-circle" style={{ width: '32px', height: '32px', borderRadius: '50%', border: '1px solid #EEF1F6', background: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}><img src={hoanext} alt="" /></button>
+                    <div className="event-nav activity-event-nav">
+                      <button className="nav-circle activity-nav-circle"><img src={hoaprev} alt="" /></button>
+                      <button className="nav-circle activity-nav-circle"><img src={hoanext} alt="" /></button>
                     </div>
                   </div>
 
 
                   <div className="qa-section">
-                    <h4 style={{ fontSize: '14px', color: '#071437', margin: '30px 0 15px 0' }}>Questions & Answers</h4>
+                    <h4 className="qa-title">Questions & Answers</h4>
 
                     {/* Ticket 1 */}
                     <div className={`ticket-card border-green ${!openTickets[1] ? 'collapsed' : ''}`}>
-                      <div className="ticket-header" onClick={() => toggleTicket(1)} style={{ cursor: 'pointer' }}>
+                      <div className="ticket-header" onClick={() => toggleTicket(1)}>
                         <div className="ticket-meta">
                           <strong>Ticket No : #TKT1204567</strong>
                           <span>CC : maxsmith@gonaraza.com</span>
@@ -750,7 +751,7 @@ const HOATutors = () => {
                         <div className="ticket-body">
                           <div className="ticket-user" style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
                             <img src="/assets/imgs/default-profile.png" alt="" className="tiny-avatar" style={{ borderRadius: '50%', width: '40px', height: '40px' }} />
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                            <div className="flex-col-gap4">
                               <span style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '8px' }}>
                                 <strong style={{ color: '#071437', fontSize: '15px', fontWeight: 600 }}>Max Smith</strong>
                                 <img src={hoavbadge} style={{ width: '16px', height: '16px' }} alt="" />
@@ -787,7 +788,7 @@ const HOATutors = () => {
 
                     {/* Ticket 2 */}
                     <div className={`ticket-card border-red ${!openTickets[2] ? 'collapsed' : ''}`}>
-                      <div className="ticket-header" onClick={() => toggleTicket(2)} style={{ cursor: 'pointer' }}>
+                      <div className="ticket-header" onClick={() => toggleTicket(2)}>
                         <div className="ticket-meta">
                           <strong>Ticket No : #TKT1204567</strong>
                           <span>CC : maxsmith@gonaraza.com</span>
@@ -806,7 +807,7 @@ const HOATutors = () => {
 
                     {/* Ticket 3 */}
                     <div className={`ticket-card border-blue ${!openTickets[3] ? 'collapsed' : ''}`}>
-                      <div className="ticket-header" onClick={() => toggleTicket(3)} style={{ cursor: 'pointer' }}>
+                      <div className="ticket-header" onClick={() => toggleTicket(3)}>
                         <div className="ticket-meta">
                           <strong>Ticket No : #TKT1204567</strong>
                           <span>CC : maxsmith@gonaraza.com</span>
@@ -838,6 +839,7 @@ const HOATutors = () => {
           <img src={fullScreenImage} alt="Full Screen" style={{ maxWidth: '90%', maxHeight: '90%', borderRadius: '8px', objectFit: 'contain' }} />
         </div>
       )}
+      </div>
     </HOALayout>
   );
 };

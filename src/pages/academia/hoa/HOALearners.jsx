@@ -258,6 +258,7 @@ const HOALearners = () => {
 
   return (
     <HOALayout currentPage="learners">
+      <div className="hoa-learners-page">
 
       {/* Page Header */}
       <div className="hoa-page-header">
@@ -384,12 +385,12 @@ const HOALearners = () => {
                   <div className="minus-icon">-</div>
                 </button>
               </th>
-              <th style={{ width: '35%' }}><div className="th-content">Student Details (34) <span className="sort-icon"><img src={hoaupdowncaret} alt="Sort" /></span></div></th>
-              <th className="text-center" style={{ whiteSpace: 'nowrap' }}><div className="th-content justify-center">Avg. Score <span className="sort-icon"><img src={hoaupdowncaret} alt="Sort" /></span></div></th>
-              <th className="text-center" style={{ whiteSpace: 'nowrap' }}><div className="th-content justify-center">Attempts <span className="sort-icon"><img src={hoaupdowncaret} alt="Sort" /></span></div></th>
-              <th className="text-center" style={{ whiteSpace: 'nowrap' }}><div className="th-content justify-center">Downloads <span className="sort-icon"><img src={hoaupdowncaret} alt="Sort" /></span></div></th>
-              <th className="text-center" style={{ whiteSpace: 'nowrap' }}><div className="th-content justify-center">Certificates <span className="sort-icon"><img src={hoaupdowncaret} alt="Sort" /></span></div></th>
-              <th className="text-center" style={{ whiteSpace: 'nowrap' }}><div className="th-content justify-center">Tot. Paid (USD) <span className="sort-icon"><img src={hoaupdowncaret} alt="Sort" /></span></div></th>
+              <th style={{ width: '100%' }}><div className="th-content">Student Details (34) <span className="sort-icon"><img src={hoaupdowncaret} alt="Sort" /></span></div></th>
+              <th className="text-center"><div className="th-content justify-center">Avg. Score <span className="sort-icon"><img src={hoaupdowncaret} alt="Sort" /></span></div></th>
+              <th className="text-center"><div className="th-content justify-center">Attempts <span className="sort-icon"><img src={hoaupdowncaret} alt="Sort" /></span></div></th>
+              <th className="text-center"><div className="th-content justify-center">Downloads <span className="sort-icon"><img src={hoaupdowncaret} alt="Sort" /></span></div></th>
+              <th className="text-center"><div className="th-content justify-center">Certificates <span className="sort-icon"><img src={hoaupdowncaret} alt="Sort" /></span></div></th>
+              <th className="text-center"><div className="th-content justify-center">Tot. Paid (USD) <span className="sort-icon"><img src={hoaupdowncaret} alt="Sort" /></span></div></th>
               <th className="status-col"><div className="th-content">Status <span className="sort-icon"><img src={hoaupdowncaret} alt="Sort" /></span></div></th>
               <th className="action-col"></th>
             </tr>
@@ -410,11 +411,11 @@ const HOALearners = () => {
                     </div>
                   </div>
                 </td>
-                <td className="fw-600 text-center" style={{ whiteSpace: 'nowrap' }}>{req.score}</td>
-                <td className="fw-500 text-center" style={{ whiteSpace: 'nowrap' }}>{req.attempts}</td>
-                <td className="fw-500 text-center" style={{ whiteSpace: 'nowrap' }}>{req.downloads}</td>
-                <td className="fw-500 text-center" style={{ whiteSpace: 'nowrap' }}>{req.certs}</td>
-                <td className="fw-600 text-center" style={{ whiteSpace: 'nowrap' }}>{req.paid}</td>
+                <td className="fw-600 text-center">{req.score}</td>
+                <td className="fw-500 text-center">{req.attempts}</td>
+                <td className="fw-500 text-center">{req.downloads}</td>
+                <td className="fw-500 text-center">{req.certs}</td>
+                <td className="fw-600 text-center">{req.paid}</td>
                 <td className="status-col">
                   <span className={`status-pill pill-${req.statusColor}`}>
                     <span className="dot"></span> {req.status}
@@ -860,6 +861,7 @@ const HOALearners = () => {
           <img src={fullScreenImage} alt="Full Screen" style={{ maxWidth: '90%', maxHeight: '90%', borderRadius: '8px', objectFit: 'contain' }} />
         </div>
       )}
+      </div>
     </HOALayout>
   );
 };
