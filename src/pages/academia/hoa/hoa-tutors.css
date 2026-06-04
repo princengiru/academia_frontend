@@ -300,6 +300,26 @@
   flex-shrink: 0;
 }
 
+/* Custom Scrollbars */
+.hoa-tutors-page ::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+}
+
+.hoa-tutors-page ::-webkit-scrollbar-track {
+  background: #EEF1F6;
+  border-radius: 4px;
+}
+
+.hoa-tutors-page ::-webkit-scrollbar-thumb {
+  background: #DBDFE9;
+  border-radius: 4px;
+}
+
+.hoa-tutors-page ::-webkit-scrollbar-thumb:hover {
+  background: #A1A5B7;
+}
+
 .hoa-tutors-page .hoa-list-table {
   width: 100%;
   border-collapse: collapse;
@@ -981,14 +1001,40 @@
   margin-bottom: 20px;
 }
 
+.hoa-tutors-page .mod-table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
 .hoa-tutors-page .mod-table th {
   background: #FFFFFF;
   border-top: 1px solid #EEF1F6;
   padding: 12px 10px;
+  white-space: nowrap;
 }
 
 .hoa-tutors-page .mod-table td {
   padding: 12px 10px;
+  white-space: nowrap;
+}
+
+/* Sticky first and second columns for Modal Table */
+.hoa-tutors-page .mod-table th:nth-child(1),
+.hoa-tutors-page .mod-table td:nth-child(1) {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background: #FFFFFF;
+}
+
+.hoa-tutors-page .mod-table th:nth-child(2),
+.hoa-tutors-page .mod-table td:nth-child(2) {
+  position: sticky;
+  left: 40px;
+  z-index: 2;
+  background: #FFFFFF;
+  box-shadow: 8px 0 15px -2px rgba(0, 0, 0, 0.1);
+  border-right: 1px solid #EEF1F6;
 }
 
 .hoa-tutors-page .mod-table .user-meta h5 {

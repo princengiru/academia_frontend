@@ -496,6 +496,26 @@
   flex-shrink: 0;
 }
 
+/* Custom Scrollbars */
+.hoa-learners-page ::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+}
+
+.hoa-learners-page ::-webkit-scrollbar-track {
+  background: #EEF1F6;
+  border-radius: 4px;
+}
+
+.hoa-learners-page ::-webkit-scrollbar-thumb {
+  background: #DBDFE9;
+  border-radius: 4px;
+}
+
+.hoa-learners-page ::-webkit-scrollbar-thumb:hover {
+  background: #A1A5B7;
+}
+
 .hoa-list-table {
   width: 100%;
   border-collapse: collapse;
