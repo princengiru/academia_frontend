@@ -145,6 +145,12 @@
   position: relative;
   text-align: center;
   flex: 1;
+  padding: 0 12px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 
 .sub-stat:not(:last-child)::after {
