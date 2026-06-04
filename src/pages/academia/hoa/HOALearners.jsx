@@ -496,16 +496,24 @@ const HOALearners = () => {
                   </div>
                   <div className="profile-meta-row">
                     <span className="badge-missing">UI/UX Designer</span> {/* Used for role per tab 2 */}
-                    <span className="bullet-sep">•</span>
-                    <span className="profile-email">johndoe@gonaraza.com</span>
                   </div>
                 </div>
               </div>
               <div className="profile-actions">
-                <button className="icon-btn"><img src={hoagrayadd} alt="" /></button>
-                <button className="icon-btn"><img src={hoagrayphone} alt="" /></button>
-                <button className="icon-btn"><img src={hoagraymail} alt="" /></button>
-                <button className="icon-btn"><img src={hoaverticaldots} alt="" /></button>
+                <button className="icon-btn">
+                  <img src={hoagrayadd} alt="" />
+                </button>
+                <button className="icon-btn tooltip-trigger">
+                  <span className="action-tooltip">+250 123 456 789</span>
+                  <img src={hoagrayphone} alt="" />
+                </button>
+                <button className="icon-btn tooltip-trigger">
+                  <span className="action-tooltip">johndoe@gonaraza.com</span>
+                  <img src={hoagraymail} alt="" />
+                </button>
+                <button className="icon-btn">
+                  <img src={hoaverticaldots} alt="" />
+                </button>
               </div>
             </div>
 

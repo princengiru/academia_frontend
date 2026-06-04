@@ -36,6 +36,7 @@ import hoaproject from '../../../assets/imgs/hoaproject.png';
 import hoacalendar from '../../../assets/icons/hoacalendar.svg';
 import hoavbadge from '../../../assets/icons/hoavbadge.svg';
 import hoareply from '../../../assets/icons/hoareply.svg';
+import hoayellowstar  from '../../../assets/icons/hoayellowstar.svg';
 
 
 const HOATutors = () => {
@@ -421,7 +422,6 @@ const HOATutors = () => {
                       <span className="profile-label">Total Paid :</span>
                       <strong className="profile-value-flex">2,340,044 <span className="stat-currency">RWF <img src={rwanda} alt="rwf" className="currency-flag"/> <img src={hoadowncaret} alt="drop" /></span></strong>
                     </div>
-                    <span className="profile-email-badge">johndoe@gonaraza.com</span>
                   </div>
                 </div>
 
@@ -429,13 +429,23 @@ const HOATutors = () => {
                   <div className="flex-center-gap8">
                     <span className="status-badge-blue">Active</span>
                     <span className="status-badge-purple"><img src={hoauserbadge} alt="" /> 6</span>
-                    <span className="status-badge-yellow">⭐ 3.4</span>
+                    <span className="status-badge-yellow"><img src={hoayellowstar} alt="" /> 3.4</span>
                   </div>
-                  <div className="profile-actions gap-4">
-                    <button className="icon-btn icon-28"><img src={hoagrayadd} alt="" /></button>
-                    <button className="icon-btn icon-28"><img src={hoagrayphone} alt="" /></button>
-                    <button className="icon-btn icon-28"><img src={hoagraymail} alt="" /></button>
-                    <button className="icon-btn icon-28"><img src={hoaverticaldots} alt="" /></button>
+                  <div className="profile-actions gap-2">
+                    <button className="icon-btn icon-28">
+                      <img src={hoagrayadd} alt="" />
+                    </button>
+                    <button className="icon-btn icon-28 tooltip-trigger">
+                      <span className="action-tooltip">+250 123 456 789</span>
+                      <img src={hoagrayphone} alt="" />
+                    </button>
+                    <button className="icon-btn icon-28 tooltip-trigger">
+                      <span className="action-tooltip">johndoe@gonaraza.com</span>
+                      <img src={hoagraymail} alt="" />
+                    </button>
+                    <button className="icon-btn icon-28">
+                      <img src={hoaverticaldots} alt="" />
+                    </button>
                   </div>
                 </div>
               </div>

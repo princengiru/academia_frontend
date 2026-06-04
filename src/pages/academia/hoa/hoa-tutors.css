@@ -818,12 +818,12 @@
 
 .hoa-tutors-page .profile-actions {
   display: flex;
-  gap: 8px;
+  gap: 4px;
 }
 
 .hoa-tutors-page .icon-btn {
-  width: 36px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   border: 1px solid #F1F1F4;
   background: #FAFAFA;
@@ -832,10 +832,65 @@
   justify-content: center;
   cursor: pointer;
   transition: 0.2s;
+  position: relative;
 }
 
 .hoa-tutors-page .icon-btn:hover {
   background: #F8FAFC;
+}
+
+/* Tooltip for profile icons */
+.hoa-tutors-page .action-tooltip {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  transform: translateY(-4px);
+  background: #FFFFFF;
+  border: 1px solid #EEF1F6;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #4B5675;
+  white-space: nowrap;
+  width: max-content;
+  max-width: 250px;
+  text-align: center;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s ease;
+  z-index: 9999;
+  pointer-events: none;
+}
+
+.hoa-tutors-page .action-tooltip::after {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  right: 18px;
+  transform: translateX(50%);
+  border-width: 6px;
+  border-style: solid;
+  border-color: transparent transparent #FFFFFF transparent;
+  z-index: 2;
+}
+
+.hoa-tutors-page .action-tooltip::before {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  right: 18px;
+  transform: translateX(50%);
+  border-width: 7px;
+  border-style: solid;
+  border-color: transparent transparent #EEF1F6 transparent;
+  z-index: 1;
+}
+
+.hoa-tutors-page .tooltip-trigger:hover .action-tooltip {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
 }
 
 /* Modal Stats Row */
@@ -1610,7 +1665,6 @@
   border-radius: 8px;
   padding: 24px;
   position: relative;
-  overflow: hidden;
 }
 
 .hoa-tutors-page .modal-profile-bg {
@@ -1622,6 +1676,7 @@
   background: url(/assets/imgs/hexagon-pattern.svg) no-repeat right top;
   opacity: 0.1;
   pointer-events: none;
+  border-radius: inherit;
 }
 
 .hoa-tutors-page .profile-top-row {
@@ -1641,9 +1696,9 @@
 }
 
 .hoa-tutors-page .btn-view-details {
-  background: #F8F5FF;
-  color: #7239EA;
-  border: 1px solid #7239EA33;
+  background: #FCF8FF;
+  color: #450468;
+  border: 1px solid #E3C9F2;
   padding: 4px 12px;
   border-radius: 4px;
   font-size: 12px;
@@ -1705,11 +1760,11 @@
 }
 
 .hoa-tutors-page .status-badge-purple {
-  color: #7239EA;
-  background: #F8F5FF;
-  border: 1px solid #7239EA33;
+  color: #4B5675;
+  background: #45046812;
+  border: 1px solid #45046812;
   padding: 2px 8px;
-  border-radius: 4px;
+  border-radius: 50px;
   font-size: 12px;
   font-weight: 600;
   display: flex;
@@ -1718,11 +1773,11 @@
 }
 
 .hoa-tutors-page .status-badge-yellow {
-  color: #F6B100;
-  background: #FFF8E1;
-  border: 1px solid #F6B10033;
+  color: #4B5675;
+  background: #45046812;
+  border: 1px solid #45046812;
   padding: 2px 8px;
-  border-radius: 4px;
+  border-radius: 50px;
   font-size: 12px;
   font-weight: 600;
   display: flex;

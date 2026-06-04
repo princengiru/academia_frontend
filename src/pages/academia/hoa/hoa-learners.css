@@ -1015,10 +1015,65 @@ td.status-col {
   justify-content: center;
   cursor: pointer;
   transition: 0.2s;
+  position: relative;
 }
 
 .icon-btn:hover {
   background: #F8FAFC;
+}
+
+/* Tooltip for profile icons */
+.action-tooltip {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  transform: translateY(-4px);
+  background: #FFFFFF;
+  border: 1px solid #EEF1F6;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #4B5675;
+  white-space: nowrap;
+  width: max-content;
+  max-width: 250px;
+  text-align: center;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s ease;
+  z-index: 9999;
+  pointer-events: none;
+}
+
+.action-tooltip::after {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  right: 18px;
+  transform: translateX(50%);
+  border-width: 6px;
+  border-style: solid;
+  border-color: transparent transparent #FFFFFF transparent;
+  z-index: 2;
+}
+
+.action-tooltip::before {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  right: 18px;
+  transform: translateX(50%);
+  border-width: 7px;
+  border-style: solid;
+  border-color: transparent transparent #EEF1F6 transparent;
+  z-index: 1;
+}
+
+.tooltip-trigger:hover .action-tooltip {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
 }
 
 /* Modal Stats Row */
