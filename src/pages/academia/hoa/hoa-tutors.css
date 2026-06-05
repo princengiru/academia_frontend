@@ -1823,8 +1823,6 @@
   justify-content: space-between;
   align-items: center;
   margin-top: 20px;
-  position: relative;
-  z-index: 1;
 }
 
 .hoa-tutors-page .status-badge-blue {

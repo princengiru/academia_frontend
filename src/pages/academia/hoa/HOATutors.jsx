@@ -77,6 +77,19 @@ const HOATutors = () => {
   const [openTickets, setOpenTickets] = useState({ 1: true });
   const [fullScreenImage, setFullScreenImage] = useState(null);
 
+  const [openAttendees, setOpenAttendees] = useState(false);
+  const [openThisWeek, setOpenThisWeek] = useState(false);
+  const [activeWeekFilter, setActiveWeekFilter] = useState('This week');
+  const weekFilters = ['Today', 'This week', 'This month', 'This year'];
+  const [openDots, setOpenDots] = useState(null);
+  
+  const attendeesList = [
+    { name: 'John Doe', avatar: '/assets/imgs/default-profile.png' },
+    { name: 'Jane Smith', avatar: '/assets/imgs/default-profile.png' },
+    { name: 'Esther Howard', avatar: '/assets/imgs/default-profile.png' },
+    { name: 'Cody Fisher', avatar: '/assets/imgs/default-profile.png' },
+  ];
+
   const toggleTicket = (id) => {
     setOpenTickets(prev => ({ ...prev, [id]: !prev[id] }));
   };
@@ -833,9 +846,9 @@ const HOATutors = () => {
                             <img src="/assets/imgs/default-profile.png" alt="" className="tiny-avatar rounded-circle" style={{ width: '24px', height: '24px', borderRadius: '50%' }} /> Esther Howard <img src={hoadowncaret} alt="" />
                           </div>
                         </div>
-                        <div className="form-group activity-form-group-pl" style={{ paddingLeft: '10px' }}>
+                        <div className="form-group activity-form-group-pl" style={{ paddingLeft: '10px', position: 'relative' }}>
                           <label className="activity-form-label" style={{ display: 'block', fontSize: '11px', color: '#A1A5B7', marginBottom: '8px' }}>Attendees</label>
-                          <div className="form-select borderless activity-form-select-borderless" style={{ fontWeight: '600', fontSize: '13px', color: '#071437', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <div className="form-select borderless activity-form-select-borderless" style={{ fontWeight: '600', fontSize: '13px', color: '#071437', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }} onClick={() => setOpenAttendees(!openAttendees)}>
                             <div style={{ display: 'flex', alignItems: 'center' }}>
                               <img src="/assets/imgs/default-profile.png" alt="" style={{ width: '24px', height: '24px', borderRadius: '50%', border: '2px solid white', zIndex: 3 }} />
                               <img src="/assets/imgs/default-profile.png" alt="" style={{ width: '24px', height: '24px', borderRadius: '50%', border: '2px solid white', marginLeft: '-10px', zIndex: 2 }} />
@@ -843,6 +856,16 @@ const HOATutors = () => {
                             </div>
                             46 Students <img src={hoadowncaret} alt="" />
                           </div>
+                          {openAttendees && (
+                            <div className="attendees-dropdown" style={{ position: 'absolute', top: '100%', left: '10px', background: '#FFFFFF', border: '1px solid #EEF1F6', borderRadius: '8px', padding: '10px', width: '200px', zIndex: 9999, boxShadow: '0 12px 30px rgba(15, 23, 42, 0.12)' }}>
+                              {attendeesList.map((attendee, idx) => (
+                                <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 4px', borderBottom: idx < attendeesList.length - 1 ? '1px solid #EEF1F6' : 'none', cursor: 'pointer' }}>
+                                  <img src={attendee.avatar} alt="" style={{ width: '24px', height: '24px', borderRadius: '50%' }} />
+                                  <span style={{ fontSize: '13px', color: '#4B5675' }}>{attendee.name}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       </div>
                       
@@ -856,9 +879,20 @@ const HOATutors = () => {
                     <div className="notifications-section">
                       <div className="notifications-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '24px', marginTop: '40px' }}>
                         <h4 style={{ margin: 0, fontSize: '18px', fontWeight: '700', color: '#071437' }}>Notifications</h4>
-                        <button className="this-week-btn" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', border: '1px solid #EEF1F6', borderRadius: '6px', background: '#FFFFFF', color: '#78829D', fontSize: '12px', cursor: 'pointer' }}>
-                          <img src={hoacalendar} style={{ width: '14px' }} alt="" /> This week <img src={hoadowncaret} style={{ width: '10px' }} alt="" />
-                        </button>
+                        <div style={{ position: 'relative' }}>
+                          <button className="this-week-btn" onClick={() => setOpenThisWeek(!openThisWeek)} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', border: '1px solid #EEF1F6', borderRadius: '6px', background: '#FFFFFF', color: '#78829D', fontSize: '12px', cursor: 'pointer' }}>
+                            <img src={hoacalendar} style={{ width: '14px' }} alt="" /> {activeWeekFilter} <img src={hoadowncaret} style={{ width: '10px' }} alt="" />
+                          </button>
+                          {openThisWeek && (
+                            <div className="flag-dropdown-menu" style={{ minWidth: '120px', padding: '4px', top: '100%', right: 0, zIndex: 9999, position: 'absolute', background: '#FFFFFF', border: '1px solid #EEF1F6', borderRadius: '8px', boxShadow: '0 12px 30px rgba(15, 23, 42, 0.12)' }}>
+                              {weekFilters.map((opt, idx) => (
+                                <button key={idx} type="button" className={`flag-dropdown-option ${activeWeekFilter === opt ? 'active' : ''}`} onClick={() => { setActiveWeekFilter(opt); setOpenThisWeek(false); }} style={{ width: '100%', border: 'none', background: activeWeekFilter === opt ? '#F8FAFC' : 'transparent', display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 10px', borderRadius: '6px', color: '#071437', fontSize: '13px', fontWeight: 500, cursor: 'pointer' }}>
+                                  <span>{opt}</span>
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
                       </div>
 
                       <div className="notification-list">
@@ -875,7 +909,18 @@ const HOATutors = () => {
                               <span style={{ color: '#78829D', fontSize: '13px' }}>Course failed ,try again to get certificates. 49.5%</span>
                             </div>
                           </div>
-                          <button style={{ background: 'transparent', border: '1px solid #EEF1F6', borderRadius: '4px', padding: '4px 8px', height: '32px', color: '#78829D', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>⋮</button>
+                          <div style={{ position: 'relative' }}>
+                            <button onClick={() => setOpenDots(openDots === 1 ? null : 1)} style={{ background: openDots === 1 ? '#F1F1F4' : 'transparent', border: '1px solid #EEF1F6', borderRadius: '4px', padding: '4px 8px', height: '32px', color: '#78829D', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>⋮</button>
+                            {openDots === 1 && (
+                              <div className="flag-dropdown-menu" style={{ minWidth: '140px', padding: '4px', top: '100%', right: 0, zIndex: 9999, position: 'absolute', background: '#FFFFFF', border: '1px solid #EEF1F6', borderRadius: '8px', boxShadow: '0 12px 30px rgba(15, 23, 42, 0.12)' }}>
+                                {['View details', 'Mark as unread', 'Delete'].map((opt, idx) => (
+                                  <button key={idx} type="button" className="flag-dropdown-option" onClick={() => setOpenDots(null)} style={{ width: '100%', border: 'none', background: 'transparent', display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 10px', borderRadius: '6px', color: '#071437', fontSize: '13px', fontWeight: 500, cursor: 'pointer' }}>
+                                    <span style={{ color: opt === 'Delete' ? '#F1416C' : 'inherit' }}>{opt}</span>
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
                         </div>
 
                         {/* Item 2 */}
@@ -894,7 +939,18 @@ const HOATutors = () => {
                               <span style={{ color: '#78829D', fontSize: '13px' }}>approved. Using <strong style={{ color: '#450468', fontWeight: '600' }}>MTN Mobile Money</strong>.</span>
                             </div>
                           </div>
-                          <button style={{ background: 'transparent', border: '1px solid #EEF1F6', borderRadius: '4px', padding: '4px 8px', height: '32px', color: '#78829D', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>⋮</button>
+                          <div style={{ position: 'relative' }}>
+                            <button onClick={() => setOpenDots(openDots === 2 ? null : 2)} style={{ background: openDots === 2 ? '#F1F1F4' : 'transparent', border: '1px solid #EEF1F6', borderRadius: '4px', padding: '4px 8px', height: '32px', color: '#78829D', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>⋮</button>
+                            {openDots === 2 && (
+                              <div className="flag-dropdown-menu" style={{ minWidth: '140px', padding: '4px', top: '100%', right: 0, zIndex: 9999, position: 'absolute', background: '#FFFFFF', border: '1px solid #EEF1F6', borderRadius: '8px', boxShadow: '0 12px 30px rgba(15, 23, 42, 0.12)' }}>
+                                {['View details', 'Mark as unread', 'Delete'].map((opt, idx) => (
+                                  <button key={idx} type="button" className="flag-dropdown-option" onClick={() => setOpenDots(null)} style={{ width: '100%', border: 'none', background: 'transparent', display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 10px', borderRadius: '6px', color: '#071437', fontSize: '13px', fontWeight: 500, cursor: 'pointer' }}>
+                                    <span style={{ color: opt === 'Delete' ? '#F1416C' : 'inherit' }}>{opt}</span>
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
                         </div>
 
                         {/* Item 3 */}
@@ -913,7 +969,18 @@ const HOATutors = () => {
                               <span style={{ color: '#78829D', fontSize: '13px' }}>approved. Using <strong style={{ color: '#450468', fontWeight: '600' }}>MTN Mobile Money</strong>.</span>
                             </div>
                           </div>
-                          <button style={{ background: 'transparent', border: '1px solid #EEF1F6', borderRadius: '4px', padding: '4px 8px', height: '32px', color: '#78829D', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>⋮</button>
+                          <div style={{ position: 'relative' }}>
+                            <button onClick={() => setOpenDots(openDots === 3 ? null : 3)} style={{ background: openDots === 3 ? '#F1F1F4' : 'transparent', border: '1px solid #EEF1F6', borderRadius: '4px', padding: '4px 8px', height: '32px', color: '#78829D', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>⋮</button>
+                            {openDots === 3 && (
+                              <div className="flag-dropdown-menu" style={{ minWidth: '140px', padding: '4px', top: '100%', right: 0, zIndex: 9999, position: 'absolute', background: '#FFFFFF', border: '1px solid #EEF1F6', borderRadius: '8px', boxShadow: '0 12px 30px rgba(15, 23, 42, 0.12)' }}>
+                                {['View details', 'Mark as unread', 'Delete'].map((opt, idx) => (
+                                  <button key={idx} type="button" className="flag-dropdown-option" onClick={() => setOpenDots(null)} style={{ width: '100%', border: 'none', background: 'transparent', display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 10px', borderRadius: '6px', color: '#071437', fontSize: '13px', fontWeight: 500, cursor: 'pointer' }}>
+                                    <span style={{ color: opt === 'Delete' ? '#F1416C' : 'inherit' }}>{opt}</span>
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
 
