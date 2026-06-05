@@ -704,17 +704,7 @@ const HOATutors = () => {
                 {activeTab === 'activity' && (
                   <div className="tab-activity">
 
-                    <div className="activity-header">
-                      <div className="login-info">
-                        <span className="label">Last Login</span>
-                        <p><strong>Wed Apr 23, 2023</strong> at <strong>11 : 33 PM</strong></p>
-                      </div>
-                      <div className="priority-badge">
-                        <span className="label">Priority</span>
-                        <span className="badge-high">High</span>
-                      </div>
-                    </div>
-                    <h4 className="activity-title">
+                    <h4 className="activity-title" style={{ marginTop: '10px' }}>
                       <img src={hoacalendar} alt="calendar" />
                       Upcoming Activity
                     </h4>
@@ -722,126 +712,123 @@ const HOATutors = () => {
                     <div className="upcoming-activity-card activity-card-bg">
                       <div className="event-row activity-event-row">
                         <h5 className="activity-event-name">Event Name</h5>
-                        <span className="event-status activity-status-approved">Approved <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M6 9L12 15L18 9" stroke="#17C653" strokeWidth="2" /></svg></span>
+                        <span className="event-status activity-status-approved" style={{ background: '#EAFFF1', color: '#17C653', padding: '4px 10px', borderRadius: '4px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>Approved <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M6 9L12 15L18 9" stroke="#17C653" strokeWidth="2" /></svg></span>
                       </div>
 
-                      <p className="event-desc activity-event-desc">
+                      <p className="event-desc activity-event-desc" style={{ color: '#78829D', fontSize: '13px', lineHeight: '1.6', marginBottom: '24px' }}>
                         Statistics is the branch of mathematics that deals with the collection, analysis, interpretation, presentation, and organization of data. It provides methodologies for making inferences about populations based on sample data, enabling researchers to quantify uncertainty and variability in empirical findings.
                       </p>
-                      <div className="event-forms activity-event-forms">
-                        <div className="form-group border-right activity-form-group-pr">
-                          <label className="activity-form-label">Reminder</label>
-                          <div className="form-select borderless activity-form-select-borderless">No Reminder <img src={hoadowncaret} alt="" /></div>
+                      
+                      <div className="event-forms activity-event-forms" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '20px', borderTop: '1px solid #EEF1F6', paddingTop: '20px' }}>
+                        <div className="form-group border-right activity-form-group-pr" style={{ borderRight: '1px solid #EEF1F6' }}>
+                          <label className="activity-form-label" style={{ display: 'block', fontSize: '11px', color: '#A1A5B7', marginBottom: '8px' }}>Reminder</label>
+                          <div className="form-select borderless activity-form-select-borderless" style={{ fontWeight: '600', fontSize: '13px', color: '#071437', display: 'flex', alignItems: 'center', gap: '8px' }}>No Reminder <img src={hoadowncaret} alt="" /></div>
                         </div>
-                        <div className="form-group border-right activity-form-group-px">
-                          <label className="activity-form-label">Task Priority</label>
-                          <div className="form-select borderless activity-priority-badge"><span className="dot activity-priority-dot"></span> High <img src={hoadowncaret} alt="" /></div>
+                        <div className="form-group border-right activity-form-group-px" style={{ borderRight: '1px solid #EEF1F6', paddingLeft: '10px' }}>
+                          <label className="activity-form-label" style={{ display: 'block', fontSize: '11px', color: '#A1A5B7', marginBottom: '8px' }}>Task Priority</label>
+                          <div className="form-select borderless activity-priority-badge" style={{ background: '#F8F5FF', border: '1px solid #7239EA33', color: '#5014D0', padding: '4px 10px', borderRadius: '20px', fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '6px', fontWeight: '600' }}><span className="dot activity-priority-dot" style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#5014D0' }}></span> High <img src={hoadowncaret} style={{ opacity: 0.5 }} alt="" /></div>
                         </div>
-                        <div className="form-group activity-form-group-pl">
-                          <label className="activity-form-label">Assigned To</label>
-                          <div className="form-select borderless activity-form-select-borderless">
-                            <img src="/assets/imgs/default-profile.png" alt="" className="tiny-avatar rounded-circle" /> Esther Howard <img src={hoadowncaret} alt="" />
+                        <div className="form-group activity-form-group-pl" style={{ paddingLeft: '10px' }}>
+                          <label className="activity-form-label" style={{ display: 'block', fontSize: '11px', color: '#A1A5B7', marginBottom: '8px' }}>Assigned To</label>
+                          <div className="form-select borderless activity-form-select-borderless" style={{ fontWeight: '600', fontSize: '13px', color: '#071437', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <img src="/assets/imgs/default-profile.png" alt="" className="tiny-avatar rounded-circle" style={{ width: '24px', height: '24px', borderRadius: '50%' }} /> Esther Howard <img src={hoadowncaret} alt="" />
+                          </div>
+                        </div>
+                        <div className="form-group activity-form-group-pl" style={{ paddingLeft: '10px' }}>
+                          <label className="activity-form-label" style={{ display: 'block', fontSize: '11px', color: '#A1A5B7', marginBottom: '8px' }}>Attendees</label>
+                          <div className="form-select borderless activity-form-select-borderless" style={{ fontWeight: '600', fontSize: '13px', color: '#071437', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center' }}>
+                              <img src="/assets/imgs/default-profile.png" alt="" style={{ width: '24px', height: '24px', borderRadius: '50%', border: '2px solid white', zIndex: 3 }} />
+                              <img src="/assets/imgs/default-profile.png" alt="" style={{ width: '24px', height: '24px', borderRadius: '50%', border: '2px solid white', marginLeft: '-10px', zIndex: 2 }} />
+                              <div style={{ width: '24px', height: '24px', borderRadius: '50%', border: '2px solid white', background: '#F1F1F4', color: '#A1A5B7', fontSize: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginLeft: '-10px', zIndex: 1, fontWeight: '700' }}>43+</div>
+                            </div>
+                            46 Students <img src={hoadowncaret} alt="" />
                           </div>
                         </div>
                       </div>
-                      <div className="event-nav activity-event-nav">
-                        <button className="nav-circle activity-nav-circle"><img src={hoaprev} alt="" /></button>
-                        <button className="nav-circle activity-nav-circle"><img src={hoanext} alt="" /></button>
+                      
+                      <div className="event-nav activity-event-nav" style={{ display: 'flex', justifyContent: 'center', gap: '12px', marginTop: '30px' }}>
+                        <button className="nav-circle activity-nav-circle" style={{ width: '32px', height: '32px', borderRadius: '50%', border: '1px solid #EEF1F6', background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}><img src={hoaprev} style={{ width: '8px' }} alt="" /></button>
+                        <button className="nav-circle activity-nav-circle" style={{ width: '32px', height: '32px', borderRadius: '50%', border: '1px solid #EEF1F6', background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}><img src={hoanext} style={{ width: '8px' }} alt="" /></button>
                       </div>
                     </div>
 
 
-                    <div className="qa-section">
-                      <h4 className="qa-title">Questions & Answers</h4>
-
-                      {/* Ticket 1 */}
-                      <div className={`ticket-card border-green ${!openTickets[1] ? 'collapsed' : ''}`}>
-                        <div className="ticket-header" onClick={() => toggleTicket(1)}>
-                          <div className="ticket-meta">
-                            <strong>Ticket No : #TKT1204567</strong>
-                            <span>CC : maxsmith@gonaraza.com</span>
-                          </div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                            <div className="ticket-status st-solved">Solved</div>
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#78829D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ transform: openTickets[1] ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}><path d="M6 9l6 6 6-6" /></svg>
-                          </div>
-                        </div>
-
-                        {openTickets[1] && (
-                          <div className="ticket-body">
-                            <div className="ticket-user" style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-                              <img src="/assets/imgs/default-profile.png" alt="" className="tiny-avatar" style={{ borderRadius: '50%', width: '40px', height: '40px' }} />
-                              <div className="flex-col-gap4">
-                                <span style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '8px' }}>
-                                  <strong style={{ color: '#071437', fontSize: '15px', fontWeight: 600 }}>Max Smith</strong>
-                                  <img src={hoavbadge} style={{ width: '16px', height: '16px' }} alt="" />
-                                  <span style={{ background: '#F0E5FD', color: '#450468', fontSize: '12px', padding: '2px 6px', borderRadius: '4px', fontWeight: 500 }}>Professor</span>
-                                </span>
-                                <span style={{ fontSize: '14px', color: '#2A3556' }}>maxsmith@gonaraza.com</span>
-                              </div>
-                            </div>
-                            <div className="ticket-content">
-                              <p>Ads is not displaying and i paid for all fees, 3 batches please help me as soon as possible.</p>
-                              <div className="ticket-attachment" style={{ display: 'flex', gap: '8px', margin: '16px 0' }}>
-                                <div style={{ paddingTop: '8px' }}>
-                                  <img src={hoareply} alt="" />
-                                </div>
-                                <div
-                                  className="attach-img"
-                                  style={{ backgroundImage: `url(${hoaproject})`, backgroundSize: 'cover', backgroundPosition: 'center', height: '100px', width: '140px', borderRadius: '6px', border: '1px solid #DBDFE9', cursor: 'pointer', position: 'relative', overflow: 'hidden' }}
-                                  onClick={() => setFullScreenImage(hoaproject)}
-                                >
-                                  <div style={{ position: 'absolute', bottom: 0, right: 0, background: 'rgba(0,0,0,0.5)', width: '24px', height: '24px', borderTopLeftRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" /></svg>
-                                  </div>
-                                </div>
-                              </div>
-                              <p>Ads is not displaying and i paid for all fees, 3 batches please help me as soon as possible.</p>
-                            </div>
-                            <div className="ticket-actions">
-                              <button><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M14 9V5C14 4.20435 13.6839 3.44129 13.1213 2.87868C12.5587 2.31607 11.7956 2 11 2L7 11V22H18.28C18.7623 22.0055 19.2304 21.8364 19.5979 21.524C19.9654 21.2116 20.2077 20.7769 20.28 20.3L21.66 11.3C21.7035 11.0134 21.6842 10.7207 21.6033 10.4423C21.5225 10.1638 21.3821 9.90629 21.1919 9.68751C21.0016 9.46873 20.7661 9.29393 20.5016 9.17522C20.2371 9.0565 19.95 8.99672 19.66 9H14Z" stroke="rgba(69, 4, 104, 1)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /><path d="M7 22H3C2.46957 22 1.96086 21.7893 1.58579 21.4142C1.21071 21.0391 1 20.5304 1 20V13C1 12.4696 1.21071 11.9609 1.58579 11.5858C1.96086 11.2107 2.46957 11 3 11H7V22Z" stroke="#rgba(69, 4, 104, 1)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg> <span style={{ color: 'rgba(69, 4, 104, 1)', fontWeight: '600' }}>Yes</span></button>
-                              <button><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M10 15V19C10 19.7956 10.3161 20.5587 10.8787 21.1213C11.4413 21.6839 12.2044 22 13 22L17 13V2H5.72C5.23773 1.99451 4.76961 2.16358 4.40212 2.47597C4.03463 2.78836 3.79234 3.22312 3.72 3.7L2.34 12.7C2.29653 12.9866 2.31575 13.2793 2.39665 13.5577C2.47754 13.8362 2.61794 14.0937 2.80814 14.3125C2.99834 14.5313 3.23389 14.7061 3.49836 14.8248C3.76284 14.9435 4.05001 15.0033 4.34 15H10Z" stroke="#A1A5B7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /><path d="M17 2H21C21.5304 2 22.0391 2.21071 22.4142 2.58579C22.7893 2.96086 23 3.46957 23 4V11C23 11.5304 22.7893 12.0391 22.4142 12.4142C22.0391 12.7893 21.5304 13 21 13H17V2Z" stroke="#A1A5B7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg> <span style={{ color: '#A1A5B7' }}>No</span></button>
-                            </div>
-                          </div>
-                        )}
+                    <div className="notifications-section">
+                      <div className="notifications-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '24px', marginTop: '40px' }}>
+                        <h4 style={{ margin: 0, fontSize: '18px', fontWeight: '700', color: '#071437' }}>Notifications</h4>
+                        <button className="this-week-btn" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', border: '1px solid #EEF1F6', borderRadius: '6px', background: '#FFFFFF', color: '#78829D', fontSize: '12px', cursor: 'pointer' }}>
+                          <img src={hoacalendar} style={{ width: '14px' }} alt="" /> This week <img src={hoadowncaret} style={{ width: '10px' }} alt="" />
+                        </button>
                       </div>
 
-                      {/* Ticket 2 */}
-                      <div className={`ticket-card border-red ${!openTickets[2] ? 'collapsed' : ''}`}>
-                        <div className="ticket-header" onClick={() => toggleTicket(2)}>
-                          <div className="ticket-meta">
-                            <strong>Ticket No : #TKT1204567</strong>
-                            <span>CC : maxsmith@gonaraza.com</span>
+                      <div className="notification-list">
+                        {/* Item 1 */}
+                        <div className="notification-item" style={{ display: 'flex', justifyContent: 'space-between', borderLeft: '2px solid #1B84FF', paddingLeft: '16px', marginBottom: '24px' }}>
+                          <div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: '#A1A5B7', marginBottom: '8px' }}>
+                              <span>10 Jan, 24</span>
+                              <span style={{ width: '4px', height: '4px', borderRadius: '50%', background: '#E2E8F0' }}></span>
+                              <span>Course</span>
+                            </div>
+                            <div>
+                              <strong style={{ color: '#071437', fontSize: '13px', marginRight: '6px' }}>Retake</strong>
+                              <span style={{ color: '#78829D', fontSize: '13px' }}>Course failed ,try again to get certificates. 49.5%</span>
+                            </div>
                           </div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                            <div className="ticket-status st-unsolved">Unsolved</div>
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#78829D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ transform: openTickets[2] ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}><path d="M6 9l6 6 6-6" /></svg>
-                          </div>
+                          <button style={{ background: 'transparent', border: '1px solid #EEF1F6', borderRadius: '4px', padding: '4px 8px', height: '32px', color: '#78829D', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>⋮</button>
                         </div>
-                        {openTickets[2] && (
-                          <div className="ticket-body">
-                            <div className="ticket-content"><p>Ticket 2 content goes here.</p></div>
+
+                        {/* Item 2 */}
+                        <div className="notification-item" style={{ display: 'flex', justifyContent: 'space-between', borderLeft: '2px solid #17C653', paddingLeft: '16px', marginBottom: '24px' }}>
+                          <div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: '#A1A5B7', marginBottom: '8px' }}>
+                              <span>10 Jan, 24</span>
+                              <span style={{ width: '4px', height: '4px', borderRadius: '50%', background: '#E2E8F0' }}></span>
+                              <span>Payment</span>
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                              <div>
+                                <strong style={{ color: '#071437', fontSize: '13px', marginRight: '6px' }}>Course Paid Successful</strong>
+                                <span style={{ color: '#78829D', fontSize: '13px' }}>Payment was successful completed and</span>
+                              </div>
+                              <span style={{ color: '#78829D', fontSize: '13px' }}>approved. Using <strong style={{ color: '#450468', fontWeight: '600' }}>MTN Mobile Money</strong>.</span>
+                            </div>
                           </div>
-                        )}
+                          <button style={{ background: 'transparent', border: '1px solid #EEF1F6', borderRadius: '4px', padding: '4px 8px', height: '32px', color: '#78829D', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>⋮</button>
+                        </div>
+
+                        {/* Item 3 */}
+                        <div className="notification-item" style={{ display: 'flex', justifyContent: 'space-between', borderLeft: '2px solid #17C653', paddingLeft: '16px', marginBottom: '24px' }}>
+                          <div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: '#A1A5B7', marginBottom: '8px' }}>
+                              <span>10 Jan, 24</span>
+                              <span style={{ width: '4px', height: '4px', borderRadius: '50%', background: '#E2E8F0' }}></span>
+                              <span>Payment</span>
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                              <div>
+                                <strong style={{ color: '#071437', fontSize: '13px', marginRight: '6px' }}>Course Paid Successful</strong>
+                                <span style={{ color: '#78829D', fontSize: '13px' }}>Payment was successful completed and</span>
+                              </div>
+                              <span style={{ color: '#78829D', fontSize: '13px' }}>approved. Using <strong style={{ color: '#450468', fontWeight: '600' }}>MTN Mobile Money</strong>.</span>
+                            </div>
+                          </div>
+                          <button style={{ background: 'transparent', border: '1px solid #EEF1F6', borderRadius: '4px', padding: '4px 8px', height: '32px', color: '#78829D', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>⋮</button>
+                        </div>
                       </div>
 
-                      {/* Ticket 3 */}
-                      <div className={`ticket-card border-blue ${!openTickets[3] ? 'collapsed' : ''}`}>
-                        <div className="ticket-header" onClick={() => toggleTicket(3)}>
-                          <div className="ticket-meta">
-                            <strong>Ticket No : #TKT1204567</strong>
-                            <span>CC : maxsmith@gonaraza.com</span>
-                          </div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                            <div className="ticket-status st-review">In Review</div>
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#78829D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ transform: openTickets[3] ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}><path d="M6 9l6 6 6-6" /></svg>
-                          </div>
+                      <div className="hoa-pagination-container justify-center" style={{ marginTop: '40px', display: 'flex', justifyContent: 'center' }}>
+                        <div className="hoa-pagination" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                          <button className="page-nav" style={{ width: '34px', height: '34px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #DBDFE9', borderRadius: '6px', background: '#FFFFFF', cursor: 'pointer' }}><img src={hoaprev} style={{ width: '6px' }} alt="Prev" /></button>
+                          <button className="page-num" style={{ width: '34px', height: '34px', border: 'none', background: 'transparent', color: '#4B5675', fontSize: '13px', fontWeight: '500', cursor: 'pointer' }}>1</button>
+                          <button className="page-num active" style={{ width: '34px', height: '34px', border: 'none', background: '#450468', color: '#FFFFFF', fontSize: '13px', fontWeight: '500', borderRadius: '6px', cursor: 'pointer' }}>2</button>
+                          <button className="page-num" style={{ width: '34px', height: '34px', border: 'none', background: 'transparent', color: '#4B5675', fontSize: '13px', fontWeight: '500', cursor: 'pointer' }}>3</button>
+                          <button className="page-num" style={{ width: '34px', height: '34px', border: 'none', background: 'transparent', color: '#4B5675', fontSize: '13px', fontWeight: '500', cursor: 'pointer' }}>4</button>
+                          <button className="page-num" style={{ width: '34px', height: '34px', border: 'none', background: 'transparent', color: '#4B5675', fontSize: '13px', fontWeight: '500', cursor: 'pointer' }}>5</button>
+                          <span className="page-dots" style={{ color: '#A1A5B7' }}>...</span>
+                          <button className="page-nav" style={{ width: '34px', height: '34px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #DBDFE9', borderRadius: '6px', background: '#FFFFFF', cursor: 'pointer' }}><img src={hoanext} style={{ width: '6px' }} alt="Next" /></button>
                         </div>
-                        {openTickets[3] && (
-                          <div className="ticket-body">
-                            <div className="ticket-content"><p>Ticket 3 content goes here.</p></div>
-                          </div>
-                        )}
                       </div>
 
                     </div>
