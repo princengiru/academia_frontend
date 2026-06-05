@@ -267,7 +267,7 @@ const HOATutors = () => {
               <div className="flex-between-center">
                 <span className="hoa-revenue-label">Total Revenue</span>
                 <div className="hoa-revenue-dropdown" style={{position: 'relative'}} onClick={() => toggleFlagDropdown('rev1')}>
-                  {formatAmount('9.6M RWF')} <img src={currency.flag} className="currency-icon" alt="flag" /> <img src={hoadowncaret} alt="drop" />
+                  {formatAmount('9.6M RWF')} <img src={currency.flag} className="currency-icon" alt="flag" style={{cursor: 'pointer'}} /> <img src={hoadowncaret} alt="drop" style={{cursor: 'pointer'}} />
                   {openFlagDropdown === 'rev1' && (
                     <div className="flag-dropdown-menu" style={{ minWidth: '80px', padding: '4px', top: '100%', right: 0, zIndex: 10, position: 'absolute' }}>
                       {flagOptions.map((option, idx) => (
@@ -302,7 +302,7 @@ const HOATutors = () => {
               <div className="flex-between-center">
                 <span className="hoa-revenue-label">Total Revenue</span>
                 <div className="hoa-revenue-dropdown" style={{position: 'relative'}} onClick={() => toggleFlagDropdown('rev2')}>
-                  {formatAmount('9.6M RWF')} <img src={currency.flag} className="currency-icon" alt="flag" /> <img src={hoadowncaret} alt="drop" />
+                  {formatAmount('9.6M RWF')} <img src={currency.flag} className="currency-icon" alt="flag" style={{cursor: 'pointer'}} /> <img src={hoadowncaret} alt="drop" style={{cursor: 'pointer'}} />
                   {openFlagDropdown === 'rev2' && (
                     <div className="flag-dropdown-menu" style={{ minWidth: '80px', padding: '4px', top: '100%', right: 0, zIndex: 10, position: 'absolute' }}>
                       {flagOptions.map((option, idx) => (
