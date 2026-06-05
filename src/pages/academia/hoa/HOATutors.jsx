@@ -857,13 +857,25 @@ const HOATutors = () => {
                             46 Students <img src={hoadowncaret} alt="" />
                           </div>
                           {openAttendees && (
-                            <div className="attendees-dropdown" style={{ position: 'absolute', top: '100%', left: '10px', background: '#FFFFFF', border: '1px solid #EEF1F6', borderRadius: '8px', padding: '10px', width: '200px', zIndex: 9999, boxShadow: '0 12px 30px rgba(15, 23, 42, 0.12)' }}>
-                              {attendeesList.map((attendee, idx) => (
-                                <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 4px', borderBottom: idx < attendeesList.length - 1 ? '1px solid #EEF1F6' : 'none', cursor: 'pointer' }}>
-                                  <img src={attendee.avatar} alt="" style={{ width: '24px', height: '24px', borderRadius: '50%' }} />
-                                  <span style={{ fontSize: '13px', color: '#4B5675' }}>{attendee.name}</span>
+                            <div className="attendees-dropdown" style={{ position: 'absolute', top: '100%', right: '-10px', background: '#FFFFFF', border: '1px solid #EEF1F6', borderRadius: '12px', padding: '0', width: '280px', zIndex: 9999, boxShadow: '0 12px 30px rgba(15, 23, 42, 0.15)', overflow: 'hidden' }}>
+                              <div style={{ padding: '16px 16px 12px 16px', borderBottom: '1px solid #EEF1F6' }}>
+                                <h5 style={{ margin: '0 0 12px 0', fontSize: '14px', color: '#071437', fontWeight: '700' }}>Attendees <span style={{ color: '#A1A5B7', fontWeight: '500' }}>(46)</span></h5>
+                                <div style={{ position: 'relative' }}>
+                                  <img src={hoasearch} alt="search" style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', width: '14px', opacity: 0.5 }} />
+                                  <input type="text" placeholder="Search attendees..." style={{ width: '100%', padding: '8px 10px 8px 32px', border: '1px solid #EEF1F6', borderRadius: '6px', fontSize: '12px', outline: 'none', color: '#4B5675', boxSizing: 'border-box' }} />
                                 </div>
-                              ))}
+                              </div>
+                              <div style={{ maxHeight: '200px', overflowY: 'auto', padding: '8px' }}>
+                                {attendeesList.map((attendee, idx) => (
+                                  <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '8px 12px', borderRadius: '6px', cursor: 'pointer', transition: 'background 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.background = '#F8FAFC'} onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}>
+                                    <img src={attendee.avatar} alt="" style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover' }} />
+                                    <span style={{ fontSize: '13px', color: '#071437', fontWeight: '500' }}>{attendee.name}</span>
+                                  </div>
+                                ))}
+                              </div>
+                              <div style={{ padding: '12px 16px', borderTop: '1px solid #EEF1F6', textAlign: 'center' }}>
+                                <button style={{ background: 'transparent', border: 'none', color: '#1B84FF', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}>View All Attendees</button>
+                              </div>
                             </div>
                           )}
                         </div>
