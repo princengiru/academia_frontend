@@ -413,7 +413,9 @@ const HOATutors = () => {
               
               {/* Profile Card */}
               <div className="modal-profile-card">
-                <div className="modal-profile-bg" style={{ background: `url(${hoabrickspattern}) center / 100% 100% no-repeat`, opacity: 1 }}></div>
+                <div className="modal-profile-bg-wrapper">
+                  <div className="modal-profile-bg" style={{ background: `url(${hoabrickspattern}) center / 100% 100% no-repeat`, opacity: 1 }}></div>
+                </div>
                 
                 <div className="profile-top-row">
                   <img src="/assets/imgs/default-profile.png" alt="Avatar" className="profile-lg-avatar" />
