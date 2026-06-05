@@ -41,6 +41,10 @@ import hoasyllabus from '../../../assets/icons/hoasyllabus.svg';
 import hoaonlinecourses from '../../../assets/icons/hoaonlinecourses.svg';
 import hoaprojects from '../../../assets/icons/hoaprojects.svg';
 import hoatotalstudents from '../../../assets/icons/hoatotalstudents.svg';
+import brickspattern from '../../../assets/imgs/brickspattern.png';
+import hoabrickspattern from '../../../assets/imgs/hoabrickspattern.png';
+
+
 
 
 const HOATutors = () => {
@@ -409,7 +413,7 @@ const HOATutors = () => {
               
               {/* Profile Card */}
               <div className="modal-profile-card">
-                <div className="modal-profile-bg"></div>
+                <div className="modal-profile-bg" style={{ background: `url(${hoabrickspattern}) center / 100% 100% no-repeat`, opacity: 1 }}></div>
                 
                 <div className="profile-top-row">
                   <img src="/assets/imgs/default-profile.png" alt="Avatar" className="profile-lg-avatar" />
