@@ -449,6 +449,7 @@ const HOALearners = () => {
                 <th className="text-center"><div className="th-content justify-center" onClick={() => handleSort('certs')}>Certificates <span className={`sort-icon ${sortConfig.key === 'certs' ? 'active ' + sortConfig.direction : ''}`}><img src={hoaupdowncaret} alt="" /></span></div></th>
                 <th className="text-center"><div className="th-content justify-center" onClick={() => handleSort('paid')}>Tot. Paid (USD) <span className={`sort-icon ${sortConfig.key === 'paid' ? 'active ' + sortConfig.direction : ''}`}><img src={hoaupdowncaret} alt="" /></span></div></th>
                 <th className="status-col"><div className="th-content" onClick={() => handleSort('status')}>Status <span className={`sort-icon ${sortConfig.key === 'status' ? 'active ' + sortConfig.direction : ''}`}><img src={hoaupdowncaret} alt="" /></span></div></th>
+                <th className="action-col"></th>
               </tr>
             </thead>
             <tbody>

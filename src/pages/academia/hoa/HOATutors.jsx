@@ -369,7 +369,7 @@ const HOATutors = () => {
                 <th className="text-center" style={{ whiteSpace: 'nowrap' }}><div className="th-content justify-center" onClick={() => handleSort('role')}>Role <span className={`sort-icon ${sortConfig.key === 'role' ? 'active ' + sortConfig.direction : ''}`}><img src={hoaupdowncaret} alt="Sort" /></span></div></th>
                 <th className="text-center" style={{ whiteSpace: 'nowrap' }}><div className="th-content justify-center" onClick={() => handleSort('uploads')}>Uploads <span className={`sort-icon ${sortConfig.key === 'uploads' ? 'active ' + sortConfig.direction : ''}`}><img src={hoaupdowncaret} alt="Sort" /></span></div></th>
                 <th className="text-center" style={{ whiteSpace: 'nowrap' }}><div className="th-content justify-center" onClick={() => handleSort('paid')}>Amount Paid <span className={`sort-icon ${sortConfig.key === 'paid' ? 'active ' + sortConfig.direction : ''}`}><img src={hoaupdowncaret} alt="Sort" /></span></div></th>
-                <th className="status-col"><div className="th-content" onClick={() => handleSort('status')}>Status <span className={`sort-icon ${sortConfig.key === 'status' ? 'active ' + sortConfig.direction : ''}`}><img src={hoaupdowncaret} alt="Sort" /></span></div></th>
+                <th className="status-col" ><div className="th-content" onClick={() => handleSort('status')}>Status <span className={`sort-icon ${sortConfig.key === 'status' ? 'active ' + sortConfig.direction : ''}`}><img src={hoaupdowncaret} alt="Sort" /></span></div></th>
                 <th className="action-col"></th>
               </tr>
             </thead>
