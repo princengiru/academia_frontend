@@ -20,16 +20,6 @@ function AcademiaHOARoutes() {
       <Route path="academia/hoa/learners" element={<HOALearners />} />
       <Route path="academia/hoa/tutors" element={<HOATutors />} />
       <Route
-        path="academia/hoa/reports"
-        element={(
-          <HOAPlaceholderPage
-            currentPage="reports"
-            title="Reports"
-            description="Reports are not wired yet."
-          />
-        )}
-      />
-      <Route
         path="academia/hoa/settings"
         element={(
           <HOAPlaceholderPage

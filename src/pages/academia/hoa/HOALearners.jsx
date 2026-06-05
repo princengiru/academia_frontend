@@ -73,8 +73,6 @@ const HOALearners = () => {
   };
 
   const { currency, setCurrency, formatAmount } = useCurrency();
-  const [openFlagDropdown, setOpenFlagDropdown] = useState(null);
-
   const pageSizeOptions = ['5', '10', '25'];
   const filterOptions = ['All Learners', 'Active', 'Inactive'];
 
