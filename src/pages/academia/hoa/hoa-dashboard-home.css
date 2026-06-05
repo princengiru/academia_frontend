@@ -923,6 +923,8 @@
     display: flex;
     align-items: center;
     gap: 6px;
+    cursor: pointer;
+    user-select: none;
   }
 
   .minus-select-button {
@@ -953,8 +955,20 @@
 
   .sort-icon {
     font-size: 11px;
-    opacity: 0.5;
+    opacity: 0.3;
     cursor: pointer;
+    transition: opacity 0.2s, transform 0.2s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .sort-icon.active {
+    opacity: 1;
+  }
+
+  .sort-icon.desc {
+    transform: rotate(180deg);
   }
 
   .hoa-list-table td {
@@ -968,6 +982,10 @@
     border-bottom: 1px solid #F1F1F4;
     box-shadow: 0px 2px 4px #0000000D;
     color: #071437;
+  }
+
+  .hoa-list-table tr.selected-row td {
+    background-color: #F8F5FF;
   }
 
   .hoa-list-table tr:last-child td {

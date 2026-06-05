@@ -41,6 +41,7 @@ const HOADashboardHome = () => {
   const [isPageSizeOpen, setIsPageSizeOpen] = useState(false);
   const [openActionRowId, setOpenActionRowId] = useState(null);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [sortConfig, setSortConfig] = useState({ key: 'name', direction: 'asc' });
   const [openFlagDropdown, setOpenFlagDropdown] = useState(null);
   const [flagSelections, setFlagSelections] = useState({
     revenue: { label: 'US', flag: hoausflag },
@@ -123,6 +124,37 @@ const HOADashboardHome = () => {
         )}
       </div>
     );
+  };
+
+  const handleSort = (key) => {
+    let direction = 'asc';
+    if (sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    } else if (sortConfig.key === key && sortConfig.direction === 'desc') {
+      direction = 'asc';
+    }
+    setSortConfig({ key, direction });
+  };
+
+  const getSortedData = (data, config) => {
+    if (!config.key) return data;
+    return [...data].sort((a, b) => {
+      let aVal = a[config.key];
+      let bVal = b[config.key];
+      
+      if (config.key === 'date') {
+         aVal = new Date(aVal).getTime();
+         bVal = new Date(bVal).getTime();
+      }
+
+      if (aVal < bVal) {
+        return config.direction === 'asc' ? -1 : 1;
+      }
+      if (aVal > bVal) {
+        return config.direction === 'asc' ? 1 : -1;
+      }
+      return 0;
+    });
   };
 
   // Updated Data to match image types and icons
@@ -388,7 +420,7 @@ const HOADashboardHome = () => {
       {/* Conditional Rendering of Grid vs List */}
       {viewMode === 'grid' ? (
         <div className="hoa-grid-3">
-          {approvalRequests.map((req) => (
+          {getSortedData(approvalRequests, sortConfig).map((req) => (
             <div key={req.id} className="hoa-card hoa-approval-card">
               
               <div className="approval-user-row">
@@ -445,17 +477,17 @@ const HOADashboardHome = () => {
                     <div className="minus-icon">-</div>
                   </button>
                 </th>
-                <th><div className="th-content">Student Details (34) <span className="sort-icon"><img src={hoaupdowncaret} alt="Sort" /></span></div></th>
-                <th><div className="th-content">Role <span className="sort-icon"><img src={hoaupdowncaret} style={{width: '11px', height: '11px'}} alt="Sort" /></span></div></th>
-                <th><div className="th-content"> Date <span className="sort-icon"><img src={hoaupdowncaret} style={{width: '11px', height: '11px'}} alt="Sort" /></span></div></th>
-                <th><div className="th-content">Assessment Type <span className="sort-icon"><img src={hoaupdowncaret} style={{width: '11px', height: '11px'}} alt="Sort" /></span></div></th>
-                <th><div className="th-content">Status <span className="sort-icon"><img src={hoaupdowncaret} style={{width: '11px', height: '11px'}} alt="Sort" /></span></div></th>
+                <th><div className="th-content" onClick={() => handleSort('name')}>Student Details (34) <span className={`sort-icon ${sortConfig.key === 'name' ? 'active ' + sortConfig.direction : ''}`}><img src={hoaupdowncaret} alt="Sort" /></span></div></th>
+                <th><div className="th-content" onClick={() => handleSort('role')}>Role <span className={`sort-icon ${sortConfig.key === 'role' ? 'active ' + sortConfig.direction : ''}`}><img src={hoaupdowncaret} style={{width: '11px', height: '11px'}} alt="Sort" /></span></div></th>
+                <th><div className="th-content" onClick={() => handleSort('date')}> Date <span className={`sort-icon ${sortConfig.key === 'date' ? 'active ' + sortConfig.direction : ''}`}><img src={hoaupdowncaret} style={{width: '11px', height: '11px'}} alt="Sort" /></span></div></th>
+                <th><div className="th-content" onClick={() => handleSort('fileCount')}>Assessment Type <span className={`sort-icon ${sortConfig.key === 'fileCount' ? 'active ' + sortConfig.direction : ''}`}><img src={hoaupdowncaret} style={{width: '11px', height: '11px'}} alt="Sort" /></span></div></th>
+                <th><div className="th-content" onClick={() => handleSort('status')}>Status <span className={`sort-icon ${sortConfig.key === 'status' ? 'active ' + sortConfig.direction : ''}`}><img src={hoaupdowncaret} style={{width: '11px', height: '11px'}} alt="Sort" /></span></div></th>
                 <th><div className="th-content">Action <span className="sort-icon"><img src={hoaupdowncaret} style={{width: '11px', height: '11px'}} alt="Sort" /></span></div></th>
               </tr>
             </thead>
             <tbody>
-              {approvalRequests.map((req) => (
-                <tr key={req.id}>
+              {getSortedData(approvalRequests, sortConfig).map((req) => (
+                <tr key={req.id} className={selectedRows.includes(req.id) ? 'selected-row' : ''}>
                   <td>
                     <input
                       type="checkbox"

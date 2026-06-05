@@ -58,6 +58,8 @@ const HOATutors = () => {
   const [hoverData, setHoverData] = useState({ chartId: null, text: '', tooltipClass: '', x: 0, y: 0 });
   const [likedProjects, setLikedProjects] = useState({});
 
+  const [sortConfig, setSortConfig] = useState({ key: 'name', direction: 'asc' });
+
   const toggleProjectLike = (idx) => {
     setLikedProjects((prev) => ({
       ...prev,
@@ -67,6 +69,8 @@ const HOATutors = () => {
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalSortConfig, setModalSortConfig] = useState({ key: 'title', direction: 'asc' });
+  const [modalSelectedRows, setModalSelectedRows] = useState([]);
   const [activeTab, setActiveTab] = useState('lessons'); // 'lessons', 'projects', 'activity'
 
   const [openTickets, setOpenTickets] = useState({ 1: true });
@@ -137,6 +141,58 @@ const HOATutors = () => {
 
   const handleMouseLeave = () => {
     setHoverData({ chartId: null, text: '', tooltipClass: '', x: 0, y: 0 });
+  };
+
+  const toggleModalRowSelection = (rowId) => {
+    setModalSelectedRows((currentRows) => (
+      currentRows.includes(rowId)
+        ? currentRows.filter((selectedRowId) => selectedRowId !== rowId)
+        : [...currentRows, rowId]
+    ));
+  };
+
+  const getSortedData = (data, config) => {
+    if (!config.key) return data;
+    return [...data].sort((a, b) => {
+      let aVal = a[config.key];
+      let bVal = b[config.key];
+      
+      if (config.key === 'date') {
+         aVal = new Date(aVal).getTime() || 0;
+         bVal = new Date(bVal).getTime() || 0;
+      }
+      
+      if (typeof aVal === 'string' && aVal === '---') aVal = -Infinity;
+      if (typeof bVal === 'string' && bVal === '---') bVal = -Infinity;
+
+      if (aVal < bVal) {
+        return config.direction === 'asc' ? -1 : 1;
+      }
+      if (aVal > bVal) {
+        return config.direction === 'asc' ? 1 : -1;
+      }
+      return 0;
+    });
+  };
+
+  const handleSort = (key) => {
+    let direction = 'asc';
+    if (sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    } else if (sortConfig.key === key && sortConfig.direction === 'desc') {
+      direction = 'asc';
+    }
+    setSortConfig({ key, direction });
+  };
+
+  const handleModalSort = (key) => {
+    let direction = 'asc';
+    if (modalSortConfig.key === key && modalSortConfig.direction === 'asc') {
+      direction = 'desc';
+    } else if (modalSortConfig.key === key && modalSortConfig.direction === 'desc') {
+      direction = 'asc';
+    }
+    setModalSortConfig({ key, direction });
   };
 
   const openModal = () => setIsModalOpen(true);
@@ -308,43 +364,43 @@ const HOATutors = () => {
                     <div className="minus-icon">-</div>
                   </button>
                 </th>
-                <th style={{ width: '25%' }}><div className="th-content">Tutor Details (34) <span className="sort-icon"><img src={hoaupdowncaret} alt="Sort" /></span></div></th>
-                <th style={{ width: '25%' }}><div className="th-content">Contact Info <span className="sort-icon"><img src={hoaupdowncaret} alt="Sort" /></span></div></th>
-                <th className="text-center" style={{ whiteSpace: 'nowrap' }}><div className="th-content justify-center">Role <span className="sort-icon"><img src={hoaupdowncaret} alt="Sort" /></span></div></th>
-                <th className="text-center" style={{ whiteSpace: 'nowrap' }}><div className="th-content justify-center">Uploads <span className="sort-icon"><img src={hoaupdowncaret} alt="Sort" /></span></div></th>
-                <th className="text-center" style={{ whiteSpace: 'nowrap' }}><div className="th-content justify-center">Amount Paid <span className="sort-icon"><img src={hoaupdowncaret} alt="Sort" /></span></div></th>
-                <th className="status-col"><div className="th-content">Status <span className="sort-icon"><img src={hoaupdowncaret} alt="Sort" /></span></div></th>
+                <th style={{ width: '25%' }}><div className="th-content" onClick={() => handleSort('name')}>Tutor Details (34) <span className={`sort-icon ${sortConfig.key === 'name' ? 'active ' + sortConfig.direction : ''}`}><img src={hoaupdowncaret} alt="Sort" /></span></div></th>
+                <th style={{ width: '25%' }}><div className="th-content" onClick={() => handleSort('phone')}>Contact Info <span className={`sort-icon ${sortConfig.key === 'phone' ? 'active ' + sortConfig.direction : ''}`}><img src={hoaupdowncaret} alt="Sort" /></span></div></th>
+                <th className="text-center" style={{ whiteSpace: 'nowrap' }}><div className="th-content justify-center" onClick={() => handleSort('role')}>Role <span className={`sort-icon ${sortConfig.key === 'role' ? 'active ' + sortConfig.direction : ''}`}><img src={hoaupdowncaret} alt="Sort" /></span></div></th>
+                <th className="text-center" style={{ whiteSpace: 'nowrap' }}><div className="th-content justify-center" onClick={() => handleSort('uploads')}>Uploads <span className={`sort-icon ${sortConfig.key === 'uploads' ? 'active ' + sortConfig.direction : ''}`}><img src={hoaupdowncaret} alt="Sort" /></span></div></th>
+                <th className="text-center" style={{ whiteSpace: 'nowrap' }}><div className="th-content justify-center" onClick={() => handleSort('paid')}>Amount Paid <span className={`sort-icon ${sortConfig.key === 'paid' ? 'active ' + sortConfig.direction : ''}`}><img src={hoaupdowncaret} alt="Sort" /></span></div></th>
+                <th className="status-col"><div className="th-content" onClick={() => handleSort('status')}>Status <span className={`sort-icon ${sortConfig.key === 'status' ? 'active ' + sortConfig.direction : ''}`}><img src={hoaupdowncaret} alt="Sort" /></span></div></th>
                 <th className="action-col"></th>
               </tr>
             </thead>
             <tbody>
-              {tutorsData.map((req) => (
-                <tr key={req.id}>
+              {getSortedData(tutorsData, sortConfig).map((tutor) => (
+                <tr key={tutor.id} className={selectedRows.includes(tutor.id) ? 'selected-row' : ''}>
                   <td>
-                    <input type="checkbox" className="hoa-checkbox" checked={selectedRows.includes(req.id)} onChange={() => toggleRowSelection(req.id)} />
+                    <input type="checkbox" className="hoa-checkbox" checked={selectedRows.includes(tutor.id)} onChange={() => toggleRowSelection(tutor.id)} />
                   </td>
                   <td>
                     <div className="list-user-col">
                       <div className="user-meta">
-                        <h5>{req.name}</h5>
+                        <h5>{tutor.name}</h5>
                         <p className="location-with-flag">
-                          <img src={req.flag} alt="flag" className="tiny-flag" /> {req.location}
+                          <img src={tutor.flag} alt="flag" className="tiny-flag" /> {tutor.location}
                         </p>
                       </div>
                     </div>
                   </td>
                   <td>
                     <div className="user-meta">
-                      <h5 style={{ fontWeight: 600 }}>{req.phone}</h5>
-                      <p className="font-11-gray">{req.email}</p>
+                      <h5 style={{ fontWeight: 600 }}>{tutor.phone}</h5>
+                      <p className="font-11-gray">{tutor.email}</p>
                     </div>
                   </td>
-                  <td className="fw-600 text-center" style={{ whiteSpace: 'nowrap' }}>{req.role}</td>
-                  <td className="fw-500 text-center" style={{ whiteSpace: 'nowrap' }}>{req.uploads}</td>
-                  <td className="fw-600 text-center" style={{ whiteSpace: 'nowrap' }}>{req.paid}</td>
+                  <td className="fw-600 text-center" style={{ whiteSpace: 'nowrap' }}>{tutor.role}</td>
+                  <td className="fw-500 text-center" style={{ whiteSpace: 'nowrap' }}>{tutor.uploads}</td>
+                  <td className="fw-600 text-center" style={{ whiteSpace: 'nowrap' }}>{tutor.paid}</td>
                   <td className="status-col">
-                    <span className={`status-pill pill-${req.statusColor}`}>
-                      <span className="dot"></span> {req.status}
+                    <span className={`status-pill pill-${tutor.statusColor}`}>
+                      <span className="dot"></span> {tutor.status}
                     </span>
                   </td>
                   <td className="action-col">
@@ -526,20 +582,24 @@ const HOATutors = () => {
                       <table className="hoa-list-table mod-table">
                         <thead>
                           <tr>
-                            <th className="w-40"><div className="minus-icon m-auto">-</div></th>
-                            <th><div className="th-content">Course Details (34) <span className="sort-icon"><img src={hoaupdowncaret} alt="" /></span></div></th>
-                            <th><div className="th-content">Type <span className="sort-icon"><img src={hoaupdowncaret} alt="" /></span></div></th>
-                            <th><div className="th-content">Tot. Students <span className="sort-icon"><img src={hoaupdowncaret} alt="" /></span></div></th>
-                            <th><div className="th-content">Tot. Amount & Visits <span className="sort-icon"><img src={hoaupdowncaret} alt="" /></span></div></th>
-                            <th><div className="th-content">Certificates & Avg. Score <span className="sort-icon"><img src={hoaupdowncaret} alt="" /></span></div></th>
-                            <th><div className="th-content">Charging Fee <img src={hoausflag} alt="" className="icon-12-mx4" /> <span className="sort-icon"><img src={hoaupdowncaret} alt="" /></span></div></th>
-                            <th className="status-col"><div className="th-content">Status <span className="sort-icon"><img src={hoaupdowncaret} alt="" /></span></div></th>
+                            <th className="w-40">
+                              <button type="button" className="th-content minus-btn-container minus-select-button" onClick={() => setModalSelectedRows([])}>
+                                <div className="minus-icon m-auto">-</div>
+                              </button>
+                            </th>
+                            <th><div className="th-content" onClick={() => handleModalSort('title')}>Course Details (34) <span className={`sort-icon ${modalSortConfig.key === 'title' ? 'active ' + modalSortConfig.direction : ''}`}><img src={hoaupdowncaret} alt="" /></span></div></th>
+                            <th><div className="th-content" onClick={() => handleModalSort('type')}>Type <span className={`sort-icon ${modalSortConfig.key === 'type' ? 'active ' + modalSortConfig.direction : ''}`}><img src={hoaupdowncaret} alt="" /></span></div></th>
+                            <th><div className="th-content" onClick={() => handleModalSort('students')}>Tot. Students <span className={`sort-icon ${modalSortConfig.key === 'students' ? 'active ' + modalSortConfig.direction : ''}`}><img src={hoaupdowncaret} alt="" /></span></div></th>
+                            <th><div className="th-content" onClick={() => handleModalSort('amount')}>Tot. Amount & Visits <span className={`sort-icon ${modalSortConfig.key === 'amount' ? 'active ' + modalSortConfig.direction : ''}`}><img src={hoaupdowncaret} alt="" /></span></div></th>
+                            <th><div className="th-content" onClick={() => handleModalSort('certs')}>Certificates & Avg. Score <span className={`sort-icon ${modalSortConfig.key === 'certs' ? 'active ' + modalSortConfig.direction : ''}`}><img src={hoaupdowncaret} alt="" /></span></div></th>
+                            <th><div className="th-content" onClick={() => handleModalSort('feeStatus')}>Charging Fee <img src={hoausflag} alt="" className="icon-12-mx4" /> <span className={`sort-icon ${modalSortConfig.key === 'feeStatus' ? 'active ' + modalSortConfig.direction : ''}`}><img src={hoaupdowncaret} alt="" /></span></div></th>
+                            <th className="status-col"><div className="th-content" onClick={() => handleModalSort('status')}>Status <span className={`sort-icon ${modalSortConfig.key === 'status' ? 'active ' + modalSortConfig.direction : ''}`}><img src={hoaupdowncaret} alt="" /></span></div></th>
                           </tr>
                         </thead>
                         <tbody>
-                          {modalLessons.map((les) => (
-                            <tr key={les.id}>
-                              <td><input type="checkbox" className="hoa-checkbox" /></td>
+                          {getSortedData(modalLessons, modalSortConfig).map((les) => (
+                            <tr key={les.id} className={modalSelectedRows.includes(les.id) ? 'selected-row' : ''}>
+                              <td><input type="checkbox" className="hoa-checkbox" checked={modalSelectedRows.includes(les.id)} onChange={() => toggleModalRowSelection(les.id)} /></td>
                               <td>
                                 <div className="user-meta">
                                   <h5>{les.title}</h5>
