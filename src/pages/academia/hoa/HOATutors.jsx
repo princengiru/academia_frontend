@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import HOALayout from '../../../components/layouts/HOALayout/HOALayout';
+import { useCurrency, flagOptions } from '../../../hooks/useCurrency';
 import './hoa-tutors.css';
 
 import hoausflag from '../../../assets/icons/hoausflag.svg';
@@ -80,30 +81,10 @@ const HOATutors = () => {
     setOpenTickets(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
-  const [flagSelections, setFlagSelections] = useState({
-    syllabus: { label: 'RWF', flag: rwanda },
-    courses: { label: 'RWF', flag: rwanda },
-  });
-
-  const [exchangeRate, setExchangeRate] = useState(1350);
-
-  useEffect(() => {
-    fetch('https://open.er-api.com/v6/latest/RWF')
-      .then(res => res.json())
-      .then(data => {
-        if (data && data.rates && data.rates.USD) {
-          setExchangeRate(1 / data.rates.USD);
-        }
-      })
-      .catch(err => console.error("Failed to fetch exchange rate", err));
-  }, []);
+  const { currency, setCurrency, formatAmount } = useCurrency();
 
   const pageSizeOptions = ['5', '10', '25'];
   const filterOptions = ['All Learners', 'Active', 'Inactive'];
-  const flagOptions = [
-    { label: 'RWF', flag: rwanda },
-    { label: 'USD', flag: hoausflag },
-  ];
 
   const toggleRowSelection = (rowId) => {
     setSelectedRows((currentRows) => (
@@ -124,11 +105,8 @@ const HOATutors = () => {
     setOpenFlagDropdown((currentKey) => (currentKey === key ? null : key));
   };
 
-  const selectFlagOption = (key, option) => {
-    setFlagSelections((currentSelections) => ({
-      ...currentSelections,
-      [key]: option,
-    }));
+  const selectFlagOption = (option) => {
+    setCurrency(option);
     setOpenFlagDropdown(null);
   };
 
@@ -257,11 +235,11 @@ const HOATutors = () => {
             <div className="sub-stat"><h4>13.3M</h4><p>Syllabus Uploads</p></div>
             <div className="sub-stat"><h4>204</h4><p>Online Courses</p></div>
             <div className="sub-stat">
-              <h4 className="flex-center-gap8">19.3M <span className="stat-currency">RWF <img src={rwanda} alt="rwf" className="currency-flag" /> <img src={hoadowncaret} alt="drop" /></span></h4>
+              <h4 className="flex-center-gap8">{formatAmount('19.3M RWF').replace(' RWF','').replace(' USD','')} <span className="stat-currency">{currency.label} <img src={currency.flag} alt="flag" className="currency-flag" /></span></h4>
               <p>Upload Payments <span className="trend down"> <img src={hoadecrease} alt="" /> -4.5%</span></p>
             </div>
             <div className="sub-stat">
-              <h4 className="flex-center-gap8">843.5K <span className="stat-currency">RWF <img src={rwanda} alt="rwf" className="currency-flag" /> <img src={hoadowncaret} alt="drop" /></span></h4>
+              <h4 className="flex-center-gap8">{formatAmount('843.5K RWF').replace(' RWF','').replace(' USD','')} <span className="stat-currency">{currency.label} <img src={currency.flag} alt="flag" className="currency-flag" /></span></h4>
               <p>Amount Paid <span className="trend up"> <img src={hoaincrease} alt="" /> +4.1</span></p>
             </div>
           </div>
@@ -288,8 +266,18 @@ const HOATutors = () => {
               </div>
               <div className="flex-between-center">
                 <span className="hoa-revenue-label">Total Revenue</span>
-                <div className="hoa-revenue-dropdown">
-                  9.6M RWF <img src={rwanda} className="currency-icon" alt="rwf" /> <img src={hoadowncaret} alt="drop" />
+                <div className="hoa-revenue-dropdown" style={{position: 'relative'}} onClick={() => toggleFlagDropdown('rev1')}>
+                  {formatAmount('9.6M RWF')} <img src={currency.flag} className="currency-icon" alt="flag" /> <img src={hoadowncaret} alt="drop" />
+                  {openFlagDropdown === 'rev1' && (
+                    <div className="flag-dropdown-menu" style={{ minWidth: '80px', padding: '4px', top: '100%', right: 0, zIndex: 10, position: 'absolute' }}>
+                      {flagOptions.map((option, idx) => (
+                        <button key={idx} type="button" className={`flag-dropdown-option ${currency.label === option.label ? 'active' : ''}`} onClick={(e) => { e.stopPropagation(); selectFlagOption(option); }}>
+                          <img src={option.flag} alt="flag" className="flag-icon" />
+                          <span>{option.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -313,8 +301,18 @@ const HOATutors = () => {
               </div>
               <div className="flex-between-center">
                 <span className="hoa-revenue-label">Total Revenue</span>
-                <div className="hoa-revenue-dropdown">
-                  9.6M RWF <img src={rwanda} className="currency-icon" alt="rwf" /> <img src={hoadowncaret} alt="drop" />
+                <div className="hoa-revenue-dropdown" style={{position: 'relative'}} onClick={() => toggleFlagDropdown('rev2')}>
+                  {formatAmount('9.6M RWF')} <img src={currency.flag} className="currency-icon" alt="flag" /> <img src={hoadowncaret} alt="drop" />
+                  {openFlagDropdown === 'rev2' && (
+                    <div className="flag-dropdown-menu" style={{ minWidth: '80px', padding: '4px', top: '100%', right: 0, zIndex: 10, position: 'absolute' }}>
+                      {flagOptions.map((option, idx) => (
+                        <button key={idx} type="button" className={`flag-dropdown-option ${currency.label === option.label ? 'active' : ''}`} onClick={(e) => { e.stopPropagation(); selectFlagOption(option); }}>
+                          <img src={option.flag} alt="flag" className="flag-icon" />
+                          <span>{option.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -368,7 +366,22 @@ const HOATutors = () => {
                 <th style={{ width: '25%' }}><div className="th-content" onClick={() => handleSort('phone')}>Contact Info <span className={`sort-icon ${sortConfig.key === 'phone' ? 'active ' + sortConfig.direction : ''}`}><img src={hoaupdowncaret} alt="Sort" /></span></div></th>
                 <th className="text-center" style={{ whiteSpace: 'nowrap' }}><div className="th-content justify-center" onClick={() => handleSort('role')}>Role <span className={`sort-icon ${sortConfig.key === 'role' ? 'active ' + sortConfig.direction : ''}`}><img src={hoaupdowncaret} alt="Sort" /></span></div></th>
                 <th className="text-center" style={{ whiteSpace: 'nowrap' }}><div className="th-content justify-center" onClick={() => handleSort('uploads')}>Uploads <span className={`sort-icon ${sortConfig.key === 'uploads' ? 'active ' + sortConfig.direction : ''}`}><img src={hoaupdowncaret} alt="Sort" /></span></div></th>
-                <th className="text-center" style={{ whiteSpace: 'nowrap' }}><div className="th-content justify-center" onClick={() => handleSort('paid')}>Amount Paid <span className={`sort-icon ${sortConfig.key === 'paid' ? 'active ' + sortConfig.direction : ''}`}><img src={hoaupdowncaret} alt="Sort" /></span></div></th>
+                <th className="text-center" style={{ whiteSpace: 'nowrap', position: 'relative' }}>
+                  <div className="th-content justify-center" onClick={() => handleSort('paid')}>
+                    Amount Paid ({currency.label}) <img src={currency.flag} alt="flag" className="icon-12-mx4" onClick={(e) => { e.stopPropagation(); toggleFlagDropdown('main-paid'); }} style={{ cursor: 'pointer' }} />
+                    <span className={`sort-icon ${sortConfig.key === 'paid' ? 'active ' + sortConfig.direction : ''}`}><img src={hoaupdowncaret} alt="Sort" /></span>
+                  </div>
+                  {openFlagDropdown === 'main-paid' && (
+                    <div className="flag-dropdown-menu" style={{ minWidth: '80px', padding: '4px', top: '100%', right: '50%', transform: 'translateX(50%)', zIndex: 10, position: 'absolute' }}>
+                      {flagOptions.map((option, idx) => (
+                        <button key={idx} type="button" className={`flag-dropdown-option ${currency.label === option.label ? 'active' : ''}`} onClick={() => selectFlagOption(option)}>
+                          <img src={option.flag} alt="flag" className="flag-icon" />
+                          <span>{option.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </th>
                 <th className="status-col" ><div className="th-content" onClick={() => handleSort('status')}>Status <span className={`sort-icon ${sortConfig.key === 'status' ? 'active ' + sortConfig.direction : ''}`}><img src={hoaupdowncaret} alt="Sort" /></span></div></th>
                 <th className="action-col"></th>
               </tr>
@@ -397,7 +410,7 @@ const HOATutors = () => {
                   </td>
                   <td className="fw-600 text-center" style={{ whiteSpace: 'nowrap' }}>{tutor.role}</td>
                   <td className="fw-500 text-center" style={{ whiteSpace: 'nowrap' }}>{tutor.uploads}</td>
-                  <td className="fw-600 text-center" style={{ whiteSpace: 'nowrap' }}>{tutor.paid}</td>
+                  <td className="fw-600 text-center" style={{ whiteSpace: 'nowrap' }}>{formatAmount(tutor.paid)}</td>
                   <td className="status-col">
                     <span className={`status-pill pill-${tutor.statusColor}`}>
                       <span className="dot"></span> {tutor.status}
@@ -486,7 +499,18 @@ const HOATutors = () => {
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                       <div style={{ display: 'flex', alignItems: 'center' }}>
                         <span className="profile-label">Total Paid :</span>
-                        <strong className="profile-value-flex">2,340,044 <span className="stat-currency">RWF <img src={rwanda} alt="rwf" className="currency-flag" /> <img src={hoadowncaret} alt="drop" /></span></strong>
+                        <strong className="profile-value-flex" style={{ position: 'relative', zIndex: 9999 }}>{formatAmount('2,340,044 RWF').replace(' RWF','').replace(' USD','')} <span className="stat-currency">{currency.label} <img src={currency.flag} alt="flag" className="currency-flag" /> <img src={hoadowncaret} alt="drop" onClick={() => toggleFlagDropdown('stats3')} style={{cursor: 'pointer'}} /></span>
+                        {openFlagDropdown === 'stats3' && (
+                          <div className="flag-dropdown-menu" style={{ minWidth: '80px', padding: '4px', top: '100%', left: '50%', zIndex: 10, position: 'absolute' }}>
+                            {flagOptions.map((option, idx) => (
+                              <button key={idx} type="button" className={`flag-dropdown-option ${currency.label === option.label ? 'active' : ''}`} onClick={() => selectFlagOption(option)}>
+                                <img src={option.flag} alt="flag" className="flag-icon" />
+                                <span>{option.label}</span>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                        </strong>
                       </div>
                     </div>
                   </div>
@@ -548,15 +572,15 @@ const HOATutors = () => {
               {/* Modal Stats Row */}
               <div className="modal-stats-row modal-stats-row-no-border">
                 <div className="mod-stat mod-stat-br-pr">
-                  <h3 className="flex-center-gap4">+ 2.8K <span className="stat-currency">USD <img src={hoausflag} alt="usd" className="icon-12" /> <img src={hoadowncaret} alt="drop" /></span></h3>
+                  <h3 className="flex-center-gap4">+ {formatAmount('2.8K USD').replace(' USD', '').replace(' RWF', '')} <span className="stat-currency">{currency.label} <img src={currency.flag} alt="flag" className="icon-12" /></span></h3>
                   <p>Downloads Income</p>
                 </div>
                 <div className="mod-stat mod-stat-br-px">
-                  <h3 className="flex-center-gap4">+ 2.8K <span className="stat-currency">USD <img src={hoausflag} alt="usd" className="icon-12" /> <img src={hoadowncaret} alt="drop" /></span></h3>
+                  <h3 className="flex-center-gap4">+ {formatAmount('2.8K USD').replace(' USD', '').replace(' RWF', '')} <span className="stat-currency">{currency.label} <img src={currency.flag} alt="flag" className="icon-12" /></span></h3>
                   <p>Courses Income</p>
                 </div>
                 <div className="mod-stat mod-stat-br-px">
-                  <h3 className="flex-center-gap4">2,340,044 <span className="stat-currency">RWF <img src={rwanda} alt="rwf" className="currency-flag" /> <img src={hoadowncaret} alt="drop" /></span></h3>
+                  <h3 className="flex-center-gap4">{formatAmount('2,340,044 RWF').replace(' RWF','').replace(' USD','')} <span className="stat-currency">{currency.label} <img src={currency.flag} alt="flag" className="currency-flag" /></span></h3>
                   <p>Upload Amount</p>
                 </div>
                 <div className="mod-stat mod-stat-pl">
@@ -592,7 +616,22 @@ const HOATutors = () => {
                             <th><div className="th-content" onClick={() => handleModalSort('students')}>Tot. Students <span className={`sort-icon ${modalSortConfig.key === 'students' ? 'active ' + modalSortConfig.direction : ''}`}><img src={hoaupdowncaret} alt="" /></span></div></th>
                             <th><div className="th-content" onClick={() => handleModalSort('amount')}>Tot. Amount & Visits <span className={`sort-icon ${modalSortConfig.key === 'amount' ? 'active ' + modalSortConfig.direction : ''}`}><img src={hoaupdowncaret} alt="" /></span></div></th>
                             <th><div className="th-content" onClick={() => handleModalSort('certs')}>Certificates & Avg. Score <span className={`sort-icon ${modalSortConfig.key === 'certs' ? 'active ' + modalSortConfig.direction : ''}`}><img src={hoaupdowncaret} alt="" /></span></div></th>
-                            <th><div className="th-content" onClick={() => handleModalSort('feeStatus')}>Charging Fee <img src={hoausflag} alt="" className="icon-12-mx4" /> <span className={`sort-icon ${modalSortConfig.key === 'feeStatus' ? 'active ' + modalSortConfig.direction : ''}`}><img src={hoaupdowncaret} alt="" /></span></div></th>
+                            <th style={{ position: 'relative' }}>
+                              <div className="th-content" onClick={() => handleModalSort('feeStatus')}>
+                                Charging Fee ({currency.label}) <img src={currency.flag} alt="flag" className="icon-12-mx4" onClick={(e) => { e.stopPropagation(); toggleFlagDropdown('modal-fee'); }} style={{ cursor: 'pointer' }} />
+                                <span className={`sort-icon ${modalSortConfig.key === 'feeStatus' ? 'active ' + modalSortConfig.direction : ''}`}><img src={hoaupdowncaret} alt="" /></span>
+                              </div>
+                              {openFlagDropdown === 'modal-fee' && (
+                                <div className="flag-dropdown-menu" style={{ minWidth: '80px', padding: '4px', top: '100%', right: '50%', transform: 'translateX(50%)', zIndex: 10, position: 'absolute' }}>
+                                  {flagOptions.map((option, idx) => (
+                                    <button key={idx} type="button" className={`flag-dropdown-option ${currency.label === option.label ? 'active' : ''}`} onClick={() => selectFlagOption(option)}>
+                                      <img src={option.flag} alt="flag" className="flag-icon" />
+                                      <span>{option.label}</span>
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                            </th>
                             <th className="status-col"><div className="th-content" onClick={() => handleModalSort('status')}>Status <span className={`sort-icon ${modalSortConfig.key === 'status' ? 'active ' + modalSortConfig.direction : ''}`}><img src={hoaupdowncaret} alt="" /></span></div></th>
                           </tr>
                         </thead>
@@ -620,7 +659,7 @@ const HOATutors = () => {
                               </td>
                               <td>
                                 <div className="user-meta">
-                                  <h5 className="fw-600">{les.amount}</h5>
+                                  <h5 className="fw-600">{formatAmount(les.amount)}</h5>
                                   <p className="font-11-gray">{les.amountSub}</p>
                                 </div>
                               </td>
@@ -633,7 +672,7 @@ const HOATutors = () => {
                               <td>
                                 <div className="user-meta">
                                   <h5 style={{ fontWeight: '600', color: les.feeColor }}>{les.feeStatus}</h5>
-                                  <p className="font-11-gray">{les.feeAmount}</p>
+                                  <p className="font-11-gray">{formatAmount(les.feeAmount)}</p>
                                 </div>
                               </td>
                               <td className="status-col">

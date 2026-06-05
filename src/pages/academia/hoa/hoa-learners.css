@@ -387,6 +387,21 @@
     z-index: 10;
   }
 
+  .flag-dropdown-option {
+    width: 100%;
+    border: none;
+    background: transparent;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    color: #071437;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+  }
+
   .flag-dropdown-option:hover {
     background: #F8FAFC;
     border-radius: 6px;

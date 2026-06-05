@@ -1788,7 +1788,7 @@
   display: grid;
   gap: 12px;
   position: relative;
-  z-index: 1;
+  z-index: 2;
 }
 
 .hoa-tutors-page .profile-label {
@@ -2199,4 +2199,36 @@
 .hoa-tutors-page .modal-pagination .page-num.active {
   background: #F1F1F4 !important;
   color: #450468 !important;
+}
+
+.flag-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background: #FFFFFF;
+  border: 1px solid #EEF1F6;
+  border-radius: 8px;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.12);
+  padding: 4px;
+  z-index: 10;
+}
+
+.flag-dropdown-option {
+  width: 100%;
+  border: none;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  color: #071437;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.flag-dropdown-option.active,
+.flag-dropdown-option:hover {
+  background: #F8FAFC;
 }

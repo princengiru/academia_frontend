@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import HOALayout from '../../../components/layouts/HOALayout/HOALayout';
+import { useCurrency, flagOptions } from '../../../hooks/useCurrency';
 import './hoa-learners.css';
 
 import hoausflag from '../../../assets/icons/hoausflag.svg';
@@ -71,30 +72,11 @@ const HOALearners = () => {
     setOpenTickets(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
-  const [flagSelections, setFlagSelections] = useState({
-    syllabus: { label: 'RWF', flag: rwanda },
-    courses: { label: 'RWF', flag: rwanda },
-  });
-
-  const [exchangeRate, setExchangeRate] = useState(1350);
-
-  useEffect(() => {
-    fetch('https://open.er-api.com/v6/latest/RWF')
-      .then(res => res.json())
-      .then(data => {
-        if (data && data.rates && data.rates.USD) {
-          setExchangeRate(1 / data.rates.USD);
-        }
-      })
-      .catch(err => console.error("Failed to fetch exchange rate", err));
-  }, []);
+  const { currency, setCurrency, formatAmount } = useCurrency();
+  const [openFlagDropdown, setOpenFlagDropdown] = useState(null);
 
   const pageSizeOptions = ['5', '10', '25'];
   const filterOptions = ['All Learners', 'Active', 'Inactive'];
-  const flagOptions = [
-    { label: 'RWF', flag: rwanda },
-    { label: 'USD', flag: hoausflag },
-  ];
 
   const toggleRowSelection = (rowId) => {
     setSelectedRows((currentRows) => (
@@ -115,11 +97,8 @@ const HOALearners = () => {
     setOpenFlagDropdown((currentKey) => (currentKey === key ? null : key));
   };
 
-  const selectFlagOption = (key, option) => {
-    setFlagSelections((currentSelections) => ({
-      ...currentSelections,
-      [key]: option,
-    }));
+  const selectFlagOption = (option) => {
+    setCurrency(option);
     setOpenFlagDropdown(null);
   };
 
@@ -234,21 +213,8 @@ const HOALearners = () => {
     );
   };
 
-  const formatRevenue = (baseAmountRWF, currency) => {
-    if (currency === 'USD') {
-      const amountUSD = baseAmountRWF / exchangeRate;
-      if (amountUSD >= 1000000) return `${(amountUSD / 1000000).toFixed(1)}M USD`;
-      if (amountUSD >= 1000) return `${(amountUSD / 1000).toFixed(1)}K USD`;
-      return `${amountUSD.toFixed(2)} USD`;
-    }
-    if (baseAmountRWF >= 1000000) return `${(baseAmountRWF / 1000000).toFixed(1)}M RWF`;
-    if (baseAmountRWF >= 1000) return `${(baseAmountRWF / 1000).toFixed(1)}K RWF`;
-    return `${baseAmountRWF} RWF`;
-  };
-
   const renderFlagDropdown = (key, baseValueRWF) => {
-    const selectedFlag = flagSelections[key];
-    const displayValue = formatRevenue(baseValueRWF, selectedFlag.label);
+    const displayValue = formatAmount(baseValueRWF);
 
     return (
       <div className="hoa-revenue-dropdown-box">
@@ -257,19 +223,18 @@ const HOALearners = () => {
           <span className="revenue-value">{displayValue}</span>
           <div className="flag-dropdown-wrapper">
             <button type="button" className="flag-dropdown-trigger" onClick={() => toggleFlagDropdown(key)}>
-              <img src={selectedFlag.flag} alt="flag" className="flag-icon" />
+              <img src={currency.flag} alt="flag" className="flag-icon" />
               <img src={hoadowncaret} alt="drop" className="flag-dropdown-caret" />
             </button>
             {openFlagDropdown === key && (
               <div className="flag-dropdown-menu" style={{ minWidth: '80px', padding: '4px' }}>
                 {flagOptions.map((option, idx) => (
                   <button
-                    key={idx} type="button" className="flag-dropdown-option"
-                    onClick={() => selectFlagOption(key, option)}
-                    style={{ display: 'flex', alignItems: 'center', width: '100%', padding: '6px 8px', border: 'none', background: 'transparent', cursor: 'pointer' }}
+                    key={idx} type="button" className={`flag-dropdown-option ${currency.label === option.label ? 'active' : ''}`}
+                    onClick={() => selectFlagOption(option)}
                   >
                     <img src={option.flag} alt="flag" className="flag-icon" />
-                    <span style={{ marginLeft: '8px', fontSize: '13px', color: '#4B5675', fontWeight: '500' }}>{option.label}</span>
+                    <span>{option.label}</span>
                   </button>
                 ))}
               </div>
@@ -447,7 +412,25 @@ const HOALearners = () => {
                 <th className="text-center"><div className="th-content justify-center" onClick={() => handleSort('attempts')}>Attempts <span className={`sort-icon ${sortConfig.key === 'attempts' ? 'active ' + sortConfig.direction : ''}`}><img src={hoaupdowncaret} alt="" /></span></div></th>
                 <th className="text-center"><div className="th-content justify-center" onClick={() => handleSort('downloads')}>Downloads <span className={`sort-icon ${sortConfig.key === 'downloads' ? 'active ' + sortConfig.direction : ''}`}><img src={hoaupdowncaret} alt="" /></span></div></th>
                 <th className="text-center"><div className="th-content justify-center" onClick={() => handleSort('certs')}>Certificates <span className={`sort-icon ${sortConfig.key === 'certs' ? 'active ' + sortConfig.direction : ''}`}><img src={hoaupdowncaret} alt="" /></span></div></th>
-                <th className="text-center"><div className="th-content justify-center" onClick={() => handleSort('paid')}>Tot. Paid (USD) <span className={`sort-icon ${sortConfig.key === 'paid' ? 'active ' + sortConfig.direction : ''}`}><img src={hoaupdowncaret} alt="" /></span></div></th>
+                <th className="text-center" style={{ position: 'relative' }}>
+                  <div className="th-content justify-center" onClick={() => handleSort('paid')}>
+                    Tot. Paid ({currency.label}) <img src={currency.flag} alt="flag" className="icon-12-mx4" onClick={(e) => { e.stopPropagation(); toggleFlagDropdown('main-table'); }} style={{ cursor: 'pointer' }} />
+                    <span className={`sort-icon ${sortConfig.key === 'paid' ? 'active ' + sortConfig.direction : ''}`}><img src={hoaupdowncaret} alt="" /></span>
+                  </div>
+                  {openFlagDropdown === 'main-table' && (
+                    <div className="flag-dropdown-menu" style={{ minWidth: '80px', padding: '4px', top: '100%', right: '50%', transform: 'translateX(50%)', zIndex: 10 }}>
+                      {flagOptions.map((option, idx) => (
+                        <button
+                          key={idx} type="button" className={`flag-dropdown-option ${currency.label === option.label ? 'active' : ''}`}
+                          onClick={() => selectFlagOption(option)}
+                        >
+                          <img src={option.flag} alt="flag" className="flag-icon" />
+                          <span>{option.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </th>
                 <th className="status-col"><div className="th-content" onClick={() => handleSort('status')}>Status <span className={`sort-icon ${sortConfig.key === 'status' ? 'active ' + sortConfig.direction : ''}`}><img src={hoaupdowncaret} alt="" /></span></div></th>
                 <th className="action-col"></th>
               </tr>
@@ -477,7 +460,7 @@ const HOALearners = () => {
                   <td className="fw-500 text-center">{req.attempts}</td>
                   <td className="fw-500 text-center">{req.downloads}</td>
                   <td className="fw-500 text-center">{req.certs}</td>
-                  <td className="fw-600 text-center">{req.paid}</td>
+                  <td className="fw-600 text-center">{formatAmount(req.paid)}</td>
                   <td className="status-col">
                     <span className={`status-pill pill-${req.statusColor}`}>
                       <span className="dot"></span> {req.status}
