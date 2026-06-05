@@ -1727,3 +1727,36 @@
     font-size: 12px;
   }
 }
+
+/* =========================================
+   MODAL PAGINATION OVERRIDES
+========================================= */
+.hoa-learners-page .page-size-button {
+  border: 1px solid #DBDFE9;
+  border-radius: 3px;
+  padding: 4px 10px;
+  background: #FCFCFC;
+  font-size: 10px;
+  color: #450468;
+}
+
+.hoa-learners-page .page-size-button img {
+  width: 8px;
+  height: 8px;
+}
+
+.hoa-learners-page .modal-pagination .page-nav {
+  border: none !important;
+  background: transparent !important;
+}
+
+.hoa-learners-page .modal-pagination .page-num {
+  border: none !important;
+  background: transparent !important;
+  color: #4B5675 !important;
+}
+
+.hoa-learners-page .modal-pagination .page-num.active {
+  background: #F1F1F4 !important;
+  color: #450468 !important;
+}
