@@ -566,8 +566,20 @@
 
   .sort-icon {
     font-size: 11px;
-    opacity: 0.5;
+    opacity: 0.3;
     cursor: pointer;
+    transition: opacity 0.2s, transform 0.2s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .sort-icon.active {
+    opacity: 1;
+  }
+
+  .sort-icon.desc {
+    transform: rotate(180deg);
   }
 
   .hoa-list-table td {
@@ -581,6 +593,11 @@
     border-bottom: 1px solid #F1F1F4;
     box-shadow: 0px 2px 4px #0000000D;
     color: #071437;
+  }
+
+  .hoa-list-table tr.selected-row td,
+  .hoa-list-table tr.selected-row {
+    background-color: #F4ECFF !important;
   }
 
   .hoa-list-table tr:last-child td {
