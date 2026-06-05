@@ -426,12 +426,12 @@
     border-radius: 50%;
 }
 
-input[type="checkbox"]:checked {
+.courses-page input[type="checkbox"]:checked {
     background-color: #450468;
     border-color: #450468;
 }
 
-input[type="checkbox"]:checked::before {
+.courses-page input[type="checkbox"]:checked::before {
     content: "✓";
     position: absolute;
     top: 50%;
@@ -442,12 +442,12 @@ input[type="checkbox"]:checked::before {
     font-weight: bold;
 }
 
-input[type="checkbox"]:hover {
+.courses-page input[type="checkbox"]:hover {
     border-color: #5a0580;
     box-shadow: 0 0 0 2px rgba(69, 4, 104, 0.2);
 }
 
-input[type="checkbox"]:focus {
+.courses-page input[type="checkbox"]:focus {
     outline: none;
     box-shadow: 0 0 0 2px rgba(69, 4, 104, 0.3);
 }
