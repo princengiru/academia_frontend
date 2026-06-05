@@ -1,6 +1,7 @@
 import { Navigate, Route } from 'react-router-dom';
 import HOADashboardHome from '../../../pages/academia/hoa/HOADashboardHome';
 import HOALearners from '../../../pages/academia/hoa/HOALearners';
+import HOATutors from '../../../pages/academia/hoa/HOATutors';
 import HOALayout from '../../../components/layouts/HOALayout/HOALayout';
 
 const HOAPlaceholderPage = ({ currentPage, title, description }) => (
@@ -17,26 +18,7 @@ function AcademiaHOARoutes() {
     <>
       <Route path="academia/hoa" element={<HOADashboardHome />} />
       <Route path="academia/hoa/learners" element={<HOALearners />} />
-      <Route
-        path="academia/hoa/tutors"
-        element={(
-          <HOAPlaceholderPage
-            currentPage="tutors"
-            title="Tutors"
-            description="Tutor management is not wired yet."
-          />
-        )}
-      />
-      <Route
-        path="academia/hoa/reports"
-        element={(
-          <HOAPlaceholderPage
-            currentPage="reports"
-            title="Reports"
-            description="Reports are not wired yet."
-          />
-        )}
-      />
+      <Route path="academia/hoa/tutors" element={<HOATutors />} />
       <Route
         path="academia/hoa/settings"
         element={(
