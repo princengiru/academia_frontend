@@ -1842,14 +1842,14 @@
 }
 
 .hoa-tutors-page .mod-stat-br-pr {
-  border-right: 1px solid #EEF1F6;
-  padding-right: 20px;
+  /* Inherits padding and border from .mod-stat */
 }
 
 .hoa-tutors-page .flex-center-gap4 {
   display: flex;
   align-items: center;
   gap: 4px;
+  justify-content: center;
 }
 
 .hoa-tutors-page .icon-12 {
@@ -1857,17 +1857,17 @@
 }
 
 .hoa-tutors-page .mod-stat-br-px {
-  border-right: 1px solid #EEF1F6;
-  padding: 0 20px;
+  /* Inherits padding and border from .mod-stat */
 }
 
 .hoa-tutors-page .mod-stat-pl {
-  padding-left: 20px;
+  /* Inherits padding from .mod-stat */
 }
 
 .hoa-tutors-page .font-15-mt6 {
   font-size: 15px;
   margin-top: 6px;
+  white-space: nowrap;
 }
 
 .hoa-tutors-page .font-11-gray500 {
