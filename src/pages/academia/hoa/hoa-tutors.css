@@ -2121,7 +2121,9 @@
   align-items: center;
   gap: 8px;
   width: 120px;
-  color: #78829D;
+  color: #64748B;
+  font-weight: 600;
+  font-size: 13px;
 }
 
 .hoa-tutors-page .opacity-50 {
@@ -2129,8 +2131,10 @@
 }
 
 .hoa-tutors-page .profile-info-val {
-  color: #071437;
-  font-weight: 500;
+  color: #4B5675;
+  font-weight: 400;
+  font-size: 13px;
+  padding-left: 28px;
 }
 
 .hoa-tutors-page .m-0 {

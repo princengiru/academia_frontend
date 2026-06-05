@@ -37,6 +37,10 @@ import hoacalendar from '../../../assets/icons/hoacalendar.svg';
 import hoavbadge from '../../../assets/icons/hoavbadge.svg';
 import hoareply from '../../../assets/icons/hoareply.svg';
 import hoayellowstar  from '../../../assets/icons/hoayellowstar.svg';
+import hoasyllabus from '../../../assets/icons/hoasyllabus.svg';
+import hoaonlinecourses from '../../../assets/icons/hoaonlinecourses.svg';
+import hoaprojects from '../../../assets/icons/hoaprojects.svg';
+import hoatotalstudents from '../../../assets/icons/hoatotalstudents.svg';
 
 
 const HOATutors = () => {
@@ -461,19 +465,19 @@ const HOATutors = () => {
                   <span className="profile-info-val">Software Engineer</span>
                 </div>
                 <div className="profile-info-row">
-                  <span className="profile-info-label"><img src={hoalocation} alt="syll" className="opacity-50" /> Syllabus</span>
+                  <span className="profile-info-label"><img src={hoasyllabus} alt="syll" className="opacity-50" /> Syllabus</span>
                   <span className="profile-info-val">12</span>
                 </div>
                 <div className="profile-info-row">
-                  <span className="profile-info-label"><img src={hoalocation} alt="courses" className="opacity-50" /> Online Courses</span>
+                  <span className="profile-info-label"><img src={hoaonlinecourses} alt="courses" className="opacity-50" /> Online Courses</span>
                   <span className="profile-info-val">2</span>
                 </div>
                 <div className="profile-info-row">
-                  <span className="profile-info-label"><img src={hoalocation} alt="proj" className="opacity-50" /> Projects</span>
+                  <span className="profile-info-label"><img src={hoaprojects} alt="proj" className="opacity-50" /> Projects</span>
                   <span className="profile-info-val">14</span>
                 </div>
                 <div className="profile-info-row">
-                  <span className="profile-info-label"><img src={hoafollowers} alt="stud" className="opacity-50" /> Total Students</span>
+                  <span className="profile-info-label"><img src={hoatotalstudents} alt="stud" className="opacity-50" /> Total Students</span>
                   <span className="profile-info-val">234</span>
                 </div>
               </div>
