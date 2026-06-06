@@ -74,40 +74,56 @@
 }
 
 /* Top Stats Row (5 Columns) */
-.hoa-reports-page .rep-stats-row {
-  display: flex;
-  justify-content: space-between;
-  padding: 20px 0;
+.hoa-reports-page .rep-dashboard-stats-container {
+  background: #FAFAFA;
+  border: 1px solid #FAFAFA;
+  border-radius: 9px;
+  padding: 12px;
+  margin-bottom: 20px;
 }
 
-.hoa-reports-page .rep-stat-item {
-  flex: 1;
+.hoa-reports-page .rep-secondary-stats-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 24px 30px;
+  background: #FFFFFF;
+  border: 1px solid #F1F1F4;
+  border-radius: 12px;
+  margin-bottom: 0;
+  box-shadow: none;
+}
+
+.hoa-reports-page .rep-sub-stat {
   position: relative;
+  text-align: center;
+  flex: 1;
+  padding: 0 12px;
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  text-align: center;
 }
 
-.hoa-reports-page .rep-stat-item:not(:last-child)::after {
+.hoa-reports-page .rep-sub-stat:not(:last-child)::after {
   content: '';
   position: absolute;
   right: 0;
-  top: 10%;
-  height: 80%;
+  top: 15%;
+  height: 70%;
   width: 1px;
   background: #EEF1F6;
 }
 
-.hoa-reports-page .rep-stat-item h3 {
-  margin: 0 0 8px 0;
+.hoa-reports-page .rep-sub-stat h4 {
+  margin: 0 0 6px 0;
   font-size: 16px;
   color: #071437;
+  font-weight: 600;
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-weight: 700;
+  justify-content: center;
+  gap: 8px;
 }
 
 .hoa-reports-page .rep-stat-currency {
@@ -119,25 +135,27 @@
   gap: 4px;
 }
 
-.hoa-reports-page .rep-stat-item p {
+.hoa-reports-page .rep-sub-stat p {
   margin: 0;
   font-size: 12px;
-  color: #A1A5B7;
+  color: #78829D;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
+  font-weight: 400;
 }
 
 .hoa-reports-page .rep-trend {
+  font-weight: 400;
   font-size: 10px;
-  font-weight: 600;
   display: flex;
   align-items: center;
   gap: 2px;
 }
 
-.hoa-reports-page .rep-trend.down { color: #F8285A; }
-.hoa-reports-page .rep-trend.up { color: #17C653; }
+.hoa-reports-page .rep-trend.down { color: #DC2626; }
+.hoa-reports-page .rep-trend.up { color: #16A34A; }
 
 /* Dropdown specific for Reports */
 .hoa-reports-page .rep-dropdown-btn {

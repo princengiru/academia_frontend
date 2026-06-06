@@ -112,16 +112,16 @@ const HOAReports = () => {
         </div>
 
         {/* Top Stats Row */}
-        <div className="rep-card">
-          <div className="rep-stats-row">
+        <div className="rep-dashboard-stats-container">
+          <div className="rep-secondary-stats-row">
             {topStats.map((stat, idx) => (
-              <div key={idx} className="rep-stat-item">
-                <h3>
+              <div key={idx} className="rep-sub-stat">
+                <h4>
                   {stat.amount} 
                   <span className="rep-stat-currency">
                     RWF <img src={currency.flag} alt="flag" style={{ width: 12 }} /> <img src={hoadowncaret} alt="" style={{ width: 8 }} />
                   </span>
-                </h3>
+                </h4>
                 <p>
                   {stat.title} 
                   <span className={`rep-trend ${stat.trendType}`}>
