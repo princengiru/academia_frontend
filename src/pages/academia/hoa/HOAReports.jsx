@@ -95,7 +95,9 @@ const HOAReports = () => {
   const preventDefault = (e) => e.preventDefault();
 
   // Chart Interactivity Logic
-  const [activeAreaIndex, setActiveAreaIndex] = useState(4); // May
+  const currentMonthIndex = new Date().getMonth();
+
+  const [activeAreaIndex, setActiveAreaIndex] = useState(currentMonthIndex);
   const areaWrapRef = useRef(null);
   const handleAreaMouseMove = (e) => {
     if (!areaWrapRef.current) return;
@@ -104,9 +106,9 @@ const HOAReports = () => {
     let index = Math.round((x / rect.width) * 11);
     setActiveAreaIndex(Math.max(0, Math.min(index, 11)));
   };
-  const handleAreaMouseLeave = () => setActiveAreaIndex(4);
+  const handleAreaMouseLeave = () => setActiveAreaIndex(currentMonthIndex);
 
-  const [activeBarIndex, setActiveBarIndex] = useState(4); // May
+  const [activeBarIndex, setActiveBarIndex] = useState(currentMonthIndex);
   const barWrapRef = useRef(null);
   const handleBarMouseMove = (e) => {
     if (!barWrapRef.current) return;
@@ -115,7 +117,7 @@ const HOAReports = () => {
     let index = Math.round((x / rect.width) * 11);
     setActiveBarIndex(Math.max(0, Math.min(index, 11)));
   };
-  const handleBarMouseLeave = () => setActiveBarIndex(4);
+  const handleBarMouseLeave = () => setActiveBarIndex(currentMonthIndex);
 
   // Chart Data
   const greenValues = [15, 30, 20, 25, 35, 50, 42, 40, 42, 60, 55, 65];
