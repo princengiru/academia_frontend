@@ -267,7 +267,7 @@ const HOAReports = () => {
                 </div>
 
                 {/* Tooltip Overlay */}
-                <div style={{ position: 'absolute', left: `${(activeAreaIndex/11)*100}%`, top: `${100 - (purpleValues[activeAreaIndex]/90)*100}%`, transform: 'translate(-50%, -100%)', paddingBottom: '12px', zIndex: 10, pointerEvents: 'none', transition: 'left 180ms cubic-bezier(0.22, 1, 0.36, 1), top 180ms cubic-bezier(0.22, 1, 0.36, 1)' }}>
+                <div style={{ position: 'absolute', left: `${(activeAreaIndex/11)*100}%`, top: '52%', transform: 'translate(-50%, -100%)', paddingBottom: '12px', zIndex: 10, pointerEvents: 'none', transition: 'left 180ms cubic-bezier(0.22, 1, 0.36, 1)' }}>
                   <div className="rep-chart-tooltip">
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px', fontSize: '11px', fontWeight: 'bold' }}>
                         {monthsList[activeAreaIndex]} 25 <span style={{ color: '#17C653', fontWeight: '600' }}><img src={hoaincrease} alt="" style={{width: 6, marginRight: 4}} /> 20%</span>
@@ -348,7 +348,7 @@ const HOAReports = () => {
                 </div>
 
                 {/* Tooltip Overlay */}
-                <div style={{ position: 'absolute', left: `${(activeBarIndex/11)*100}%`, top: `${100 - (Math.max(barData[activeBarIndex].syl, barData[activeBarIndex].onl)/90)*100}%`, transform: 'translate(-50%, -100%)', paddingBottom: '12px', zIndex: 10, pointerEvents: 'none', transition: 'left 180ms cubic-bezier(0.22, 1, 0.36, 1), top 180ms cubic-bezier(0.22, 1, 0.36, 1)' }}>
+                <div style={{ position: 'absolute', left: `${(activeBarIndex/11)*100}%`, top: '52%', transform: 'translate(-50%, -100%)', paddingBottom: '12px', zIndex: 10, pointerEvents: 'none', transition: 'left 180ms cubic-bezier(0.22, 1, 0.36, 1)' }}>
                   <div className="rep-chart-tooltip">
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px', fontSize: '11px', fontWeight: 'bold' }}>
                         Stats <span style={{ color: '#17C653', fontWeight: '600' }}><img src={hoaincrease} alt="" style={{width: 6, marginRight: 4}} /> 20%</span>
