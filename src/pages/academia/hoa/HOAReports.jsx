@@ -92,6 +92,37 @@ const HOAReports = () => {
     setSelectedRows(prev => prev.includes(id) ? prev.filter(rId => rId !== id) : [...prev, id]);
   };
 
+  // Chart Data
+  const greenValues = [15, 30, 20, 25, 35, 50, 42, 40, 42, 60, 55, 65];
+  const purpleValues = [25, 35, 25, 45, 42, 48, 45, 50, 70, 65, 75, 90];
+  const generateSmoothPath = (values) => {
+    const points = values.map((val, i) => [i * 10, 100 - (val / 90) * 100]);
+    let d = `M${points[0][0]},${points[0][1]}`;
+    for (let i = 1; i < points.length; i++) {
+      const prev = points[i - 1];
+      const curr = points[i];
+      d += ` C${prev[0] + 4},${prev[1]} ${curr[0] - 4},${curr[1]} ${curr[0]},${curr[1]}`;
+    }
+    return d;
+  };
+
+  const barData = [
+    { syl: 80, onl: 60 },
+    { syl: 20, onl: 32 },
+    { syl: 36, onl: 25 },
+    { syl: 27, onl: 50 },
+    { syl: 70, onl: 55 },
+    { syl: 45, onl: 35 },
+    { syl: 19, onl: 15 },
+    { syl: 48, onl: 32 },
+    { syl: 80, onl: 88 },
+    { syl: 53, onl: 40 },
+    { syl: 15, onl: 68 },
+    { syl: 0, onl: 0 }
+  ];
+
+  const monthsList = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
   return (
     <HOALayout currentPage="reports">
       <div className="hoa-reports-page">
@@ -147,50 +178,76 @@ const HOAReports = () => {
               <button className="rep-dropdown-btn">Monthly <img src={hoadowncaret} alt="" /></button>
             </div>
             {/* SVG Replica of Area Chart */}
-            <div style={{ position: 'relative', height: '220px', width: '100%', marginTop: '20px' }}>
-                <svg width="100%" height="100%" viewBox="0 0 400 200" preserveAspectRatio="none">
+            <div style={{ display: 'flex', marginTop: '20px', height: '220px', position: 'relative', width: '100%', paddingBottom: '20px' }}>
+              
+              {/* Y-Axis */}
+              <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', color: '#A1A5B7', fontSize: '10px', paddingRight: '12px', position: 'relative', height: '100%' }}>
+                {[90, 80, 70, 60, 50, 40, 30, 20, 10, 0].map((y, idx) => (
+                  <span key={y} style={{ lineHeight: '10px', marginTop: idx === 0 ? '-4px' : 0, marginBottom: idx === 9 ? '-4px' : 0 }}>{y}</span>
+                ))}
+              </div>
+
+              {/* Chart Content Area */}
+              <div style={{ position: 'relative', flex: 1, height: '100%' }}>
+                
+                {/* Grid Lines */}
+                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                  {[...Array(10)].map((_, i) => (
+                    <div key={i} style={{ borderBottom: '1px dashed #EEF1F6', width: '100%', height: '1px' }}></div>
+                  ))}
+                </div>
+
+                {/* SVG */}
+                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
+                  <svg width="100%" height="100%" viewBox="0 0 110 100" preserveAspectRatio="none" style={{ overflow: 'visible' }}>
                     <defs>
-                        <linearGradient id="areaGreen" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stopColor="rgba(23, 198, 83, 0.2)" />
-                            <stop offset="100%" stopColor="rgba(23, 198, 83, 0)" />
-                        </linearGradient>
-                        <linearGradient id="areaPurple" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stopColor="rgba(114, 57, 234, 0.2)" />
-                            <stop offset="100%" stopColor="rgba(114, 57, 234, 0)" />
-                        </linearGradient>
+                      <linearGradient id="areaGreen" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="rgba(23, 198, 83, 0.2)" />
+                        <stop offset="100%" stopColor="rgba(23, 198, 83, 0)" />
+                      </linearGradient>
+                      <linearGradient id="areaPurple" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="rgba(114, 57, 234, 0.2)" />
+                        <stop offset="100%" stopColor="rgba(114, 57, 234, 0)" />
+                      </linearGradient>
                     </defs>
-                    {/* Grid Lines */}
-                    {[20, 50, 80, 110, 140, 170].map(y => (
-                       <line key={y} x1="0" y1={y} x2="400" y2={y} stroke="#EEF1F6" strokeDasharray="4 4" />
-                    ))}
-                    {/* Data Paths */}
-                    <path d="M0,150 C50,130 80,180 130,120 C160,80 200,100 250,140 C300,180 350,80 400,120 L400,200 L0,200 Z" fill="url(#areaGreen)" />
-                    <path d="M0,150 C50,130 80,180 130,120 C160,80 200,100 250,140 C300,180 350,80 400,120" fill="none" stroke="#17C653" strokeWidth="2" />
+
+                    <path d={`${generateSmoothPath(greenValues)} L110,100 L0,100 Z`} fill="url(#areaGreen)" />
+                    <path d={generateSmoothPath(greenValues)} fill="none" stroke="#17C653" strokeWidth="1.5" />
                     
-                    <path d="M0,180 C40,160 90,140 120,80 C150,20 180,60 220,100 C270,140 320,20 400,50 L400,200 L0,200 Z" fill="url(#areaPurple)" />
-                    <path d="M0,180 C40,160 90,140 120,80 C150,20 180,60 220,100 C270,140 320,20 400,50" fill="none" stroke="#E3C9F2" strokeWidth="2" />
-                    
-                    {/* Tooltip Overlay Dot */}
-                    <line x1="130" y1="40" x2="130" y2="200" stroke="#DBDFE9" strokeDasharray="4 4" />
-                    <circle cx="130" cy="88" r="4" fill="#7239EA" stroke="#FFF" strokeWidth="2" />
-                    <circle cx="130" cy="120" r="4" fill="#17C653" stroke="#FFF" strokeWidth="2" />
-                </svg>
-                {/* Tooltip Box */}
-                <div style={{ position: 'absolute', top: '10px', left: '140px', background: '#FFF', border: '1px solid #EEF1F6', borderRadius: '8px', padding: '12px', boxShadow: '0 8px 20px rgba(0,0,0,0.06)'}}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '11px', fontWeight: 'bold' }}>
-                        May 25 <span style={{ color: '#17C653', fontWeight: '600' }}><img src={hoaincrease} alt="" style={{width: 6}} /> 20%</span>
+                    <path d={`${generateSmoothPath(purpleValues)} L110,100 L0,100 Z`} fill="url(#areaPurple)" />
+                    <path d={generateSmoothPath(purpleValues)} fill="none" stroke="#E3C9F2" strokeWidth="1.5" />
+
+                    {/* Tooltip Overlay Dot & Line (May = index 4 => x=40, GreenY=61.11, PurpleY=53.33) */}
+                    <line x1="40" y1="53.333" x2="40" y2="100" stroke="#071437" strokeWidth="0.5" />
+                    <circle cx="40" cy="53.333" r="2.5" fill="#7239EA" stroke="#FFF" strokeWidth="1" />
+                    <circle cx="40" cy="61.111" r="2.5" fill="#17C653" stroke="#FFF" strokeWidth="1" />
+                  </svg>
+                </div>
+
+                {/* Tooltip Overlay */}
+                <div style={{ position: 'absolute', left: `${(4/11)*100}%`, top: `${100 - (42/90)*100}%`, transform: 'translate(-50%, -100%)', paddingBottom: '12px', zIndex: 10 }}>
+                  <div className="rep-chart-tooltip">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px', fontSize: '11px', fontWeight: 'bold' }}>
+                        May 25 <span style={{ color: '#17C653', fontWeight: '600' }}><img src={hoaincrease} alt="" style={{width: 6, marginRight: 4}} /> 20%</span>
                     </div>
-                    <div style={{ fontSize: '11px', color: '#4B5675', marginBottom: '4px', display: 'flex', justifyContent: 'space-between', gap: '20px' }}>
-                        <span><span style={{color:'#7239EA'}}>●</span> Certificates</span> <strong>23</strong>
+                    <div style={{ fontSize: '11px', color: '#4B5675', marginBottom: '8px', display: 'flex', justifyContent: 'space-between', gap: '20px' }}>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><span style={{color:'#7239EA', fontSize: 14, lineHeight: 1}}>●</span> Certificates</span> <strong style={{ color: '#071437' }}>23</strong>
                     </div>
                     <div style={{ fontSize: '11px', color: '#4B5675', display: 'flex', justifyContent: 'space-between' }}>
-                        <span><span style={{color:'#17C653'}}>●</span> Projects</span> <strong>39</strong>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><span style={{color:'#17C653', fontSize: 14, lineHeight: 1}}>●</span> Projects</span> <strong style={{ color: '#071437' }}>39</strong>
                     </div>
+                  </div>
                 </div>
+
                 {/* X Axis Labels */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '10px', fontSize: '10px', color: '#A1A5B7' }}>
-                    <span>Jan</span><span>Feb</span><span>Mar</span><span>Apr</span><span style={{color:'#071437', fontWeight: 600}}>May</span><span>Jun</span><span>Jul</span><span>Aug</span><span>Sep</span><span>Oct</span><span>Nov</span><span>Dec</span>
+                <div style={{ position: 'absolute', bottom: '-25px', left: 0, right: 0 }}>
+                  {monthsList.map((m, i) => (
+                    <span key={m} style={{ position: 'absolute', left: `${(i/11)*100}%`, transform: 'translateX(-50%)', color: m==='May' ? '#450468' : '#A1A5B7', fontWeight: m==='May' ? 600 : 'normal', fontSize: '10px' }}>
+                      {m}
+                    </span>
+                  ))}
                 </div>
+              </div>
             </div>
           </div>
 
@@ -204,28 +261,59 @@ const HOAReports = () => {
               <button className="rep-dropdown-btn">Monthly <img src={hoadowncaret} alt="" /></button>
             </div>
             {/* SVG Replica of Bar Chart */}
-            <div style={{ position: 'relative', height: '220px', width: '100%', marginTop: '20px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', height: '170px', alignItems: 'flex-end' }}>
-                    {[80, 40, 60, 50, 45, 70, 55, 35, 65, 80, 50, 30].map((h, i) => (
-                        <div key={i} style={{ width: '8px', height: `${h}%`, background: i === 4 ? '#7239EA' : '#450468', borderRadius: '4px' }}></div>
-                    ))}
+            <div style={{ display: 'flex', marginTop: '20px', height: '220px', position: 'relative', width: '100%', paddingBottom: '20px' }}>
+              
+              {/* Y-Axis */}
+              <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', color: '#A1A5B7', fontSize: '10px', paddingRight: '12px', position: 'relative', height: '100%' }}>
+                {[90, 80, 70, 60, 50, 40, 30, 20, 10, 0].map((y, idx) => (
+                  <span key={y} style={{ lineHeight: '10px', marginTop: idx === 0 ? '-4px' : 0, marginBottom: idx === 9 ? '-4px' : 0 }}>{y}</span>
+                ))}
+              </div>
+
+              {/* Chart Content Area */}
+              <div style={{ position: 'relative', flex: 1, height: '100%' }}>
+                
+                {/* Grid Lines */}
+                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                  {[...Array(10)].map((_, i) => (
+                    <div key={i} style={{ borderBottom: '1px dashed #EEF1F6', width: '100%', height: '1px' }}></div>
+                  ))}
                 </div>
-                {/* Tooltip Box */}
-                <div style={{ position: 'absolute', top: '50px', left: '120px', background: '#FFF', border: '1px solid #EEF1F6', borderRadius: '8px', padding: '12px', boxShadow: '0 8px 20px rgba(0,0,0,0.06)'}}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '11px', fontWeight: 'bold' }}>
-                        Stats <span style={{ color: '#17C653', fontWeight: '600' }}><img src={hoaincrease} alt="" style={{width: 6}} /> 20%</span>
+
+                {/* Bars */}
+                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
+                  {barData.map((data, i) => (
+                      <div key={i} style={{ position: 'absolute', left: `${(i/11)*100}%`, transform: 'translateX(-50%)', display: 'flex', gap: '4px', height: '100%', alignItems: 'flex-end', width: '12px' }}>
+                          {data.syl > 0 ? <div style={{ width: '4px', height: `${(data.syl/90)*100}%`, background: '#450468', borderRadius: '4px' }}></div> : null}
+                          {data.onl > 0 ? <div style={{ width: '4px', height: `${(data.onl/90)*100}%`, background: '#EEF1F6', borderRadius: '4px' }}></div> : null}
+                      </div>
+                  ))}
+                </div>
+
+                {/* Tooltip Overlay */}
+                <div style={{ position: 'absolute', left: `${(4/11)*100}%`, top: `${100 - (70/90)*100}%`, transform: 'translate(-50%, -100%)', paddingBottom: '12px', zIndex: 10 }}>
+                  <div className="rep-chart-tooltip">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px', fontSize: '11px', fontWeight: 'bold' }}>
+                        Stats <span style={{ color: '#17C653', fontWeight: '600' }}><img src={hoaincrease} alt="" style={{width: 6, marginRight: 4}} /> 20%</span>
                     </div>
-                    <div style={{ fontSize: '11px', color: '#4B5675', marginBottom: '4px', display: 'flex', justifyContent: 'space-between', gap: '20px' }}>
-                        <span><span style={{color:'#7239EA'}}>●</span> Syllabus :</span> <strong>23</strong>
+                    <div style={{ fontSize: '11px', color: '#4B5675', marginBottom: '8px', display: 'flex', justifyContent: 'space-between', gap: '20px' }}>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><span style={{color:'#450468', fontSize: 14, lineHeight: 1}}>●</span> Syllabus :</span> <strong style={{ color: '#071437' }}>23</strong>
                     </div>
                     <div style={{ fontSize: '11px', color: '#4B5675', display: 'flex', justifyContent: 'space-between' }}>
-                        <span><span style={{color:'#450468'}}>●</span> Online Courses :</span> <strong>39</strong>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><span style={{color:'#EEF1F6', fontSize: 14, lineHeight: 1}}>●</span> Online Courses :</span> <strong style={{ color: '#071437' }}>39</strong>
                     </div>
+                  </div>
                 </div>
-                 {/* X Axis Labels */}
-                 <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '10px', fontSize: '10px', color: '#A1A5B7', padding: '0 4px' }}>
-                    <span>Jan</span><span>Feb</span><span>Mar</span><span>Apr</span><span style={{color:'#071437', fontWeight: 600}}>May</span><span>Jun</span><span>Jul</span><span>Aug</span><span>Sep</span><span>Oct</span><span>Nov</span><span>Dec</span>
+
+                {/* X Axis Labels */}
+                <div style={{ position: 'absolute', bottom: '-25px', left: 0, right: 0 }}>
+                  {monthsList.map((m, i) => (
+                    <span key={m} style={{ position: 'absolute', left: `${(i/11)*100}%`, transform: 'translateX(-50%)', color: m==='May' ? '#450468' : '#A1A5B7', fontWeight: m==='May' ? 600 : 'normal', fontSize: '10px' }}>
+                      {m}
+                    </span>
+                  ))}
                 </div>
+              </div>
             </div>
           </div>
         </div>
