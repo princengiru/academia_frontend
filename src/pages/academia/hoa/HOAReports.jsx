@@ -100,8 +100,8 @@ const HOAReports = () => {
   const chartDataMap = {
     Monthly: {
       labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-      green: [15, 30, 20, 25, 35, 50, 42, 40, 42, 60, 55, 65],
-      purple: [25, 35, 25, 45, 42, 48, 45, 50, 70, 65, 75, 90],
+      green: [17, 30, 25, 28, 36, 34, 48, 42, 40, 48, 60, 65],
+      purple: [24, 35, 28, 45, 43, 37, 55, 48, 70, 66, 77, 90],
       bar: [
         { syl: 80, onl: 60 }, { syl: 20, onl: 32 }, { syl: 36, onl: 25 }, { syl: 27, onl: 50 },
         { syl: 70, onl: 55 }, { syl: 45, onl: 35 }, { syl: 19, onl: 15 }, { syl: 48, onl: 32 },
@@ -258,10 +258,17 @@ const HOAReports = () => {
             {/* SVG Replica of Area Chart */}
             <div style={{ display: 'flex', marginTop: '20px', height: '220px', position: 'relative', width: '100%', paddingBottom: '20px' }}>
               
+              {/* Global Grid Lines */}
+              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', pointerEvents: 'none' }}>
+                  {[...Array(10)].map((_, i) => (
+                    <div key={i} style={{ borderBottom: '1.5px dashed #EEF1F6', width: '100%', height: '1px' }}></div>
+                  ))}
+              </div>
+
               {/* Y-Axis */}
               <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', color: '#A1A5B7', fontSize: '10px', paddingRight: '12px', position: 'relative', height: '100%' }}>
                 {[90, 80, 70, 60, 50, 40, 30, 20, 10, 0].map((y, idx) => (
-                  <span key={y} style={{ lineHeight: '10px', marginTop: idx === 0 ? '-4px' : 0, marginBottom: idx === 9 ? '-4px' : 0 }}>{y}</span>
+                  <span key={y} style={{ lineHeight: '10px', marginTop: idx === 0 ? '-4px' : 0, marginBottom: idx === 9 ? '-4px' : 0, backgroundColor: 'white', zIndex: 1 }}>{y}</span>
                 ))}
               </div>
 
@@ -273,51 +280,44 @@ const HOAReports = () => {
                 onMouseLeave={handleAreaMouseLeave}
               >
                 
-                {/* Grid Lines */}
-                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', pointerEvents: 'none' }}>
-                  {[...Array(10)].map((_, i) => (
-                    <div key={i} style={{ borderBottom: '1px dashed #EEF1F6', width: '100%', height: '1px' }}></div>
-                  ))}
-                </div>
-
                 {/* SVG */}
                 <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, pointerEvents: 'none' }}>
                   <svg width="100%" height="100%" viewBox="0 0 110 100" preserveAspectRatio="none" style={{ overflow: 'visible' }}>
                     <defs>
                       <linearGradient id="areaGreen" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="rgba(23, 198, 83, 0.2)" />
-                        <stop offset="100%" stopColor="rgba(23, 198, 83, 0)" />
+                        <stop offset="0%" stopColor="rgba(34, 197, 94, 0.15)" />
+                        <stop offset="100%" stopColor="rgba(34, 197, 94, 0)" />
                       </linearGradient>
                       <linearGradient id="areaPurple" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="rgba(114, 57, 234, 0.2)" />
-                        <stop offset="100%" stopColor="rgba(114, 57, 234, 0)" />
+                        <stop offset="0%" stopColor="rgba(185, 152, 206, 0.25)" />
+                        <stop offset="100%" stopColor="rgba(185, 152, 206, 0)" />
                       </linearGradient>
                     </defs>
 
                     <path d={`${generateSmoothPath(currentAreaData.green)} L110,100 L0,100 Z`} fill="url(#areaGreen)" />
-                    <path d={generateSmoothPath(currentAreaData.green)} fill="none" stroke="#17C653" strokeWidth="1.5" />
+                    <path d={generateSmoothPath(currentAreaData.green)} fill="none" stroke="#22C55E" strokeWidth="2" vectorEffect="non-scaling-stroke" />
                     
                     <path d={`${generateSmoothPath(currentAreaData.purple)} L110,100 L0,100 Z`} fill="url(#areaPurple)" />
-                    <path d={generateSmoothPath(currentAreaData.purple)} fill="none" stroke="#E3C9F2" strokeWidth="1.5" />
-
-                    {/* Tooltip Overlay Dot & Line */}
-                    <line x1={activeAreaIndex * (110 / Math.max(1, currentAreaData.labels.length - 1))} y1={100 - (currentAreaData.purple[activeAreaIndex]/90)*100} x2={activeAreaIndex * (110 / Math.max(1, currentAreaData.labels.length - 1))} y2="100" stroke="#071437" strokeWidth="0.5" />
-                    <circle cx={activeAreaIndex * (110 / Math.max(1, currentAreaData.labels.length - 1))} cy={100 - (currentAreaData.purple[activeAreaIndex]/90)*100} r="2.5" fill="#7239EA" stroke="#FFF" strokeWidth="1" />
-                    <circle cx={activeAreaIndex * (110 / Math.max(1, currentAreaData.labels.length - 1))} cy={100 - (currentAreaData.green[activeAreaIndex]/90)*100} r="2.5" fill="#17C653" stroke="#FFF" strokeWidth="1" />
+                    <path d={generateSmoothPath(currentAreaData.purple)} fill="none" stroke="#B998CE" strokeWidth="2" vectorEffect="non-scaling-stroke" />
                   </svg>
+                  
+                  {/* Tooltip Overlay Dot & Line */}
+                  <div style={{ position: 'absolute', left: `${(activeAreaIndex / Math.max(1, currentAreaData.labels.length - 1))*100}%`, top: `${100 - (currentAreaData.purple[activeAreaIndex]/90)*100}%`, bottom: '-25px', width: '1px', backgroundColor: '#374151', transform: 'translateX(-50%)' }}></div>
+                  <div style={{ position: 'absolute', left: `${(activeAreaIndex / Math.max(1, currentAreaData.labels.length - 1))*100}%`, top: `${100 - (currentAreaData.purple[activeAreaIndex]/90)*100}%`, width: '14px', height: '14px', backgroundColor: '#450468', border: '3px solid white', borderRadius: '50%', transform: 'translate(-50%, -50%)', zIndex: 5 }}></div>
+                  <div style={{ position: 'absolute', left: `${(activeAreaIndex / Math.max(1, currentAreaData.labels.length - 1))*100}%`, top: `${100 - (currentAreaData.green[activeAreaIndex]/90)*100}%`, width: '14px', height: '14px', backgroundColor: '#22C55E', border: '3px solid white', borderRadius: '50%', transform: 'translate(-50%, -50%)', zIndex: 5 }}></div>
                 </div>
 
                 {/* Tooltip Overlay */}
                 <div style={{ position: 'absolute', left: `${(activeAreaIndex / Math.max(1, currentAreaData.labels.length - 1))*100}%`, top: '52%', transform: `translate(-${(activeAreaIndex / Math.max(1, currentAreaData.labels.length - 1))*100}%, -100%)`, '--caret-pos': `${(activeAreaIndex / Math.max(1, currentAreaData.labels.length - 1))*100}%`, paddingBottom: '12px', zIndex: 10, pointerEvents: 'none', transition: 'left 180ms cubic-bezier(0.22, 1, 0.36, 1), transform 180ms ease' }}>
-                  <div className="rep-chart-tooltip">
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px', fontSize: '11px', fontWeight: 'bold' }}>
-                        {currentAreaData.labels[activeAreaIndex]} 25 <span style={{ color: '#17C653', fontWeight: '600' }}><img src={hoaincrease} alt="" style={{width: 6, marginRight: 4}} /> 20%</span>
+                  <div className="rep-chart-tooltip" style={{ padding: '16px', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px', fontSize: '13px', fontWeight: 'bold', color: '#071437' }}>
+                        {currentAreaData.labels[activeAreaIndex]} 25 <span style={{ color: '#22C55E', fontWeight: '600', fontSize: '10px', display: 'flex', alignItems: 'center' }}><img src={hoaincrease} alt="" style={{width: 8, marginRight: 4}} /> 20%</span>
                     </div>
-                    <div style={{ fontSize: '11px', color: '#4B5675', marginBottom: '8px', display: 'flex', justifyContent: 'space-between', gap: '20px' }}>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><span style={{color:'#7239EA', fontSize: 14, lineHeight: 1}}>●</span> Certificates</span> <strong style={{ color: '#071437' }}>{currentAreaData.purple[activeAreaIndex]}</strong>
+                    <div style={{ fontSize: '13px', color: '#4B5675', marginBottom: '10px', display: 'flex', justifyContent: 'space-between', gap: '24px' }}>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><span style={{color:'#450468', fontSize: 16, lineHeight: 1}}>●</span> Certificates</span> <strong style={{ color: '#071437', fontSize: '14px' }}>{currentAreaData.purple[activeAreaIndex]}</strong>
                     </div>
-                    <div style={{ fontSize: '11px', color: '#4B5675', display: 'flex', justifyContent: 'space-between' }}>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><span style={{color:'#17C653', fontSize: 14, lineHeight: 1}}>●</span> Projects</span> <strong style={{ color: '#071437' }}>{currentAreaData.green[activeAreaIndex]}</strong>
+                    <div style={{ fontSize: '13px', color: '#4B5675', display: 'flex', justifyContent: 'space-between' }}>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><span style={{color:'#22C55E', fontSize: 16, lineHeight: 1}}>●</span> Projects</span> <strong style={{ color: '#071437', fontSize: '14px' }}>{currentAreaData.green[activeAreaIndex]}</strong>
                     </div>
                   </div>
                 </div>
