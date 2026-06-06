@@ -159,16 +159,46 @@
 
 /* Dropdown specific for Reports */
 .hoa-reports-page .rep-dropdown-btn {
+  min-height: 28px;
+  border: 1px solid #E2E8F0;
+  border-radius: 6px;
+  background: #FCFCFC;
+  padding: 0 9px;
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  background: transparent;
-  border: 1px solid #EEF1F6;
-  padding: 4px 8px;
-  border-radius: 4px;
-  color: #A1A5B7;
+  gap: 8px;
+  font-family: Inter, sans-serif;
+  font-weight: 500;
+  font-size: 10px;
+  line-height: 14px;
+  color: #78829D;
+}
+.hoa-reports-page .rep-dropdown-btn img {
+  width: 10px;
+  height: 10px;
+  opacity: 0.6;
+}
+.hoa-reports-page .learners-performance-period-dropdown {
+  position: relative;
+}
+.hoa-reports-page .learners-performance-period-menu {
+  min-width: 132px;
+  padding: 6px;
+  border: 1px solid #E2E8F0;
+  border-radius: 8px;
+}
+.hoa-reports-page .learners-performance-period-menu .dropdown-item {
+  border-radius: 6px;
+  font-family: Inter, sans-serif;
   font-size: 11px;
-  cursor: pointer;
+  line-height: 16px;
+  color: #4B5675;
+  padding: 7px 10px;
+}
+.hoa-reports-page .learners-performance-period-menu .dropdown-item.active,
+.hoa-reports-page .learners-performance-period-menu .dropdown-item:active {
+  background: #F7F3FA;
+  color: #450468;
 }
 
 /* Charts Grid */
@@ -196,12 +226,19 @@
 }
 
 .hoa-reports-page .rep-badge-purple {
-  background: #F8F5FF;
-  color: #7239EA;
-  font-size: 10px;
-  padding: 2px 6px;
+  min-height: 22px;
+  padding: 0 9px;
   border-radius: 4px;
+  background: #F7F3FA;
+  border: 1px solid #E3D7EC;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: Inter, sans-serif;
   font-weight: 600;
+  font-size: 10px;
+  line-height: 14px;
+  color: #450468;
 }
 
 /* Middle Row Grid */
@@ -242,32 +279,25 @@
 
 /* Tooltip for Charts */
 .rep-chart-tooltip {
-  background: #FFFFFF;
-  border: 1px solid #EEF1F6;
+  min-width: 166px;
+  padding: 12px 12px 10px;
+  border: 1px solid #E7EAF1;
   border-radius: 8px;
-  padding: 12px;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.06);
-  min-width: 120px;
+  background: #FFFFFF;
+  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.12);
   position: relative;
 }
-.rep-chart-tooltip::after, .rep-chart-tooltip::before {
-  content: '';
-  position: absolute;
-  top: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  border: solid transparent;
-  pointer-events: none;
-}
 .rep-chart-tooltip::after {
-  border-top-color: #FFFFFF;
-  border-width: 6px;
-  margin-left: -6px;
-}
-.rep-chart-tooltip::before {
-  border-top-color: #EEF1F6;
-  border-width: 7px;
-  margin-left: -7px;
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  width: 12px;
+  height: 12px;
+  background: #FFFFFF;
+  border-right: 1px solid #E7EAF1;
+  border-bottom: 1px solid #E7EAF1;
+  transform: translateX(-50%) rotate(45deg);
 }
 
 .hoa-reports-page .rep-rev-info h2 {

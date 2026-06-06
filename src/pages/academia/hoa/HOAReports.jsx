@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import HOALayout from '../../../components/layouts/HOALayout/HOALayout';
 import { useCurrency, flagOptions } from '../../../hooks/useCurrency';
 import './hoa-reports.css';
@@ -92,6 +92,31 @@ const HOAReports = () => {
     setSelectedRows(prev => prev.includes(id) ? prev.filter(rId => rId !== id) : [...prev, id]);
   };
 
+  const preventDefault = (e) => e.preventDefault();
+
+  // Chart Interactivity Logic
+  const [activeAreaIndex, setActiveAreaIndex] = useState(4); // May
+  const areaWrapRef = useRef(null);
+  const handleAreaMouseMove = (e) => {
+    if (!areaWrapRef.current) return;
+    const rect = areaWrapRef.current.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    let index = Math.round((x / rect.width) * 11);
+    setActiveAreaIndex(Math.max(0, Math.min(index, 11)));
+  };
+  const handleAreaMouseLeave = () => setActiveAreaIndex(4);
+
+  const [activeBarIndex, setActiveBarIndex] = useState(4); // May
+  const barWrapRef = useRef(null);
+  const handleBarMouseMove = (e) => {
+    if (!barWrapRef.current) return;
+    const rect = barWrapRef.current.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    let index = Math.round((x / rect.width) * 11);
+    setActiveBarIndex(Math.max(0, Math.min(index, 11)));
+  };
+  const handleBarMouseLeave = () => setActiveBarIndex(4);
+
   // Chart Data
   const greenValues = [15, 30, 20, 25, 35, 50, 42, 40, 42, 60, 55, 65];
   const purpleValues = [25, 35, 25, 45, 42, 48, 45, 50, 70, 65, 75, 90];
@@ -175,7 +200,17 @@ const HOAReports = () => {
                 <span className="rep-badge-purple">89.7%</span>
                 Certificates & Projects
               </div>
-              <button className="rep-dropdown-btn">Monthly <img src={hoadowncaret} alt="" /></button>
+              <div className="dropdown learners-performance-period-dropdown">
+                <button className="dropdown-toggle rep-dropdown-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                  <span>Monthly</span>
+                  <img src={hoadowncaret} alt="" />
+                </button>
+                <ul className="dropdown-menu learners-performance-period-menu">
+                  <li><a className="dropdown-item active" href="#" onClick={preventDefault}>Monthly</a></li>
+                  <li><a className="dropdown-item" href="#" onClick={preventDefault}>Weekly</a></li>
+                  <li><a className="dropdown-item" href="#" onClick={preventDefault}>Quarterly</a></li>
+                </ul>
+              </div>
             </div>
             {/* SVG Replica of Area Chart */}
             <div style={{ display: 'flex', marginTop: '20px', height: '220px', position: 'relative', width: '100%', paddingBottom: '20px' }}>
@@ -188,17 +223,22 @@ const HOAReports = () => {
               </div>
 
               {/* Chart Content Area */}
-              <div style={{ position: 'relative', flex: 1, height: '100%' }}>
+              <div 
+                style={{ position: 'relative', flex: 1, height: '100%', cursor: 'default' }}
+                ref={areaWrapRef}
+                onMouseMove={handleAreaMouseMove}
+                onMouseLeave={handleAreaMouseLeave}
+              >
                 
                 {/* Grid Lines */}
-                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', pointerEvents: 'none' }}>
                   {[...Array(10)].map((_, i) => (
                     <div key={i} style={{ borderBottom: '1px dashed #EEF1F6', width: '100%', height: '1px' }}></div>
                   ))}
                 </div>
 
                 {/* SVG */}
-                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
+                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, pointerEvents: 'none' }}>
                   <svg width="100%" height="100%" viewBox="0 0 110 100" preserveAspectRatio="none" style={{ overflow: 'visible' }}>
                     <defs>
                       <linearGradient id="areaGreen" x1="0" y1="0" x2="0" y2="1">
@@ -217,32 +257,32 @@ const HOAReports = () => {
                     <path d={`${generateSmoothPath(purpleValues)} L110,100 L0,100 Z`} fill="url(#areaPurple)" />
                     <path d={generateSmoothPath(purpleValues)} fill="none" stroke="#E3C9F2" strokeWidth="1.5" />
 
-                    {/* Tooltip Overlay Dot & Line (May = index 4 => x=40, GreenY=61.11, PurpleY=53.33) */}
-                    <line x1="40" y1="53.333" x2="40" y2="100" stroke="#071437" strokeWidth="0.5" />
-                    <circle cx="40" cy="53.333" r="2.5" fill="#7239EA" stroke="#FFF" strokeWidth="1" />
-                    <circle cx="40" cy="61.111" r="2.5" fill="#17C653" stroke="#FFF" strokeWidth="1" />
+                    {/* Tooltip Overlay Dot & Line */}
+                    <line x1={activeAreaIndex * 10} y1={100 - (purpleValues[activeAreaIndex]/90)*100} x2={activeAreaIndex * 10} y2="100" stroke="#071437" strokeWidth="0.5" />
+                    <circle cx={activeAreaIndex * 10} cy={100 - (purpleValues[activeAreaIndex]/90)*100} r="2.5" fill="#7239EA" stroke="#FFF" strokeWidth="1" />
+                    <circle cx={activeAreaIndex * 10} cy={100 - (greenValues[activeAreaIndex]/90)*100} r="2.5" fill="#17C653" stroke="#FFF" strokeWidth="1" />
                   </svg>
                 </div>
 
                 {/* Tooltip Overlay */}
-                <div style={{ position: 'absolute', left: `${(4/11)*100}%`, top: `${100 - (42/90)*100}%`, transform: 'translate(-50%, -100%)', paddingBottom: '12px', zIndex: 10 }}>
+                <div style={{ position: 'absolute', left: `${(activeAreaIndex/11)*100}%`, top: `${100 - (purpleValues[activeAreaIndex]/90)*100}%`, transform: 'translate(-50%, -100%)', paddingBottom: '12px', zIndex: 10, pointerEvents: 'none', transition: 'left 180ms cubic-bezier(0.22, 1, 0.36, 1), top 180ms cubic-bezier(0.22, 1, 0.36, 1)' }}>
                   <div className="rep-chart-tooltip">
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px', fontSize: '11px', fontWeight: 'bold' }}>
-                        May 25 <span style={{ color: '#17C653', fontWeight: '600' }}><img src={hoaincrease} alt="" style={{width: 6, marginRight: 4}} /> 20%</span>
+                        {monthsList[activeAreaIndex]} 25 <span style={{ color: '#17C653', fontWeight: '600' }}><img src={hoaincrease} alt="" style={{width: 6, marginRight: 4}} /> 20%</span>
                     </div>
                     <div style={{ fontSize: '11px', color: '#4B5675', marginBottom: '8px', display: 'flex', justifyContent: 'space-between', gap: '20px' }}>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><span style={{color:'#7239EA', fontSize: 14, lineHeight: 1}}>●</span> Certificates</span> <strong style={{ color: '#071437' }}>23</strong>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><span style={{color:'#7239EA', fontSize: 14, lineHeight: 1}}>●</span> Certificates</span> <strong style={{ color: '#071437' }}>{purpleValues[activeAreaIndex]}</strong>
                     </div>
                     <div style={{ fontSize: '11px', color: '#4B5675', display: 'flex', justifyContent: 'space-between' }}>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><span style={{color:'#17C653', fontSize: 14, lineHeight: 1}}>●</span> Projects</span> <strong style={{ color: '#071437' }}>39</strong>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><span style={{color:'#17C653', fontSize: 14, lineHeight: 1}}>●</span> Projects</span> <strong style={{ color: '#071437' }}>{greenValues[activeAreaIndex]}</strong>
                     </div>
                   </div>
                 </div>
 
                 {/* X Axis Labels */}
-                <div style={{ position: 'absolute', bottom: '-25px', left: 0, right: 0 }}>
+                <div style={{ position: 'absolute', bottom: '-25px', left: 0, right: 0, pointerEvents: 'none' }}>
                   {monthsList.map((m, i) => (
-                    <span key={m} style={{ position: 'absolute', left: `${(i/11)*100}%`, transform: 'translateX(-50%)', color: m==='May' ? '#450468' : '#A1A5B7', fontWeight: m==='May' ? 600 : 'normal', fontSize: '10px' }}>
+                    <span key={m} style={{ position: 'absolute', left: `${(i/11)*100}%`, transform: 'translateX(-50%)', color: i === activeAreaIndex ? '#450468' : '#A1A5B7', fontWeight: i === activeAreaIndex ? 600 : 'normal', fontSize: '10px' }}>
                       {m}
                     </span>
                   ))}
@@ -258,7 +298,17 @@ const HOAReports = () => {
                 <span className="rep-badge-purple">89.7%</span>
                 Average uploads
               </div>
-              <button className="rep-dropdown-btn">Monthly <img src={hoadowncaret} alt="" /></button>
+              <div className="dropdown learners-performance-period-dropdown">
+                <button className="dropdown-toggle rep-dropdown-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                  <span>Monthly</span>
+                  <img src={hoadowncaret} alt="" />
+                </button>
+                <ul className="dropdown-menu learners-performance-period-menu">
+                  <li><a className="dropdown-item active" href="#" onClick={preventDefault}>Monthly</a></li>
+                  <li><a className="dropdown-item" href="#" onClick={preventDefault}>Weekly</a></li>
+                  <li><a className="dropdown-item" href="#" onClick={preventDefault}>Quarterly</a></li>
+                </ul>
+              </div>
             </div>
             {/* SVG Replica of Bar Chart */}
             <div style={{ display: 'flex', marginTop: '20px', height: '220px', position: 'relative', width: '100%', paddingBottom: '20px' }}>
@@ -271,19 +321,24 @@ const HOAReports = () => {
               </div>
 
               {/* Chart Content Area */}
-              <div style={{ position: 'relative', flex: 1, height: '100%' }}>
+              <div 
+                style={{ position: 'relative', flex: 1, height: '100%', cursor: 'default' }}
+                ref={barWrapRef}
+                onMouseMove={handleBarMouseMove}
+                onMouseLeave={handleBarMouseLeave}
+              >
                 
                 {/* Grid Lines */}
-                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', pointerEvents: 'none' }}>
                   {[...Array(10)].map((_, i) => (
                     <div key={i} style={{ borderBottom: '1px dashed #EEF1F6', width: '100%', height: '1px' }}></div>
                   ))}
                 </div>
 
                 {/* Bars */}
-                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
+                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, pointerEvents: 'none' }}>
                   {barData.map((data, i) => (
-                      <div key={i} style={{ position: 'absolute', left: `${(i/11)*100}%`, transform: 'translateX(-50%)', display: 'flex', gap: '4px', height: '100%', alignItems: 'flex-end', width: '12px' }}>
+                      <div key={i} style={{ position: 'absolute', left: `${(i/11)*100}%`, transform: `translateX(-50%) translateY(${activeBarIndex === i ? '-1px' : '0'})`, display: 'flex', gap: '4px', height: '100%', alignItems: 'flex-end', width: '12px', transition: 'transform 0.14s ease' }}>
                           {data.syl > 0 ? <div style={{ width: '4px', height: `${(data.syl/90)*100}%`, background: '#450468', borderRadius: '4px' }}></div> : null}
                           {data.onl > 0 ? <div style={{ width: '4px', height: `${(data.onl/90)*100}%`, background: '#EEF1F6', borderRadius: '4px' }}></div> : null}
                       </div>
@@ -291,24 +346,24 @@ const HOAReports = () => {
                 </div>
 
                 {/* Tooltip Overlay */}
-                <div style={{ position: 'absolute', left: `${(4/11)*100}%`, top: `${100 - (70/90)*100}%`, transform: 'translate(-50%, -100%)', paddingBottom: '12px', zIndex: 10 }}>
+                <div style={{ position: 'absolute', left: `${(activeBarIndex/11)*100}%`, top: `${100 - (Math.max(barData[activeBarIndex].syl, barData[activeBarIndex].onl)/90)*100}%`, transform: 'translate(-50%, -100%)', paddingBottom: '12px', zIndex: 10, pointerEvents: 'none', transition: 'left 180ms cubic-bezier(0.22, 1, 0.36, 1), top 180ms cubic-bezier(0.22, 1, 0.36, 1)' }}>
                   <div className="rep-chart-tooltip">
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px', fontSize: '11px', fontWeight: 'bold' }}>
                         Stats <span style={{ color: '#17C653', fontWeight: '600' }}><img src={hoaincrease} alt="" style={{width: 6, marginRight: 4}} /> 20%</span>
                     </div>
                     <div style={{ fontSize: '11px', color: '#4B5675', marginBottom: '8px', display: 'flex', justifyContent: 'space-between', gap: '20px' }}>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><span style={{color:'#450468', fontSize: 14, lineHeight: 1}}>●</span> Syllabus :</span> <strong style={{ color: '#071437' }}>23</strong>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><span style={{color:'#450468', fontSize: 14, lineHeight: 1}}>●</span> Syllabus :</span> <strong style={{ color: '#071437' }}>{barData[activeBarIndex].syl}</strong>
                     </div>
                     <div style={{ fontSize: '11px', color: '#4B5675', display: 'flex', justifyContent: 'space-between' }}>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><span style={{color:'#EEF1F6', fontSize: 14, lineHeight: 1}}>●</span> Online Courses :</span> <strong style={{ color: '#071437' }}>39</strong>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><span style={{color:'#EEF1F6', fontSize: 14, lineHeight: 1}}>●</span> Online Courses :</span> <strong style={{ color: '#071437' }}>{barData[activeBarIndex].onl}</strong>
                     </div>
                   </div>
                 </div>
 
                 {/* X Axis Labels */}
-                <div style={{ position: 'absolute', bottom: '-25px', left: 0, right: 0 }}>
+                <div style={{ position: 'absolute', bottom: '-25px', left: 0, right: 0, pointerEvents: 'none' }}>
                   {monthsList.map((m, i) => (
-                    <span key={m} style={{ position: 'absolute', left: `${(i/11)*100}%`, transform: 'translateX(-50%)', color: m==='May' ? '#450468' : '#A1A5B7', fontWeight: m==='May' ? 600 : 'normal', fontSize: '10px' }}>
+                    <span key={m} style={{ position: 'absolute', left: `${(i/11)*100}%`, transform: 'translateX(-50%)', color: i === activeBarIndex ? '#450468' : '#A1A5B7', fontWeight: i === activeBarIndex ? 600 : 'normal', fontSize: '10px' }}>
                       {m}
                     </span>
                   ))}
