@@ -443,7 +443,7 @@ const HOAReports = () => {
             <div className="rep-progress-bar">
                <div className="rep-prog-seg" style={{ width: '15%', background: '#1B84FF' }}></div>
                <div className="rep-prog-seg" style={{ width: '15%', background: '#F8285A' }}></div>
-               <div className="rep-prog-seg" style={{ width: '25%', background: '#FFC700' }}></div>
+               <div className="rep-prog-seg" style={{ width: '25%', background: '#FF8A00' }}></div>
                <div className="rep-prog-seg" style={{ width: '15%', background: '#17C653' }}></div>
                <div className="rep-prog-seg" style={{ width: '30%', background: '#071437' }}></div>
             </div>
@@ -451,7 +451,7 @@ const HOAReports = () => {
             <div className="rep-rev-legend">
                 <div className="rep-legend-item"><span className="rep-legend-dot" style={{background: '#1B84FF'}}></span> Syllabus ( 12% )</div>
                 <div className="rep-legend-item"><span className="rep-legend-dot" style={{background: '#F8285A'}}></span> Online Courses ( 12% )</div>
-                <div className="rep-legend-item"><span className="rep-legend-dot" style={{background: '#FFC700'}}></span> Tutors upload payments ( 12% )</div>
+                <div className="rep-legend-item"><span className="rep-legend-dot" style={{background: '#FF8A00'}}></span> Tutors upload payments ( 12% )</div>
                 <div className="rep-legend-item"><span className="rep-legend-dot" style={{background: '#17C653'}}></span> Certificates ( 12% )</div>
                 <div className="rep-legend-item"><span className="rep-legend-dot" style={{background: '#071437'}}></span> Projects ( 12% )</div>
             </div>
@@ -473,7 +473,7 @@ const HOAReports = () => {
                       <p className="rep-country-pop">{country.pop}</p>
                     </div>
                   </div>
-                  <button className="rep-dropdown-btn" style={{ fontSize: 12, color: '#7239EA', fontWeight: 600, background: '#F8F5FF', border: '1px solid #E3C9F2' }}>
+                  <button className="rep-dropdown-btn" style={{ fontSize: 12, color: '#7239EA', fontWeight: 600 }}>
                     {country.rev} RWF <img src={currency.flag} alt="" style={{width:12}} /> <img src={hoadowncaret} alt="" />
                   </button>
                 </div>

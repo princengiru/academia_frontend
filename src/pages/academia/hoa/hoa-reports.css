@@ -322,12 +322,14 @@
 .hoa-reports-page .rep-progress-bar {
   display: flex;
   height: 10px;
-  border-radius: 10px;
-  overflow: hidden;
+  gap: 6px;
   margin-bottom: 24px;
 }
 
-.hoa-reports-page .rep-prog-seg { height: 100%; }
+.hoa-reports-page .rep-prog-seg {
+  height: 100%;
+  border-radius: 10px;
+}
 
 .hoa-reports-page .rep-rev-legend {
   display: grid;
@@ -362,13 +364,6 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-bottom: 12px;
-  border-bottom: 1px dashed #EEF1F6;
-}
-
-.hoa-reports-page .rep-country-item:last-child {
-  border-bottom: none;
-  padding-bottom: 0;
 }
 
 .hoa-reports-page .rep-country-left {
