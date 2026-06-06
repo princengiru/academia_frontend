@@ -14,9 +14,25 @@ const Performance = () => {
     { value: '8', label: 'Certificates Approved' },
   ];
 
-  const chartMonths = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  const chartSyllabusValues = [80, 20, 36, 70, 26, 70, 36, 19, 48, 79, 53, 14];
-  const chartOnlineValues = [65, 32, 23, 5, 14, 53, 34, 15, 33, 88, 39, 65];
+  const [chartPeriod, setChartPeriod] = useState('Weekly');
+  const chartDataMap = {
+    Monthly: {
+      labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+      syllabus: [80, 20, 36, 70, 26, 70, 36, 19, 48, 79, 53, 14],
+      online: [65, 32, 23, 5, 14, 53, 34, 15, 33, 88, 39, 65]
+    },
+    Weekly: {
+      labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+      syllabus: [40, 60, 20, 80, 50, 30, 70],
+      online: [30, 50, 10, 60, 40, 20, 50]
+    },
+    Quarterly: {
+      labels: ['Q1', 'Q2', 'Q3', 'Q4'],
+      syllabus: [60, 80, 50, 90],
+      online: [50, 70, 40, 80]
+    }
+  };
+  const currentChartData = chartDataMap[chartPeriod];
   const chartMax = 90;
 
   const performanceLegend = [
@@ -46,8 +62,23 @@ const Performance = () => {
   ];
 
   // --- Bar Chart Logic ---
-  const [activeBarIndex, setActiveBarIndex] = useState(4); // Default to index 4 (May)
+  const currentMonthIndex = new Date().getMonth();
+  const currentDayIndex = (new Date().getDay() + 6) % 7; // Monday = 0
+  const currentQuarterIndex = Math.floor(currentMonthIndex / 3);
+
+  const getDefaultActiveIndex = (period) => {
+    if (period === 'Monthly') return currentMonthIndex;
+    if (period === 'Weekly') return currentDayIndex;
+    if (period === 'Quarterly') return currentQuarterIndex;
+    return 0;
+  };
+
+  const [activeBarIndex, setActiveBarIndex] = useState(() => getDefaultActiveIndex('Weekly'));
   const chartWrapRef = useRef(null);
+
+  useEffect(() => {
+    setActiveBarIndex(getDefaultActiveIndex(chartPeriod));
+  }, [chartPeriod]);
 
   const handleBarHover = (index) => {
     setActiveBarIndex(index);
@@ -55,19 +86,15 @@ const Performance = () => {
 
   const handleChartMouseMove = (e) => {
     if (!chartWrapRef.current) return;
-    const canvasRect = chartWrapRef.current.getBoundingClientRect();
-    const localX = e.clientX - canvasRect.left;
-    const width = canvasRect.width;
-    
-    // Determine closest index based on X coordinate
-    const numBars = chartMonths.length;
-    let closestIndex = Math.floor((localX / width) * numBars);
-    closestIndex = Math.max(0, Math.min(closestIndex, numBars - 1));
-    setActiveBarIndex(closestIndex);
+    const rect = chartWrapRef.current.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const numPoints = chartDataMap[chartPeriod].labels.length - 1;
+    let index = Math.round((x / rect.width) * numPoints);
+    setActiveBarIndex(Math.max(0, Math.min(index, numPoints)));
   };
 
   const handleChartMouseLeave = () => {
-    setActiveBarIndex(4); // Reset to default
+    setActiveBarIndex(getDefaultActiveIndex(chartPeriod));
   };
 
   // --- Donut Chart Logic ---
@@ -210,13 +237,13 @@ const Performance = () => {
 
                   <div className="dropdown learners-performance-period-dropdown">
                     <button className="dropdown-toggle learners-performance-period-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                      <span>Monthly</span>
+                      <span>{chartPeriod}</span>
                       <img src="/assets/icons/drop1.svg" alt="" />
                     </button>
                     <ul className="dropdown-menu learners-performance-period-menu">
-                      <li><a className="dropdown-item active" href="#" onClick={preventDefault}>Monthly</a></li>
-                      <li><a className="dropdown-item" href="#" onClick={preventDefault}>Weekly</a></li>
-                      <li><a className="dropdown-item" href="#" onClick={preventDefault}>Quarterly</a></li>
+                      <li><a className={`dropdown-item ${chartPeriod === 'Monthly' ? 'active' : ''}`} href="#" onClick={(e) => { preventDefault(e); setChartPeriod('Monthly'); }}>Monthly</a></li>
+                      <li><a className={`dropdown-item ${chartPeriod === 'Weekly' ? 'active' : ''}`} href="#" onClick={(e) => { preventDefault(e); setChartPeriod('Weekly'); }}>Weekly</a></li>
+                      <li><a className={`dropdown-item ${chartPeriod === 'Quarterly' ? 'active' : ''}`} href="#" onClick={(e) => { preventDefault(e); setChartPeriod('Quarterly'); }}>Quarterly</a></li>
                     </ul>
                   </div>
                 </div>
@@ -238,15 +265,15 @@ const Performance = () => {
                       {Array.from({ length: 10 }).map((_, i) => <span key={i}></span>)}
                     </div>
 
-                    <div className="learners-performance-bars" aria-hidden="true">
-                      {chartMonths.map((month, index) => (
+                    <div className="learners-performance-bars" aria-hidden="true" style={{ gridTemplateColumns: `repeat(${currentChartData.labels.length}, minmax(0, 1fr))` }}>
+                      {currentChartData.labels.map((month, index) => (
                         <div
                           key={index}
                           className={`learners-performance-bar-group ${index === activeBarIndex ? 'is-active' : ''}`}
                           onMouseEnter={() => handleBarHover(index)}
                         >
-                          <span className="learners-performance-bar learners-performance-bar--syllabus" style={{ height: `${(chartSyllabusValues[index] / chartMax) * 100}%` }}></span>
-                          <span className="learners-performance-bar learners-performance-bar--online" style={{ height: `${(chartOnlineValues[index] / chartMax) * 100}%` }}></span>
+                          <span className="learners-performance-bar learners-performance-bar--syllabus" style={{ height: `${(currentChartData.syllabus[index] / chartMax) * 100}%` }}></span>
+                          <span className="learners-performance-bar learners-performance-bar--online" style={{ height: `${(currentChartData.online[index] / chartMax) * 100}%` }}></span>
                         </div>
                       ))}
                     </div>
@@ -255,25 +282,27 @@ const Performance = () => {
                     <div 
                       className="learners-performance-chart-tooltip learners-performance-chart-tooltip--bars" 
                       style={{ 
-                        left: `${(activeBarIndex / (chartMonths.length - 1)) * 100}%`, 
+                        left: `${(activeBarIndex / Math.max(1, currentChartData.labels.length - 1)) * 100}%`, 
                         top: '52%',
+                        transform: `translateX(-${(activeBarIndex / Math.max(1, currentChartData.labels.length - 1)) * 100}%)`,
+                        '--caret-pos': `${(activeBarIndex / Math.max(1, currentChartData.labels.length - 1)) * 100}%`,
                         opacity: 1 // Managed purely by location in React
                       }}
                     >
                       <span>Stats</span>
                       <strong>+ 20%</strong>
                       <div className="learners-performance-chart-tooltip-row">
-                        <i className="is-syllabus"></i><span>Syllabus :</span><b>{chartSyllabusValues[activeBarIndex]}</b>
+                        <i className="is-syllabus"></i><span>Syllabus :</span><b>{currentChartData.syllabus[activeBarIndex]}</b>
                       </div>
                       <div className="learners-performance-chart-tooltip-row">
-                        <i className="is-online"></i><span>Online Courses :</span><b>{chartOnlineValues[activeBarIndex]}</b>
+                        <i className="is-online"></i><span>Online Courses :</span><b>{currentChartData.online[activeBarIndex]}</b>
                       </div>
                     </div>
                   </div>
                 </div>
 
-                <div className="learners-performance-chart-months">
-                  {chartMonths.map((month, index) => (
+                <div className="learners-performance-chart-months" style={{ gridTemplateColumns: `repeat(${currentChartData.labels.length}, minmax(0, 1fr))` }}>
+                  {currentChartData.labels.map((month, index) => (
                     <span key={index} className={index === activeBarIndex ? 'is-active' : ''}>{month}</span>
                   ))}
                 </div>

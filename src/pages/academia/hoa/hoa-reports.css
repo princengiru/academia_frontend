@@ -290,7 +290,7 @@
 .rep-chart-tooltip::after {
   content: "";
   position: absolute;
-  left: 50%;
+  left: clamp(12px, var(--caret-pos, 50%), calc(100% - 12px));
   bottom: -6px;
   width: 12px;
   height: 12px;

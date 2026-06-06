@@ -97,58 +97,99 @@ const HOAReports = () => {
   // Chart Interactivity Logic
   const currentMonthIndex = new Date().getMonth();
 
-  const [activeAreaIndex, setActiveAreaIndex] = useState(currentMonthIndex);
-  const areaWrapRef = useRef(null);
+  const chartDataMap = {
+    Monthly: {
+      labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+      green: [15, 30, 20, 25, 35, 50, 42, 40, 42, 60, 55, 65],
+      purple: [25, 35, 25, 45, 42, 48, 45, 50, 70, 65, 75, 90],
+      bar: [
+        { syl: 80, onl: 60 }, { syl: 20, onl: 32 }, { syl: 36, onl: 25 }, { syl: 27, onl: 50 },
+        { syl: 70, onl: 55 }, { syl: 45, onl: 35 }, { syl: 19, onl: 15 }, { syl: 48, onl: 32 },
+        { syl: 80, onl: 88 }, { syl: 53, onl: 40 }, { syl: 15, onl: 68 }, { syl: 40, onl: 50 }
+      ]
+    },
+    Weekly: {
+      labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+      green: [20, 40, 30, 60, 50, 40, 80],
+      purple: [30, 50, 40, 70, 60, 50, 90],
+      bar: [
+        { syl: 40, onl: 30 }, { syl: 60, onl: 50 }, { syl: 20, onl: 10 }, { syl: 80, onl: 60 },
+        { syl: 50, onl: 40 }, { syl: 30, onl: 20 }, { syl: 70, onl: 50 }
+      ]
+    },
+    Quarterly: {
+      labels: ['Q1', 'Q2', 'Q3', 'Q4'],
+      green: [40, 60, 50, 80],
+      purple: [50, 70, 60, 90],
+      bar: [
+        { syl: 60, onl: 50 }, { syl: 80, onl: 70 }, { syl: 50, onl: 40 }, { syl: 90, onl: 80 }
+      ]
+    }
+  };
+
+  const currentDayIndex = (new Date().getDay() + 6) % 7; // Monday = 0
+  const currentQuarterIndex = Math.floor(currentMonthIndex / 3);
+
+  const getDefaultActiveIndex = (period) => {
+    if (period === 'Monthly') return currentMonthIndex;
+    if (period === 'Weekly') return currentDayIndex;
+    if (period === 'Quarterly') return currentQuarterIndex;
+    return 0;
+  };
+
+  const [areaChartPeriod, setAreaChartPeriod] = useState('Monthly');
+  const [activeAreaIndex, setActiveAreaIndex] = useState(() => getDefaultActiveIndex('Monthly'));
+  const areaWrapRef = React.useRef(null);
+
+  React.useEffect(() => {
+    setActiveAreaIndex(getDefaultActiveIndex(areaChartPeriod));
+  }, [areaChartPeriod]);
+
   const handleAreaMouseMove = (e) => {
     if (!areaWrapRef.current) return;
     const rect = areaWrapRef.current.getBoundingClientRect();
     const x = e.clientX - rect.left;
-    let index = Math.round((x / rect.width) * 11);
-    setActiveAreaIndex(Math.max(0, Math.min(index, 11)));
+    const numPoints = chartDataMap[areaChartPeriod].labels.length - 1;
+    let index = Math.round((x / rect.width) * numPoints);
+    setActiveAreaIndex(Math.max(0, Math.min(index, numPoints)));
   };
-  const handleAreaMouseLeave = () => setActiveAreaIndex(currentMonthIndex);
+  const handleAreaMouseLeave = () => setActiveAreaIndex(getDefaultActiveIndex(areaChartPeriod));
 
-  const [activeBarIndex, setActiveBarIndex] = useState(currentMonthIndex);
-  const barWrapRef = useRef(null);
+  const [barChartPeriod, setBarChartPeriod] = useState('Monthly');
+  const [activeBarIndex, setActiveBarIndex] = useState(() => getDefaultActiveIndex('Monthly'));
+  const barWrapRef = React.useRef(null);
+
+  React.useEffect(() => {
+    setActiveBarIndex(getDefaultActiveIndex(barChartPeriod));
+  }, [barChartPeriod]);
+
   const handleBarMouseMove = (e) => {
     if (!barWrapRef.current) return;
     const rect = barWrapRef.current.getBoundingClientRect();
     const x = e.clientX - rect.left;
-    let index = Math.round((x / rect.width) * 11);
-    setActiveBarIndex(Math.max(0, Math.min(index, 11)));
+    const numPoints = chartDataMap[barChartPeriod].labels.length - 1;
+    let index = Math.round((x / rect.width) * numPoints);
+    setActiveBarIndex(Math.max(0, Math.min(index, numPoints)));
   };
-  const handleBarMouseLeave = () => setActiveBarIndex(currentMonthIndex);
+  const handleBarMouseLeave = () => setActiveBarIndex(getDefaultActiveIndex(barChartPeriod));
 
   // Chart Data
-  const greenValues = [15, 30, 20, 25, 35, 50, 42, 40, 42, 60, 55, 65];
-  const purpleValues = [25, 35, 25, 45, 42, 48, 45, 50, 70, 65, 75, 90];
+  const currentAreaData = chartDataMap[areaChartPeriod];
+  const currentBarData = chartDataMap[barChartPeriod];
+
   const generateSmoothPath = (values) => {
-    const points = values.map((val, i) => [i * 10, 100 - (val / 90) * 100]);
+    const segments = values.length - 1;
+    const xStep = 110 / Math.max(1, segments);
+    const points = values.map((val, i) => [i * xStep, 100 - (val / 90) * 100]);
     let d = `M${points[0][0]},${points[0][1]}`;
     for (let i = 1; i < points.length; i++) {
       const prev = points[i - 1];
       const curr = points[i];
-      d += ` C${prev[0] + 4},${prev[1]} ${curr[0] - 4},${curr[1]} ${curr[0]},${curr[1]}`;
+      const cpDist = xStep * 0.4;
+      d += ` C${prev[0] + cpDist},${prev[1]} ${curr[0] - cpDist},${curr[1]} ${curr[0]},${curr[1]}`;
     }
     return d;
   };
-
-  const barData = [
-    { syl: 80, onl: 60 },
-    { syl: 20, onl: 32 },
-    { syl: 36, onl: 25 },
-    { syl: 27, onl: 50 },
-    { syl: 70, onl: 55 },
-    { syl: 45, onl: 35 },
-    { syl: 19, onl: 15 },
-    { syl: 48, onl: 32 },
-    { syl: 80, onl: 88 },
-    { syl: 53, onl: 40 },
-    { syl: 15, onl: 68 },
-    { syl: 0, onl: 0 }
-  ];
-
-  const monthsList = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
   return (
     <HOALayout currentPage="reports">
@@ -204,13 +245,13 @@ const HOAReports = () => {
               </div>
               <div className="dropdown learners-performance-period-dropdown">
                 <button className="dropdown-toggle rep-dropdown-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                  <span>Monthly</span>
+                  <span>{areaChartPeriod}</span>
                   <img src={hoadowncaret} alt="" />
                 </button>
                 <ul className="dropdown-menu learners-performance-period-menu">
-                  <li><a className="dropdown-item active" href="#" onClick={preventDefault}>Monthly</a></li>
-                  <li><a className="dropdown-item" href="#" onClick={preventDefault}>Weekly</a></li>
-                  <li><a className="dropdown-item" href="#" onClick={preventDefault}>Quarterly</a></li>
+                  <li><a className={`dropdown-item ${areaChartPeriod === 'Monthly' ? 'active' : ''}`} href="#" onClick={(e) => { preventDefault(e); setAreaChartPeriod('Monthly'); }}>Monthly</a></li>
+                  <li><a className={`dropdown-item ${areaChartPeriod === 'Weekly' ? 'active' : ''}`} href="#" onClick={(e) => { preventDefault(e); setAreaChartPeriod('Weekly'); }}>Weekly</a></li>
+                  <li><a className={`dropdown-item ${areaChartPeriod === 'Quarterly' ? 'active' : ''}`} href="#" onClick={(e) => { preventDefault(e); setAreaChartPeriod('Quarterly'); }}>Quarterly</a></li>
                 </ul>
               </div>
             </div>
@@ -253,38 +294,38 @@ const HOAReports = () => {
                       </linearGradient>
                     </defs>
 
-                    <path d={`${generateSmoothPath(greenValues)} L110,100 L0,100 Z`} fill="url(#areaGreen)" />
-                    <path d={generateSmoothPath(greenValues)} fill="none" stroke="#17C653" strokeWidth="1.5" />
+                    <path d={`${generateSmoothPath(currentAreaData.green)} L110,100 L0,100 Z`} fill="url(#areaGreen)" />
+                    <path d={generateSmoothPath(currentAreaData.green)} fill="none" stroke="#17C653" strokeWidth="1.5" />
                     
-                    <path d={`${generateSmoothPath(purpleValues)} L110,100 L0,100 Z`} fill="url(#areaPurple)" />
-                    <path d={generateSmoothPath(purpleValues)} fill="none" stroke="#E3C9F2" strokeWidth="1.5" />
+                    <path d={`${generateSmoothPath(currentAreaData.purple)} L110,100 L0,100 Z`} fill="url(#areaPurple)" />
+                    <path d={generateSmoothPath(currentAreaData.purple)} fill="none" stroke="#E3C9F2" strokeWidth="1.5" />
 
                     {/* Tooltip Overlay Dot & Line */}
-                    <line x1={activeAreaIndex * 10} y1={100 - (purpleValues[activeAreaIndex]/90)*100} x2={activeAreaIndex * 10} y2="100" stroke="#071437" strokeWidth="0.5" />
-                    <circle cx={activeAreaIndex * 10} cy={100 - (purpleValues[activeAreaIndex]/90)*100} r="2.5" fill="#7239EA" stroke="#FFF" strokeWidth="1" />
-                    <circle cx={activeAreaIndex * 10} cy={100 - (greenValues[activeAreaIndex]/90)*100} r="2.5" fill="#17C653" stroke="#FFF" strokeWidth="1" />
+                    <line x1={activeAreaIndex * (110 / Math.max(1, currentAreaData.labels.length - 1))} y1={100 - (currentAreaData.purple[activeAreaIndex]/90)*100} x2={activeAreaIndex * (110 / Math.max(1, currentAreaData.labels.length - 1))} y2="100" stroke="#071437" strokeWidth="0.5" />
+                    <circle cx={activeAreaIndex * (110 / Math.max(1, currentAreaData.labels.length - 1))} cy={100 - (currentAreaData.purple[activeAreaIndex]/90)*100} r="2.5" fill="#7239EA" stroke="#FFF" strokeWidth="1" />
+                    <circle cx={activeAreaIndex * (110 / Math.max(1, currentAreaData.labels.length - 1))} cy={100 - (currentAreaData.green[activeAreaIndex]/90)*100} r="2.5" fill="#17C653" stroke="#FFF" strokeWidth="1" />
                   </svg>
                 </div>
 
                 {/* Tooltip Overlay */}
-                <div style={{ position: 'absolute', left: `${(activeAreaIndex/11)*100}%`, top: '52%', transform: 'translate(-50%, -100%)', paddingBottom: '12px', zIndex: 10, pointerEvents: 'none', transition: 'left 180ms cubic-bezier(0.22, 1, 0.36, 1)' }}>
+                <div style={{ position: 'absolute', left: `${(activeAreaIndex / Math.max(1, currentAreaData.labels.length - 1))*100}%`, top: '52%', transform: `translate(-${(activeAreaIndex / Math.max(1, currentAreaData.labels.length - 1))*100}%, -100%)`, '--caret-pos': `${(activeAreaIndex / Math.max(1, currentAreaData.labels.length - 1))*100}%`, paddingBottom: '12px', zIndex: 10, pointerEvents: 'none', transition: 'left 180ms cubic-bezier(0.22, 1, 0.36, 1), transform 180ms ease' }}>
                   <div className="rep-chart-tooltip">
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px', fontSize: '11px', fontWeight: 'bold' }}>
-                        {monthsList[activeAreaIndex]} 25 <span style={{ color: '#17C653', fontWeight: '600' }}><img src={hoaincrease} alt="" style={{width: 6, marginRight: 4}} /> 20%</span>
+                        {currentAreaData.labels[activeAreaIndex]} 25 <span style={{ color: '#17C653', fontWeight: '600' }}><img src={hoaincrease} alt="" style={{width: 6, marginRight: 4}} /> 20%</span>
                     </div>
                     <div style={{ fontSize: '11px', color: '#4B5675', marginBottom: '8px', display: 'flex', justifyContent: 'space-between', gap: '20px' }}>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><span style={{color:'#7239EA', fontSize: 14, lineHeight: 1}}>●</span> Certificates</span> <strong style={{ color: '#071437' }}>{purpleValues[activeAreaIndex]}</strong>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><span style={{color:'#7239EA', fontSize: 14, lineHeight: 1}}>●</span> Certificates</span> <strong style={{ color: '#071437' }}>{currentAreaData.purple[activeAreaIndex]}</strong>
                     </div>
                     <div style={{ fontSize: '11px', color: '#4B5675', display: 'flex', justifyContent: 'space-between' }}>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><span style={{color:'#17C653', fontSize: 14, lineHeight: 1}}>●</span> Projects</span> <strong style={{ color: '#071437' }}>{greenValues[activeAreaIndex]}</strong>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><span style={{color:'#17C653', fontSize: 14, lineHeight: 1}}>●</span> Projects</span> <strong style={{ color: '#071437' }}>{currentAreaData.green[activeAreaIndex]}</strong>
                     </div>
                   </div>
                 </div>
 
                 {/* X Axis Labels */}
                 <div style={{ position: 'absolute', bottom: '-25px', left: 0, right: 0, pointerEvents: 'none' }}>
-                  {monthsList.map((m, i) => (
-                    <span key={m} style={{ position: 'absolute', left: `${(i/11)*100}%`, transform: 'translateX(-50%)', color: i === activeAreaIndex ? '#450468' : '#A1A5B7', fontWeight: i === activeAreaIndex ? 600 : 'normal', fontSize: '10px' }}>
+                  {currentAreaData.labels.map((m, i) => (
+                    <span key={m} style={{ position: 'absolute', left: `${(i / Math.max(1, currentAreaData.labels.length - 1))*100}%`, transform: 'translateX(-50%)', color: i === activeAreaIndex ? '#450468' : '#A1A5B7', fontWeight: i === activeAreaIndex ? 600 : 'normal', fontSize: '10px' }}>
                       {m}
                     </span>
                   ))}
@@ -302,13 +343,13 @@ const HOAReports = () => {
               </div>
               <div className="dropdown learners-performance-period-dropdown">
                 <button className="dropdown-toggle rep-dropdown-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                  <span>Monthly</span>
+                  <span>{barChartPeriod}</span>
                   <img src={hoadowncaret} alt="" />
                 </button>
                 <ul className="dropdown-menu learners-performance-period-menu">
-                  <li><a className="dropdown-item active" href="#" onClick={preventDefault}>Monthly</a></li>
-                  <li><a className="dropdown-item" href="#" onClick={preventDefault}>Weekly</a></li>
-                  <li><a className="dropdown-item" href="#" onClick={preventDefault}>Quarterly</a></li>
+                  <li><a className={`dropdown-item ${barChartPeriod === 'Monthly' ? 'active' : ''}`} href="#" onClick={(e) => { preventDefault(e); setBarChartPeriod('Monthly'); }}>Monthly</a></li>
+                  <li><a className={`dropdown-item ${barChartPeriod === 'Weekly' ? 'active' : ''}`} href="#" onClick={(e) => { preventDefault(e); setBarChartPeriod('Weekly'); }}>Weekly</a></li>
+                  <li><a className={`dropdown-item ${barChartPeriod === 'Quarterly' ? 'active' : ''}`} href="#" onClick={(e) => { preventDefault(e); setBarChartPeriod('Quarterly'); }}>Quarterly</a></li>
                 </ul>
               </div>
             </div>
@@ -339,8 +380,8 @@ const HOAReports = () => {
 
                 {/* Bars */}
                 <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, pointerEvents: 'none' }}>
-                  {barData.map((data, i) => (
-                      <div key={i} style={{ position: 'absolute', left: `${(i/11)*100}%`, transform: `translateX(-50%) translateY(${activeBarIndex === i ? '-1px' : '0'})`, display: 'flex', gap: '4px', height: '100%', alignItems: 'flex-end', width: '12px', transition: 'transform 0.14s ease' }}>
+                  {currentBarData.bar.map((data, i) => (
+                      <div key={i} style={{ position: 'absolute', left: `${(i / Math.max(1, currentBarData.labels.length - 1))*100}%`, transform: `translateX(-50%) translateY(${activeBarIndex === i ? '-1px' : '0'})`, display: 'flex', gap: '4px', height: '100%', alignItems: 'flex-end', width: '12px', transition: 'transform 0.14s ease' }}>
                           {data.syl > 0 ? <div style={{ width: '4px', height: `${(data.syl/90)*100}%`, background: '#450468', borderRadius: '4px' }}></div> : null}
                           {data.onl > 0 ? <div style={{ width: '4px', height: `${(data.onl/90)*100}%`, background: '#EEF1F6', borderRadius: '4px' }}></div> : null}
                       </div>
@@ -348,24 +389,24 @@ const HOAReports = () => {
                 </div>
 
                 {/* Tooltip Overlay */}
-                <div style={{ position: 'absolute', left: `${(activeBarIndex/11)*100}%`, top: '52%', transform: 'translate(-50%, -100%)', paddingBottom: '12px', zIndex: 10, pointerEvents: 'none', transition: 'left 180ms cubic-bezier(0.22, 1, 0.36, 1)' }}>
+                <div style={{ position: 'absolute', left: `${(activeBarIndex / Math.max(1, currentBarData.labels.length - 1))*100}%`, top: '52%', transform: `translate(-${(activeBarIndex / Math.max(1, currentBarData.labels.length - 1))*100}%, -100%)`, '--caret-pos': `${(activeBarIndex / Math.max(1, currentBarData.labels.length - 1))*100}%`, paddingBottom: '12px', zIndex: 10, pointerEvents: 'none', transition: 'left 180ms cubic-bezier(0.22, 1, 0.36, 1), transform 180ms ease' }}>
                   <div className="rep-chart-tooltip">
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px', fontSize: '11px', fontWeight: 'bold' }}>
                         Stats <span style={{ color: '#17C653', fontWeight: '600' }}><img src={hoaincrease} alt="" style={{width: 6, marginRight: 4}} /> 20%</span>
                     </div>
                     <div style={{ fontSize: '11px', color: '#4B5675', marginBottom: '8px', display: 'flex', justifyContent: 'space-between', gap: '20px' }}>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><span style={{color:'#450468', fontSize: 14, lineHeight: 1}}>●</span> Syllabus :</span> <strong style={{ color: '#071437' }}>{barData[activeBarIndex].syl}</strong>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><span style={{color:'#450468', fontSize: 14, lineHeight: 1}}>●</span> Syllabus :</span> <strong style={{ color: '#071437' }}>{currentBarData.bar[activeBarIndex].syl}</strong>
                     </div>
                     <div style={{ fontSize: '11px', color: '#4B5675', display: 'flex', justifyContent: 'space-between' }}>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><span style={{color:'#EEF1F6', fontSize: 14, lineHeight: 1}}>●</span> Online Courses :</span> <strong style={{ color: '#071437' }}>{barData[activeBarIndex].onl}</strong>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><span style={{color:'#EEF1F6', fontSize: 14, lineHeight: 1}}>●</span> Online Courses :</span> <strong style={{ color: '#071437' }}>{currentBarData.bar[activeBarIndex].onl}</strong>
                     </div>
                   </div>
                 </div>
 
                 {/* X Axis Labels */}
                 <div style={{ position: 'absolute', bottom: '-25px', left: 0, right: 0, pointerEvents: 'none' }}>
-                  {monthsList.map((m, i) => (
-                    <span key={m} style={{ position: 'absolute', left: `${(i/11)*100}%`, transform: 'translateX(-50%)', color: i === activeBarIndex ? '#450468' : '#A1A5B7', fontWeight: i === activeBarIndex ? 600 : 'normal', fontSize: '10px' }}>
+                  {currentBarData.labels.map((m, i) => (
+                    <span key={m} style={{ position: 'absolute', left: `${(i / Math.max(1, currentBarData.labels.length - 1))*100}%`, transform: 'translateX(-50%)', color: i === activeBarIndex ? '#450468' : '#A1A5B7', fontWeight: i === activeBarIndex ? 600 : 'normal', fontSize: '10px' }}>
                       {m}
                     </span>
                   ))}
