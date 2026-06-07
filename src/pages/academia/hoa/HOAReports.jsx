@@ -527,7 +527,8 @@ const HOAReports = () => {
           </div>
           <div className="rep-table-actions">
             <div className="rep-search-box">
-               <img src={hoasearch} alt="search" style={{ opacity: 0.5, width: 14 }} />
+               <img src={hoasearch} alt="search" className="search-icon" />
+               <div className="search-divider"></div>
                <input type="text" placeholder="Search Lessons..." />
             </div>
             <button className="rep-btn-filters">

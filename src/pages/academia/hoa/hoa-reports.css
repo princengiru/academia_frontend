@@ -467,18 +467,38 @@
 .hoa-reports-page .rep-search-box {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  border: 1px solid #EEF1F6;
-  border-radius: 6px;
-  background: #FFFFFF;
+  gap: 12px;
+  padding: 4px 0 8px 0;
+  border-bottom: 1px solid #EEF1F6;
+  background: transparent;
+  min-width: 200px;
+}
+
+.hoa-reports-page .rep-search-box .search-icon {
+  width: 18px;
+  height: 18px;
+  opacity: 0.6;
+}
+
+.hoa-reports-page .rep-search-box .search-divider {
+  width: 1px;
+  height: 16px;
+  background-color: #EEF1F6;
 }
 
 .hoa-reports-page .rep-search-box input {
   border: none;
   outline: none;
-  font-size: 12px;
+  background: transparent;
+  font-size: 14px;
   color: #4B5675;
+  width: 100%;
+}
+
+.hoa-reports-page .rep-search-box input::placeholder {
+  color: #78829D;
+  font-size: 12px;
+  font-weight: 400;
 }
 
 .hoa-reports-page .rep-btn-filters {
