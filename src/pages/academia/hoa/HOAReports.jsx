@@ -458,7 +458,7 @@ const HOAReports = () => {
           </div>
 
           {/* Countries Report */}
-          <div className="rep-card">
+          <div className="rep-card" style={{ display: 'flex', flexDirection: 'column' }}>
             <div className="rep-chart-header" style={{ marginBottom: 0 }}>
               <h4 className="rep-section-title">COUNTRIES REPORT</h4>
               <button className="rep-dropdown-btn">Monthly <img src={hoadowncaret} alt="" /></button>
