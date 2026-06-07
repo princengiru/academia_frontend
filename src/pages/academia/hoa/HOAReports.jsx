@@ -32,6 +32,8 @@ const HOAReports = () => {
   const [pageSize, setPageSize] = useState('10');
   const [isPageSizeOpen, setIsPageSizeOpen] = useState(false);
   const pageSizeOptions = ['5', '10', '20'];
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [selectedFilter, setSelectedFilter] = useState('All Status');
 
   const clearSelectedRows = () => setSelectedRows([]);
 
@@ -531,9 +533,19 @@ const HOAReports = () => {
                <div className="search-divider"></div>
                <input type="text" placeholder="Search Lessons..." />
             </div>
-            <button className="rep-btn-filters">
-               <img src={hoafilter} alt="" style={{ width: 14 }} /> Filters
-            </button>
+            <div className="rep-filter-dropdown-container" style={{ position: 'relative' }}>
+              <button className="rep-btn-filters" onClick={() => setIsFilterOpen(!isFilterOpen)}>
+                 <img src={hoafilter} alt="" style={{ width: 14 }} /> {selectedFilter === 'All Status' ? 'Filters' : selectedFilter}
+              </button>
+              {isFilterOpen && (
+                <div className="learners-performance-period-menu" style={{ position: 'absolute', background: '#FFF', top: '100%', right: 0, marginTop: '8px', zIndex: 10 }}>
+                  <div className={`dropdown-item ${selectedFilter === 'All Status' ? 'active' : ''}`} onClick={() => { setSelectedFilter('All Status'); setIsFilterOpen(false); }}>All Status</div>
+                  <div className={`dropdown-item ${selectedFilter === 'Completed' ? 'active' : ''}`} onClick={() => { setSelectedFilter('Completed'); setIsFilterOpen(false); }}>Completed</div>
+                  <div className={`dropdown-item ${selectedFilter === 'In Progress' ? 'active' : ''}`} onClick={() => { setSelectedFilter('In Progress'); setIsFilterOpen(false); }}>In Progress</div>
+                  <div className={`dropdown-item ${selectedFilter === 'Failed' ? 'active' : ''}`} onClick={() => { setSelectedFilter('Failed'); setIsFilterOpen(false); }}>Failed</div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
