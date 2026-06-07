@@ -20,6 +20,7 @@ import hoafailedstudents from '../../../assets/icons/hoafailedstudents.svg';
 import hoaretakes from '../../../assets/icons/hoaretakes.svg';
 import rwanda from '../../../assets/icons/rwanda.svg';
 import hoausflag from '../../../assets/icons/hoausflag.svg';
+import hoadownload3 from '../../../assets/icons/hoadownload3.svg';
 
 const HOAPassedCourses = () => {
     const [selectedRows, setSelectedRows] = useState([]);
@@ -331,7 +332,7 @@ const HOAPassedCourses = () => {
                                     <td style={{ textAlign: 'center' }}>
                                         {/* Download Button explicitly designed for this specific column */}
                                         <button className="rep-btn-download">
-                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg> Download
+                                            <img src={hoadownload3} alt="Download" /> Download
                                         </button>
                                     </td>
                                     <td style={{ textAlign: 'center', position: 'relative' }}>
@@ -389,15 +390,6 @@ const HOAPassedCourses = () => {
                         <button className="page-nav"><img src={hoarightarrow} className="icon-15" style={{ width: '20px', height: '20px', padding: '0' }} alt="Next" /></button>
                     </div>
                 </div>
-
-                {/* Footer Area */}
-                <div className="assn-footer" style={{ borderTop: 'none', marginTop: '0', paddingTop: '0' }}>
-                    <div>© Copyright 2025 All Right Reserved By Naraza Group Ltd</div>
-                    <div className="assn-footer-links">
-                        <a href="#">Privacy and Policy</a> | <a href="#">Terms and Condition</a>
-                    </div>
-                </div>
-
             </div>
         </HOALayout>
     );
