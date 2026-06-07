@@ -4,10 +4,10 @@ const HOASidebar = ({ currentPage }) => {
   const preventDefault = (e) => e.preventDefault();
   const dashboardPages = ['index', 'learners', 'tutors', 'reports', 'settings'];
   const managementPages = ['assignments', 'passed-courses', 'retaken-courses', 'failed-courses'];
-  
+
   const getDashboardIconClassName = () => (dashboardPages.includes(currentPage) ? 'selected' : '');
   const getManagementIconClassName = () => (managementPages.includes(currentPage) ? 'selected' : '');
-  
+
   const getSidebarLinkClassName = ({ isActive, isPending }) => {
     if (isPending) {
       return '';
@@ -18,7 +18,7 @@ const HOASidebar = ({ currentPage }) => {
 
   return (
     <aside className="hoa-sidebar">
-      
+
       {/* 1. NEW: Unified Top Header Spanning Both Columns */}
       <div className="sidebar-top-header">
         <div className="brand-logo">
@@ -35,7 +35,7 @@ const HOASidebar = ({ currentPage }) => {
 
       {/* 2. Bottom Section Split into Left and Right Columns */}
       <div className="sidebar-bottom-section">
-        
+
         {/* Left Column: First Links */}
         <div className="first-links">
           <div className="sidebar-body">
@@ -85,7 +85,7 @@ const HOASidebar = ({ currentPage }) => {
               <img src="/assets/icons/magnifier.svg" alt="Search" className="search-icon" />
               <input type="search" placeholder="Search any tab ..." />
             </form>
-            
+
             {dashboardPages.includes(currentPage) && (
               <div className="links-list">
                 <h6>DASHBOARD</h6>

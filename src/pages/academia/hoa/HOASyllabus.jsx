@@ -1,0 +1,407 @@
+import React, { useState } from 'react';
+import HOALayout from '../../../components/layouts/HOALayout/HOALayout';
+import './hoa-syllabus.css';
+
+// Reusing general icons based on standard project structure
+import hoarefresh from '../../../assets/icons/hoarefresh.svg';
+import hoagoto from '../../../assets/icons/hoagoto.svg';
+import hoasearch from '../../../assets/icons/hoasearch.svg';
+import hoafilter from '../../../assets/icons/hoafilter.svg';
+import hoadowncaret from '../../../assets/icons/hoadowncaret.svg';
+import hoaupdowncaret from '../../../assets/icons/hoaupdowncaret.svg';
+import hoaleftarrow from '../../../assets/icons/hoaleftarrow.svg';
+import hoarightarrow from '../../../assets/icons/hoarightarrow.svg';
+
+// Custom inline SVGs for specific icons needed in this design
+const IconFollowers = () => (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+);
+
+const IconEye = () => (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+);
+
+const IconExternalLink = () => (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+);
+
+const IconDownloadCloud = () => (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 17l4 4 4-4M12 12v9"></path><path d="M20.88 18.09A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.29"></path></svg>
+);
+
+const IconStar = ({ fill = "#FFC700" }) => (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill={fill} stroke={fill} strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+);
+
+const HOASyllabus = () => {
+    // State to manage drill-down: 1 = Topics Grid, 2 = Papers List, 3 = Paper Detail
+    const [currentView, setCurrentView] = useState(1);
+
+    // Sidebar state
+    const [expandedCategories, setExpandedCategories] = useState(['math']);
+    const [selectedSubCat, setSelectedSubCat] = useState('algebra');
+
+    // Main header filter state
+    const [activeFilter, setActiveFilter] = useState('All');
+
+    const toggleCategory = (catId) => {
+        setExpandedCategories(prev =>
+            prev.includes(catId) ? prev.filter(id => id !== catId) : [...prev, catId]
+        );
+    };
+
+    // Data mocks based exactly on images
+    const mathSubcats = [
+        { id: 'algebra', name: 'Algebra', count: '410' },
+        { id: 'calculus', name: 'Calculus', count: '12' },
+        { id: 'comp_math', name: 'Computational Math', count: '2,899' },
+        { id: 'app_math', name: 'Applied Math', count: '23' },
+        { id: 'func_analysis', name: 'Functional analysis', count: '567' },
+        { id: 'geometry', name: 'Geometry', count: '1,099' }
+    ];
+
+    const sidebarCategories = [
+        { id: 'math', name: 'Mathematics & Science', subcats: mathSubcats },
+        { id: 'history', name: 'History' },
+        { id: 'engineering', name: 'Engineering' },
+        { id: 'economics', name: 'Economics' },
+        { id: 'psychology', name: 'Psychology' },
+        { id: 'data', name: 'Data Science' },
+        { id: 'it1', name: 'IT & Software development' },
+        { id: 'it2', name: 'IT & Software development' },
+        { id: 'it3', name: 'IT & Software development' }
+    ];
+
+    const gridTopics = Array(9).fill({
+        title: 'Linear Algebra',
+        meta: '14 Papers | 11 Followers'
+    });
+
+    const listPapers = [
+        { id: 1, title: 'An Operadic Approach to Internal Structures', author: 'Dr. Xavier KABARANGA', type: 'Paid' },
+        { id: 2, title: 'On bornological semi-abelian algebras', author: 'Dr. Xavier KABARANGA', type: 'Free' },
+        { id: 3, title: 'A Universal Investigation of n-representations of n-quivers', author: 'Dr. Xavier KABARANGA', type: 'Paid' },
+    ];
+
+    // Sub-renders for the 3 distinct views to keep main return clean
+    const renderView1Grid = () => (
+        <>
+            <div className="syll-view-title-row">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    <h2>Algebra</h2>
+                    <div className="syll-followers-info">
+                        <span className="syll-followers-count"><IconFollowers /> 12.7K Followers</span>
+                        <button className="syll-btn-purple-dark"><IconEye /> View Followers</button>
+                    </div>
+                </div>
+            </div>
+            <p className="syll-desc-text">
+                Statistics is the branch of mathematics that deals with the collection, analysis, interpretation, presentation, and organization of data. It provides methodologies for making inferences about populations based on sample data, enabling researchers to quantify uncertainty and variability in empirical findings.
+            </p>
+
+            <div className="syll-topics-grid">
+                {gridTopics.map((topic, idx) => (
+                    <div key={idx} className="syll-topic-card">
+                        <div className="syll-tc-left">
+                            <h4 style={{ textDecoration: 'underline', cursor: 'pointer' }} onClick={() => setCurrentView(2)}>{topic.title}</h4>
+                            <p>{topic.meta}</p>
+                        </div>
+                        <button className="syll-btn-view" onClick={() => setCurrentView(2)}>
+                            <IconEye /> View Topics
+                        </button>
+                    </div>
+                ))}
+            </div>
+
+            <div className="syll-pagination">
+                <div className="syll-page-sizer">
+                    Show
+                    <button>5 <img src={hoadowncaret} alt="" style={{ width: 8 }} /></button>
+                    per page
+                </div>
+                <div className="syll-page-nav">
+                    <span style={{ marginRight: 16 }}>1-10 of 5</span>
+                    <button><img src={hoaleftarrow} style={{ width: 10 }} alt="Prev" /></button>
+                    <button>1</button>
+                    <button className="active">2</button>
+                    <button>3</button>
+                    <button><img src={hoarightarrow} style={{ width: 10 }} alt="Next" /></button>
+                </div>
+            </div>
+        </>
+    );
+
+    const renderView2List = () => (
+        <>
+            <div className="syll-view-title-row">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    <h2>Linear Algebra</h2>
+                    <div className="syll-followers-info">
+                        <span className="syll-followers-count"><IconFollowers /> 12.7K Followers</span>
+                        <button className="syll-btn-purple-dark"><IconEye /> View Followers</button>
+                    </div>
+                </div>
+            </div>
+            <p className="syll-desc-text">
+                Statistics is the branch of mathematics that deals with the collection, analysis, interpretation, presentation, and organization of data. It provides methodologies for making inferences about populations based on sample data, enabling researchers to quantify uncertainty and variability in empirical findings.
+            </p>
+
+            <h3 className="syll-list-subtitle">Key research themes</h3>
+
+            <div className="syll-papers-list">
+                {listPapers.map((paper) => (
+                    <div key={paper.id} className="syll-paper-item">
+                        <div className="syll-pi-left">
+                            <h4 onClick={() => setCurrentView(3)}>{paper.title}</h4>
+                            <p className="author">By {paper.author}</p>
+                            <p className="preview">
+                                Statistics is the branch of mathematics that deals with the collection, analysis, interpretation, presentation, and organization of data. It provides methodologies for making inferences about populations based on sample data, enabling researchers to quantify uncertainty and variability in empirical findings... <a href="#" className="syll-read-more" onClick={(e) => { e.preventDefault(); setCurrentView(3); }}>Read more</a>
+                            </p>
+                        </div>
+                        <div className="syll-pi-right">
+                            <button className="syll-btn-view" onClick={() => setCurrentView(3)}>
+                                <IconEye /> View Paper
+                            </button>
+                            <span className={paper.type === 'Paid' ? 'syll-badge-paid' : 'syll-badge-free'}>
+                                {paper.type} <IconExternalLink />
+                            </span>
+                        </div>
+                    </div>
+                ))}
+            </div>
+
+            <div className="syll-pagination">
+                <div className="syll-page-sizer">
+                    Show <button>5 <img src={hoadowncaret} alt="" style={{ width: 8 }} /></button> per page
+                </div>
+                <div className="syll-page-nav">
+                    <span style={{ marginRight: 16 }}>1-10 of 5</span>
+                    <button><img src={hoaleftarrow} style={{ width: 10 }} alt="Prev" /></button>
+                    <button>1</button>
+                    <button className="active">2</button>
+                    <button>3</button>
+                    <button><img src={hoarightarrow} style={{ width: 10 }} alt="Next" /></button>
+                </div>
+            </div>
+        </>
+    );
+
+    const renderView3Detail = () => (
+        <>
+            <div className="syll-detail-header">
+                <h2>On bornological semi-abelian algebras</h2>
+                <span className="syll-badge-paid">Paid <IconExternalLink /></span>
+            </div>
+
+            <div className="syll-author-row">
+                <div className="syll-author-info">
+                    <img src="/assets/imgs/default-profile.png" alt="Author" className="syll-author-avatar" />
+                    <span className="syll-author-name">By Dr. Xavier KABARANGA</span>
+                </div>
+                <div className="syll-downloads-info">
+                    <IconDownloadCloud /> 234.5K Downloads
+                </div>
+            </div>
+
+            <div className="syll-section-block">
+                <h3>Abstract</h3>
+                <p>
+                    Statistics is the branch of mathematics that deals with the collection, analysis, interpretation, presentation, and organization of data. It provides methodologies for making inferences about populations based on sample data, enabling researchers to quantify uncertainty and variability in empirical findings.
+                </p>
+            </div>
+
+            <div className="syll-accordion-header">
+                <h3>Outline</h3>
+                <img src={hoadowncaret} alt="" style={{ opacity: 0.5 }} />
+            </div>
+
+            <div className="syll-rating-footer">
+                <div className="syll-rating-left">
+                    <h4>Rating</h4>
+                    <p>2,482 Ratings</p>
+                </div>
+                <div className="syll-rating-right">
+                    <span className="syll-rating-score">4.8</span>
+                    <div className="syll-stars">
+                        <IconStar /><IconStar /><IconStar /><IconStar /><IconStar />
+                    </div>
+                </div>
+            </div>
+        </>
+    );
+
+    return (
+        <HOALayout currentPage="syllabus">
+            <div className="hoa-syllabus-page">
+
+                {/* Page Header */}
+                <div className="syll-page-header">
+                    <h1>Syllabus</h1>
+                    <div className="syll-header-actions">
+                        <span className="syll-update-status">
+                            <img src={hoarefresh} alt="Refresh" className="sync-icon" />
+                            Data updated every 5min
+                            <span className="dot"></span>
+                        </span>
+                        <button className="syll-btn-primary">
+                            Go to website <img src={hoagoto} alt="Go" />
+                        </button>
+                    </div>
+                </div>
+
+                {/* Top Stats - Single Card Wrapper */}
+                <div className="syll-stats-container">
+                    <div className="syll-stat-block">
+                        <h3>13.3M</h3>
+                        <p>Total Syllabus</p>
+                    </div>
+                    <div className="syll-stat-block">
+                        <h3>13.3M</h3>
+                        <p>Syllabus Downloads</p>
+                    </div>
+                    <div className="syll-stat-block">
+                        <h3>204</h3>
+                        <p>Avg. Read time</p>
+                    </div>
+                    <div className="syll-stat-block">
+                        <h3>
+                            19.3M
+                            <span className="syll-currency-dropdown">
+                                RWF <img src="/assets/icons/rwanda.svg" alt="flag" style={{ width: 10, borderRadius: '50%' }} /> <img src={hoadowncaret} alt="" style={{ width: 8 }} />
+                            </span>
+                        </h3>
+                        <p>Upload Payments <span className="syll-trend down">↘ -4.5%</span></p>
+                    </div>
+                    <div className="syll-stat-block">
+                        <h3>
+                            843.5K
+                            <span className="syll-currency-dropdown">
+                                RWF <img src="/assets/icons/rwanda.svg" alt="flag" style={{ width: 10, borderRadius: '50%' }} /> <img src={hoadowncaret} alt="" style={{ width: 8 }} />
+                            </span>
+                        </h3>
+                        <p>Download Amount <span className="syll-trend up">↗ +4.1</span></p>
+                    </div>
+                </div>
+
+                {/* Sub Header & Add Buttons */}
+                <div className="syll-sub-header">
+                    <div className="syll-sub-title">
+                        <h2>Syllabus</h2>
+                        <p>3,461 Past Papers</p>
+                    </div>
+                    <div className="syll-add-actions">
+                        <button className="syll-btn-outline">+ Add Syllabus</button>
+                        <button className="syll-btn-primary">+ Add Category</button>
+                    </div>
+                </div>
+
+                {/* Two Column Layout */}
+                <div className="syll-layout">
+
+                    {/* Left Sidebar */}
+                    <div className="syll-sidebar">
+                        <div className="syll-course-filter">
+                            <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <img src={hoafilter} style={{ opacity: 0.5, width: 14 }} alt="" /> All Courses
+                            </span>
+                            <img src={hoadowncaret} alt="" />
+                        </div>
+
+                        <div className="syll-cat-list">
+                            {sidebarCategories.map((cat, idx) => (
+                                <div key={idx}>
+                                    <div
+                                        className={`syll-cat-header ${expandedCategories.includes(cat.id) ? 'active' : ''}`}
+                                        onClick={() => toggleCategory(cat.id)}
+                                    >
+                                        {cat.name}
+                                        <img
+                                            src={hoadowncaret}
+                                            alt=""
+                                            style={{ transform: expandedCategories.includes(cat.id) ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}
+                                        />
+                                    </div>
+
+                                    {expandedCategories.includes(cat.id) && cat.subcats && (
+                                        <div className="syll-subcat-list">
+                                            {cat.subcats.map((sub, sidx) => (
+                                                <div
+                                                    key={sidx}
+                                                    className={`syll-subcat-item ${selectedSubCat === sub.id ? 'active' : ''}`}
+                                                    onClick={() => setSelectedSubCat(sub.id)}
+                                                >
+                                                    <div className="syll-radio-label">
+                                                        <div className="syll-radio-circle"></div>
+                                                        {sub.name}
+                                                    </div>
+                                                    <span className="syll-count-badge">{sub.count}</span>
+                                                </div>
+                                            ))}
+                                            <div className="syll-show-more">
+                                                <img src={hoadowncaret} alt="" style={{ width: 10 }} /> Show more
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Right Main Content Area */}
+                    <div className="syll-main-area">
+                        {/* Area Header */}
+                        <div className="syll-main-header">
+                            <div className="syll-search-bar">
+                                <img src={hoasearch} alt="Search" style={{ opacity: 0.5, width: 14 }} />
+                                <input type="text" placeholder="Search any Courses..." />
+                            </div>
+                            <div className="syll-header-filters">
+                                <div className="syll-pill-toggle">
+                                    {['All', 'Free', 'Paid'].map(filter => (
+                                        <button
+                                            key={filter}
+                                            className={`syll-pill-btn ${activeFilter === filter ? 'active' : ''}`}
+                                            onClick={() => setActiveFilter(filter)}
+                                        >
+                                            {filter}
+                                        </button>
+                                    ))}
+                                </div>
+                                <button className="syll-btn-filter-icon">
+                                    <img src={hoafilter} alt="" style={{ width: 14 }} /> Filters
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Dynamic Body Content */}
+                        <div className="syll-content-body">
+
+                            {/* Dynamic Breadcrumbs */}
+                            <div className="syll-breadcrumbs">
+                                <button className="syll-back-btn" onClick={() => setCurrentView(Math.max(1, currentView - 1))}>
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4B5675" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                                </button>
+                                <span className="syll-bc-link" onClick={() => setCurrentView(1)}>Mathematics & Science</span> /
+                                <span className={`syll-bc-link ${currentView === 1 ? 'syll-bc-active' : ''}`} onClick={() => setCurrentView(1)}>Algebra</span>
+                                {currentView >= 2 && (
+                                    <> / <span className={`syll-bc-link ${currentView === 2 ? 'syll-bc-active' : ''}`} onClick={() => setCurrentView(2)}>Linear Algebra</span></>
+                                )}
+                                {currentView === 3 && (
+                                    <> / <span className="syll-bc-active">Syllabus</span></>
+                                )}
+                            </div>
+
+                            {currentView === 1 && renderView1Grid()}
+                            {currentView === 2 && renderView2List()}
+                            {currentView === 3 && renderView3Detail()}
+
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </HOALayout>
+    );
+};
+
+export default HOASyllabus;

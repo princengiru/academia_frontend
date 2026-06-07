@@ -1,0 +1,816 @@
+.hoa-syllabus-page {
+    font-family: 'Inter', sans-serif;
+    color: #071437;
+}
+
+/* Base Buttons */
+.hoa-syllabus-page button {
+    cursor: pointer;
+    font-family: inherit;
+}
+
+/* Page Header */
+.hoa-syllabus-page .syll-page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+}
+
+.hoa-syllabus-page .syll-page-header h1 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 700;
+    color: #000000;
+}
+
+.hoa-syllabus-page .syll-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.hoa-syllabus-page .syll-update-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    color: #64748B;
+    border: 1px solid #DBDFE9;
+    padding: 6px 14px;
+    border-radius: 4px;
+    background: #FCFCFC;
+    height: 40px;
+}
+
+.hoa-syllabus-page .syll-update-status .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #17C653;
+}
+
+.hoa-syllabus-page .syll-btn-primary {
+    background: #450468;
+    color: #FFFFFF;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    height: 40px;
+}
+
+/* Top Stats Card (Single continuous card) */
+.hoa-syllabus-page .syll-stats-container {
+    background: #FFFFFF;
+    border: 1px solid #EEF1F6;
+    border-radius: 8px;
+    display: flex;
+    padding: 24px 0;
+    margin-bottom: 24px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+}
+
+.hoa-syllabus-page .syll-stat-block {
+    flex: 1;
+    position: relative;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.hoa-syllabus-page .syll-stat-block:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 10%;
+    height: 80%;
+    width: 1px;
+    background: #EEF1F6;
+}
+
+.hoa-syllabus-page .syll-stat-block h3 {
+    margin: 0 0 6px 0;
+    font-size: 16px;
+    color: #071437;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.hoa-syllabus-page .syll-stat-block p {
+    margin: 0;
+    font-size: 11px;
+    color: #A1A5B7;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.hoa-syllabus-page .syll-currency-dropdown {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    color: #78829D;
+    background: #F8FAFC;
+    border: 1px solid #EEF1F6;
+    padding: 2px 6px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.hoa-syllabus-page .syll-trend {
+    font-size: 9px;
+    font-weight: 600;
+}
+
+.hoa-syllabus-page .syll-trend.down {
+    color: #F8285A;
+}
+
+.hoa-syllabus-page .syll-trend.up {
+    color: #17C653;
+}
+
+/* Sub-header (Title + Add Buttons) */
+.hoa-syllabus-page .syll-sub-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 20px;
+}
+
+.hoa-syllabus-page .syll-sub-title h2 {
+    margin: 0 0 4px 0;
+    font-size: 18px;
+    color: #071437;
+}
+
+.hoa-syllabus-page .syll-sub-title p {
+    margin: 0;
+    font-size: 12px;
+    color: #A1A5B7;
+    font-weight: 500;
+}
+
+.hoa-syllabus-page .syll-add-actions {
+    display: flex;
+    gap: 12px;
+}
+
+.hoa-syllabus-page .syll-btn-outline {
+    background: #FFFFFF;
+    border: 1px solid #DBDFE9;
+    color: #4B5675;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* Two Column Layout */
+.hoa-syllabus-page .syll-layout {
+    display: flex;
+    gap: 24px;
+    align-items: flex-start;
+}
+
+/* Sidebar */
+.hoa-syllabus-page .syll-sidebar {
+    width: 260px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.hoa-syllabus-page .syll-course-filter {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: #FFFFFF;
+    border: 1px solid #EEF1F6;
+    border-radius: 8px;
+    font-size: 13px;
+    color: #4B5675;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.hoa-syllabus-page .syll-cat-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.hoa-syllabus-page .syll-cat-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 0;
+    font-size: 13px;
+    color: #4B5675;
+    font-weight: 600;
+    cursor: pointer;
+    border-bottom: 1px solid transparent;
+}
+
+.hoa-syllabus-page .syll-cat-header.active {
+    color: #071437;
+}
+
+.hoa-syllabus-page .syll-subcat-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 8px 0 16px 12px;
+}
+
+.hoa-syllabus-page .syll-subcat-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+}
+
+.hoa-syllabus-page .syll-radio-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    color: #78829D;
+}
+
+/* Removed color override to keep the label color consistent */
+
+.hoa-syllabus-page .syll-radio-circle {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 2px solid #DBDFE9;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.hoa-syllabus-page .syll-subcat-item.active .syll-radio-circle {
+    border-color: #450468;
+    border-width: 4px;
+}
+
+.hoa-syllabus-page .syll-count-badge {
+    background: #F8F5FF;
+    color: #7239EA;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 12px;
+}
+
+.hoa-syllabus-page .syll-subcat-item.active .syll-count-badge {
+    background: #450468;
+    color: #FFFFFF;
+}
+
+.hoa-syllabus-page .syll-show-more {
+    font-size: 12px;
+    color: #450468;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    margin-top: 4px;
+}
+
+/* Main Area Container */
+.hoa-syllabus-page .syll-main-area {
+    flex: 1;
+    min-width: 0;
+    background: #FFFFFF;
+    border: 1px solid #EEF1F6;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    min-height: 600px;
+}
+
+/* Main Area Header */
+.hoa-syllabus-page .syll-main-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 24px;
+    border-bottom: 1px solid #EEF1F6;
+}
+
+.hoa-syllabus-page .syll-search-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    max-width: 400px;
+}
+
+.hoa-syllabus-page .syll-search-bar input {
+    border: none;
+    outline: none;
+    font-size: 13px;
+    color: #4B5675;
+    width: 100%;
+}
+
+.hoa-syllabus-page .syll-header-filters {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.hoa-syllabus-page .syll-pill-toggle {
+    display: flex;
+    background: #FAFAFA;
+    border: 1px solid #EEF1F6;
+    border-radius: 20px;
+    padding: 4px;
+}
+
+.hoa-syllabus-page .syll-pill-btn {
+    background: transparent;
+    border: none;
+    padding: 4px 16px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #78829D;
+    border-radius: 16px;
+    transition: all 0.2s;
+}
+
+.hoa-syllabus-page .syll-pill-btn.active {
+    background: #F8F5FF;
+    color: #450468;
+}
+
+.hoa-syllabus-page .syll-btn-filter-icon {
+    background: #FFFFFF;
+    border: 1px solid #EEF1F6;
+    color: #78829D;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* Main Content Padding */
+.hoa-syllabus-page .syll-content-body {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+/* Breadcrumbs */
+.hoa-syllabus-page .syll-breadcrumbs {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    color: #A1A5B7;
+    margin-bottom: 20px;
+}
+
+.hoa-syllabus-page .syll-back-btn {
+    background: transparent;
+    border: none;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #071437;
+    cursor: pointer;
+    margin-right: 8px;
+}
+
+.hoa-syllabus-page .syll-bc-active {
+    color: #071437;
+    font-weight: 500;
+}
+
+.hoa-syllabus-page .syll-bc-link {
+    cursor: pointer;
+}
+
+.hoa-syllabus-page .syll-bc-link:hover {
+    text-decoration: underline;
+}
+
+/* View 1 & 2 Title Area */
+.hoa-syllabus-page .syll-view-title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.hoa-syllabus-page .syll-view-title-row h2 {
+    margin: 0;
+    font-size: 22px;
+    color: #071437;
+    font-weight: 700;
+}
+
+.hoa-syllabus-page .syll-followers-info {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.hoa-syllabus-page .syll-followers-count {
+    font-size: 12px;
+    color: #4B5675;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.hoa-syllabus-page .syll-btn-purple-dark {
+    background: #450468;
+    color: #FFFFFF;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.hoa-syllabus-page .syll-desc-text {
+    font-size: 13px;
+    color: #78829D;
+    line-height: 1.6;
+    margin-bottom: 30px;
+    max-width: 90%;
+}
+
+/* View 1: Topics Grid */
+.hoa-syllabus-page .syll-topics-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    margin-bottom: 30px;
+}
+
+.hoa-syllabus-page .syll-topic-card {
+    border: 1px solid #EEF1F6;
+    border-radius: 8px;
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: box-shadow 0.2s;
+}
+
+.hoa-syllabus-page .syll-topic-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+}
+
+.hoa-syllabus-page .syll-tc-left h4 {
+    margin: 0 0 6px 0;
+    font-size: 15px;
+    color: #071437;
+    font-weight: 700;
+}
+
+.hoa-syllabus-page .syll-tc-left p {
+    margin: 0;
+    font-size: 12px;
+    color: #78829D;
+}
+
+.hoa-syllabus-page .syll-btn-view {
+    background: #FFFFFF;
+    border: 1px solid #EEF1F6;
+    color: #A1A5B7;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.hoa-syllabus-page .syll-btn-view:hover {
+    border-color: #DBDFE9;
+    color: #78829D;
+}
+
+/* View 2: Papers List */
+.hoa-syllabus-page .syll-list-subtitle {
+    font-size: 15px;
+    font-weight: 700;
+    color: #071437;
+    margin: 0 0 20px 0;
+}
+
+.hoa-syllabus-page .syll-papers-list {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    margin-bottom: 30px;
+}
+
+.hoa-syllabus-page .syll-paper-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding-bottom: 24px;
+    border-bottom: 1px solid #EEF1F6;
+}
+
+.hoa-syllabus-page .syll-paper-item:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.hoa-syllabus-page .syll-pi-left {
+    flex: 1;
+    padding-right: 40px;
+}
+
+.hoa-syllabus-page .syll-pi-left h4 {
+    margin: 0 0 4px 0;
+    font-size: 15px;
+    color: #071437;
+    font-weight: 700;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.hoa-syllabus-page .syll-pi-left .author {
+    margin: 0 0 12px 0;
+    font-size: 12px;
+    color: #78829D;
+}
+
+.hoa-syllabus-page .syll-pi-left .preview {
+    margin: 0;
+    font-size: 12px;
+    color: #78829D;
+    line-height: 1.6;
+}
+
+.hoa-syllabus-page .syll-read-more {
+    color: #450468;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.hoa-syllabus-page .syll-pi-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.hoa-syllabus-page .syll-badge-paid {
+    background: #EAFFF1;
+    border: 1px solid #17C65333;
+    color: #17C653;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.hoa-syllabus-page .syll-badge-free {
+    background: #F8F5FF;
+    border: 1px solid #E3C9F2;
+    color: #7239EA;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* View 3: Paper Detail */
+.hoa-syllabus-page .syll-detail-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 24px;
+}
+
+.hoa-syllabus-page .syll-detail-header h2 {
+    margin: 0;
+    font-size: 20px;
+    color: #071437;
+    font-weight: 700;
+}
+
+.hoa-syllabus-page .syll-author-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+.hoa-syllabus-page .syll-author-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.hoa-syllabus-page .syll-author-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.hoa-syllabus-page .syll-author-name {
+    font-size: 13px;
+    color: #4B5675;
+}
+
+.hoa-syllabus-page .syll-downloads-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: #78829D;
+    font-weight: 500;
+}
+
+.hoa-syllabus-page .syll-section-block {
+    margin-bottom: 30px;
+}
+
+.hoa-syllabus-page .syll-section-block h3 {
+    margin: 0 0 12px 0;
+    font-size: 16px;
+    color: #071437;
+    font-weight: 700;
+}
+
+.hoa-syllabus-page .syll-section-block p {
+    margin: 0;
+    font-size: 13px;
+    color: #78829D;
+    line-height: 1.6;
+}
+
+.hoa-syllabus-page .syll-accordion-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 0;
+    border-top: 1px solid #EEF1F6;
+    border-bottom: 1px solid #EEF1F6;
+    cursor: pointer;
+}
+
+.hoa-syllabus-page .syll-accordion-header h3 {
+    margin: 0;
+    font-size: 16px;
+    color: #071437;
+    font-weight: 700;
+}
+
+.hoa-syllabus-page .syll-rating-footer {
+    margin-top: auto;
+    border-top: 1px solid #EEF1F6;
+    padding-top: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.hoa-syllabus-page .syll-rating-left h4 {
+    margin: 0 0 4px 0;
+    font-size: 13px;
+    color: #071437;
+    font-weight: 700;
+}
+
+.hoa-syllabus-page .syll-rating-left p {
+    margin: 0;
+    font-size: 11px;
+    color: #A1A5B7;
+}
+
+.hoa-syllabus-page .syll-rating-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+}
+
+.hoa-syllabus-page .syll-rating-score {
+    font-size: 14px;
+    color: #071437;
+    font-weight: 700;
+}
+
+.hoa-syllabus-page .syll-stars {
+    display: flex;
+    gap: 2px;
+}
+
+/* Pagination (reused concept) */
+.hoa-syllabus-page .syll-pagination {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    color: #78829D;
+    margin-top: auto;
+    padding-top: 20px;
+}
+
+.hoa-syllabus-page .syll-page-sizer {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.hoa-syllabus-page .syll-page-sizer button {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid #EEF1F6;
+    border-radius: 4px;
+    padding: 4px 8px;
+    background: #FFFFFF;
+    color: #4B5675;
+    outline: none;
+}
+
+.hoa-syllabus-page .syll-page-nav {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.hoa-syllabus-page .syll-page-nav button {
+    width: 28px;
+    height: 28px;
+    border-radius: 4px;
+    border: none;
+    background: transparent;
+    color: #4B5675;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.hoa-syllabus-page .syll-page-nav button.active {
+    background: #F8F5FF;
+    color: #7239EA;
+}
+
+/* Footer elements */
+.hoa-syllabus-page .syll-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid #EEF1F6;
+    padding-top: 20px;
+    margin-top: 20px;
+    font-size: 12px;
+    color: #A1A5B7;
+}
+
+.hoa-syllabus-page .syll-footer-links a {
+    color: #A1A5B7;
+    text-decoration: none;
+    margin-left: 16px;
+}
+
+.hoa-syllabus-page .syll-footer-links a:hover {
+    color: #450468;
+}
