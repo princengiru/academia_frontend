@@ -204,8 +204,11 @@
   line-height: 16px;
   color: #4B5675;
   padding: 7px 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
+.hoa-reports-page .learners-performance-period-menu .dropdown-item:hover,
 .hoa-reports-page .learners-performance-period-menu .dropdown-item.active,
 .hoa-reports-page .learners-performance-period-menu .dropdown-item:active {
   background: #F7F3FA;
