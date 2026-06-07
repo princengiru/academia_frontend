@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import HOALayout from '../../../components/layouts/HOALayout/HOALayout';
-import './hoa-retaken-courses.css';
+import './hoa-failed-courses.css';
 import './hoa-assignments.css';
 import './hoa-reports.css';
 
@@ -21,7 +21,7 @@ import hoaretakes from '../../../assets/icons/hoaretakes.svg';
 import rwanda from '../../../assets/icons/rwanda.svg';
 import hoausflag from '../../../assets/icons/hoausflag.svg';
 
-const HOARetakenCourses = () => {
+const HOAFailedCourses = () => {
     const [selectedRows, setSelectedRows] = useState([]);
     const [sortConfig, setSortConfig] = useState({ key: 'studentName', direction: 'asc' });
     const [pageSize, setPageSize] = useState('5');
@@ -50,8 +50,8 @@ const HOARetakenCourses = () => {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    // Mock Data based on the Retaken Courses Image
-    const retakenCoursesData = [
+    // Mock Data based on the Failed Courses Image
+    const failedCoursesData = [
         {
             id: 1,
             studentName: 'Alexis Ndayamabje Froduard', location: 'Rwanda', flag: rwanda,
@@ -158,12 +158,12 @@ const HOARetakenCourses = () => {
     };
 
     return (
-        <HOALayout currentPage="retaken-courses">
-            <div className="hoa-retaken-courses-page hoa-assignments-page hoa-reports-page">
+        <HOALayout currentPage="failed-courses">
+            <div className="hoa-failed-courses-page hoa-assignments-page hoa-reports-page">
 
                 {/* Page Header */}
                 <div className="hoa-page-header">
-                    <h1>Retaken Courses</h1>
+                    <h1>Failed Courses</h1>
                     <div className="hoa-header-actions">
                         <span className="hoa-update-status">
                             <img src={hoarefresh} alt="Refresh" className="sync-icon" />
@@ -232,7 +232,7 @@ const HOARetakenCourses = () => {
                 {/* Table Area Header */}
                 <div className="rep-table-header-area">
                     <div className="rep-table-title">
-                        <h2>Retaken Courses</h2>
+                        <h2>Failed Courses</h2>
                         <p>3,461 Courses</p>
                     </div>
                     <div className="rep-table-actions">
@@ -291,7 +291,7 @@ const HOARetakenCourses = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            {getSortedData(retakenCoursesData, sortConfig).map((row) => (
+                            {getSortedData(failedCoursesData, sortConfig).map((row) => (
                                 <tr key={row.id} className={selectedRows.includes(row.id) ? 'selected-row' : ''}>
                                     <td className="sticky-col-1" style={{ textAlign: 'center' }}>
                                         <input
@@ -328,8 +328,8 @@ const HOARetakenCourses = () => {
                                         <span className="rep-td-reason" style={{ fontWeight: 600, color: '#071437' }}>{row.timeLimit}</span>
                                     </td>
                                     <td style={{ textAlign: 'center' }}>
-                                        <button className="rep-btn-retake">
-                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg> On Retake
+                                        <button className="rep-btn-failed">
+                                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg> Failed
                                         </button>
                                     </td>
                                     <td style={{ textAlign: 'center', position: 'relative' }}>
@@ -393,4 +393,4 @@ const HOARetakenCourses = () => {
     );
 };
 
-export default HOARetakenCourses;
+export default HOAFailedCourses;

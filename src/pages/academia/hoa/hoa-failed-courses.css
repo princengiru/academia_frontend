@@ -1,13 +1,13 @@
 /* All other styles have been migrated to hoa-assignments.css and hoa-reports.css to maintain 100% UI consistency */
 
-/* On Retake Button specific to Certificates Column */
-.hoa-retaken-courses-page .rep-btn-retake {
+/* Failed Button specific to Certificates Column */
+.hoa-failed-courses-page .rep-btn-failed {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    background: #FFF8DD;
-    color: #F6B100;
-    border: 1px solid #F6B10033;
+    background: #FFEEF3;
+    color: #F8285A;
+    border: 1px solid #F8285A33;
     padding: 6px 12px;
     border-radius: 4px;
     font-size: 11px;
