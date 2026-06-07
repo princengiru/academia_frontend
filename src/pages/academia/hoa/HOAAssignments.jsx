@@ -12,6 +12,11 @@ import hoaupdowncaret from '../../../assets/icons/hoaupdowncaret.svg';
 import hoadowncaret from '../../../assets/icons/hoadowncaret.svg';
 import hoaleftarrow from '../../../assets/icons/hoaleftarrow.svg';
 import hoarightarrow from '../../../assets/icons/hoarightarrow.svg';
+import hoasummative from '../../../assets/icons/hoasummative.svg';
+import hoaformative from '../../../assets/icons/hoaformative.svg';
+import hoapassedstudents from '../../../assets/icons/hoapassedstudents.svg';
+import hoafailedstudents from '../../../assets/icons/hoafailedstudents.svg';
+import hoaretakes from '../../../assets/icons/hoaretakes.svg';
 
 const HOAAssignments = () => {
     const [selectedRows, setSelectedRows] = useState([]);
@@ -208,8 +213,7 @@ const HOAAssignments = () => {
                 <div className="assn-stats-row">
                     <div className="assn-stat-card">
                         <div className="assn-stat-icon assn-icon-gray">
-                            {/* Mocking the icon shown in design */}
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#78829D" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="9" x2="15" y2="9"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>
+                            <img src={hoasummative} alt="Summative" />
                         </div>
                         <div className="assn-stat-info">
                             <h3>21</h3>
@@ -219,8 +223,7 @@ const HOAAssignments = () => {
 
                     <div className="assn-stat-card">
                         <div className="assn-stat-icon assn-icon-gray">
-                            {/* Mocking the icon shown in design */}
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#78829D" strokeWidth="2"><path d="M21 12V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h7"></path><path d="M19 19a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"></path></svg>
+                            <img src={hoaformative} alt="Formative" />
                         </div>
                         <div className="assn-stat-info">
                             <h3>21</h3>
@@ -230,7 +233,7 @@ const HOAAssignments = () => {
 
                     <div className="assn-stat-card">
                         <div className="assn-stat-icon assn-icon-green">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#17C653" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            <img src={hoapassedstudents} alt="Passed" />
                         </div>
                         <div className="assn-stat-info">
                             <h3>+ 2.8K</h3>
@@ -240,7 +243,7 @@ const HOAAssignments = () => {
 
                     <div className="assn-stat-card">
                         <div className="assn-stat-icon assn-icon-orange">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F6B100" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"></path><polyline points="21 3 21 8 16 8"></polyline></svg>
+                            <img src={hoaretakes} alt="Retakes" />
                         </div>
                         <div className="assn-stat-info">
                             <h3>157</h3>
@@ -250,7 +253,7 @@ const HOAAssignments = () => {
 
                     <div className="assn-stat-card">
                         <div className="assn-stat-icon assn-icon-red">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F8285A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                            <img src={hoafailedstudents} alt="Failed" />
                         </div>
                         <div className="assn-stat-info">
                             <h3>1.8K</h3>

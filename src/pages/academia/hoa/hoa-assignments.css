@@ -65,62 +65,46 @@
     grid-template-columns: repeat(5, 1fr);
     gap: 16px;
     margin-bottom: 30px;
+    background: #FAFAFA;
+    padding: 12px;
+    border-radius: 2px;
 }
 
 .hoa-assignments-page .assn-stat-card {
     background: #FFFFFF;
-    border: 1px solid #EEF1F6;
     border-radius: 8px;
-    padding: 20px;
+    padding: 10px 12px;
     display: flex;
     align-items: center;
-    gap: 16px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+    gap: 12px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
 }
 
 .hoa-assignments-page .assn-stat-icon {
-    width: 36px;
-    height: 36px;
-    border-radius: 8px;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-}
-
-/* Specific Stat Icon Colors */
-.hoa-assignments-page .assn-icon-gray {
-    background: #F8FAFC;
-    border: 1px solid #EEF1F6;
-}
-
-.hoa-assignments-page .assn-icon-green {
-    background: #EAFFF1;
-    border: 1px solid #17C65333;
-}
-
-.hoa-assignments-page .assn-icon-orange {
-    background: #FFF8DD;
-    border: 1px solid #F6B10033;
-}
-
-.hoa-assignments-page .assn-icon-red {
-    background: #FFEEF3;
-    border: 1px solid #F8285A33;
+    background: #FFFFFF;
+    box-shadow: 4px 4px 12px rgba(0, 0, 0, 0.07);
 }
 
 .hoa-assignments-page .assn-stat-info h3 {
     margin: 0 0 4px 0;
-    font-size: 15px;
+    font-size: 14px;
     font-weight: 700;
-    color: #071437;
+    color: #000000;
 }
 
 .hoa-assignments-page .assn-stat-info p {
     margin: 0;
     font-size: 11px;
-    color: #A1A5B7;
-    font-weight: 500;
+    color: #64748B;
+    font-weight: 400;
+    white-space: nowrap;
 }
 
 /* Table Area Header */
@@ -451,9 +435,10 @@
     border: 1px solid #EEF1F6;
     border-radius: 6px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    min-width: 120px;
+    width: 150px;
+    height: 150px;
     z-index: 10;
-    padding: 8px 0;
+    padding: 5px 0;
     text-align: left;
 }
 
@@ -467,10 +452,15 @@
 }
 
 .rep-action-dropdown-menu .dropdown-item:hover {
-    background: #F8F5FF;
-    color: #7239EA;
+    background: #FAFAFA;
 }
 
 .rep-action-dropdown-menu .dropdown-item[style*="color: #F8285A"]:hover {
     background: #FFF5F8;
+}
+
+/* Make dropdown open upwards for the last few rows to avoid clipping */
+.rep-table tr:nth-last-child(-n+3) .rep-action-dropdown-menu {
+    top: auto;
+    bottom: 20px;
 }
