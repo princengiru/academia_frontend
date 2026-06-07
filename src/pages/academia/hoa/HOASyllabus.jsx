@@ -32,6 +32,17 @@ const IconExternalLink = () => (
     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
 );
 
+const IconFilterSliders = () => (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="8" cy="8" r="3"></circle>
+        <line x1="11" y1="8" x2="21" y2="8"></line>
+        <line x1="3" y1="8" x2="5" y2="8"></line>
+        <circle cx="16" cy="16" r="3"></circle>
+        <line x1="3" y1="16" x2="13" y2="16"></line>
+        <line x1="19" y1="16" x2="21" y2="16"></line>
+    </svg>
+);
+
 const IconDownloadCloud = () => (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 17l4 4 4-4M12 12v9"></path><path d="M20.88 18.09A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.29"></path></svg>
 );
@@ -445,26 +456,29 @@ const HOASyllabus = () => {
                     {/* Right Main Content Area */}
                     <div className="syll-main-area">
                         {/* Area Header */}
-                        <div className="syll-main-header">
-                            <div className="syll-search-bar">
-                                <img src={hoasearch} alt="Search" style={{ opacity: 0.5, width: 14 }} />
-                                <input type="text" placeholder="Search any Courses..." />
-                            </div>
-                            <div className="syll-header-filters">
-                                <div className="syll-pill-toggle">
-                                    {['All', 'Free', 'Paid'].map(filter => (
-                                        <button
-                                            key={filter}
-                                            className={`syll-pill-btn ${activeFilter === filter ? 'active' : ''}`}
-                                            onClick={() => setActiveFilter(filter)}
-                                        >
-                                            {filter}
-                                        </button>
-                                    ))}
+                        <div className="syll-main-header-wrapper">
+                            <div className="syll-main-header-bar">
+                                <div className="syll-search-bar">
+                                    <img src={hoasearch} alt="Search" style={{ opacity: 0.5, width: 14 }} />
+                                    <input type="text" placeholder="Search any Courses..." />
                                 </div>
-                                <button className="syll-btn-filter-icon">
-                                    <img src={hoafilter} alt="" style={{ width: 14 }} /> Filters
-                                </button>
+                                <div className="syll-header-actions">
+                                    <div className="syll-type-toggles">
+                                        {['All', 'Free', 'Paid'].map(filter => (
+                                            <button
+                                                key={filter}
+                                                className={`syll-type-btn ${activeFilter === filter ? 'active' : ''}`}
+                                                onClick={() => setActiveFilter(filter)}
+                                            >
+                                                {filter}
+                                            </button>
+                                        ))}
+                                    </div>
+                                    <div className="syll-v-divider"></div>
+                                    <button className="syll-btn-filter-pill">
+                                        <IconFilterSliders /> Filters
+                                    </button>
+                                </div>
                             </div>
                         </div>
 
