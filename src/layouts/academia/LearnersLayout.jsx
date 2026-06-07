@@ -1,5 +1,5 @@
-import { useLayoutEffect } from 'react';
-import { NavLink, Outlet } from 'react-router-dom';
+import { useEffect, useLayoutEffect, useState } from 'react';
+import { NavLink, Outlet, Navigate, useNavigate } from 'react-router-dom';
 import './learners-layout.css';
 import learnersBrandIcon from '../../assets/icons/Favicon.svg';
 import learnersSearchIcon from '../../assets/icons/magnifier.svg';
@@ -16,8 +16,90 @@ import learnersAppsIcon from '../../assets/icons/header-grid.svg';
 import learnersFlagIcon from '../../assets/icons/rwanda.svg';
 import learnersDropdownIcon from '../../assets/icons/drop1.svg';
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
 function LearnersLayout() {
+  const navigate = useNavigate();
+  const token = localStorage.getItem('token');
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [profileLoading, setProfileLoading] = useState(true);
+  const [profileSummary, setProfileSummary] = useState({
+    name: '',
+    email: '',
+    role: '',
+    avatar: learnersProfileImage,
+  });
+  const [profileCompletion, setProfileCompletion] = useState(0);
+  const [profileError, setProfileError] = useState('');
+
+  const openLogoutModal = (event) => {
+    if (event && event.preventDefault) event.preventDefault();
+    setShowLogoutModal(true);
+  };
+
+  const cancelLogout = () => setShowLogoutModal(false);
+
+  const confirmLogout = () => {
+    try {
+      localStorage.clear();
+    } catch (e) {
+      // ignore
+    }
+    setShowLogoutModal(false);
+    navigate('/academia/auth/signin');
+  };
   const linkClassName = ({ isActive }) => (isActive ? 'active-menu' : '');
+
+  if (!token) {
+    return <Navigate to="/academia/auth/signin" replace />;
+  }
+
+  useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/profile`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.message || 'Failed to load profile');
+        }
+
+        const user = data?.data?.user || {};
+
+        const resolveAssetUrl = (value) => {
+          if (!value) return learnersProfileImage;
+          if (value.startsWith('http://') || value.startsWith('https://') || value.startsWith('data:')) return value;
+          if (value.startsWith('/')) return `${API_BASE_URL}${value}`;
+          return `${API_BASE_URL}/${value}`;
+        };
+
+        setProfileSummary({
+          name: user.name || user.email || 'Learner',
+          email: user.email || '',
+          role: user.role || 'learner',
+          avatar: resolveAssetUrl(user.avatar),
+        });
+        setProfileCompletion(Number(data?.data?.profilePercentage || 0));
+        setProfileError('');
+      } catch (error) {
+        setProfileError(error.message || 'Failed to load profile');
+      } finally {
+        setProfileLoading(false);
+      }
+    };
+
+    loadProfile();
+  }, [navigate, token]);
+
+  const truncateName = (name, max = 18) => {
+    if (!name) return '';
+    if (name.length <= max) return name;
+    return `${name.slice(0, max - 1).trimEnd()}…`;
+  };
 
   useLayoutEffect(() => {
     const html = document.documentElement;
@@ -64,7 +146,7 @@ function LearnersLayout() {
         </div>
 
         <div className="sidebar-body learners-sidebar-body">
-          <form className="learners-sidebar-search" role="search">
+          <form className="learners-sidebar-search" role="search" onSubmit={(event) => event.preventDefault()}>
             <input type="search" placeholder="Search" aria-label="Search" />
             <img src={learnersSearchIcon} alt="Search" />
           </form>
@@ -108,37 +190,38 @@ function LearnersLayout() {
           </NavLink>
         </div>
 
-        <div className="sidebar-events learners-sidebar-events">
-          <a href="#" onClick={(event) => event.preventDefault()}>
-            <p>2 Events Pending</p>
-            <p>&gt;</p>
-          </a>
-          <div className="progress" role="progressbar" aria-label="Events" aria-valuenow="60" aria-valuemin="0" aria-valuemax="100">
-            <div className="progress-bar" style={{ width: '60%' }}></div>
+        <div className="learners-sidebar-progress">
+          <div className="learners-sidebar-progress-head">
+            <h6>Profile completion</h6>
+            <strong>{profileLoading ? '...' : `${profileCompletion}%`}</strong>
+          </div>
+          <p>
+            {profileLoading
+              ? 'Loading profile data from the backend.'
+              : profileError || 'Backed by your saved profile data.'}
+          </p>
+          <div className="progress" role="progressbar" aria-label="Profile completion" aria-valuenow={profileCompletion} aria-valuemin="0" aria-valuemax="100">
+            <div className="progress-bar" style={{ width: `${profileCompletion}%` }}></div>
           </div>
         </div>
 
-        <div className="sidebar-advertise learners-sidebar-advertise">
-          <h6>Advertise your projects</h6>
-          <p>Do you have a business and your clients don’t know where to find you ?</p>
-          <button type="button">Start now</button>
-        </div>
-
-        <div className="learners-sidebar-profile">
-          <div className="learners-sidebar-profile-left">
-            <div className="learners-sidebar-profile-img">
-              <img src={learnersProfileImage} alt="Profile" />
+          <div className="learners-sidebar-profile">
+          <NavLink to="/academia/learner/account" className="learners-profile-link">
+            <div className="learners-sidebar-profile-left">
+              <div className="learners-sidebar-profile-img">
+                <img src={profileSummary.avatar} alt="Profile" />
+              </div>
+              <div className="learners-sidebar-profile-text">
+                <h6>{profileLoading ? 'Loading...' : `Hi, ${truncateName(profileSummary.name)}`}</h6>
+                <p>{profileLoading ? 'Please wait' : profileSummary.role}</p>
+              </div>
             </div>
-            <div className="learners-sidebar-profile-text">
-              <h6>Hi, Learner</h6>
-              <p>Personal User</p>
-            </div>
-          </div>
+          </NavLink>
           <div className="learners-sidebar-profile-right">
             <NavLink to="/academia/learner/settings" className="learners-icon-btn" aria-label="Settings">
               <img src={learnersSettingsIcon} alt="Settings" />
             </NavLink>
-            <button type="button" className="learners-icon-btn" aria-label="Logout" onClick={(event) => event.preventDefault()}>
+            <button type="button" className="learners-icon-btn" aria-label="Logout" onClick={openLogoutModal}>
               <img src={learnersLogoutIcon} alt="Logout" />
             </button>
           </div>
@@ -174,15 +257,17 @@ function LearnersLayout() {
               </ul>
             </div>
 
-            <div className="learners-user">
-              <div className="learners-user-avatar">
-                <img src={learnersProfileImage} alt="User" />
+            <NavLink to="/academia/learner/account" className="learners-user-link">
+              <div className="learners-user">
+                <div className="learners-user-avatar">
+                  <img src={profileSummary.avatar} alt="User" />
+                </div>
+                <div className="learners-user-meta">
+                  <h6>{profileLoading ? 'Loading...' : truncateName(profileSummary.name)}</h6>
+                  <p>{profileLoading ? 'Please wait' : profileSummary.email || profileSummary.role}</p>
+                </div>
               </div>
-              <div className="learners-user-meta">
-                <h6>Hi, John Doe</h6>
-                <p>Learner</p>
-              </div>
-            </div>
+            </NavLink>
           </div>
         </header>
 
@@ -201,6 +286,19 @@ function LearnersLayout() {
           </footer>
         </div>
       </section>
+
+      {showLogoutModal && (
+        <div className="modal-overlay" role="dialog" aria-modal="true" aria-label="Confirm logout">
+          <div className="logout-modal">
+            <h4>Confirm Logout</h4>
+            <p>Are you sure you want to log out?</p>
+            <div className="logout-modal-buttons">
+              <button type="button" className="logout-cancel" onClick={cancelLogout}>Cancel</button>
+              <button type="button" className="logout-confirm" onClick={confirmLogout}>Logout</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

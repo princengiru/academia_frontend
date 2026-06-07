@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import LearnersPageShell from './LearnersPageShell';
 
@@ -19,37 +19,152 @@ function LearnersCourses() {
   const navigate = useNavigate();
   const preventDefault = (e) => e.preventDefault();
 
-  const handleCourseClick = (e) => {
-    e.preventDefault();
-    navigate('/academia/learner/course-part');
+  const handleCourseClick = (id) => {
+    if (!id) {
+      navigate('/academia/learner/course-part');
+      return;
+    }
+    navigate('/academia/learner/course-part', { state: { courseId: id } });
   };
 
-  const slate = [
-    { id: 1, price: '$5 / Per Month' },
-    { id: 2, price: 'Free' },
-    { id: 3, price: '$5 / Per Month' },
-    { id: 4, price: '$5 / Per Month' },
-    { id: 5, price: '$5 / Per Month' },
-    { id: 6, price: '$5 / Per Month' },
-    { id: 7, price: '$5 / Per Month' },
-    { id: 8, price: '$5 / Per Month' },
-    { id: 9, price: '$5 / Per Month' },
-  ];
+  const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+  const [courses, setCourses] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedFilter, setSelectedFilter] = useState('All');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [syllabusCourses, setSyllabusCourses] = useState([]);
 
-  const genesis = [
-    { id: 1, title: 'Linear Algebra', icon: acPlus },
-    { id: 2, title: 'Abstract Algebra', icon: acLock },
-    { id: 3, title: 'Abstract Algebra', icon: acPlus },
-    { id: 4, title: 'Abstract Algebra', icon: acLock },
-    { id: 5, title: 'Abstract Algebra', icon: acLock },
-    { id: 6, title: 'Abstract Algebra', icon: acPlus },
-  ];
+  const resolveAssetUrl = (value) => {
+    if (!value) return acOn;
+    if (value.startsWith('http://') || value.startsWith('https://') || value.startsWith('data:')) return value;
+    if (value.startsWith('/')) return `${API_BASE_URL}${value}`;
+    return `${API_BASE_URL}/${value}`;
+  };
+
+  const extractCourseList = (body) => {
+    if (Array.isArray(body?.data?.data)) return body.data.data;
+    if (Array.isArray(body?.data?.courses)) return body.data.courses;
+    if (Array.isArray(body?.data?.items)) return body.data.items;
+    if (Array.isArray(body?.data)) return body.data;
+    if (Array.isArray(body)) return body;
+    return [];
+  };
+
+  const extractPagination = (body) => body?.data?.pagination || body?.pagination || null;
+
+  const mapCourse = (course) => ({
+    id: course.id,
+    title: course.title || 'Untitled course',
+    author: course.instructor_name || course.author || 'Academia',
+    image: course.thumbnail ? resolveAssetUrl(course.thumbnail) : acOn,
+    priceLabel: (course.price || course.price === 0) ? (Number(course.price) > 0 ? `$${course.price}` : 'Free') : (course.is_free ? 'Free' : 'Paid'),
+    description: course.description || '',
+    startsOn: course.starts_on || course.published_at || '',
+    chapterCount: Number(course.chapter_count || 0),
+    category: course.category || '',
+    level: course.level || '',
+  });
+
+  useEffect(() => {
+    // Load a small syllabus list independent of the current filter so sidebar stays populated
+    (async () => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/courses/public/available?page=1&limit=6`);
+        const body = await res.json();
+        if (!res.ok) throw new Error(body.message || 'Failed to load syllabus courses');
+        const list = extractCourseList(body);
+        setSyllabusCourses(list.map(mapCourse));
+      } catch (err) {
+        setSyllabusCourses([]);
+      }
+    })();
+
+    let cancelled = false;
+
+    const loadCourses = async () => {
+      setLoading(true);
+
+      try {
+        const token = localStorage.getItem('token');
+        let res;
+        let body;
+        let list = [];
+        let pagination = null;
+
+        if (selectedFilter === 'All') {
+          res = await fetch(`${API_BASE_URL}/api/courses/public/available?page=${currentPage}&limit=10`);
+          body = await res.json();
+          if (!res.ok) throw new Error(body.message || 'Failed to load courses');
+          list = extractCourseList(body);
+          pagination = extractPagination(body);
+        } else if (selectedFilter === 'Free') {
+          res = await fetch(`${API_BASE_URL}/api/courses/public/free?page=${currentPage}&limit=10`);
+          body = await res.json();
+          if (!res.ok) throw new Error(body.message || 'Failed to load free courses');
+          list = extractCourseList(body);
+          pagination = extractPagination(body);
+        } else if (selectedFilter === 'Popular') {
+          res = await fetch(`${API_BASE_URL}/api/courses/public/popular?page=${currentPage}&limit=10`);
+          body = await res.json();
+          if (!res.ok) throw new Error(body.message || 'Failed to load popular courses');
+          list = extractCourseList(body);
+          pagination = extractPagination(body);
+        } else if (selectedFilter === 'Paid') {
+          res = await fetch(`${API_BASE_URL}/api/courses/public/available?page=${currentPage}&limit=10`);
+          body = await res.json();
+          if (!res.ok) throw new Error(body.message || 'Failed to load courses');
+          list = extractCourseList(body).filter((course) => {
+            if (course.price || course.price === 0) return Number(course.price) > 0;
+            if (typeof course.is_free !== 'undefined') return !course.is_free;
+            return true;
+          });
+          pagination = extractPagination(body);
+        } else if (selectedFilter === 'My Courses') {
+          if (!token) {
+            list = [];
+            pagination = { pages: 1 };
+          } else {
+            res = await fetch(`${API_BASE_URL}/api/dashboard/student`, { headers: { Authorization: `Bearer ${token}` } });
+            body = await res.json();
+            if (!res.ok) throw new Error(body.message || 'Failed to load your courses');
+            list = Array.isArray(body?.data?.enrolledCourses) ? body.data.enrolledCourses : [];
+            pagination = { pages: 1 };
+          }
+        }
+
+        if (cancelled) return;
+
+        setCourses(list.map(mapCourse));
+        setTotalPages(Number(pagination?.pages || 1));
+      } catch (err) {
+        if (cancelled) return;
+        setCourses([]);
+        setTotalPages(1);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    loadCourses();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [API_BASE_URL, currentPage, selectedFilter]);
+
+  const syllabusItems = syllabusCourses.slice(0, 6).map((course) => ({
+    id: course.id,
+    title: course.title,
+    metaLeft: course.category || course.level || 'Course syllabus',
+    metaRight: `${course.chapterCount || 0} Chapters`,
+    icon: course.id % 2 === 0 ? acLock : acPlus,
+  }));
+
+  const pageNumbers = Array.from({ length: Math.max(1, totalPages) }, (_, index) => index + 1);
 
   return (
-    <LearnersPageShell
-      title="Courses"
-      description="Learners courses layout scaffold migrated from the PHP page."
-    >
+    <LearnersPageShell>
       <section className="learners-courses-page">
         <section className="learners-home-title">
           <div className="learners-home-title-top">
@@ -69,25 +184,61 @@ function LearnersCourses() {
         </section>
 
       <div className="div-h">
-        <div className="dropdown filter-drop">
+          <div className="dropdown filter-drop">
           <button className="dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
             <div>
               <img src={acFf} alt="Filter" />
-              <span>Certificates</span>
+              <span>{selectedFilter}</span>
             </div>
           </button>
           <ul className="dropdown-menu">
-            <li className="dropdown-item active">
-              <a href="/" onClick={preventDefault}>Certificates</a>
+            <li>
+              <button
+                className={`dropdown-item ${selectedFilter === 'All' ? 'active' : ''}`}
+                type="button"
+                onClick={() => {
+                  setSelectedFilter('All');
+                  setCurrentPage(1);
+                }}
+              >
+                All
+              </button>
             </li>
-            <li className="dropdown-item">
-              <a href="/" onClick={preventDefault}>Diplomas</a>
+            <li>
+              <button
+                className={`dropdown-item ${selectedFilter === 'Free' ? 'active' : ''}`}
+                type="button"
+                onClick={() => {
+                  setSelectedFilter('Free');
+                  setCurrentPage(1);
+                }}
+              >
+                Free
+              </button>
             </li>
-            <li className="dropdown-item">
-              <a href="/" onClick={preventDefault}>Degrees</a>
+            <li>
+              <button
+                className={`dropdown-item ${selectedFilter === 'Paid' ? 'active' : ''}`}
+                type="button"
+                onClick={() => {
+                  setSelectedFilter('Paid');
+                  setCurrentPage(1);
+                }}
+              >
+                Paid
+              </button>
             </li>
-            <li className="dropdown-item">
-              <a href="/" onClick={preventDefault}>Workshops</a>
+            <li>
+              <button
+                className={`dropdown-item ${selectedFilter === 'My Courses' ? 'active' : ''}`}
+                type="button"
+                onClick={() => {
+                  setSelectedFilter('My Courses');
+                  setCurrentPage(1);
+                }}
+              >
+                My Courses
+              </button>
             </li>
           </ul>
         </div>
@@ -137,49 +288,69 @@ function LearnersCourses() {
             </div>
 
             <div className="learners-online-sec-contents">
-              {slate.map((husk) => (
-                <div key={husk.id} className="osc-item" onClick={handleCourseClick} style={{ cursor: 'pointer' }}>
+              {/* Courses loaded from API when "All" filter is active. */}
+              {courses && courses.length > 0 ? courses.map((course) => (
+                <div key={course.id} className="osc-item" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleCourseClick(course.id); }} style={{ cursor: 'pointer' }}>
                   <div className="osc-item-img">
-                    <img src={acOn} alt="Online Course" />
+                    <img src={course.image || acOn} alt={course.title || 'Online Course'} />
                   </div>
                   <div className="osc-item-text">
                     <div className="osc-item-text-float">
-                      <p>{husk.price}</p>
+                      <p>{course.priceLabel}</p>
                     </div>
                     <div>
-                      <h6><a href="/course-part" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleCourseClick(); }}>Software Development</a></h6>
-                      <small>Emma Furgreance</small>
+                      <h6><a href="/course-part" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleCourseClick(course.id); }}>{course.title}</a></h6>
+                      <small>{course.author}</small>
                     </div>
                     <div>
-                      <p>Lorem ipsum dolor sit amet, dipisi consectetur adipisicing elit consectetur adipisicing elit...</p>
+                      <p>{course.description || 'No description available.'}</p>
                     </div>
                     <div>
-                      <small>Starts : Jan 4th 2026</small>
-                      <a className="learners-course-open" href="/course-part" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleCourseClick(); }}>
+                      <small>{course.startsOn || ''}</small>
+                      <a className="learners-course-open" href="/course-part" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleCourseClick(course.id); }}>
                         <img src={acEn} alt="Enroll" />
                       </a>
                     </div>
                   </div>
                 </div>
+              )) : (!loading && (
+                <div className="learners-empty-state learners-empty-state--courses">
+                  <h4>No courses available</h4>
+                  <p>There are no published courses to show right now.</p>
+                </div>
               ))}
             </div>
 
-            <div className="learners-courses-pagination">
-              <button type="button" onClick={preventDefault}>
-                <img src={acLe2} alt="Previous" />
-              </button>
-              <div>
-                <p>1</p>
-                <p className="active">2</p>
-                <p>3</p>
-                <p>4</p>
-                <p>5</p>
-                <span>...</span>
+            {courses && courses.length > 0 && (
+              <div className="learners-courses-pagination">
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+                  disabled={currentPage === 1}
+                >
+                  <img src={acLe2} alt="Previous" />
+                </button>
+                <div>
+                  {pageNumbers.map((page) => (
+                    <button
+                      key={page}
+                      type="button"
+                      className={page === currentPage ? 'active' : ''}
+                      onClick={() => setCurrentPage(page)}
+                    >
+                      {page}
+                    </button>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
+                  disabled={currentPage >= totalPages}
+                >
+                  <img src={acRi} alt="Next" />
+                </button>
               </div>
-              <button type="button" onClick={preventDefault}>
-                <img src={acRi} alt="Next" />
-              </button>
-            </div>
+            )}
           </div>
 
           <aside className="learners-courses-syllabus">
@@ -192,14 +363,14 @@ function LearnersCourses() {
             </div>
 
             <div className="learners-syllabus-list">
-              {genesis.map((husk) => (
+              {syllabusItems.length > 0 ? syllabusItems.map((husk) => (
                 <div key={husk.id} className="fgbl-item learners-syllabus-item">
                   <div className="fgbl-item-l">
                     <h4>{husk.title}</h4>
                     <p>
-                      <span>14 Papers</span>
+                      <span>{husk.metaLeft}</span>
                       <span>|</span>
-                      <span>11 Followers</span>
+                      <span>{husk.metaRight}</span>
                     </p>
                   </div>
                   <div className="fgbl-item-r">
@@ -209,7 +380,12 @@ function LearnersCourses() {
                     </button>
                   </div>
                 </div>
-              ))}
+              )) : (
+                <div className="learners-empty-state learners-empty-state--courses">
+                  <h4>No syllabus available</h4>
+                  <p>Load the available courses to populate the syllabus sidebar.</p>
+                </div>
+              )}
             </div>
           </aside>
         </div>

@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import acStat1Icon from '../../../assets/icons/ac-stat1.svg';
 import acStat2Icon from '../../../assets/icons/ac-stat2.svg';
@@ -16,14 +16,30 @@ import psIcon from '../../../assets/icons/ps.svg';
 import pvIcon from '../../../assets/icons/pv.svg';
 import pshIcon from '../../../assets/icons/psh.svg';
 import pfIcon from '../../../assets/icons/pf.svg';
-import acStrImage from '../../../assets/imgs/ac-str.jpg';
-import profImage from '../../../assets/imgs/prof.jpg';
+import learnersProfileImage from '../../../assets/imgs/default-profile.png';
 import journalImage from '../../../assets/imgs/journal.jpg';
 import video2 from '../../../assets/vids/video2.mp4';
 import './watch.css';
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
+const resolveStoryImage = (value) => {
+  if (!value) return null;
+
+  if (value.startsWith('http://') || value.startsWith('https://') || value.startsWith('data:') || value.startsWith('blob:')) {
+    return value;
+  }
+
+  return `${API_BASE_URL}${value}`;
+};
+
 function AcademiaWatch() {
   const navigate = useNavigate();
+
+  const [stories, setStories] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState(null);
 
   useEffect(() => {
     document.querySelectorAll('.academia-watch-page .story-thumbnail').forEach((container) => {
@@ -207,10 +223,29 @@ function AcademiaWatch() {
     });
   }, []);
 
-  const stories = Array.from({ length: 8 }, (_, index) => ({
-    id: index,
-    image: acStrImage,
-  }));
+  useEffect(() => {
+    let mounted = true;
+    const load = async () => {
+      setLoading(true);
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/community-stories?page=${page}&limit=12`);
+        const body = await res.json().catch(() => ({}));
+        if (!mounted) return;
+        const data = Array.isArray(body?.data) ? body.data : (Array.isArray(body) ? body : []);
+        setStories(data);
+        setPagination(body?.pagination || body?.meta || null);
+      } catch (e) {
+        // keep empty
+        setStories([]);
+        setPagination(null);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
+
+    load();
+    return () => { mounted = false; };
+  }, [page]);
 
   return (
     <div className="academia-watch-page">
@@ -318,33 +353,45 @@ function AcademiaWatch() {
 
       <section className="main-content">
         <div className="new-main-content-grid">
-          {stories.map((story) => (
+          {loading && Array.from({ length: 6 }).map((_, i) => (
+            <div key={`skeleton-${i}`} className="ss-item ss-empty">
+              <div className="ss-item-img">
+                <div className="skeleton-img" />
+              </div>
+              <div className="ss-item-text">
+                <div className="skeleton-line short" />
+                <div className="skeleton-line" />
+              </div>
+            </div>
+          ))}
+
+          {!loading && stories && stories.length > 0 && stories.map((story) => (
             <div
-              key={story.id}
+              key={story.id || story._id}
               className="ss-item"
-              onClick={() => navigate('/academia/read-story')}
+              onClick={() => navigate(`/academia/read-story?id=${story.id || story._id}`)}
               style={{ cursor: 'pointer' }}
             >
               <div className="ss-item-img">
-                <img src={story.image} alt="Story Image" />
+                  {resolveStoryImage(story.thumbnail) ? <img src={resolveStoryImage(story.thumbnail)} alt="Story Image" /> : null}
               </div>
               <div className="ss-item-text">
                 <div className="ss-item-text-h">
                   <div>
                     <img src={acUsIcon} alt="User" />
-                    <span>Admin</span>
+                    <span>{story.author_name || story.author || 'Admin'}</span>
                   </div>
                   <div>
                     <img src={acMessIcon} alt="Messages" />
-                    <span>3</span>
+                    <span>{story.comments_count || 0}</span>
                   </div>
                 </div>
-                <h4>Build your dream software & engineering career</h4>
-                <p>A small river named Duden flows by their place and supplies it with the necessary regelialia.</p>
+                <h4>{story.title || story.heading || 'Story'}</h4>
+                <p>{story.excerpt || story.summary || (story.content ? (story.content.substring(0, 120) + '...') : 'No description')}</p>
                 <div className="ss-item-text-f">
                   <div>
                     <img src={acCalIcon} alt="Calendar" />
-                    <span>Oct 19, 2025 07:50 AM</span>
+                    <span>{new Date(story.published_at || story.created_at || Date.now()).toLocaleString()}</span>
                   </div>
                   <button type="button">
                     <img src={acShareIcon} alt="Share" />
@@ -353,6 +400,13 @@ function AcademiaWatch() {
               </div>
             </div>
           ))}
+
+          {!loading && (!stories || stories.length === 0) && (
+            <div className="ss-empty-state">
+              <div className="empty-title">No community stories</div>
+              <div className="empty-desc">There are no community stories published yet.</div>
+            </div>
+          )}
         </div>
       </section>
 

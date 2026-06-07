@@ -1,6 +1,6 @@
 import React from 'react';
 
-const Topbar = () => {
+const Topbar = ({ profileLoading, profileSummary }) => {
   const preventDefault = (e) => e.preventDefault();
 
   return (
@@ -34,11 +34,11 @@ const Topbar = () => {
 
         <div className="prof-user">
           <div className="prof-user-avatar">
-            <img src="/assets/imgs/default-profile.png" alt="User" />
+            <img src={profileSummary?.avatar || '/assets/imgs/default-profile.png'} alt="User" />
           </div>
           <div className="prof-user-meta">
-            <h6>Hi, John Doe</h6>
-            <p>Learner</p>
+            <h6>{profileLoading ? 'Loading...' : profileSummary?.name || 'Professor'}</h6>
+            <p>{profileLoading ? 'Please wait' : profileSummary?.email || profileSummary?.role || 'instructor'}</p>
           </div>
         </div>
       </div>

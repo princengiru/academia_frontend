@@ -371,6 +371,41 @@
     color: #450468;
 }
 
+.academia-read-story-page .comment-empty,
+.academia-read-story-page .story-empty,
+.academia-read-story-page .author-empty,
+.academia-read-story-page .related-item-empty,
+.academia-read-story-page .story-empty-swiper {
+    border: 1px dashed #DBDFE9;
+    border-radius: 12px;
+    background: #FCFCFC;
+    padding: 20px;
+}
+
+.academia-read-story-page .story-empty h4,
+.academia-read-story-page .story-empty-swiper h4,
+.academia-read-story-page .author-empty h4 {
+    margin: 0 0 6px;
+    font-family: Inter;
+    font-weight: 600;
+    font-size: 16px;
+    line-height: 20px;
+    color: #071437;
+}
+
+.academia-read-story-page .story-empty p,
+.academia-read-story-page .story-empty-swiper p,
+.academia-read-story-page .author-empty p,
+.academia-read-story-page .comment-empty p,
+.academia-read-story-page .related-item-empty p {
+    margin: 0;
+    font-family: Inter;
+    font-weight: 400;
+    font-size: 13px;
+    line-height: 18px;
+    color: #6A7287;
+}
+
 .academia-read-story-page .mcnd-r{
     min-width: 0;
     width: 100%;

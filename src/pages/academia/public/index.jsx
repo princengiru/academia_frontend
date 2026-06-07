@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Swiper from 'swiper';
 import { EffectCoverflow, Navigation, Pagination } from 'swiper/modules';
 import 'swiper/css';
@@ -44,8 +44,25 @@ import profImg from '../../../assets/imgs/prof.jpg';
 
 import './index.css';
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
+const resolveStoryImage = (value) => {
+  if (!value) return null;
+
+  if (value.startsWith('http://') || value.startsWith('https://') || value.startsWith('data:') || value.startsWith('blob:')) {
+    return value;
+  }
+
+  return `${API_BASE_URL}${value}`;
+};
+
 function AcademiaIndex() {
   const swiperInstancesRef = useRef([]);
+  const [journalsData, setJournalsData] = useState([]);
+  const [popularData, setPopularData] = useState([]);
+  const [freeData, setFreeData] = useState([]);
+  const [storiesData, setStoriesData] = useState([]);
+  const [dataLoading, setDataLoading] = useState(true);
 
   useEffect(() => {
     swiperInstancesRef.current.forEach((instance) => instance?.destroy(true, true));
@@ -151,6 +168,38 @@ function AcademiaIndex() {
     };
   }, []);
 
+  useEffect(() => {
+    let mounted = true;
+
+    const loadPublicData = async () => {
+      try {
+        const [storiesRes, popularRes, freeRes] = await Promise.all([
+          fetch(`${API_BASE_URL}/api/community-stories`),
+          fetch(`${API_BASE_URL}/api/courses/public/popular`),
+          fetch(`${API_BASE_URL}/api/courses/public/free`),
+        ]);
+
+        const storiesBody = await storiesRes.json().catch(() => ({}));
+        const popularBody = await popularRes.json().catch(() => ({}));
+        const freeBody = await freeRes.json().catch(() => ({}));
+
+        if (!mounted) return;
+
+        setStoriesData(Array.isArray(storiesBody?.data) ? storiesBody.data : (Array.isArray(storiesBody) ? storiesBody : []));
+        setPopularData(Array.isArray(popularBody?.data) ? popularBody.data : (Array.isArray(popularBody) ? popularBody : []));
+        setFreeData(Array.isArray(freeBody?.data) ? freeBody.data : (Array.isArray(freeBody) ? freeBody : []));
+      } catch (err) {
+        // keep defaults on error
+      } finally {
+        if (mounted) setDataLoading(false);
+      }
+    };
+
+    loadPublicData();
+
+    return () => { mounted = false; };
+  }, []);
+
   const stats = [
     { icon: acStat1Icon, value: '20,000+', label: 'Enrolled Students' },
     { icon: acStat2Icon, value: '20,000+', label: 'Trusted Tutors' },
@@ -237,30 +286,53 @@ function AcademiaIndex() {
           <p>Orientation Guide projects</p>
           <h1>All Courses & Journals</h1>
         </div>
-        <div className="swiper journalsSwiper">
-          <div className="swiper-wrapper">
-            {[...Array(8)].map((_, i) => (
-              <div key={i} className="swiper-slide">
-                <div className="js-item" onClick={() => window.location.href = '/academia/read-story'} style={{ cursor: 'pointer' }}>
-                  <div className="js-item-img">
-                    <img src={jrImg} alt="Journal Image" />
-                  </div>
-                  <div className="js-item-text">
-                    <h6>Rwanda Unleashed Americans - 23 year old Justine Byiringiro eliminates americans over 230KM per hour, winning gold medal 2028</h6>
-                    <div>
-                      <span>Oct 19, 2025 07:50 AM</span>
-                      <button>
-                        <img src={acWshIcon} alt="Share" />
-                      </button>
+        {dataLoading || (journalsData && journalsData.length > 0) ? (
+          <div className="swiper journalsSwiper">
+            <div className="swiper-wrapper">
+              {dataLoading && (
+                <div className="swiper-slide">
+                  <div className="ss-item ss-empty">
+                    <div className="ss-item-text">
+                      <div className="empty-title">Loading stories…</div>
+                      <div className="empty-desc">Fetching inspiring community stories.</div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              )}
+
+              {!dataLoading && journalsData && journalsData.length > 0 && (
+                journalsData.map((story, i) => (
+                  <div key={story.id || story._id || i} className="swiper-slide">
+                    <div className="js-item" onClick={() => window.location.href = '/academia/read-story'} style={{ cursor: 'pointer' }}>
+                      <div className="js-item-img">
+                        <img src={story.thumbnail ? (story.thumbnail.startsWith('http') ? story.thumbnail : `${API_BASE_URL}${story.thumbnail}`) : jrImg} alt="Journal Image" />
+                      </div>
+                      <div className="js-item-text">
+                        <h6>{story.title || story.heading || story.summary || 'Story'}</h6>
+                        <div>
+                          <span>{new Date(story.published_at || story.created_at || Date.now()).toLocaleString()}</span>
+                          <button>
+                            <img src={acWshIcon} alt="Share" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+            <div className="swiper-button-next js-btn"></div>
+            <div className="swiper-button-prev js-btn"></div>
           </div>
-          <div className="swiper-button-next js-btn"></div>
-          <div className="swiper-button-prev js-btn"></div>
-        </div>
+        ) : (
+          <div className="ss-item ss-empty">
+            <div className="ss-item-text">
+              <div className="empty-title">No stories yet</div>
+              <div className="empty-desc">Be the first to share a story with the community.</div>
+              <a className="empty-cta" href="/academia/stories">Share a story</a>
+            </div>
+          </div>
+        )}
       </section>
 
       {/* Popular Courses Section */}
@@ -270,61 +342,89 @@ function AcademiaIndex() {
           <h1>Popular Courses</h1>
         </div>
         <div className="popular-sec-contents">
-          <div className="swiper psc-swiper">
-            <div className="swiper-wrapper">
-              {[...Array(5)].map((_, i) => (
-                <div key={i} className="swiper-slide psc-card">
-                  <div className="psc-card-h">
-                    <div className="psc-card-h-l">
-                      <h5>Economics</h5>
-                      <p>
-                        <span>11.34M</span>
-                        <small>Followers</small>
-                      </p>
-                    </div>
-                    <div className="psc-card-h-r">
-                      <button>
-                        <span>Follow</span>
-                        <img src={acP1Icon} alt="Plus" />
-                      </button>
+          {dataLoading || (popularData && popularData.length > 0) ? (
+            <div className="swiper psc-swiper">
+              <div className="swiper-wrapper">
+                {dataLoading && (
+                  <div className="swiper-slide psc-card">
+                    <div className="psc-card-h">
+                      <div className="psc-card-h-l">
+                        <h5>Loading popular courses...</h5>
+                        <p>Please wait</p>
+                      </div>
+                      <div className="psc-card-h-r" />
                     </div>
                   </div>
-                  <div className="psc-card-b">
-                    <div className="psc-card-b-item">
-                      <h6>11.34M</h6>
-                      <p>Authors</p>
+                )}
+
+                {!dataLoading && popularData && popularData.length > 0 && (
+                  popularData.map((course, i) => (
+                    <div key={course.id || course._id || i} className="swiper-slide psc-card">
+                      <div className="psc-card-h">
+                        <div className="psc-card-h-l">
+                          <h5>{course.title || course.name || 'Course'}</h5>
+                          <p>
+                            <span>{course.followers || course.enrollments || '---'}</span>
+                            <small>Followers</small>
+                          </p>
+                        </div>
+                        <div className="psc-card-h-r">
+                          <button>
+                            <span>Follow</span>
+                            <img src={acP1Icon} alt="Plus" />
+                          </button>
+                        </div>
+                      </div>
+                      <div className="psc-card-b">
+                        <div className="psc-card-b-item">
+                          <h6>{course.instructors_count || course.authors || '—'}</h6>
+                          <p>Authors</p>
+                        </div>
+                        <div className="psc-card-b-item">
+                          <h6>{course.learners_count || course.enrolled_count || '—'}</h6>
+                          <p>Learners</p>
+                        </div>
+                        <div className="psc-card-b-item">
+                          <h6>{course.papers_count || course.resources_count || '—'}</h6>
+                          <p>Papers</p>
+                        </div>
+                      </div>
+                      <div className="psc-card-f">
+                        <button onClick={() => window.location.href = '/academia/course-part'}>View courses</button>
+                      </div>
                     </div>
-                    <div className="psc-card-b-item">
-                      <h6>234K</h6>
-                      <p>Learners</p>
-                    </div>
-                    <div className="psc-card-b-item">
-                      <h6>23K</h6>
-                      <p>Papers</p>
-                    </div>
+                  ))
+                )}
+
+                <div className="swiper-slide psc-last-card">
+                  <h3>1000+ Popular course</h3>
+                  <div className="psc-last-card-imgs">
+                    {[...Array(3)].map((_, i) => (
+                      <div key={i} className="psc-last-card-img">
+                        <img src={dummyIcon} alt="Icon" />
+                      </div>
+                    ))}
+                    <div className="psc-last-card-number">9+</div>
                   </div>
-                  <div className="psc-card-f">
-                    <button onClick={() => window.location.href = '/academia/course-part'}>View courses</button>
+                  <div className="psc-last-card-btn">
+                    <button onClick={() => window.location.href = '/academia/courses'}>Explore Courses</button>
                   </div>
-                </div>
-              ))}
-              <div className="swiper-slide psc-last-card">
-                <h3>1000+ Popular course</h3>
-                <div className="psc-last-card-imgs">
-                  {[...Array(3)].map((_, i) => (
-                    <div key={i} className="psc-last-card-img">
-                      <img src={dummyIcon} alt="Icon" />
-                    </div>
-                  ))}
-                  <div className="psc-last-card-number">9+</div>
-                </div>
-                <div className="psc-last-card-btn">
-                  <button onClick={() => window.location.href = '/academia/courses'}>Explore Courses</button>
                 </div>
               </div>
+              <div className="swiper-pagination psc-pages"></div>
             </div>
-            <div className="swiper-pagination psc-pages"></div>
-          </div>
+          ) : (
+            <div className="psc-card psc-empty">
+              <div className="psc-card-h">
+                <div className="psc-card-h-l">
+                  <div className="empty-title">No popular courses yet</div>
+                  <div className="empty-desc">We couldn't find trending courses right now.</div>
+                  <a className="empty-cta" href="/academia/courses">Browse courses</a>
+                </div>
+                <div className="psc-card-h-r" />
+              </div>
+            </div>
+          )}
         </div>
       </section>
 
@@ -335,31 +435,52 @@ function AcademiaIndex() {
           <h1>Online Courses</h1>
         </div>
         <div className="online-sec-contents">
-          {[...Array(4)].map((_, i) => (
-            <div key={i} className="osc-item" onClick={() => window.location.href = '/academia/course-part'} style={{ cursor: 'pointer' }}>
-              <div className="osc-item-img">
-                <img src={acOnImg} alt="Online Course" />
-              </div>
+          {dataLoading && (
+            <div className="osc-item osc-empty">
               <div className="osc-item-text">
-                <div className="osc-item-text-float">
-                  <p>$5 / Per Month</p>
-                </div>
-                <div>
-                  <h6>Software Development</h6>
-                  <small>Emma Furgreance</small>
-                </div>
-                <div>
-                  <p>Learn the fundamentals of software development and build your first application.</p>
-                </div>
-                <div>
-                  <small>Starts : Jan 4th 2026</small>
-                  <button onClick={(e) => { e.stopPropagation(); window.location.href = '/academia/course-part'; }}>
-                    <img src={acEnIcon} alt="Enroll" />
-                  </button>
-                </div>
+                <div className="empty-title">Loading courses…</div>
+                <div className="empty-desc">Fetching the best courses for you.</div>
               </div>
             </div>
-          ))}
+          )}
+
+          {!dataLoading && popularData && popularData.length > 0 && (
+            popularData.slice(0, 4).map((course, i) => (
+              <div key={course.id || course._id || i} className="osc-item" onClick={() => window.location.href = '/academia/course-part'} style={{ cursor: 'pointer' }}>
+                <div className="osc-item-img">
+                  <img src={course.thumbnail ? (course.thumbnail.startsWith('http') ? course.thumbnail : `${API_BASE_URL}${course.thumbnail}`) : acOnImg} alt="Online Course" />
+                </div>
+                <div className="osc-item-text">
+                  <div className="osc-item-text-float">
+                    <p>{course.price ? `${course.price} / Per Month` : '$0 / Per Month'}</p>
+                  </div>
+                  <div>
+                    <h6>{course.title || course.name || 'Course'}</h6>
+                    <small>{course.instructor_name || course.author || 'Instructor'}</small>
+                  </div>
+                  <div>
+                    <p>{course.description || course.summary || 'No description available.'}</p>
+                  </div>
+                  <div>
+                    <small>{course.starts_on || course.startsAt || 'Starts : TBD'}</small>
+                    <button onClick={(e) => { e.stopPropagation(); window.location.href = '/academia/course-part'; }}>
+                      <img src={acEnIcon} alt="Enroll" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+
+          {!dataLoading && (!popularData || popularData.length === 0) && (
+            <div className="fsc-item fsc-empty">
+              <div className="fsc-item-text">
+                <div className="empty-title">No free courses</div>
+                <div className="empty-desc">Check back later or explore paid courses.</div>
+                <a className="empty-cta" href="/academia/courses">Explore courses</a>
+              </div>
+            </div>
+          )}
         </div>
         <div className="sec-CTA">
           <button onClick={() => window.location.href = '/academia/courses'}>
@@ -376,17 +497,37 @@ function AcademiaIndex() {
           <h1>Free Courses</h1>
         </div>
         <div className="free-sec-contents">
-          {[...Array(5)].map((_, i) => (
-            <div key={i} className="fsc-item" onClick={() => window.location.href = '/academia/course-part'} style={{ cursor: 'pointer' }}>
-              <div className="fsc-item-img">
-                <img src={acOnImg} alt="Free Course" />
-              </div>
+          {dataLoading && (
+            <div className="fsc-item fsc-empty">
               <div className="fsc-item-text">
-                <h6>Software Development</h6>
-                <small>Emma Furgreance</small>
+                <h6>Loading free courses...</h6>
+                <p>Please wait while we load free courses.</p>
               </div>
             </div>
-          ))}
+          )}
+
+          {!dataLoading && freeData && freeData.length > 0 && (
+            freeData.map((course, i) => (
+              <div key={course.id || course._id || i} className="fsc-item" onClick={() => window.location.href = '/academia/course-part'} style={{ cursor: 'pointer' }}>
+                <div className="fsc-item-img">
+                  <img src={course.thumbnail ? (course.thumbnail.startsWith('http') ? course.thumbnail : `${API_BASE_URL}${course.thumbnail}`) : acOnImg} alt="Free Course" />
+                </div>
+                <div className="fsc-item-text">
+                  <h6>{course.title || course.name || 'Course'}</h6>
+                  <small>{course.instructor_name || course.author || 'Instructor'}</small>
+                </div>
+              </div>
+            ))
+          )}
+
+          {!dataLoading && (!freeData || freeData.length === 0) && (
+            <div className="fsc-item fsc-empty">
+              <div className="fsc-item-text">
+                <h6>No free courses</h6>
+                <p>There are no free courses to show at the moment.</p>
+              </div>
+            </div>
+          )}
         </div>
         <div className="sec-CTA">
           <button onClick={() => window.location.href = '/academia/courses?type=free'}>
@@ -442,44 +583,67 @@ function AcademiaIndex() {
           <h1>Community stories</h1>
         </div>
         <div className="stories-sec-contents">
-          <div className="swiper ss-swiper">
-            <div className="swiper-wrapper">
-              {[...Array(4)].map((_, i) => (
-                <div key={i} className="swiper-slide">
-                  <div className="ss-item" onClick={() => window.location.href = '/academia/read-story'} style={{ cursor: 'pointer' }}>
-                    <div className="ss-item-img">
-                      <img src={acStrImg} alt="Story Image" />
-                    </div>
-                    <div className="ss-item-text">
-                      <div className="ss-item-text-h">
-                        <div>
-                          <img src={acUsIcon} alt="User" />
-                          <span>Admin</span>
-                        </div>
-                        <div>
-                          <img src={acMessIcon} alt="Messages" />
-                          <span>3</span>
-                        </div>
-                      </div>
-                      <h4>Build your dream software & engineering career</h4>
-                      <p>A small river named Duden flows by their place and supplies it with the necessary regelialia.</p>
-                      <div className="ss-item-text-f">
-                        <div>
-                          <img src={acCalIcon} alt="Calendar" />
-                          <span>Oct 19, 2025 07:50 AM</span>
-                        </div>
-                        <button>
-                          <img src={acShareIcon} alt="Share" />
-                        </button>
+          {dataLoading || (storiesData && storiesData.length > 0) ? (
+            <div className="swiper ss-swiper">
+              <div className="swiper-wrapper">
+                {dataLoading && (
+                  <div className="swiper-slide">
+                    <div className="js-item js-empty">
+                      <div className="js-item-text">
+                        <h4>Loading stories…</h4>
+                        <p>Fetching the latest community stories.</p>
                       </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                )}
+
+                {!dataLoading && storiesData && storiesData.length > 0 && (
+                  storiesData.map((story, i) => (
+                    <div key={story.id || story._id || i} className="swiper-slide">
+                      <div className="ss-item" onClick={() => window.location.href = `/academia/read-story?id=${story.id || story._id}` } style={{ cursor: 'pointer' }}>
+                        <div className="ss-item-img">
+                          {resolveStoryImage(story.thumbnail) ? <img src={resolveStoryImage(story.thumbnail)} alt="Story Image" /> : null}
+                        </div>
+                        <div className="ss-item-text">
+                          <div className="ss-item-text-h">
+                            <div>
+                              <img src={acUsIcon} alt="User" />
+                              <span>{story.author_name || story.author || 'Admin'}</span>
+                            </div>
+                            <div>
+                              <img src={acMessIcon} alt="Messages" />
+                              <span>{story.comments_count || story.messages || 0}</span>
+                            </div>
+                          </div>
+                          <h4>{story.title || story.heading || 'Story'}</h4>
+                          <p>{story.excerpt || story.summary || (story.content ? (story.content.substring(0, 120) + '...') : 'No description')}</p>
+                          <div className="ss-item-text-f">
+                            <div>
+                              <img src={acCalIcon} alt="Calendar" />
+                              <span>{new Date(story.published_at || story.created_at || Date.now()).toLocaleString()}</span>
+                            </div>
+                            <button>
+                              <img src={acShareIcon} alt="Share" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+              <div className="swiper-button-next ss-btn"></div>
+              <div className="swiper-button-prev ss-btn"></div>
             </div>
-            <div className="swiper-button-next ss-btn"></div>
-            <div className="swiper-button-prev ss-btn"></div>
-          </div>
+          ) : (
+            <div className="js-item js-empty">
+              <div className="js-item-text">
+                <h4>No community stories</h4>
+                <p>There are no community stories published yet.</p>
+                <a className="empty-cta" href="/academia/watch">Explore stories</a>
+              </div>
+            </div>
+          )}
         </div>
         <div className="sec-CTA">
           <button onClick={() => window.location.href = '/academia/watch'}>

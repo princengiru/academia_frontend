@@ -398,6 +398,28 @@
     display: unset;
 }
 
+/* Compact empty outline state */
+.academia-read-contents-page .cont-page{
+    padding: 12px 0;
+    min-height: 160px;
+}
+
+.academia-read-contents-page .cont-page.cont-empty{
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 48px;
+    max-height: 64px;
+    padding: 6px 8px;
+    width: auto;
+}
+
+.academia-read-contents-page .cont-page.cont-empty p{
+    margin: 0;
+    color: #6A7287;
+    font-size: 13px;
+}
+
 .academia-read-contents-page .course-part-h.related-h h5{
     line-height: 25px;
 }

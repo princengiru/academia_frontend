@@ -799,6 +799,36 @@ body[data-role="learners"] .right-container {
   width: 100%;
 }
 
+/* Logout modal */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1100;
+}
+
+.logout-modal {
+  background: #fff;
+  border-radius: 10px;
+  padding: 20px;
+  width: 340px;
+  box-shadow: 0 8px 24px rgba(16,24,40,0.12);
+  text-align: left;
+}
+
+.logout-modal h4 { margin: 0 0 8px; font-size: 16px; }
+.logout-modal p { margin: 0 0 16px; color: #444; font-size: 14px; }
+
+.logout-modal-buttons { display:flex; justify-content:flex-end; gap:8px; }
+.logout-cancel, .logout-confirm {
+  padding: 8px 12px; border-radius:6px; border:none; cursor:pointer; font-size:14px;
+}
+.logout-cancel { background:#f1f1f1; color:#111; }
+.logout-confirm { background:#6C2B98; color:#fff; }
+
 .learners-footer p {
   margin: 0;
   font-family: "Inter", sans-serif;
@@ -982,6 +1012,54 @@ body[data-role="learners"] .right-container {
   display: flex;
   align-items: center;
   gap: 10px;
+}
+
+.learners-sidebar-progress {
+  margin: 16px 18px 0;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: linear-gradient(180deg, #FFFFFF 0%, #F8FAFF 100%);
+  border: 1px solid #E5E7EB;
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+}
+
+.learners-sidebar-progress-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.learners-sidebar-progress h6 {
+  font-size: 13px;
+  font-weight: 600;
+  color: #071437;
+}
+
+.learners-sidebar-progress strong {
+  font-size: 14px;
+  color: #450468;
+}
+
+.learners-sidebar-progress p {
+  font-size: 11px;
+  color: #4B5675;
+  line-height: 1.45;
+}
+
+.learners-sidebar-progress .progress {
+  height: 8px;
+  background-color: #EAF0FF;
+  border-radius: 12px;
+}
+
+.learners-sidebar-progress .progress-bar {
+  height: 8px;
+  background: linear-gradient(90deg, #450468 0%, #7C3AED 100%);
+  border-radius: 12px;
 }
 
 .learners-icon-btn {

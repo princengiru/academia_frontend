@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Swiper from 'swiper';
 import { Navigation } from 'swiper/modules';
@@ -20,8 +20,7 @@ import con5Icon from '../../../assets/icons/con5.svg';
 import con6Icon from '../../../assets/icons/con6.svg';
 import sha2Icon from '../../../assets/icons/sha2.svg';
 import pictureIcon from '../../../assets/icons/picture.svg';
-import profImage from '../../../assets/imgs/prof.jpg';
-import acStrImage from '../../../assets/imgs/ac-str.jpg';
+import learnersProfileImage from '../../../assets/imgs/default-profile.png';
 import itemImage from '../../../assets/imgs/item.jpg';
 import trustedImage from '../../../assets/imgs/trusted.jpg';
 import acHrImage from '../../../assets/imgs/ac-hr.jpg';
@@ -30,67 +29,55 @@ import glImage from '../../../assets/imgs/gl.jpg';
 import journalImage from '../../../assets/imgs/journal.jpg';
 import './read-story.css';
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
+const resolveStoryImage = (value) => {
+  if (!value) return null;
+
+  if (value.startsWith('http://') || value.startsWith('https://') || value.startsWith('data:') || value.startsWith('blob:')) {
+    return value;
+  }
+
+  return `${API_BASE_URL}${value}`;
+};
+
+const normalizeStory = (story) => {
+  if (!story) return null;
+
+  return {
+    ...story,
+    id: story.id || story._id || story.story_id,
+    title: story.title || story.heading || 'Story',
+    content: story.content || story.description || '',
+    contentHtml: story.contentHtml || story.content_html || '',
+    thumbnail: story.thumbnail || story.thumbnail_url || story.image || null,
+    author_name: story.author_name || story.uploaded_by_name || story.user_name || 'Author',
+    author_avatar: story.author_avatar || story.uploaded_by_avatar || story.user_avatar || null,
+    author_role: story.author_role || story.role || 'Journalist',
+    read_time: story.read_time || story.readTime || null,
+    published_at: story.published_at || story.created_at || null,
+  };
+};
+
+const normalizeComment = (comment) => {
+  if (!comment) return null;
+
+  return {
+    id: comment.id || comment.comment_id,
+    author: comment.user_name || comment.author || 'Author',
+    text: comment.content || comment.comment || '',
+    time: comment.created_at ? new Date(comment.created_at).toLocaleDateString() : 'Just now',
+    avatar: comment.user_avatar || comment.avatar || null,
+  };
+};
+
 function AcademiaReadStory() {
   const navigate = useNavigate();
-
-  const comments = Array.from({ length: 10 }, (_, index) => ({
-    id: index,
-    author: 'Mr. Anderson',
-    time: '1 Day ago',
-    text:
-      'Long before you sit dow to put digital pen to paper you need to make sure you have to sit down and write. I\'ll show you how to write a great blog post in five simple steps that people will actually want to read. Ready?',
-  }));
-
-  const relatedProjects = [
-    {
-      id: 0,
-      author: 'Jose Carine',
-      likes: '11',
-      views: '1.1K',
-      title: 'Build your software & engineering dream career',
-      image: acStrImage,
-    },
-    {
-      id: 1,
-      author: 'Noah Karemera',
-      likes: '13',
-      views: '1.4K',
-      title: 'Data storytelling for engineering teams',
-      image: acHrImage,
-    },
-    {
-      id: 2,
-      author: 'Aline Uwase',
-      likes: '9',
-      views: '980',
-      title: 'How to structure your first research project',
-      image: acJrImage,
-    },
-    {
-      id: 3,
-      author: 'Ishimwe Pierre',
-      likes: '17',
-      views: '2.2K',
-      title: 'Practical design systems for product teams',
-      image: glImage,
-    },
-    {
-      id: 4,
-      author: 'Diane M.',
-      likes: '15',
-      views: '1.9K',
-      title: 'Writing clear docs that developers actually use',
-      image: journalImage,
-    },
-    {
-      id: 5,
-      author: 'Eric N.',
-      likes: '12',
-      views: '1.3K',
-      title: 'Career roadmap for software engineers in 2026',
-      image: itemImage,
-    },
-  ];
+  const [stories, setStories] = useState([]);
+  const [storyData, setStoryData] = useState(null);
+  const [comments, setComments] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [relatedStories, setRelatedStories] = useState([]);
 
   useEffect(() => {
     const textarea = document.querySelector('.academia-read-story-page .new-comment-text textarea');
@@ -100,7 +87,8 @@ function AcademiaReadStory() {
       textarea.style.height = `${textarea.scrollHeight}px`;
     };
 
-    const storySwiper = new Swiper('.ss-swiper', {
+    const storySwiperContainer = document.querySelector('.ss-swiper');
+    const storySwiper = storySwiperContainer ? new Swiper(storySwiperContainer, {
       modules: [Navigation],
       spaceBetween: 20,
       loop: false,
@@ -117,7 +105,7 @@ function AcademiaReadStory() {
           slidesPerView: 4,
         },
       },
-    });
+    }) : null;
 
     if (textarea) {
       textarea.addEventListener('input', autoResize);
@@ -128,43 +116,104 @@ function AcademiaReadStory() {
       if (textarea) {
         textarea.removeEventListener('input', autoResize);
       }
-      storySwiper.destroy();
+      storySwiper?.destroy();
     };
   }, []);
+
+  useEffect(() => {
+    let mounted = true;
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get('id');
+
+    const load = async () => {
+      setLoading(true);
+      try {
+        const [storyRes, storiesRes] = await Promise.all([
+          id ? fetch(`${API_BASE_URL}/api/community-stories/${id}`) : Promise.resolve(null),
+          fetch(`${API_BASE_URL}/api/community-stories?page=1&limit=8`),
+        ]);
+
+        const storyBody = storyRes ? await storyRes.json().catch(() => ({})) : {};
+        const storiesBody = await storiesRes.json().catch(() => ({}));
+
+        if (!mounted) return;
+
+        const selectedStory = normalizeStory(storyBody?.data || storyBody || null);
+        const publishedStories = Array.isArray(storiesBody?.data)
+          ? storiesBody.data
+          : Array.isArray(storiesBody)
+            ? storiesBody
+            : [];
+
+        setStoryData(selectedStory || normalizeStory(publishedStories[0]) || null);
+        setRelatedStories(publishedStories.map((story) => normalizeStory(story)).filter(Boolean).filter((story) => String(story.id) !== String(selectedStory?.id)));
+
+        const commentSource = selectedStory?.comments || selectedStory?.feedbacks || selectedStory?.remarks || [];
+        setComments(Array.isArray(commentSource) ? commentSource.map((comment) => normalizeComment(comment)).filter(Boolean) : []);
+      } catch (e) {
+        if (mounted) {
+          setStoryData(null);
+          setRelatedStories([]);
+          setComments([]);
+        }
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
+
+    load();
+    return () => { mounted = false; };
+  }, []);
+
+  const currentStoryTitle = storyData?.title || storyData?.heading || 'Story';
+  const currentStoryAuthor = storyData?.author_name || 'Esther Howard';
+  const currentStoryRole = storyData?.author_role || 'Journalist';
+  const currentStoryImage = resolveStoryImage(storyData?.thumbnail);
+  const currentStoryContent = storyData?.contentHtml || storyData?.content || '';
+  const currentStoryReadTime = storyData?.read_time ? `${storyData.read_time} mins read` : '—';
+  const currentStoryDate = storyData ? new Date(storyData.published_at || Date.now()).toLocaleString() : '';
+  const handleBack = () => {
+    if (window.history.length > 1) {
+      navigate(-1);
+      return;
+    }
+
+    navigate('/academia/watch');
+  };
 
   return (
     <div className="academia-read-story-page">
       <section className="main-content">
         <div className="filters-grid-b-h">
-          <button type="button" onClick={() => navigate('/academia/watch')}>
+          <button type="button" onClick={handleBack}>
             <img src={acLeftIcon} alt="Back" />
           </button>
           <div>
-            <p>Mathematics & Science</p>
+            <p>Community stories</p>
             <span>/</span>
-            <span>Algebra</span>
+            <span>Story details</span>
             <span>/</span>
           </div>
         </div>
 
         <div className="main-content-inner">
           <div className="main-content-inner-h">
-            <h3>Build your dream software & engineering career</h3>
+            <h3>{loading ? 'Loading…' : currentStoryTitle}</h3>
             <div>
-              <p>5 mins read</p>
+              <p>{loading ? '—' : currentStoryReadTime}</p>
               <p>|</p>
-              <p>Oct 21, 2025 07:51 AM</p>
+              <p>{currentStoryDate}</p>
             </div>
           </div>
 
           <div className="main-content-inner-b">
-            <img src={acStrImage} alt="Story" />
+            {currentStoryImage ? <img src={currentStoryImage} alt={currentStoryTitle} /> : null}
           </div>
 
           <div className="story-footer">
             <div className="story-author">
               <div className="story-author-img">
-                <img src={profImage} alt="Esther Howard" />
+                <img src={resolveStoryImage(storyData?.author_avatar, learnersProfileImage)} alt={currentStoryAuthor} />
               </div>
               <div
                 className="story-author-name"
@@ -178,8 +227,8 @@ function AcademiaReadStory() {
                   }
                 }}
               >
-                <h6>Esther Howard</h6>
-                <label>Journalist</label>
+                <h6>{currentStoryAuthor}</h6>
+                <label>{currentStoryRole}</label>
               </div>
             </div>
 
@@ -198,28 +247,14 @@ function AcademiaReadStory() {
           </div>
 
           <div className="full-story">
-            <p>
-              Before you do any of the following steps, be sure to pick a topic that actually interests you.
-              Nothing and enthusiasm from the writer. You.
-            </p>
-            <p>
-              Lorem ipsum dolor sit amet, consectetur adipisici elit, ist ein Blindtext, der nichts bedeuten soll,
-              sondern als Platzhalter im Layout verwendet wird, um einen Eindruck vom fertigen Schriftstuck zu
-              erhalten.
-            </p>
-            <div className="story-media">
-              <div>
-                <img src={itemImage} alt="Story media 1" />
+            {currentStoryContent ? (
+              <div dangerouslySetInnerHTML={{ __html: storyData?.contentHtml || (`<p>${String(currentStoryContent).replace(/\n/g, '</p><p>')}</p>`) }} />
+            ) : (
+              <div className="story-empty">
+                <h4>No story content yet</h4>
+                <p>This published story does not include full body content yet.</p>
               </div>
-              <div>
-                <img src={trustedImage} alt="Story media 2" />
-              </div>
-            </div>
-            <p>
-              Lorem ipsum dolor sit amet, consectetur adipisici elit, ist ein Blindtext, der nichts bedeuten soll,
-              sondern als Platzhalter im Layout verwendet wird, um einen Eindruck vom fertigen Schriftstuck zu
-              erhalten.
-            </p>
+            )}
           </div>
         </div>
       </section>
@@ -231,7 +266,7 @@ function AcademiaReadStory() {
               <h2>Comments</h2>
               <div className="new-comment">
                 <div className="new-comment-sender">
-                  <img src={profImage} alt="Current user" />
+                  <img src={learnersProfileImage} alt="Current user" />
                 </div>
                 <div className="new-comment-text">
                   <textarea rows={1} placeholder="your comment.."></textarea>
@@ -246,23 +281,23 @@ function AcademiaReadStory() {
               <div className="mcnd-l-b-h">
                 <button type="button">
                   <img src={acComIcon} alt="Comments" />
-                  <span>8 Comments</span>
+                  <span>{comments.length} Comments</span>
                 </button>
                 <button type="button">
                   <img src={acSide3Icon} alt="Likes" />
-                  <span>47k Likes</span>
+                  <span>{storyData?.likes_count || 0} Likes</span>
                 </button>
                 <button type="button">
                   <img src={acSavIcon} alt="Saves" />
-                  <span>900 Saves</span>
+                  <span>{storyData?.saves_count || 0} Saves</span>
                 </button>
               </div>
 
               <div className="mcnd-l-b-b">
-                {comments.map((comment) => (
+                {comments.length > 0 ? comments.map((comment) => (
                   <div key={comment.id} className="comment">
                     <div className="comment-img">
-                      <img src={profImage} alt="Comment author" />
+                      <img src={resolveStoryImage(comment.avatar, learnersProfileImage)} alt="Comment author" />
                     </div>
                     <div className="comment-text">
                       <div>
@@ -272,7 +307,14 @@ function AcademiaReadStory() {
                       <p>{comment.text}</p>
                     </div>
                   </div>
-                ))}
+                )) : (
+                  <div className="comment comment-empty">
+                    <div className="comment-text">
+                      <h6>No comments yet</h6>
+                      <p>Be the first to share a thought on this story.</p>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -282,25 +324,25 @@ function AcademiaReadStory() {
               <h3>Related Projects</h3>
             </div>
             <div className="mcnd-r-b">
-              {relatedProjects.map((item) => (
+              {relatedStories.length > 0 ? relatedStories.map((item) => (
                 <div key={item.id} className="related-item">
                   <div className="related-item-img">
-                    <img src={item.image} alt={item.title} />
+                    {resolveStoryImage(item.thumbnail) ? <img src={resolveStoryImage(item.thumbnail)} alt={item.title} /> : null}
                   </div>
                   <div className="related-item-l">
                     <div className="related-item-l-t">
                       <div>
                         <label>By</label>
-                        <h6>{item.author}</h6>
+                        <h6>{item.author_name}</h6>
                       </div>
                       <div>
                         <p>
                           <img src={acSide3Icon} alt="Likes" />
-                          <span>{item.likes}</span>
+                          <span>{item.likes_count || 0}</span>
                         </p>
                         <p>
                           <img src={acEyeIcon} alt="Views" />
-                          <span>{item.views}</span>
+                          <span>{item.views_count || 0}</span>
                         </p>
                       </div>
                     </div>
@@ -309,7 +351,15 @@ function AcademiaReadStory() {
                     </div>
                   </div>
                 </div>
-              ))}
+              )) : (
+                <div className="related-item related-item-empty">
+                  <div className="related-item-l">
+                    <div className="related-item-l-b">
+                      <p>No related stories available.</p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
             <div className="mcnd-r-CTA">
               <button type="button">See more</button>
@@ -322,31 +372,31 @@ function AcademiaReadStory() {
         <div className="stories-sec-contents">
           <div className="swiper ss-swiper">
             <div className="swiper-wrapper">
-              {relatedProjects.slice(0, 4).map((item) => (
+              {relatedStories.slice(0, 4).length > 0 ? relatedStories.slice(0, 4).map((item) => (
                 <div key={item.id} className="swiper-slide">
                   <div className="ss-item">
                     <div className="ss-item-img">
-                      <img src={item.image} alt={item.title} />
+                      {resolveStoryImage(item.thumbnail) ? <img src={resolveStoryImage(item.thumbnail)} alt={item.title} /> : null}
                     </div>
                     <div className="ss-item-text">
                       <div className="ss-item-text-h">
                         <div>
                           <img src={acUsIcon} alt="User" />
-                          <span>Admin</span>
+                          <span>{item.author_name || 'Admin'}</span>
                         </div>
                         <div>
                           <img src={acMessIcon} alt="Messages" />
-                          <span>3</span>
+                          <span>{comments.length || 0}</span>
                         </div>
                       </div>
                       <h4>{item.title}</h4>
                       <p>
-                        A small river named Duden flows by their place and supplies it with the necessary regelialia.
+                        {item.description || item.content || 'A community story from the public archive.'}
                       </p>
                       <div className="ss-item-text-f">
                         <div>
                           <img src={acCalIcon} alt="Calendar" />
-                          <span>Oct 19, 2025 07:50 AM</span>
+                          <span>{item.published_at ? new Date(item.published_at).toLocaleDateString() : ''}</span>
                         </div>
                         <button type="button">
                           <img src={acShareIcon} alt="Share" />
@@ -355,7 +405,14 @@ function AcademiaReadStory() {
                     </div>
                   </div>
                 </div>
-              ))}
+              )) : (
+                <div className="swiper-slide">
+                  <div className="story-empty story-empty-swiper">
+                    <h4>No more stories yet</h4>
+                    <p>Published stories will appear here once the archive grows.</p>
+                  </div>
+                </div>
+              )}
             </div>
             <div className="swiper-button-next ss-btn"></div>
             <div className="swiper-button-prev ss-btn"></div>

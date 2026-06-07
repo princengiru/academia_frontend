@@ -46,6 +46,23 @@
   flex: 1;
 }
 
+.content-transition {
+  width: 100%;
+  animation: contentFadeSlide 220ms ease-out;
+}
+
+@keyframes contentFadeSlide {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .card {
   border: 1px solid var(--border);
   border-radius: 12px;
@@ -177,5 +194,11 @@
 
   .hero-slide img {
     margin-inline: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .content-transition {
+    animation: none;
   }
 }

@@ -401,11 +401,73 @@
   color: #071437;
 }
 
+.learners-filter-menu .dropdown-item.active,
+.learners-filter-menu .dropdown-item:active,
+.learners-filter-menu .dropdown-item.active:hover,
+.learners-filter-menu .dropdown-item.active:focus {
+  background: #0D6EFD;
+  color: #FFFFFF;
+}
+
 .learners-courses-grid {
-  margin-top: 14px;
+  margin-top: 10px;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 14px;
+}
+
+.learners-empty-state {
+  border: 1px dashed #DCE2EC;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #FFFFFF 0%, #FAFBFD 100%);
+  min-height: 220px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 10px;
+}
+
+.learners-empty-state--courses {
+  grid-column: 1 / -1;
+}
+
+.learners-empty-state--compact {
+  min-height: 140px;
+  padding: 18px;
+}
+
+.learners-empty-state--compact h3 {
+  font-size: 15px;
+  line-height: 20px;
+}
+
+.learners-empty-state--compact p {
+  max-width: none;
+}
+
+.learners-empty-state h3 {
+  margin: 0;
+  font-family: "Inter", sans-serif;
+  font-size: 16px;
+  line-height: 20px;
+  font-weight: 600;
+  color: #071437;
+}
+
+.learners-empty-state p {
+  margin: 0;
+  max-width: 430px;
+  font-family: "Inter", sans-serif;
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 400;
+  color: #78829D;
+}
+
+.learners-empty-state .learners-btn {
+  margin-top: 4px;
 }
 
 .learners-course-card {

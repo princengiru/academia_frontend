@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import LearnersPageShell from './LearnersPageShell';
 
 // Icons & Images
@@ -15,96 +16,104 @@ import './available-test.css';
 function LearnersAvailableTest() {
   const preventDefault = (e) => e.preventDefault();
 
-  const slate = [
-    {
-      id: 1,
-      title: 'Web Development',
-      level: 'Beginner',
-      levelTone: 'beginner',
-      author: 'Emma fruty',
-      summary: 'Lorem ipsum dolor sit amet, dipisi consectetur adipisicing elit ipsum dolor sit amet, dipisi consectetur adipisicing elit ipsum dolor sit amet.',
-      questions: '4',
-      minutes: '50',
-      attempts: '0',
-      score: '80%',
-    },
-    {
-      id: 2,
-      title: 'Web Development',
-      level: 'Intermediate',
-      levelTone: 'intermediate',
-      author: 'Emma fruty',
-      summary: 'Lorem ipsum dolor sit amet, dipisi consectetur adipisicing elit ipsum dolor sit amet, dipisi consectetur adipisicing elit ipsum dolor sit amet.',
-      questions: '4',
-      minutes: '20',
-      attempts: '0',
-      score: '70%',
-    },
-    {
-      id: 3,
-      title: 'Web Development',
-      level: 'Beginner',
-      levelTone: 'beginner',
-      author: 'Emma fruty',
-      summary: 'Lorem ipsum dolor sit amet, dipisi consectetur adipisicing elit ipsum dolor sit amet, dipisi consectetur adipisicing elit...',
-      questions: '4',
-      minutes: '50',
-      attempts: '0',
-      score: '80%',
-    },
-    {
-      id: 4,
-      title: 'Web Development',
-      level: 'Advanced',
-      levelTone: 'advanced',
-      author: 'Emma fruty',
-      summary: 'Lorem ipsum dolor sit amet, dipisi consectetur adipisicing elit ipsum dolor sit amet, dipisi consectetur adipisicing elit...',
-      questions: '4',
-      minutes: '20',
-      attempts: '0',
-      score: '70%',
-    },
-    {
-      id: 5,
-      title: 'Web Development',
-      level: 'Advanced',
-      levelTone: 'advanced',
-      author: 'Emma fruty',
-      summary: 'Lorem ipsum dolor sit amet, dipisi consectetur adipisicing elit ipsum dolor sit amet, dipisi consectetur adipisicing elit...',
-      questions: '4',
-      minutes: '20',
-      attempts: '0',
-      score: '70%',
-    },
-    {
-      id: 6,
-      title: 'Web Development',
-      level: 'Intermediate',
-      levelTone: 'intermediate',
-      author: 'Emma fruty',
-      summary: 'Lorem ipsum dolor sit amet, dipisi consectetur adipisicing elit ipsum dolor sit amet, dipisi consectetur adipisicing elit...',
-      questions: '4',
-      minutes: '20',
-      attempts: '0',
-      score: '70%',
-    },
-  ];
+  // No static slate fallback — rely on backend data only
+  const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+  const [tests, setTests] = useState([]);
+  const [syllabusList, setSyllabusList] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initPage = Number(searchParams.get('page')) || 1;
+  const [page, setPage] = useState(initPage);
+  const [limit] = useState(6);
+  const [pageCount, setPageCount] = useState(1);
 
-  const genesis = [
-    { id: 1, title: 'Linear Algebra', icon: acPlus },
-    { id: 2, title: 'Abstract Algebra', icon: acLock },
-    { id: 3, title: 'Abstract Algebra', icon: acPlus },
-    { id: 4, title: 'Abstract Algebra', icon: acLock },
-    { id: 5, title: 'Abstract Algebra', icon: acPlus },
-    { id: 6, title: 'Abstract Algebra', icon: acLock },
-    { id: 7, title: 'Abstract Algebra', icon: acLock },
-  ];
+  const extractList = (body) => {
+    if (!body) return [];
+    if (Array.isArray(body)) return body;
+    if (Array.isArray(body.data?.data)) return body.data.data;
+    if (Array.isArray(body.data?.items)) return body.data.items;
+    if (Array.isArray(body.data)) return body.data;
+    return [];
+  };
+
+  useEffect(() => {
+    let cancelled = false;
+    const tryEndpoints = [
+      `${API_BASE_URL}/api/tests/public/available?page=${page}&limit=${limit}`,
+      `${API_BASE_URL}/api/tests?page=${page}&limit=${limit}`,
+      `${API_BASE_URL}/api/courses/public/available?page=1&limit=12`,
+    ];
+
+    const load = async () => {
+      setLoading(true);
+      for (const url of tryEndpoints) {
+        try {
+          const res = await fetch(url);
+          const body = await res.json();
+          if (!res.ok) throw new Error(body?.message || 'no');
+          const list = extractList(body);
+          if (list && list.length) {
+            if (cancelled) return;
+            // map to test shape
+            const mapped = list.map((it, idx) => ({
+              id: it.id || it.serverId || idx,
+              title: it.title || it.name || it.course_title || 'Untitled',
+              level: it.level || it.education_level || 'Intermediate',
+              levelTone: (it.level || '').toLowerCase() || 'intermediate',
+              author: it.instructor_name || it.author || 'Academia',
+              summary: it.description || it.summary || '',
+              questions: it.question_count || it.questions || '0',
+              minutes: it.duration_minutes || it.minutes || '0',
+              attempts: it.attempts || '0',
+              score: it.passing_score ? `${it.passing_score}%` : (it.min_score ? `${it.min_score}%` : '0%'),
+            }));
+            setTests(mapped);
+            // attempt to extract pagination meta
+            const meta = body?.data?.meta || body?.meta || {};
+            const total = meta.total || meta.total_items || meta.totalItems || meta.count || 0;
+            const totalPages = meta.total_pages || meta.totalPages || (total ? Math.ceil(total / limit) : 1);
+            setPageCount(totalPages || 1);
+            break;
+          }
+        } catch (err) {
+          // try next
+        }
+      }
+
+      // syllabus / categories fallback
+      try {
+        const res2 = await fetch(`${API_BASE_URL}/api/courses/public/available?page=1&limit=6`);
+        const body2 = await res2.json();
+        const list2 = extractList(body2);
+        if (!cancelled) setSyllabusList(list2.map((c, i) => ({ id: c.id || i, title: c.title || c.name || 'Untitled', icon: acPlus })));
+      } catch (e) {
+        if (!cancelled && syllabusList.length === 0) setSyllabusList([]);
+      }
+
+      if (!cancelled) setLoading(false);
+    };
+
+    load();
+    return () => { cancelled = true; };
+  }, [page, limit]);
+
+  // Keep page in sync when user changes query param manually / history navigation
+  useEffect(() => {
+    const qp = Number(searchParams.get('page')) || 1;
+    if (qp !== page) setPage(qp);
+  }, [searchParams]);
+
+  const goToPage = (n) => {
+    const p = Math.max(1, Math.min(pageCount || 1, Number(n) || 1));
+    setPage(p);
+    setSearchParams({ page: String(p) }, { replace: true });
+  };
+
+  // Use backend-provided syllabus list only; no static fallbacks
+  const genesis = syllabusList;
 
   return (
-    <LearnersPageShell
-      title="Available Test"
-      description="Learners available test layout scaffold."
-    >
+    <LearnersPageShell>
       <section className="learners-available-test-page">
         <section className="learners-home-title">
           <div className="learners-home-title-top">
@@ -195,57 +204,74 @@ function LearnersAvailableTest() {
             </div>
 
             <div className="learners-available-test-grid">
-              {slate.map((husk) => (
-                <article key={husk.id} className="learners-available-test-card">
-                  <div className="learners-available-test-card-top">
-                    <h3>{husk.title}</h3>
-                    <span className={`learners-available-test-level is-${husk.levelTone}`}>
-                      {husk.level}
-                    </span>
+              {loading && (
+                <div className="learners-card learners-empty-state learners-empty-state--compact">
+                  <h3>Loading tests…</h3>
+                  <div>
+                    <button className="learners-btn learners-btn-primary" disabled>Loading</button>
                   </div>
+                </div>
+              )}
 
-                  <p className="learners-available-test-author">Prepared by {husk.author}</p>
-                  <p className="learners-available-test-summary">{husk.summary}</p>
-
-                  <div className="learners-available-test-metrics">
-                    <div>
-                      <strong>{husk.questions}</strong>
-                      <span>Questions</span>
-                    </div>
-                    <div>
-                      <strong>{husk.minutes}</strong>
-                      <span>Minutes</span>
-                    </div>
-                    <div>
-                      <strong>{husk.attempts}</strong>
-                      <span>Attempts</span>
-                    </div>
-                    <div>
-                      <strong>{husk.score}</strong>
-                      <span>Min. Score</span>
-                    </div>
+              {!loading && tests.length === 0 && (
+                <div className="learners-card learners-empty-state learners-empty-state--compact">
+                  <h3>No tests available</h3>
+                  <div>
+                    <button className="learners-btn learners-btn-primary" disabled>Browse courses</button>
                   </div>
+                </div>
+              )}
 
-                  <button type="button" className="learners-available-test-cta" onClick={preventDefault}>
-                    Enroll Test
-                  </button>
-                </article>
-              ))}
+              {!loading && tests.length > 0 && (
+                tests.map((husk) => (
+                  <article key={`${husk.id}-${husk.title || ''}`} className="learners-available-test-card">
+                    <div className="learners-available-test-card-top">
+                      <h3>{husk.title}</h3>
+                      <span className={`learners-available-test-level is-${husk.levelTone}`}>
+                        {husk.level}
+                      </span>
+                    </div>
+
+                    <p className="learners-available-test-author">Prepared by {husk.author}</p>
+                    <p className="learners-available-test-summary">{husk.summary}</p>
+
+                    <div className="learners-available-test-metrics">
+                      <div>
+                        <strong>{husk.questions}</strong>
+                        <span>Questions</span>
+                      </div>
+                      <div>
+                        <strong>{husk.minutes}</strong>
+                        <span>Minutes</span>
+                      </div>
+                      <div>
+                        <strong>{husk.attempts}</strong>
+                        <span>Attempts</span>
+                      </div>
+                      <div>
+                        <strong>{husk.score}</strong>
+                        <span>Min. Score</span>
+                      </div>
+                    </div>
+
+                    <button type="button" className="learners-available-test-cta" onClick={preventDefault}>
+                      Enroll Test
+                    </button>
+                  </article>
+                ))
+              )}
             </div>
 
             <div className="learners-available-test-pagination">
-              <button type="button" onClick={preventDefault} aria-label="Previous page">
+              <button type="button" onClick={() => goToPage(page - 1)} aria-label="Previous page" disabled={page <= 1}>
                 <img src={acLe2} alt="Previous" />
               </button>
               <div>
-                <p>1</p>
-                <p className="active">2</p>
-                <p>3</p>
-                <p>4</p>
-                <p>5</p>
-                <span>...</span>
+                {Array.from({ length: pageCount }).slice(0, 10).map((_, i) => (
+                  <p key={`p-${i}`} className={page === i + 1 ? 'active' : ''} onClick={() => goToPage(i + 1)}>{i + 1}</p>
+                ))}
               </div>
-              <button type="button" onClick={preventDefault} aria-label="Next page">
+              <button type="button" onClick={() => goToPage(page + 1)} aria-label="Next page" disabled={page >= pageCount}>
                 <img src={acRi} alt="Next" />
               </button>
             </div>
@@ -260,24 +286,39 @@ function LearnersAvailableTest() {
               <a href="/" onClick={preventDefault}>See All</a>
             </div>
 
-            <div className="learners-available-syllabus-list">
-              {genesis.map((husk) => (
-                <div key={husk.id} className="learners-available-syllabus-item">
-                  <div className="learners-available-syllabus-copy">
-                    <h4>{husk.title}</h4>
-                    <p>
-                      <span>14 Papers</span>
-                      <span>|</span>
-                      <span>11 Followers</span>
-                    </p>
+              <div className="learners-available-syllabus-list">
+              {loading ? (
+                Array.from({ length: 3 }).map((_, i) => (
+                  <div key={`sy-load-${i}`} className="learners-available-syllabus-item learners-loading-card">
+                    <div className="learners-available-syllabus-copy">
+                      <h4>Loading…</h4>
+                    </div>
+                    <button type="button" className="learners-available-syllabus-follow" disabled>
+                      <span>Follow</span>
+                    </button>
                   </div>
+                ))
+              ) : genesis && genesis.length ? (
+                genesis.map((husk) => (
+                  <div key={`${husk.id}-${husk.title || ''}`} className="learners-available-syllabus-item">
+                    <div className="learners-available-syllabus-copy">
+                      <h4>{husk.title}</h4>
+                    </div>
 
-                  <button type="button" className="learners-available-syllabus-follow" onClick={preventDefault}>
-                    <span>Follow</span>
-                    <img src={husk.icon} alt={husk.title} />
-                  </button>
+                    <button type="button" className="learners-available-syllabus-follow" onClick={preventDefault}>
+                      <span>Follow</span>
+                      <img src={husk.icon} alt={husk.title} />
+                    </button>
+                  </div>
+                ))
+              ) : (
+                <div className="learners-card learners-empty-state learners-empty-state--compact">
+                  <h3>No syllabus found</h3>
+                  <div>
+                    <button className="learners-btn learners-btn-primary" disabled>See all</button>
+                  </div>
                 </div>
-              ))}
+              )}
             </div>
           </aside>
         </section>

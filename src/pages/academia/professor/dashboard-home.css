@@ -448,6 +448,81 @@
   width: 120px;
 }
 
+.prof-table-empty-cell {
+  padding: 24px 18px !important;
+}
+
+.prof-table-empty {
+  max-width: 420px;
+  margin: 6px auto;
+  padding: 12px 14px;
+  border: 1px solid #E8EAF2;
+  border-radius: 12px;
+  background: #FFFFFF;
+  box-shadow: 0 6px 12px rgba(15, 23, 42, 0.04);
+  text-align: center;
+}
+
+.prof-table-empty-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: #F3EDF7;
+  color: #450468;
+  font-family: "Inter", sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 14px;
+}
+
+.prof-table-empty h4 {
+  margin: 8px 0 6px;
+  font-family: "Inter", sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 20px;
+  color: #071437;
+}
+
+.prof-table-empty p {
+  margin: 0;
+  font-family: "Inter", sans-serif;
+  font-size: 12px;
+  line-height: 16px;
+  color: #667085;
+}
+
+.prof-table-empty-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 16px;
+}
+
+.prof-table-empty-actions button {
+  min-height: 34px;
+  padding: 0 14px;
+  border: 1px solid #DBDFE9;
+  border-radius: 10px;
+  background: #FFFFFF;
+  color: #450468;
+  font-family: "Inter", sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.prof-table-empty-actions button:hover {
+  transform: translateY(-1px);
+  border-color: #CDB6DD;
+  box-shadow: 0 8px 18px rgba(69, 4, 104, 0.08);
+}
+
 .prof-table thead th:first-child {
   padding-left: 10px;
 }
@@ -565,34 +640,8 @@
   white-space: nowrap;
 }
 
-.prof-table-rating {
-  white-space: nowrap;
-  font-weight: 600;
-  color: #0F172A;
-}
-
-.prof-table-rating img {
-  width: 14px;
-  height: 14px;
-  margin-left: 6px;
-  vertical-align: -2px;
-}
-
-.prof-table-status {
-  text-align: right;
-  padding-right: 18px;
-}
-
-.prof-status-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 10px;
-  border-radius: 999px;
-  font-size: 11px;
-  line-height: 14px;
-  border: 1px solid transparent;
-  white-space: nowrap;
+.prof-table-empty-actions {
+  display: none; /* actions removed for compact empty-state */
 }
 
 .prof-status-pill .dot {
@@ -708,13 +757,19 @@
 
 .prof-side-panel {
   margin-bottom: 10px;
+  margin-top: 0;
 }
+
 
 .prof-calendar-top {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
   gap: 10px;
+}
+
+.prof-calendar-top{
+  padding: 10px;
 }
 
 .prof-calendar-top h3 {

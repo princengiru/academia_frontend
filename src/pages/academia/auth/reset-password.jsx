@@ -63,10 +63,10 @@ function AcademiaResetPassword() {
         return;
       }
 
-      setStellarSuccess('Password reset successful! Redirecting to login...');
+      setStellarSuccess('Password reset successful! Redirecting...');
       setTimeout(() => {
-        navigate('/academia/auth/signin', { replace: true });
-      }, 2000);
+        navigate('/academia/auth/password-changed', { replace: true });
+      }, 1200);
     } catch (error) {
       console.error('Reset password error:', error);
       setVortexError(error.message || 'An error occurred');
