@@ -3,7 +3,11 @@ import { NavLink } from 'react-router-dom';
 const HOASidebar = ({ currentPage }) => {
   const preventDefault = (e) => e.preventDefault();
   const dashboardPages = ['index', 'learners', 'tutors', 'reports', 'settings'];
-  const getIconClassName = ({ isActive }) => (isActive || dashboardPages.includes(currentPage) ? 'selected' : '');
+  const managementPages = ['assignments', 'passed-courses', 'retaken-courses', 'failed-courses'];
+  
+  const getDashboardIconClassName = () => (dashboardPages.includes(currentPage) ? 'selected' : '');
+  const getManagementIconClassName = () => (managementPages.includes(currentPage) ? 'selected' : '');
+  
   const getSidebarLinkClassName = ({ isActive, isPending }) => {
     if (isPending) {
       return '';
@@ -35,16 +39,16 @@ const HOASidebar = ({ currentPage }) => {
         {/* Left Column: First Links */}
         <div className="first-links">
           <div className="sidebar-body">
-            <NavLink to="/academia/hoa" end className={getIconClassName}>
+            <NavLink to="/academia/hoa" end className={getDashboardIconClassName}>
               <button aria-label="Dashboard">
                 <img src="/assets/icons/home-2.svg" alt="Dashboard" />
               </button>
             </NavLink>
-            <a href="#" onClick={preventDefault}>
+            <NavLink to="/academia/hoa/assignments" className={getManagementIconClassName}>
               <button aria-label="Management">
                 <img src="/assets/icons/bill2.svg" alt="Management" />
               </button>
-            </a>
+            </NavLink>
             <a href="#" onClick={preventDefault}>
               <button aria-label="Reports">
                 <img src="/assets/icons/agent2.svg" alt="Reports" />
@@ -63,7 +67,7 @@ const HOASidebar = ({ currentPage }) => {
                 <img src="/assets/icons/tsidebar7-1.svg" alt="Help" />
               </button>
             </a>
-            <NavLink to="/academia/hoa/settings" className={getIconClassName}>
+            <NavLink to="/academia/hoa/settings" className={getDashboardIconClassName}>
               <button aria-label="Settings">
                 <img src="/assets/icons/ss1.svg" alt="Settings" />
               </button>
@@ -82,21 +86,41 @@ const HOASidebar = ({ currentPage }) => {
               <input type="search" placeholder="Search any tab ..." />
             </form>
             
-            <div className="links-list">
-              <h6>DASHBOARD</h6>
-              <NavLink to="/academia/hoa" end className={getSidebarLinkClassName}>
-                <span>Home</span>
-              </NavLink>
-              <NavLink to="/academia/hoa/learners" className={getSidebarLinkClassName}>
-                <span>Learners</span>
-              </NavLink>
-              <NavLink to="/academia/hoa/tutors" className={getSidebarLinkClassName}>
-                <span>Tutors</span>
-              </NavLink>
-              <NavLink to="/academia/hoa/reports" className={getSidebarLinkClassName}>
-                <span>Reports</span>
-              </NavLink>
-            </div>
+            {dashboardPages.includes(currentPage) && (
+              <div className="links-list">
+                <h6>DASHBOARD</h6>
+                <NavLink to="/academia/hoa" end className={getSidebarLinkClassName}>
+                  <span>Home</span>
+                </NavLink>
+                <NavLink to="/academia/hoa/learners" className={getSidebarLinkClassName}>
+                  <span>Learners</span>
+                </NavLink>
+                <NavLink to="/academia/hoa/tutors" className={getSidebarLinkClassName}>
+                  <span>Tutors</span>
+                </NavLink>
+                <NavLink to="/academia/hoa/reports" className={getSidebarLinkClassName}>
+                  <span>Reports</span>
+                </NavLink>
+              </div>
+            )}
+
+            {managementPages.includes(currentPage) && (
+              <div className="links-list">
+                <h6>MANAGEMENT</h6>
+                <NavLink to="/academia/hoa/assignments" className={getSidebarLinkClassName}>
+                  <span>Assignments</span>
+                </NavLink>
+                <NavLink to="/academia/hoa/passed-courses" className={getSidebarLinkClassName}>
+                  <span>Passed Courses</span>
+                </NavLink>
+                <NavLink to="/academia/hoa/retaken-courses" className={getSidebarLinkClassName}>
+                  <span>Retaken Courses</span>
+                </NavLink>
+                <NavLink to="/academia/hoa/failed-courses" className={getSidebarLinkClassName}>
+                  <span>Failed Courses</span>
+                </NavLink>
+              </div>
+            )}
           </div>
         </div>
 
