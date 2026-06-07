@@ -456,10 +456,12 @@
 .hoa-syllabus-page .syll-breadcrumbs {
     display: flex;
     align-items: center;
-    gap: 8px;
-    font-size: 11px;
+    gap: 12px;
+    font-size: 13px;
     color: #A1A5B7;
-    margin-bottom: 20px;
+    margin-bottom: 24px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid #EEF1F6;
 }
 
 .hoa-syllabus-page .syll-back-btn {
@@ -471,12 +473,11 @@
     justify-content: center;
     color: #071437;
     cursor: pointer;
-    margin-right: 8px;
 }
 
 .hoa-syllabus-page .syll-bc-active {
     color: #071437;
-    font-weight: 500;
+    font-weight: 600;
 }
 
 .hoa-syllabus-page .syll-bc-link {
@@ -547,12 +548,13 @@
 }
 
 .hoa-syllabus-page .syll-topic-card {
-    border: 1px solid #EEF1F6;
+    border: 1px solid #F1F1F4;
     border-radius: 8px;
-    padding: 20px;
+    padding: 16px 20px;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    background: #FFFFFF;
     transition: box-shadow 0.2s;
 }
 
@@ -570,7 +572,7 @@
 .hoa-syllabus-page .syll-tc-left p {
     margin: 0;
     font-size: 12px;
-    color: #78829D;
+    color: #99A1B7;
 }
 
 .hoa-syllabus-page .syll-btn-view {
@@ -578,12 +580,14 @@
     border: 1px solid #EEF1F6;
     color: #A1A5B7;
     padding: 8px 12px;
-    border-radius: 6px;
+    border-radius: 4px;
     font-size: 11px;
-    font-weight: 600;
+    font-weight: 500;
     display: inline-flex;
     align-items: center;
     gap: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
 }
 
 .hoa-syllabus-page .syll-btn-view:hover {
@@ -829,12 +833,13 @@
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    border: 1px solid #EEF1F6;
+    border: 1px solid #DBDFE9;
     border-radius: 4px;
-    padding: 4px 8px;
+    padding: 6px 10px;
     background: #FFFFFF;
     color: #4B5675;
     outline: none;
+    cursor: pointer;
 }
 
 .hoa-syllabus-page .syll-page-nav {
@@ -846,7 +851,7 @@
 .hoa-syllabus-page .syll-page-nav button {
     width: 28px;
     height: 28px;
-    border-radius: 4px;
+    border-radius: 50%;
     border: none;
     background: transparent;
     color: #4B5675;
@@ -854,11 +859,13 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
 }
 
 .hoa-syllabus-page .syll-page-nav button.active {
-    background: #F8F5FF;
-    color: #7239EA;
+    background: #45046814;
+    color: #450468;
 }
 
 /* Footer elements */

@@ -18,8 +18,14 @@ const IconFollowers = () => (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
 );
 
-const IconEye = () => (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+const IconEye = ({ width = 14, height = 14, color = "currentColor" }) => (
+    <svg width={width} height={height} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+);
+
+const IconUserBust = () => (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+        <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+    </svg>
 );
 
 const IconDownCaret = ({ width = 12, height = 8, className = "", style = {} }) => (
@@ -166,8 +172,8 @@ const HOASyllabus = () => {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                     <h2>Algebra</h2>
                     <div className="syll-followers-info">
-                        <span className="syll-followers-count"><IconFollowers /> 12.7K Followers</span>
-                        <button className="syll-btn-purple-dark"><IconEye /> View Followers</button>
+                        <span className="syll-followers-count"><IconUserBust /> 12.7K Followers</span>
+                        <button className="syll-btn-purple-dark"><IconEye width={12} height={12} color="#fff" /> View Followers</button>
                     </div>
                 </div>
             </div>
@@ -183,7 +189,7 @@ const HOASyllabus = () => {
                             <p>{topic.meta}</p>
                         </div>
                         <button className="syll-btn-view" onClick={() => setCurrentView(2)}>
-                            <IconEye /> View Topics
+                            <IconEye width={12} height={12} color="#A1A5B7" /> View Topics
                         </button>
                     </div>
                 ))}
@@ -488,15 +494,14 @@ const HOASyllabus = () => {
                             {/* Dynamic Breadcrumbs */}
                             <div className="syll-breadcrumbs">
                                 <button className="syll-back-btn" onClick={() => setCurrentView(Math.max(1, currentView - 1))}>
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4B5675" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#071437" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
                                 </button>
-                                <span className="syll-bc-link" onClick={() => setCurrentView(1)}>Mathematics & Science</span> /
-                                <span className={`syll-bc-link ${currentView === 1 ? 'syll-bc-active' : ''}`} onClick={() => setCurrentView(1)}>Algebra</span>
+                                <span className={`syll-bc-link ${currentView === 1 ? 'syll-bc-active' : ''}`} onClick={() => setCurrentView(1)}>Mathematics & Science</span> 
+                                <span style={{color: '#E4E6EF'}}>/</span>
+                                <span className={`syll-bc-link ${currentView === 2 ? 'syll-bc-active' : ''}`} onClick={() => setCurrentView(1)}>Algebra</span> 
+                                <span style={{color: '#E4E6EF'}}>/</span>
                                 {currentView >= 2 && (
-                                    <> / <span className={`syll-bc-link ${currentView === 2 ? 'syll-bc-active' : ''}`} onClick={() => setCurrentView(2)}>Linear Algebra</span></>
-                                )}
-                                {currentView === 3 && (
-                                    <> / <span className="syll-bc-active">Syllabus</span></>
+                                    <> <span className={`syll-bc-link ${currentView === 3 ? 'syll-bc-active' : ''}`} onClick={() => setCurrentView(2)}>Linear Algebra</span> <span style={{color: '#E4E6EF'}}>/</span></>
                                 )}
                             </div>
 
