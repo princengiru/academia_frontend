@@ -500,13 +500,24 @@
   background: #FFFFFF;
   border-radius: 8px;
   border: 1px solid #EEF1F6;
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: hidden;
   margin-bottom: 24px;
 }
 
-.hoa-reports-page .rep-table-wrapper {
-  overflow-x: auto;
-  max-width: 100%;
+.hoa-reports-page .rep-table-wrapper::-webkit-scrollbar {
+  height: 8px;
+}
+.hoa-reports-page .rep-table-wrapper::-webkit-scrollbar-track {
+  background: transparent;
+  margin: 0 16px;
+}
+.hoa-reports-page .rep-table-wrapper::-webkit-scrollbar-thumb {
+  background: #E2E8F0;
+  border-radius: 6px;
+}
+.hoa-reports-page .rep-table-wrapper::-webkit-scrollbar-thumb:hover {
+  background: #CBD5E1;
 }
 
 .hoa-reports-page .rep-table {
@@ -516,10 +527,11 @@
 }
 
 .hoa-reports-page .rep-table th {
-  padding: 16px;
-  background: #FCFCFC;
-  font-size: 12px;
-  color: #78829D;
+  background: #FAFAFA;
+  height: 48px;
+  padding: 16px 20px;
+  font-size: 13px;
+  color: #64748B;
   font-weight: 500;
   border-bottom: 1px solid #EEF1F6;
   white-space: nowrap;
@@ -533,14 +545,19 @@
 }
 
 .hoa-reports-page .rep-table td {
-  padding: 16px;
-  border-bottom: 1px dashed #EEF1F6;
+  padding: 14px 20px;
+  border-bottom: 1px solid #EEF1F6;
   vertical-align: middle;
   white-space: nowrap;
 }
 
 .hoa-reports-page .rep-table tr:hover {
-  background: #FCFCFC;
+  background: #FFFFFF;
+  border-bottom: 1px solid #F1F1F4;
+  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.05);
+  color: #071437;
+  position: relative;
+  z-index: 1;
 }
 
 .hoa-reports-page .rep-table tr.selected-row td,
@@ -558,24 +575,24 @@
 }
 
 .hoa-reports-page .rep-table th.sticky-col-1 {
-  background: #FCFCFC;
+  background: #FAFAFA;
 }
 
 .hoa-reports-page .rep-table th.sticky-col-2,
 .hoa-reports-page .rep-table td.sticky-col-2 {
   position: sticky;
-  left: 64px;
+  left: 56px;
   z-index: 2;
   background: #FFFFFF;
 }
 
 .hoa-reports-page .rep-table th.sticky-col-2 {
-  background: #FCFCFC;
+  background: #FAFAFA;
 }
 
 .hoa-reports-page .rep-table tr:hover td.sticky-col-1,
 .hoa-reports-page .rep-table tr:hover td.sticky-col-2 {
-  background: #FCFCFC;
+  background: #FFFFFF;
 }
 
 .hoa-reports-page .rep-table tr.selected-row td.sticky-col-1,
@@ -589,10 +606,10 @@
   position: absolute;
   top: 0;
   right: 0;
-  width: 1px;
-  height: 100%;
-  background-color: transparent;
-  box-shadow: 1px 0 0px #EEF1F6, 4px 0 8px rgba(0, 0, 0, 0.04);
+  bottom: 0;
+  width: 15px;
+  transform: translateX(100%);
+  background: linear-gradient(to right, rgba(0,0,0,0.06) 0%, rgba(0,0,0,0) 100%);
   pointer-events: none;
 }
 
