@@ -179,6 +179,7 @@
     justify-content: center;
     gap: 6px;
     font-weight: 400;
+    white-space: nowrap;
   }
 
   .trend {
