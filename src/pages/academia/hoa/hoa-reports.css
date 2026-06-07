@@ -370,7 +370,7 @@
 .hoa-reports-page .rep-country-list {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
   margin-top: 20px;
   overflow-y: auto;
   flex: 1;
