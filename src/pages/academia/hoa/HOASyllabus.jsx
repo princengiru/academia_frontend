@@ -21,6 +21,12 @@ const IconEye = () => (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
 );
 
+const IconDownCaret = ({ width = 12, height = 8, className = "", style = {} }) => (
+    <svg width={width} height={height} viewBox="0 0 16 10" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={className} style={style}>
+        <polyline points="2 2 8 8 14 2"></polyline>
+    </svg>
+);
+
 const IconExternalLink = () => (
     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
 );
@@ -40,12 +46,20 @@ const HOASyllabus = () => {
     // Sidebar state
     const [expandedCategories, setExpandedCategories] = useState(['math']);
     const [selectedSubCat, setSelectedSubCat] = useState('algebra');
+    const [fullyExpandedCats, setFullyExpandedCats] = useState([]);
 
     // Main header filter state
     const [activeFilter, setActiveFilter] = useState('All');
 
     const toggleCategory = (catId) => {
         setExpandedCategories(prev =>
+            prev.includes(catId) ? prev.filter(id => id !== catId) : [...prev, catId]
+        );
+    };
+
+    const toggleShowMore = (catId, e) => {
+        e.stopPropagation();
+        setFullyExpandedCats(prev => 
             prev.includes(catId) ? prev.filter(id => id !== catId) : [...prev, catId]
         );
     };
@@ -57,7 +71,11 @@ const HOASyllabus = () => {
         { id: 'comp_math', name: 'Computational Math', count: '2,899' },
         { id: 'app_math', name: 'Applied Math', count: '23' },
         { id: 'func_analysis', name: 'Functional analysis', count: '567' },
-        { id: 'geometry', name: 'Geometry', count: '1,099' }
+        { id: 'geometry', name: 'Geometry', count: '1,099' },
+        { id: 'topology', name: 'Topology', count: '45' },
+        { id: 'number_theory', name: 'Number Theory', count: '120' },
+        { id: 'statistics', name: 'Statistics', count: '300' },
+        { id: 'discrete_math', name: 'Discrete Math', count: '150' }
     ];
 
     const sidebarCategories = [
@@ -315,16 +333,15 @@ const HOASyllabus = () => {
                                         onClick={() => toggleCategory(cat.id)}
                                     >
                                         {cat.name}
-                                        <img
-                                            src={hoadowncaret}
-                                            alt=""
-                                            style={{ transform: expandedCategories.includes(cat.id) ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}
+                                        <IconDownCaret 
+                                            width={14} height={8}
+                                            style={{ transform: expandedCategories.includes(cat.id) ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', color: '#071437' }}
                                         />
                                     </div>
 
                                     {expandedCategories.includes(cat.id) && cat.subcats && (
                                         <div className="syll-subcat-list">
-                                            {cat.subcats.map((sub, sidx) => (
+                                            {(fullyExpandedCats.includes(cat.id) ? cat.subcats : cat.subcats.slice(0, 6)).map((sub, sidx) => (
                                                 <div
                                                     key={sidx}
                                                     className={`syll-subcat-item ${selectedSubCat === sub.id ? 'active' : ''}`}
@@ -337,9 +354,19 @@ const HOASyllabus = () => {
                                                     <span className="syll-count-badge">{sub.count}</span>
                                                 </div>
                                             ))}
-                                            <div className="syll-show-more">
-                                                <img src={hoadowncaret} alt="" style={{ width: 10 }} /> Show more
-                                            </div>
+                                            {cat.subcats.length > 6 && (
+                                                <div className="syll-show-more" onClick={(e) => toggleShowMore(cat.id, e)}>
+                                                    {fullyExpandedCats.includes(cat.id) ? (
+                                                        <>
+                                                            <IconDownCaret width={12} height={8} style={{ transform: 'rotate(180deg)' }} /> Show less
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <IconDownCaret width={12} height={8} /> Show more
+                                                        </>
+                                                    )}
+                                                </div>
+                                            )}
                                         </div>
                                     )}
                                 </div>
