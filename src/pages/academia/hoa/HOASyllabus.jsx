@@ -22,6 +22,12 @@ const IconEye = ({ width = 14, height = 14, color = "currentColor" }) => (
     <svg width={width} height={height} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
 );
 
+const IconLeftCaret = ({ width = 8, height = 12, className = "", style = {}, strokeWidth = 2.5 }) => (
+    <svg width={width} height={height} viewBox="0 0 8 12" fill="none" className={className} style={style}>
+        <path d="M6.5 1L1.5 6L6.5 11" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+);
+
 const IconUserBust = () => (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none">
         <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
@@ -169,12 +175,10 @@ const HOASyllabus = () => {
     const renderView1Grid = () => (
         <>
             <div className="syll-view-title-row">
-                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                    <h2>Algebra</h2>
-                    <div className="syll-followers-info">
-                        <span className="syll-followers-count"><IconUserBust /> 12.7K Followers</span>
-                        <button className="syll-btn-purple-dark"><IconEye width={12} height={12} color="#fff" /> View Followers</button>
-                    </div>
+                <h2>Algebra</h2>
+                <div className="syll-followers-info">
+                    <span className="syll-followers-count"><IconUserBust /> 12.7K Followers</span>
+                    <button className="syll-btn-purple-dark">View Followers <IconEye width={14} height={14} color="#fff" /></button>
                 </div>
             </div>
             <p className="syll-desc-text">
@@ -216,12 +220,10 @@ const HOASyllabus = () => {
     const renderView2List = () => (
         <>
             <div className="syll-view-title-row">
-                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                    <h2>Linear Algebra</h2>
-                    <div className="syll-followers-info">
-                        <span className="syll-followers-count"><IconFollowers /> 12.7K Followers</span>
-                        <button className="syll-btn-purple-dark"><IconEye /> View Followers</button>
-                    </div>
+                <h2>Linear Algebra</h2>
+                <div className="syll-followers-info">
+                    <span className="syll-followers-count"><IconUserBust /> 12.7K Followers</span>
+                    <button className="syll-btn-purple-dark">View Followers <IconEye width={14} height={14} color="#fff" /></button>
                 </div>
             </div>
             <p className="syll-desc-text">
@@ -494,7 +496,7 @@ const HOASyllabus = () => {
                             {/* Dynamic Breadcrumbs */}
                             <div className="syll-breadcrumbs">
                                 <button className="syll-back-btn" onClick={() => setCurrentView(Math.max(1, currentView - 1))}>
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#071437" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                                    <IconLeftCaret width={10} height={16} strokeWidth={2.5} />
                                 </button>
                                 <span className={`syll-bc-link ${currentView === 1 ? 'syll-bc-active' : ''}`} onClick={() => setCurrentView(1)}>Mathematics & Science</span> 
                                 <span style={{color: '#E4E6EF'}}>/</span>
