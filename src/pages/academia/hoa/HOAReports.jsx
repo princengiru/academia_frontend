@@ -14,6 +14,8 @@ import hoasearch from '../../../assets/icons/hoasearch.svg';
 import hoafilter from '../../../assets/icons/hoafilter.svg';
 import hoadollar from '../../../assets/icons/hoadollar.svg';
 import hoadownload from '../../../assets/icons/hoadownload.svg';
+import hoaleftarrow from '../../../assets/icons/hoaleftarrow.svg';
+import hoarightarrow from '../../../assets/icons/hoarightarrow.svg';
 
 // Flags and Payment methods (Placeholders assuming existing paths)
 import rwanda from '../../../assets/icons/rwanda.svg';
@@ -25,6 +27,40 @@ import mexico from '../../../assets/icons/rwanda.svg'; // Mock
 const HOAReports = () => {
   const { currency, formatAmount } = useCurrency();
   const [selectedRows, setSelectedRows] = useState([]);
+  const [sortConfig, setSortConfig] = useState({ key: 'tutorName', direction: 'asc' });
+  const [pageSize, setPageSize] = useState('10');
+  const [isPageSizeOpen, setIsPageSizeOpen] = useState(false);
+  const pageSizeOptions = ['5', '10', '20'];
+
+  const clearSelectedRows = () => setSelectedRows([]);
+
+  const getSortedData = (data, config) => {
+    if (!config.key) return data;
+    return [...data].sort((a, b) => {
+      let aVal = a[config.key];
+      let bVal = b[config.key];
+      
+      // Extract numeric values for amounts like "222.3 USD"
+      if (typeof aVal === 'string' && aVal.includes('USD')) {
+        aVal = parseFloat(aVal) || 0;
+        bVal = parseFloat(bVal) || 0;
+      }
+      
+      if (aVal < bVal) return config.direction === 'asc' ? -1 : 1;
+      if (aVal > bVal) return config.direction === 'asc' ? 1 : -1;
+      return 0;
+    });
+  };
+
+  const handleSort = (key) => {
+    let direction = 'asc';
+    if (sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    } else if (sortConfig.key === key && sortConfig.direction === 'desc') {
+      direction = 'asc';
+    }
+    setSortConfig({ key, direction });
+  };
 
   // Mock Data: Top Stats
   const topStats = [
@@ -503,34 +539,54 @@ const HOAReports = () => {
           <table className="rep-table">
             <thead>
               <tr>
-                <th style={{ width: '40px', textAlign: 'center' }}>
-                  <div className="rep-minus-box">-</div>
+                <th className="sticky-col-1" style={{ width: '40px', textAlign: 'center' }}>
+                  <button type="button" className="minus-btn-container minus-select-button" onClick={clearSelectedRows}>
+                    <div className="rep-minus-box">-</div>
+                  </button>
+                </th>
+                <th className="sticky-col-2">
+                  <div className="th-inner" onClick={() => handleSort('tutorName')}>
+                    Tutor Details (34) 
+                    <span className={`sort-icon ${sortConfig.key === 'tutorName' ? 'active ' + sortConfig.direction : ''}`}><img src={hoaupdowncaret} alt="sort" /></span>
+                  </div>
                 </th>
                 <th>
-                  <div className="th-inner">Tutor Details (34) <img src={hoaupdowncaret} alt="sort" style={{ opacity: 0.5 }} /></div>
+                  <div className="th-inner" onClick={() => handleSort('course')}>
+                    Course name 
+                    <span className={`sort-icon ${sortConfig.key === 'course' ? 'active ' + sortConfig.direction : ''}`}><img src={hoaupdowncaret} alt="sort" /></span>
+                  </div>
                 </th>
                 <th>
-                  <div className="th-inner">Course name <img src={hoaupdowncaret} alt="sort" style={{ opacity: 0.5 }} /></div>
+                  <div className="th-inner" onClick={() => handleSort('amount')}>
+                    Payment Method <img src={currency.flag} alt="flag" style={{ width: 14 }} /> 
+                    <span className={`sort-icon ${sortConfig.key === 'amount' ? 'active ' + sortConfig.direction : ''}`}><img src={hoaupdowncaret} alt="sort" /></span>
+                  </div>
                 </th>
                 <th>
-                  <div className="th-inner">Payment Method <img src={currency.flag} alt="flag" style={{ width: 14 }} /> <img src={hoadowncaret} alt="drop" style={{ opacity: 0.5 }} /></div>
+                  <div className="th-inner" onClick={() => handleSort('reason')}>
+                    Payment Reason 
+                    <span className={`sort-icon ${sortConfig.key === 'reason' ? 'active ' + sortConfig.direction : ''}`}><img src={hoaupdowncaret} alt="sort" /></span>
+                  </div>
                 </th>
                 <th>
-                  <div className="th-inner">Payment Reason <img src={hoaupdowncaret} alt="sort" style={{ opacity: 0.5 }} /></div>
+                  <div className="th-inner" onClick={() => handleSort('role')}>
+                    Role 
+                    <span className={`sort-icon ${sortConfig.key === 'role' ? 'active ' + sortConfig.direction : ''}`}><img src={hoaupdowncaret} alt="sort" /></span>
+                  </div>
                 </th>
                 <th>
-                  <div className="th-inner">Role <img src={hoaupdowncaret} alt="sort" style={{ opacity: 0.5 }} /></div>
-                </th>
-                <th>
-                  <div className="th-inner">Status <img src={hoaupdowncaret} alt="sort" style={{ opacity: 0.5 }} /></div>
+                  <div className="th-inner" onClick={() => handleSort('status')}>
+                    Status 
+                    <span className={`sort-icon ${sortConfig.key === 'status' ? 'active ' + sortConfig.direction : ''}`}><img src={hoaupdowncaret} alt="sort" /></span>
+                  </div>
                 </th>
                 <th style={{ width: '40px' }}></th>
               </tr>
             </thead>
             <tbody>
-              {paymentHistory.map((row) => (
-                <tr key={row.id}>
-                  <td style={{ textAlign: 'center' }}>
+              {getSortedData(paymentHistory, sortConfig).map((row) => (
+                <tr key={row.id} className={selectedRows.includes(row.id) ? 'selected-row' : ''}>
+                  <td className="sticky-col-1" style={{ textAlign: 'center' }}>
                     <input 
                        type="checkbox" 
                        className="rep-checkbox" 
@@ -538,7 +594,7 @@ const HOAReports = () => {
                        onChange={() => toggleRow(row.id)}
                     />
                   </td>
-                  <td>
+                  <td className="sticky-col-2">
                     <div className="rep-td-tutor">
                       <strong>{row.tutorName}</strong>
                       <span><img src={row.flag} alt="flag" style={{ width: 12, borderRadius: '50%' }} /> {row.location}</span>
@@ -579,26 +635,41 @@ const HOAReports = () => {
         </div>
 
         {/* Pagination Section */}
-        <div className="rep-pagination-row">
-           <div className="rep-page-sizer">
-              Show
-              <select defaultValue="5">
-                 <option value="5">5</option>
-                 <option value="10">10</option>
-              </select>
-              per page
-           </div>
-           
-           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-              <span>1-10 of 5</span>
-              <div className="rep-page-nav">
-                 <button className="arrow-btn">←</button>
-                 <button>1</button>
-                 <button className="active">2</button>
-                 <button>3</button>
-                 <button className="arrow-btn">→</button>
-              </div>
-           </div>
+        <div className="hoa-pagination-container list-pagination">
+          <div className="pagination-left">
+            Show
+            <div className="page-size-dropdown mx-8">
+              <button 
+                type="button" 
+                className="page-size-button px-8-py-2"
+                onClick={() => setIsPageSizeOpen(!isPageSizeOpen)}
+              >
+                {pageSize} <img src={hoadowncaret} alt="" />
+              </button>
+              {isPageSizeOpen && (
+                <div className="page-size-menu">
+                  {pageSizeOptions.map(opt => (
+                    <button
+                      key={opt}
+                      className="page-size-option"
+                      onClick={() => { setPageSize(opt); setIsPageSizeOpen(false); }}
+                    >
+                      {opt}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            per page
+          </div>
+          <div className="hoa-pagination">
+            <span className="page-range">1-{pageSize} of 5</span>
+            <button className="page-nav"><img src={hoaleftarrow} className="icon-15" style={{ width: '20px', height: '20px', padding: '0' }} alt="Prev" /></button>
+            <button className="page-num">1</button>
+            <button className="page-num active">2</button>
+            <button className="page-num">3</button>
+            <button className="page-nav"><img src={hoarightarrow} className="icon-15" style={{ width: '20px', height: '20px', padding: '0' }} alt="Next" /></button>
+          </div>
         </div>
 
         {/* Footer Link Area (Matches image footer style slightly) */}
