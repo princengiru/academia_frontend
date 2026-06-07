@@ -313,10 +313,11 @@
 
 .hoa-reports-page .rep-rev-info h2 {
   margin: 0 0 4px 0;
-  font-size: 18px;
+  font-size: 15px;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 4px;
+  font-weight: 700;
 }
 
 .hoa-reports-page .rep-rev-info p {
@@ -327,22 +328,22 @@
   font-weight: 600;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 4px;
 }
 
 .hoa-reports-page .rep-progress-bar {
   display: flex;
   width: 100%;
-  height: 10px;
+  height: 12px;
   min-height: 10px;
   flex-shrink: 0;
-  gap: 6px;
+  gap: 3px;
   margin-bottom: 14px;
 }
 
 .hoa-reports-page .rep-prog-seg {
   height: 100%;
-  border-radius: 10px;
+  border-radius: 6px;
 }
 
 .hoa-reports-page .rep-rev-legend {
@@ -355,7 +356,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 12px;
+  font-size: 11px;
   color: #4B5675;
   font-weight: 500;
 }

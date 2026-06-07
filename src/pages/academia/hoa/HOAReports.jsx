@@ -432,7 +432,7 @@ const HOAReports = () => {
               </div>
               <div className="rep-rev-info">
                  <h2>+ 223.8K 
-                    <span className="rep-stat-currency" style={{ fontSize: 13, padding: '4px 8px', borderRadius: 4 }}>
+                    <span className="rep-stat-currency" style={{ fontSize: 12, padding: '4px 8px', borderRadius: 4 }}>
                       RWF <img src={currency.flag} alt="flag" style={{ width: 14 }} /> <img src={hoadowncaret} alt="" style={{ width: 10 }} />
                     </span>
                  </h2>
@@ -443,7 +443,7 @@ const HOAReports = () => {
             <div className="rep-progress-bar">
                <div className="rep-prog-seg" style={{ width: '15%', background: '#1B84FF' }}></div>
                <div className="rep-prog-seg" style={{ width: '15%', background: '#F8285A' }}></div>
-               <div className="rep-prog-seg" style={{ width: '25%', background: '#FF8A00' }}></div>
+               <div className="rep-prog-seg" style={{ width: '25%', background: '#FF6F1E' }}></div>
                <div className="rep-prog-seg" style={{ width: '15%', background: '#17C653' }}></div>
                <div className="rep-prog-seg" style={{ width: '30%', background: '#071437' }}></div>
             </div>
@@ -451,7 +451,7 @@ const HOAReports = () => {
             <div className="rep-rev-legend">
                 <div className="rep-legend-item"><span className="rep-legend-dot" style={{background: '#1B84FF'}}></span> Syllabus ( 12% )</div>
                 <div className="rep-legend-item"><span className="rep-legend-dot" style={{background: '#F8285A'}}></span> Online Courses ( 12% )</div>
-                <div className="rep-legend-item"><span className="rep-legend-dot" style={{background: '#FF8A00'}}></span> Tutors upload payments ( 12% )</div>
+                <div className="rep-legend-item"><span className="rep-legend-dot" style={{background: '#FF6F1E'}}></span> Tutors upload payments ( 12% )</div>
                 <div className="rep-legend-item"><span className="rep-legend-dot" style={{background: '#17C653'}}></span> Certificates ( 12% )</div>
                 <div className="rep-legend-item"><span className="rep-legend-dot" style={{background: '#071437'}}></span> Projects ( 12% )</div>
             </div>
