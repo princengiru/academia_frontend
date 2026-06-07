@@ -11,6 +11,7 @@ import hoadowncaret from '../../../assets/icons/hoadowncaret.svg';
 import hoaupdowncaret from '../../../assets/icons/hoaupdowncaret.svg';
 import hoaleftarrow from '../../../assets/icons/hoaleftarrow.svg';
 import hoarightarrow from '../../../assets/icons/hoarightarrow.svg';
+import hoafilter2 from '../../../assets/icons/hoafilter2.svg';
 
 // Custom inline SVGs for specific icons needed in this design
 const IconFollowers = () => (
@@ -47,6 +48,8 @@ const HOASyllabus = () => {
     const [expandedCategories, setExpandedCategories] = useState(['math']);
     const [selectedSubCat, setSelectedSubCat] = useState('algebra');
     const [fullyExpandedCats, setFullyExpandedCats] = useState([]);
+    const [isCourseFilterOpen, setIsCourseFilterOpen] = useState(false);
+    const [selectedCourseFilter, setSelectedCourseFilter] = useState('All Courses');
 
     // Main header filter state
     const [activeFilter, setActiveFilter] = useState('All');
@@ -362,11 +365,32 @@ const HOASyllabus = () => {
 
                     {/* Left Sidebar */}
                     <div className="syll-sidebar">
-                        <div className="syll-course-filter">
+                        <div className="syll-course-filter" onClick={() => setIsCourseFilterOpen(!isCourseFilterOpen)}>
                             <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                <img src={hoafilter} style={{ opacity: 0.5, width: 14 }} alt="" /> All Courses
+                                <img src={hoafilter2} style={{ width: 16 }} alt="" /> {selectedCourseFilter}
                             </span>
-                            <img src={hoadowncaret} alt="" />
+                            <IconDownCaret 
+                                width={14} height={8} 
+                                style={{ transform: isCourseFilterOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', color: '#6B7280' }} 
+                            />
+                            
+                            {isCourseFilterOpen && (
+                                <div className="syll-course-dropdown">
+                                    {['All Courses', 'My Courses', 'Archived Courses'].map(option => (
+                                        <div 
+                                            key={option} 
+                                            className={`syll-course-dropdown-item ${selectedCourseFilter === option ? 'active' : ''}`}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setSelectedCourseFilter(option);
+                                                setIsCourseFilterOpen(false);
+                                            }}
+                                        >
+                                            {option}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
 
                         <div className="syll-cat-list">

@@ -197,6 +197,7 @@
 }
 
 .hoa-syllabus-page .syll-course-filter {
+    position: relative;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -208,6 +209,41 @@
     color: #4B5675;
     font-weight: 600;
     cursor: pointer;
+}
+
+.hoa-syllabus-page .syll-course-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    margin-top: 8px;
+    background: #FFFFFF;
+    border: 1px solid #EEF1F6;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.hoa-syllabus-page .syll-course-dropdown-item {
+    padding: 12px 16px;
+    cursor: pointer;
+    font-size: 13px;
+    color: #4B5675;
+    font-weight: 500;
+    transition: background 0.2s;
+}
+
+.hoa-syllabus-page .syll-course-dropdown-item:hover {
+    background: #F8F9FA;
+}
+
+.hoa-syllabus-page .syll-course-dropdown-item.active {
+    background: #F8F5FF;
+    color: #450468;
+    font-weight: 600;
 }
 
 .hoa-syllabus-page .syll-cat-list {
