@@ -5,7 +5,7 @@ import HOATutors from '../../../pages/academia/hoa/HOATutors';
 import HOALayout from '../../../components/layouts/HOALayout/HOALayout';
 import HOAReports from '../../../pages/academia/hoa/HOAReports';
 import HOAAssignments from '../../../pages/academia/hoa/HOAAssignments';
-
+import HOAPassedCourses from '../../../pages/academia/hoa/HOAPassedCourses';
 const HOAPlaceholderPage = ({ currentPage, title, description }) => (
   <HOALayout currentPage={currentPage}>
     <div style={{ padding: '12px 0 32px' }}>
@@ -23,6 +23,7 @@ function AcademiaHOARoutes() {
       <Route path="academia/hoa/tutors" element={<HOATutors />} />
       <Route path="academia/hoa/reports" element={<HOAReports />} />
       <Route path="academia/hoa/assignments" element={<HOAAssignments />} />
+      <Route path="academia/hoa/passed-courses" element={<HOAPassedCourses />} />
       <Route
         path="academia/hoa/settings"
         element={(
