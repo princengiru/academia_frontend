@@ -1,0 +1,443 @@
+.hoa-assignments-page {
+    font-family: 'Inter', sans-serif;
+    color: #071437;
+}
+
+/* Page Header */
+.hoa-assignments-page .hoa-page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+}
+
+.hoa-assignments-page .hoa-page-header h1 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 700;
+    color: #000000;
+}
+
+.hoa-assignments-page .hoa-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.hoa-assignments-page .hoa-update-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    color: #64748B;
+    border: 1px solid #DBDFE9;
+    padding: 6px 14px;
+    border-radius: 4px;
+    background: #FCFCFC;
+    height: 40px;
+}
+
+.hoa-assignments-page .hoa-update-status .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #17C653;
+}
+
+.hoa-assignments-page .hoa-btn-primary {
+    background: #450468;
+    color: #FFFFFF;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    height: 40px;
+}
+
+/* Top Stats Cards Row */
+.hoa-assignments-page .assn-stats-row {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 16px;
+    margin-bottom: 30px;
+}
+
+.hoa-assignments-page .assn-stat-card {
+    background: #FFFFFF;
+    border: 1px solid #EEF1F6;
+    border-radius: 8px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+}
+
+.hoa-assignments-page .assn-stat-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+/* Specific Stat Icon Colors */
+.hoa-assignments-page .assn-icon-gray {
+    background: #F8FAFC;
+    border: 1px solid #EEF1F6;
+}
+
+.hoa-assignments-page .assn-icon-green {
+    background: #EAFFF1;
+    border: 1px solid #17C65333;
+}
+
+.hoa-assignments-page .assn-icon-orange {
+    background: #FFF8DD;
+    border: 1px solid #F6B10033;
+}
+
+.hoa-assignments-page .assn-icon-red {
+    background: #FFEEF3;
+    border: 1px solid #F8285A33;
+}
+
+.hoa-assignments-page .assn-stat-info h3 {
+    margin: 0 0 4px 0;
+    font-size: 15px;
+    font-weight: 700;
+    color: #071437;
+}
+
+.hoa-assignments-page .assn-stat-info p {
+    margin: 0;
+    font-size: 11px;
+    color: #A1A5B7;
+    font-weight: 500;
+}
+
+/* Table Area Header */
+.hoa-assignments-page .assn-table-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 20px;
+}
+
+.hoa-assignments-page .assn-table-title h2 {
+    margin: 0 0 4px 0;
+    font-size: 18px;
+    color: #071437;
+}
+
+.hoa-assignments-page .assn-table-title p {
+    margin: 0;
+    font-size: 12px;
+    color: #A1A5B7;
+    font-weight: 500;
+}
+
+.hoa-assignments-page .assn-table-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.hoa-assignments-page .assn-search-box {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border: 1px solid #EEF1F6;
+    border-radius: 6px;
+    background: #FFFFFF;
+    height: 36px;
+    width: 250px;
+}
+
+.hoa-assignments-page .assn-search-box input {
+    border: none;
+    outline: none;
+    font-size: 12px;
+    color: #4B5675;
+    width: 100%;
+}
+
+.hoa-assignments-page .assn-btn-filters {
+    background: #F8F5FF;
+    border: 1px solid #E3C9F2;
+    color: #450468;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    height: 36px;
+}
+
+/* Table Wrapper and Table */
+.hoa-assignments-page .assn-table-wrapper {
+    background: #FFFFFF;
+    border-radius: 8px;
+    border: 1px solid #EEF1F6;
+    overflow-x: auto;
+    margin-bottom: 24px;
+}
+
+.hoa-assignments-page .assn-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    text-align: left;
+    min-width: 1000px;
+}
+
+.hoa-assignments-page .assn-table th {
+    background: #FAFAFA;
+    padding: 16px;
+    font-size: 12px;
+    color: #78829D;
+    font-weight: 500;
+    border-bottom: 1px solid #EEF1F6;
+    white-space: nowrap;
+}
+
+.hoa-assignments-page .assn-table th .th-inner {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+}
+
+.hoa-assignments-page .assn-table td {
+    padding: 16px;
+    border-bottom: 1px dashed #EEF1F6;
+    vertical-align: middle;
+    background: #FFFFFF;
+}
+
+.hoa-assignments-page .assn-table tr:hover td {
+    background: #FCFCFC;
+}
+
+.hoa-assignments-page .assn-table tr:last-child td {
+    border-bottom: none;
+}
+
+/* Checkbox */
+.hoa-assignments-page .assn-checkbox {
+    width: 16px;
+    height: 16px;
+    border: 1px solid #DBDFE9;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.hoa-assignments-page .assn-minus-box {
+    width: 16px;
+    height: 16px;
+    background: #78829D;
+    color: white;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    line-height: 1;
+}
+
+/* Sticky Columns for Checkbox and Details (mimicking the image's shadow effect) */
+.hoa-assignments-page .assn-table th:nth-child(1),
+.hoa-assignments-page .assn-table td:nth-child(1) {
+    position: sticky;
+    left: 0;
+    z-index: 2;
+}
+
+.hoa-assignments-page .assn-table th:nth-child(2),
+.hoa-assignments-page .assn-table td:nth-child(2) {
+    position: sticky;
+    left: 48px;
+    /* Approx width of first column */
+    z-index: 2;
+    box-shadow: 4px 0 15px -4px rgba(0, 0, 0, 0.08);
+    /* Creates the overlapping shadow effect */
+}
+
+/* Table Cell Content Styles */
+.hoa-assignments-page .assn-td-details {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.hoa-assignments-page .assn-td-details strong {
+    font-size: 13px;
+    color: #071437;
+}
+
+.hoa-assignments-page .assn-td-details span {
+    font-size: 11px;
+    color: #A1A5B7;
+}
+
+.hoa-assignments-page .assn-td-type {
+    font-size: 13px;
+    color: #4B5675;
+}
+
+.hoa-assignments-page .assn-td-number {
+    font-size: 13px;
+    color: #071437;
+    font-weight: 600;
+}
+
+.hoa-assignments-page .assn-td-time {
+    font-size: 13px;
+    color: #071437;
+    font-weight: 600;
+}
+
+/* Status Pills */
+.hoa-assignments-page .assn-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    border: 1px solid transparent;
+}
+
+.hoa-assignments-page .assn-status .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+}
+
+.hoa-assignments-page .assn-st-uploaded {
+    background: #EAFFF1;
+    color: #17C653;
+    border-color: #17C65333;
+}
+
+.hoa-assignments-page .assn-st-uploaded .dot {
+    background: #17C653;
+}
+
+.hoa-assignments-page .assn-st-not-published {
+    background: #FFEEF3;
+    color: #F8285A;
+    border-color: #F8285A33;
+}
+
+.hoa-assignments-page .assn-st-not-published .dot {
+    background: #F8285A;
+}
+
+.hoa-assignments-page .assn-st-in-review {
+    background: #F9F9F9;
+    color: #78829D;
+    border-color: #DBDFE9;
+}
+
+.hoa-assignments-page .assn-st-in-review .dot {
+    background: #78829D;
+}
+
+/* Action Button */
+.hoa-assignments-page .assn-action-btn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: #A1A5B7;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Pagination */
+.hoa-assignments-page .assn-pagination-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    color: #78829D;
+    margin-bottom: 40px;
+}
+
+.hoa-assignments-page .assn-page-sizer {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.hoa-assignments-page .assn-page-sizer select {
+    border: 1px solid #EEF1F6;
+    border-radius: 4px;
+    padding: 4px 8px;
+    color: #4B5675;
+    outline: none;
+}
+
+.hoa-assignments-page .assn-page-nav {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.hoa-assignments-page .assn-page-nav button {
+    width: 28px;
+    height: 28px;
+    border-radius: 4px;
+    border: none;
+    background: transparent;
+    color: #4B5675;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.hoa-assignments-page .assn-page-nav button.active {
+    background: #F8F5FF;
+    color: #7239EA;
+}
+
+.hoa-assignments-page .assn-page-nav .arrow-btn {
+    color: #A1A5B7;
+}
+
+/* Footer elements */
+.hoa-assignments-page .assn-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid #EEF1F6;
+    padding-top: 20px;
+    margin-top: 20px;
+    font-size: 12px;
+    color: #A1A5B7;
+}
+
+.hoa-assignments-page .assn-footer-links a {
+    color: #A1A5B7;
+    text-decoration: none;
+    margin-left: 16px;
+}
+
+.hoa-assignments-page .assn-footer-links a:hover {
+    color: #450468;
+}

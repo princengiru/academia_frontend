@@ -687,14 +687,6 @@ const HOAReports = () => {
           </div>
         </div>
 
-        {/* Footer Link Area (Matches image footer style slightly) */}
-        <div className="rep-footer">
-           <div>© Copyright 2025 All Right Reserved By Naraza Group Ltd</div>
-           <div className="rep-footer-links">
-             <a href="#">Privacy and Policy</a> | <a href="#">Terms and Condition</a>
-           </div>
-        </div>
-
       </div>
     </HOALayout>
   );
