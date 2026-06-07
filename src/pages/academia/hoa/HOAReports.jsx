@@ -14,6 +14,7 @@ import hoasearch from '../../../assets/icons/hoasearch.svg';
 import hoafilter from '../../../assets/icons/hoafilter.svg';
 import hoadollar from '../../../assets/icons/hoadollar.svg';
 import hoadownload from '../../../assets/icons/hoadownload.svg';
+import hoadownload2 from '../../../assets/icons/hoadownload2.svg';
 import hoaleftarrow from '../../../assets/icons/hoaleftarrow.svg';
 import hoarightarrow from '../../../assets/icons/hoarightarrow.svg';
 
@@ -625,7 +626,7 @@ const HOAReports = () => {
                   </td>
                   <td>
                     <button className="rep-action-btn">
-                       <img src={hoadownload} alt="download" style={{ width: 16 }} />
+                       <img src={hoadownload2} alt="download" style={{ width: 16 }} />
                     </button>
                   </td>
                 </tr>
