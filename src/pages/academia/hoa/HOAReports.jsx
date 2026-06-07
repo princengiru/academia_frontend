@@ -581,7 +581,6 @@ const HOAReports = () => {
                     <span className={`sort-icon ${sortConfig.key === 'status' ? 'active ' + sortConfig.direction : ''}`}><img src={hoaupdowncaret} alt="sort" /></span>
                   </div>
                 </th>
-                <th style={{ width: '40px' }}></th>
               </tr>
             </thead>
             <tbody>
@@ -620,14 +619,16 @@ const HOAReports = () => {
                     <span className="rep-td-role">{row.role}</span>
                   </td>
                   <td>
-                    <span className={`rep-status rep-st-${row.statusColor}`}>
-                       <span className="dot"></span> {row.status}
-                    </span>
-                  </td>
-                  <td>
-                    <button className="rep-action-btn">
-                       <img src={hoadownload2} alt="download" style={{ width: 16 }} />
-                    </button>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                      <div style={{ width: '100px', display: 'flex', justifyContent: 'flex-end' }}>
+                        <span className={`rep-status rep-st-${row.statusColor}`}>
+                           <span className="dot"></span> {row.status}
+                        </span>
+                      </div>
+                      <button className="rep-action-btn">
+                         <img src={hoadownload2} alt="download" style={{ width: 16 }} />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
