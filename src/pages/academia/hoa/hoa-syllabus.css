@@ -336,9 +336,7 @@
 .hoa-syllabus-page .syll-main-area {
     flex: 1;
     min-width: 0;
-    background: #FFFFFF;
-    border: 1px solid #EEF1F6;
-    border-radius: 8px;
+    background: transparent;
     display: flex;
     flex-direction: column;
     min-height: 600px;
