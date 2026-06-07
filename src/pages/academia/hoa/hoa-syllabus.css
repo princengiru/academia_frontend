@@ -354,9 +354,9 @@
     align-items: center;
     justify-content: space-between;
     padding: 6px 6px 6px 16px;
-    border: 1px solid #EEF1F6;
-    border-radius: 8px;
-    background: #FFFFFF;
+    border: 1.3px solid #DBDFE9;
+    border-radius: 6px;
+    background: #FCFCFC;
     margin-bottom: 24px;
 }
 
@@ -377,7 +377,9 @@
 }
 
 .hoa-syllabus-page .syll-search-bar input::placeholder {
-    color: #A1A5B7;
+    color: #99A1B7;
+    font-size: 12px;
+    font-weight: 500;
 }
 
 .hoa-syllabus-page .syll-header-actions {
@@ -409,9 +411,11 @@
 }
 
 .hoa-syllabus-page .syll-type-btn.active {
-    background: #F8F5FF;
+    background: #45046814;
+    border-color: #45046833;
+
     color: #450468;
-    font-weight: 600;
+    font-weight: 500;
 }
 
 .hoa-syllabus-page .syll-v-divider {
@@ -423,12 +427,12 @@
 
 .hoa-syllabus-page .syll-btn-filter-pill {
     background: #FFFFFF;
-    border: 1px solid #EEF1F6;
-    color: #78829D;
+    border: 1px solid #DBDFE9;
+    color: #99A1B7;
     padding: 6px 16px;
     border-radius: 20px;
     font-size: 12px;
-    font-weight: 500;
+    font-weight: 400;
     display: flex;
     align-items: center;
     gap: 6px;
