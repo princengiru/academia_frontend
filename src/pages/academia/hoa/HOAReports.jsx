@@ -432,7 +432,7 @@ const HOAReports = () => {
               </div>
               <div className="rep-rev-info">
                  <h2>+ 223.8K 
-                    <span className="rep-stat-currency" style={{ fontSize: 13, background: '#F8FAFC', padding: '4px 8px', borderRadius: 4, border: '1px solid #EEF1F6' }}>
+                    <span className="rep-stat-currency" style={{ fontSize: 13, padding: '4px 8px', borderRadius: 4 }}>
                       RWF <img src={currency.flag} alt="flag" style={{ width: 14 }} /> <img src={hoadowncaret} alt="" style={{ width: 10 }} />
                     </span>
                  </h2>

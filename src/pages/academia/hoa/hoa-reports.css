@@ -267,6 +267,14 @@
   gap: 16px;
   margin-top: 24px;
   margin-bottom: 24px;
+  background-color: #FFFFFF;
+  padding-top: 24px;
+  padding-bottom: 24px;
+  padding-left: 24px;
+  padding-right: 24px;
+  border-radius: 9px;
+  width: 274px;
+  height:69px;
 }
 
 .hoa-reports-page .rep-rev-icon {
@@ -324,9 +332,12 @@
 
 .hoa-reports-page .rep-progress-bar {
   display: flex;
+  width: 100%;
   height: 10px;
+  min-height: 10px;
+  flex-shrink: 0;
   gap: 6px;
-  margin-bottom: 24px;
+  margin-bottom: 14px;
 }
 
 .hoa-reports-page .rep-prog-seg {
