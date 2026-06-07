@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import HOALayout from '../../../components/layouts/HOALayout/HOALayout';
 import './hoa-assignments.css';
 import './hoa-reports.css';
@@ -24,6 +24,26 @@ const HOAAssignments = () => {
     const [activeActionMenu, setActiveActionMenu] = useState(null);
 
     const clearSelectedRows = () => setSelectedRows([]);
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            // Close action menu if click is outside the menu and the action button
+            if (!event.target.closest('.rep-action-dropdown-menu') && !event.target.closest('.rep-action-btn')) {
+                setActiveActionMenu(null);
+            }
+            // Close filter menu if click is outside the menu and the filter button
+            if (!event.target.closest('.learners-performance-period-menu') && !event.target.closest('.rep-btn-filters')) {
+                setIsFilterOpen(false);
+            }
+            // Close page size menu if click is outside the menu and the page size button
+            if (!event.target.closest('.page-size-menu') && !event.target.closest('.page-size-button')) {
+                setIsPageSizeOpen(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     // Mock Data: Table Rows based on the image provided
     const assignmentsData = [
