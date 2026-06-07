@@ -21,6 +21,7 @@ const HOAAssignments = () => {
     const pageSizeOptions = ['5', '10', '25'];
     const [isFilterOpen, setIsFilterOpen] = useState(false);
     const [selectedFilter, setSelectedFilter] = useState('All Status');
+    const [activeActionMenu, setActiveActionMenu] = useState(null);
 
     const clearSelectedRows = () => setSelectedRows([]);
 
@@ -337,10 +338,18 @@ const HOAAssignments = () => {
                                             <span className="dot"></span> {row.status}
                                         </span>
                                     </td>
-                                    <td style={{ textAlign: 'center' }}>
-                                        <button className="rep-action-btn">
+                                    <td style={{ textAlign: 'center', position: 'relative' }}>
+                                        <button className="rep-action-btn" onClick={() => setActiveActionMenu(activeActionMenu === row.id ? null : row.id)}>
                                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="19" r="1"></circle></svg>
                                         </button>
+                                        {activeActionMenu === row.id && (
+                                            <div className="rep-action-dropdown-menu">
+                                                <div className="dropdown-item" onClick={() => setActiveActionMenu(null)}>Approve</div>
+                                                <div className="dropdown-item" onClick={() => setActiveActionMenu(null)}>Disapprove</div>
+                                                <div className="dropdown-item" onClick={() => setActiveActionMenu(null)}>Edit</div>
+                                                <div className="dropdown-item" onClick={() => setActiveActionMenu(null)} style={{ color: '#F8285A' }}>Delete</div>
+                                            </div>
+                                        )}
                                     </td>
                                 </tr>
                             ))}
