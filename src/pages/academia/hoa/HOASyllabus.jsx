@@ -189,11 +189,11 @@ const HOASyllabus = () => {
                 {gridTopics.map((topic, idx) => (
                     <div key={idx} className="syll-topic-card">
                         <div className="syll-tc-left">
-                            <h4 style={{ textDecoration: 'underline', cursor: 'pointer' }} onClick={() => setCurrentView(2)}>{topic.title}</h4>
+                            <h4 onClick={() => setCurrentView(2)}>{topic.title}</h4>
                             <p>{topic.meta}</p>
                         </div>
                         <button className="syll-btn-view" onClick={() => setCurrentView(2)}>
-                            <IconEye width={12} height={12} color="#A1A5B7" /> View Topics
+                            <IconEye width={14} height={14} color="#99A1B7" /> View Topics
                         </button>
                     </div>
                 ))}

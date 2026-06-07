@@ -567,6 +567,12 @@
     font-size: 15px;
     color: #071437;
     font-weight: 700;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.hoa-syllabus-page .syll-tc-left h4:hover {
+    text-decoration: underline;
 }
 
 .hoa-syllabus-page .syll-tc-left p {
@@ -577,11 +583,11 @@
 
 .hoa-syllabus-page .syll-btn-view {
     background: #FFFFFF;
-    border: 1px solid #EEF1F6;
-    color: #A1A5B7;
-    padding: 8px 12px;
+    border: 1px solid #DBDFE9;
+    color: #99A1B7;
+    padding: 6px 12px;
     border-radius: 4px;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 500;
     display: inline-flex;
     align-items: center;
@@ -591,8 +597,7 @@
 }
 
 .hoa-syllabus-page .syll-btn-view:hover {
-    border-color: #DBDFE9;
-    color: #78829D;
+    background: #F8F9FA;
 }
 
 /* View 2: Papers List */
