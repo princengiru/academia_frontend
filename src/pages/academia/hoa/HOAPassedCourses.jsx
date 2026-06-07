@@ -181,12 +181,7 @@ const HOAPassedCourses = () => {
                 <div className="assn-stats-row">
                     <div className="assn-stat-card">
                         <div className="assn-stat-icon assn-icon-gray">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4B5675" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                                <rect x="3" y="5" width="18" height="14" rx="4" />
-                                <circle cx="8" cy="9" r="1.5" />
-                                <line x1="12" y1="13" x2="18" y2="13" />
-                                <line x1="12" y1="16" x2="16" y2="16" />
-                            </svg>
+                            <img src={hoasummative} alt="Summative" />
                         </div>
                         <div className="assn-stat-info">
                             <h3>21</h3>
@@ -196,10 +191,7 @@ const HOAPassedCourses = () => {
 
                     <div className="assn-stat-card">
                         <div className="assn-stat-icon assn-icon-gray">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4B5675" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                                <rect x="3" y="5" width="18" height="14" rx="4" />
-                                <circle cx="8" cy="9" r="1.5" />
-                            </svg>
+                            <img src={hoaformative} alt="Formative" />
                         </div>
                         <div className="assn-stat-info">
                             <h3>21</h3>
@@ -209,7 +201,7 @@ const HOAPassedCourses = () => {
 
                     <div className="assn-stat-card">
                         <div className="assn-stat-icon assn-icon-green">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#17C653" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            <img src={hoapassedstudents} alt="Passed" />
                         </div>
                         <div className="assn-stat-info">
                             <h3>+ 2.8K</h3>
@@ -219,11 +211,7 @@ const HOAPassedCourses = () => {
 
                     <div className="assn-stat-card">
                         <div className="assn-stat-icon assn-icon-orange">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F6B100" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <polyline points="23 4 23 10 17 10"></polyline>
-                                <polyline points="1 20 1 14 7 14"></polyline>
-                                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
-                            </svg>
+                            <img src={hoaretakes} alt="Retakes" />
                         </div>
                         <div className="assn-stat-info">
                             <h3>157</h3>
@@ -233,7 +221,7 @@ const HOAPassedCourses = () => {
 
                     <div className="assn-stat-card">
                         <div className="assn-stat-icon assn-icon-red">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F8285A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                            <img src={hoafailedstudents} alt="Failed" />
                         </div>
                         <div className="assn-stat-info">
                             <h3>1.8K</h3>
