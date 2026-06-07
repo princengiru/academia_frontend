@@ -78,16 +78,60 @@ const HOASyllabus = () => {
         { id: 'discrete_math', name: 'Discrete Math', count: '150' }
     ];
 
+    const historySubcats = [
+        { id: 'ancient_hist', name: 'Ancient History', count: '145' },
+        { id: 'modern_hist', name: 'Modern History', count: '210' },
+        { id: 'world_wars', name: 'World Wars', count: '89' }
+    ];
+
+    const engineeringSubcats = [
+        { id: 'civil_eng', name: 'Civil Engineering', count: '320' },
+        { id: 'mech_eng', name: 'Mechanical Engineering', count: '180' },
+        { id: 'elec_eng', name: 'Electrical Eng.', count: '450' }
+    ];
+
+    const economicsSubcats = [
+        { id: 'microecon', name: 'Microeconomics', count: '210' },
+        { id: 'macroecon', name: 'Macroeconomics', count: '175' }
+    ];
+
+    const psychologySubcats = [
+        { id: 'cognitive_psy', name: 'Cognitive Psychology', count: '90' },
+        { id: 'clinical_psy', name: 'Clinical Psychology', count: '120' }
+    ];
+
+    const dataSubcats = [
+        { id: 'machine_learning', name: 'Machine Learning', count: '890' },
+        { id: 'data_viz', name: 'Data Visualization', count: '420' },
+        { id: 'big_data', name: 'Big Data Analytics', count: '550' }
+    ];
+
+    const itSubcats = [
+        { id: 'web_dev', name: 'Web Development', count: '1,200' },
+        { id: 'mobile_dev', name: 'Mobile Development', count: '850' },
+        { id: 'cyber_sec', name: 'Cybersecurity', count: '630' }
+    ];
+
+    const cloudSubcats = [
+        { id: 'aws', name: 'AWS Architecture', count: '410' },
+        { id: 'azure', name: 'Azure Fundamentals', count: '230' }
+    ];
+
+    const cyberSubcats = [
+        { id: 'ethical_hack', name: 'Ethical Hacking', count: '150' },
+        { id: 'net_sec', name: 'Network Security', count: '95' }
+    ];
+
     const sidebarCategories = [
         { id: 'math', name: 'Mathematics & Science', subcats: mathSubcats },
-        { id: 'history', name: 'History' },
-        { id: 'engineering', name: 'Engineering' },
-        { id: 'economics', name: 'Economics' },
-        { id: 'psychology', name: 'Psychology' },
-        { id: 'data', name: 'Data Science' },
-        { id: 'it1', name: 'IT & Software development' },
-        { id: 'it2', name: 'IT & Software development' },
-        { id: 'it3', name: 'IT & Software development' }
+        { id: 'history', name: 'History', subcats: historySubcats },
+        { id: 'engineering', name: 'Engineering', subcats: engineeringSubcats },
+        { id: 'economics', name: 'Economics', subcats: economicsSubcats },
+        { id: 'psychology', name: 'Psychology', subcats: psychologySubcats },
+        { id: 'data', name: 'Data Science', subcats: dataSubcats },
+        { id: 'it1', name: 'IT & Software development', subcats: itSubcats },
+        { id: 'cloud', name: 'Cloud Computing', subcats: cloudSubcats },
+        { id: 'cyber', name: 'Cybersecurity', subcats: cyberSubcats }
     ];
 
     const gridTopics = Array(9).fill({
