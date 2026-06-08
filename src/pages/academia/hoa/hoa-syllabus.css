@@ -183,7 +183,7 @@
 /* Two Column Layout */
 .hoa-syllabus-page .syll-layout {
     display: flex;
-    gap: 24px;
+    gap: 16px;
     align-items: flex-start;
 }
 
@@ -194,6 +194,12 @@
     display: flex;
     flex-direction: column;
     gap: 16px;
+    background: #FDFDFD;
+    border-radius: 6px;
+    padding: 16px;
+    position: sticky;
+    top: 24px;
+    max-height: calc(100vh - 48px);
 }
 
 .hoa-syllabus-page .syll-course-filter {
@@ -220,7 +226,7 @@
     background: #FFFFFF;
     border: 1px solid #EEF1F6;
     border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
     z-index: 10;
     display: flex;
     flex-direction: column;
@@ -250,6 +256,27 @@
     display: flex;
     flex-direction: column;
     gap: 4px;
+    flex: 1;
+    overflow-y: auto;
+    padding-right: 8px;
+}
+
+/* Custom Scrollbar for Cat List */
+.hoa-syllabus-page .syll-cat-list::-webkit-scrollbar {
+    width: 4px;
+}
+
+.hoa-syllabus-page .syll-cat-list::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.hoa-syllabus-page .syll-cat-list::-webkit-scrollbar-thumb {
+    background: #DBDFE9;
+    border-radius: 4px;
+}
+
+.hoa-syllabus-page .syll-cat-list::-webkit-scrollbar-thumb:hover {
+    background: #A1A5B7;
 }
 
 .hoa-syllabus-page .syll-cat-header {
@@ -554,7 +581,7 @@
     align-items: center;
     background: #FCFCFC;
     transition: box-shadow 0.2s;
-    
+
 }
 
 .hoa-syllabus-page .syll-topic-card:hover {
@@ -586,7 +613,7 @@
     border: 1px solid #DBDFE9;
     color: #64748B;
     max-width: 104px;
-    width: 100% ;
+    width: 100%;
     padding: 6px 12px;
     border-radius: 4px;
     font-size: 10px;
