@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import HOALayout from '../../../components/layouts/HOALayout/HOALayout';
 import './hoa-syllabus.css';
 
@@ -14,6 +14,7 @@ import hoarightarrow from '../../../assets/icons/hoarightarrow.svg';
 import hoafilter2 from '../../../assets/icons/hoafilter2.svg';
 import hoawhiteadd from '../../../assets/icons/hoawhiteadd.svg';
 import hoagrayadd from '../../../assets/icons/hoagrayadd.svg';
+import hoaviewpaper from '../../../assets/icons/hoaviewpaper.svg';
 
 // Custom inline SVGs for specific icons needed in this design
 const IconFollowers = () => (
@@ -90,6 +91,18 @@ const HOASyllabus = () => {
     const [pageSize, setPageSize] = useState('10');
     const [isPageSizeOpen, setIsPageSizeOpen] = useState(false);
     const pageSizeOptions = ['5', '10', '20'];
+
+    const pageSizeRef = useRef(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (pageSizeRef.current && !pageSizeRef.current.contains(event.target)) {
+                setIsPageSizeOpen(false);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
 
     // Main header filter state
     const [activeFilter, setActiveFilter] = useState('All');
@@ -219,13 +232,13 @@ const HOASyllabus = () => {
             <div className="hoa-pagination-container list-pagination">
                 <div className="pagination-left">
                     Show
-                    <div className="page-size-dropdown mx-8" style={{ margin: '0 8px' }}>
+                    <div className="page-size-dropdown mx-8" style={{ margin: '0 8px' }} ref={pageSizeRef}>
                         <button 
                             type="button" 
                             className="page-size-button px-8-py-2"
                             onClick={() => setIsPageSizeOpen(!isPageSizeOpen)}
                         >
-                            {pageSize} <img src={hoadowncaret} alt="" />
+                            {pageSize} <img src={hoadowncaret} alt="" style={{ transform: isPageSizeOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
                         </button>
                         {isPageSizeOpen && (
                             <div className="page-size-menu">
@@ -282,7 +295,7 @@ const HOASyllabus = () => {
                         </div>
                         <div className="syll-pi-right">
                             <button className="syll-btn-view" onClick={() => setCurrentView(3)}>
-                                <IconDocument color="#64748B" /> View Paper
+                                <img src={hoaviewpaper} alt="View Paper" /> View Paper
                             </button>
                             <span className={paper.type === 'Paid' ? 'syll-badge-paid' : 'syll-badge-free'}>
                                 {paper.type} <IconExternalLink />
@@ -295,13 +308,13 @@ const HOASyllabus = () => {
             <div className="hoa-pagination-container list-pagination">
                 <div className="pagination-left">
                     Show
-                    <div className="page-size-dropdown mx-8" style={{ margin: '0 8px' }}>
+                    <div className="page-size-dropdown mx-8" style={{ margin: '0 8px' }} ref={pageSizeRef}>
                         <button 
                             type="button" 
                             className="page-size-button px-8-py-2"
                             onClick={() => setIsPageSizeOpen(!isPageSizeOpen)}
                         >
-                            {pageSize} <img src={hoadowncaret} alt="" />
+                            {pageSize} <img src={hoadowncaret} alt="" style={{ transform: isPageSizeOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
                         </button>
                         {isPageSizeOpen && (
                             <div className="page-size-menu">
