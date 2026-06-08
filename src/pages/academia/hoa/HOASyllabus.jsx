@@ -73,6 +73,11 @@ const HOASyllabus = () => {
     const [fullyExpandedCats, setFullyExpandedCats] = useState([]);
     const [isCourseFilterOpen, setIsCourseFilterOpen] = useState(false);
     const [selectedCourseFilter, setSelectedCourseFilter] = useState('All Courses');
+    
+    // Pagination state
+    const [pageSize, setPageSize] = useState('10');
+    const [isPageSizeOpen, setIsPageSizeOpen] = useState(false);
+    const pageSizeOptions = ['5', '10', '20'];
 
     // Main header filter state
     const [activeFilter, setActiveFilter] = useState('All');
@@ -199,19 +204,40 @@ const HOASyllabus = () => {
                 ))}
             </div>
 
-            <div className="syll-pagination">
-                <div className="syll-page-sizer">
+            <div className="hoa-pagination-container list-pagination">
+                <div className="pagination-left">
                     Show
-                    <button>5 <img src={hoadowncaret} alt="" style={{ width: 8 }} /></button>
+                    <div className="page-size-dropdown mx-8" style={{ margin: '0 8px' }}>
+                        <button 
+                            type="button" 
+                            className="page-size-button px-8-py-2"
+                            onClick={() => setIsPageSizeOpen(!isPageSizeOpen)}
+                        >
+                            {pageSize} <img src={hoadowncaret} alt="" />
+                        </button>
+                        {isPageSizeOpen && (
+                            <div className="page-size-menu">
+                                {pageSizeOptions.map(opt => (
+                                    <button
+                                        key={opt}
+                                        className="page-size-option"
+                                        onClick={() => { setPageSize(opt); setIsPageSizeOpen(false); }}
+                                    >
+                                        {opt}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </div>
                     per page
                 </div>
-                <div className="syll-page-nav">
-                    <span style={{ marginRight: 16 }}>1-10 of 5</span>
-                    <button><img src={hoaleftarrow} style={{ width: 10 }} alt="Prev" /></button>
-                    <button>1</button>
-                    <button className="active">2</button>
-                    <button>3</button>
-                    <button><img src={hoarightarrow} style={{ width: 10 }} alt="Next" /></button>
+                <div className="hoa-pagination">
+                    <span className="page-range">1-{pageSize} of 5</span>
+                    <button className="page-nav"><img src={hoaleftarrow} className="icon-15" style={{ width: '20px', height: '20px', padding: '0' }} alt="Prev" /></button>
+                    <button className="page-num">1</button>
+                    <button className="page-num active">2</button>
+                    <button className="page-num">3</button>
+                    <button className="page-nav"><img src={hoarightarrow} className="icon-15" style={{ width: '20px', height: '20px', padding: '0' }} alt="Next" /></button>
                 </div>
             </div>
         </>
@@ -254,17 +280,40 @@ const HOASyllabus = () => {
                 ))}
             </div>
 
-            <div className="syll-pagination">
-                <div className="syll-page-sizer">
-                    Show <button>5 <img src={hoadowncaret} alt="" style={{ width: 8 }} /></button> per page
+            <div className="hoa-pagination-container list-pagination">
+                <div className="pagination-left">
+                    Show
+                    <div className="page-size-dropdown mx-8" style={{ margin: '0 8px' }}>
+                        <button 
+                            type="button" 
+                            className="page-size-button px-8-py-2"
+                            onClick={() => setIsPageSizeOpen(!isPageSizeOpen)}
+                        >
+                            {pageSize} <img src={hoadowncaret} alt="" />
+                        </button>
+                        {isPageSizeOpen && (
+                            <div className="page-size-menu">
+                                {pageSizeOptions.map(opt => (
+                                    <button
+                                        key={opt}
+                                        className="page-size-option"
+                                        onClick={() => { setPageSize(opt); setIsPageSizeOpen(false); }}
+                                    >
+                                        {opt}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                    per page
                 </div>
-                <div className="syll-page-nav">
-                    <span style={{ marginRight: 16 }}>1-10 of 5</span>
-                    <button><img src={hoaleftarrow} style={{ width: 10 }} alt="Prev" /></button>
-                    <button>1</button>
-                    <button className="active">2</button>
-                    <button>3</button>
-                    <button><img src={hoarightarrow} style={{ width: 10 }} alt="Next" /></button>
+                <div className="hoa-pagination">
+                    <span className="page-range">1-{pageSize} of 5</span>
+                    <button className="page-nav"><img src={hoaleftarrow} className="icon-15" style={{ width: '20px', height: '20px', padding: '0' }} alt="Prev" /></button>
+                    <button className="page-num">1</button>
+                    <button className="page-num active">2</button>
+                    <button className="page-num">3</button>
+                    <button className="page-nav"><img src={hoarightarrow} className="icon-15" style={{ width: '20px', height: '20px', padding: '0' }} alt="Next" /></button>
                 </div>
             </div>
         </>
