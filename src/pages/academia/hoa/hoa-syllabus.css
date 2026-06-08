@@ -558,7 +558,7 @@
     font-size: 13px;
     color: #78829D;
     line-height: 1.6;
-    margin-bottom: 30px;
+    margin-bottom: 20px;
     max-width: 90%;
 }
 
@@ -638,7 +638,6 @@
 .hoa-syllabus-page .syll-papers-list {
     display: flex;
     flex-direction: column;
-    gap: 24px;
     margin-bottom: 30px;
 }
 
@@ -646,8 +645,13 @@
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    padding-bottom: 24px;
+    padding-bottom: 16px;
+    padding-top: 16px;
     border-bottom: 1px solid #EEF1F6;
+}
+
+.hoa-syllabus-page .syll-paper-item:first-child {
+    padding-top: 0;
 }
 
 .hoa-syllabus-page .syll-paper-item:last-child {
@@ -696,7 +700,6 @@
 
 .hoa-syllabus-page .syll-badge-paid {
     background: #EAFFF1;
-    border: 1px solid #17C65333;
     color: #17C653;
     padding: 4px 10px;
     border-radius: 4px;
@@ -709,7 +712,6 @@
 
 .hoa-syllabus-page .syll-badge-free {
     background: #F8F5FF;
-    border: 1px solid #E3C9F2;
     color: #7239EA;
     padding: 4px 10px;
     border-radius: 4px;
