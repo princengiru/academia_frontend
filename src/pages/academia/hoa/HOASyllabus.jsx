@@ -12,6 +12,7 @@ import hoaupdowncaret from '../../../assets/icons/hoaupdowncaret.svg';
 import hoaleftarrow from '../../../assets/icons/hoaleftarrow.svg';
 import hoarightarrow from '../../../assets/icons/hoarightarrow.svg';
 import hoafilter2 from '../../../assets/icons/hoafilter2.svg';
+import hoaadd from '../../../assets/icons/hoaadd.svg';
 
 // Custom inline SVGs for specific icons needed in this design
 const IconFollowers = () => (
@@ -424,7 +425,7 @@ const HOASyllabus = () => {
                     </div>
                     <div className="syll-add-actions">
                         <button className="syll-btn-outline">+ Add Syllabus</button>
-                        <button className="syll-btn-primary">+ Add Category</button>
+                        <button className="syll-btn-primary"><img src={hoaadd} alt="" /> Add Category</button>
                     </div>
                 </div>
 
