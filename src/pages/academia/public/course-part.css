@@ -530,6 +530,7 @@
     display: grid;
     grid-template-columns: 2fr 1fr;
     gap: 20px;
+    min-width: 0;
 }
 
 .course-part-page .main-content-grid-l{
@@ -539,6 +540,8 @@
     border-right: 1px solid #E2E8F0;
     padding-right: 20px;
     width: 100%;
+    min-width: 0;
+    overflow: hidden;
 }
 
 .course-part-page .mcgl-h{

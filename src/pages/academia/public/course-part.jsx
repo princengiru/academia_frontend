@@ -17,14 +17,17 @@ function AcademiaCoursePart() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
+  // FIX 1: Defined the missing preventDefault function
+  const preventDefault = (e) => e.preventDefault();
+
   const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
   const [courseData, setCourseData] = useState(null);
   const [relatedTopics, setRelatedTopics] = useState([]);
   const [dataLoading, setDataLoading] = useState(true);
   const [selectedMode, setSelectedMode] = useState('All');
-  const [chapterPage, setChapterPage] = useState(1);
-  const chaptersPerPage = 4;
+  const [topicPage, setTopicPage] = useState(1);
+  const topicsPerPage = 4;
 
   const courseTypes = ['All Courses', 'Certificates', 'Diplomas', 'Degrees', 'Workshops'];
   const sortOptions = ['Newest', 'Top papers', 'Past Papers', 'Most Downloaded'];
@@ -32,23 +35,30 @@ function AcademiaCoursePart() {
 
   const courseId = searchParams.get('courseId');
 
+  // FIX 2: Switched logic to pull from Syllabus Outlines instead of private Chapters
   const courseParts = useMemo(() => {
-    const chapters = courseData?.chapters || [];
+    // Depending on your exact backend payload, outlines might be nested. 
+    // This safely checks the most common relational structures.
+    const outlines = courseData?.syllabus?.outlines 
+      || courseData?.syllabuses?.[0]?.outlines 
+      || courseData?.outlines 
+      || [];
 
-    return chapters.map((chapter, index) => ({
-      id: chapter.id || index,
-      title: chapter.title || chapter.name || `Chapter ${index + 1}`,
+    return outlines.map((outline, index) => ({
+      id: outline.id || index,
+      title: outline.title || `Topic ${index + 1}`,
       author: courseData?.instructor_name || courseData?.author_name || 'Academia Team',
-      description: chapter.description || chapter.summary || courseData?.description || '',
+      // Prioritize the abstract for the public view, fallback to description
+      description: outline.abstract || outline.description || '', 
     }));
   }, [courseData]);
 
-  const totalChapterPages = Math.max(1, Math.ceil(courseParts.length / chaptersPerPage));
-  const visibleCourseParts = courseParts.slice((chapterPage - 1) * chaptersPerPage, chapterPage * chaptersPerPage);
-  const chapterPageNumbers = (() => {
+  const totalTopicPages = Math.max(1, Math.ceil(courseParts.length / topicsPerPage));
+  const visibleCourseParts = courseParts.slice((topicPage - 1) * topicsPerPage, topicPage * topicsPerPage);
+  const topicPageNumbers = (() => {
     const visible = 5;
-    const start = Math.max(1, Math.min(chapterPage - 2, totalChapterPages - visible + 1));
-    const end = Math.min(totalChapterPages, start + visible - 1);
+    const start = Math.max(1, Math.min(topicPage - 2, totalTopicPages - visible + 1));
+    const end = Math.min(totalTopicPages, start + visible - 1);
     const pages = [];
 
     for (let page = start; page <= end; page += 1) {
@@ -58,14 +68,13 @@ function AcademiaCoursePart() {
     return pages;
   })();
 
-  const handleViewPaper = (chapterId) => navigate(`/academia/read-contents?courseId=${courseData?.id || courseId || ''}&chapterId=${chapterId || ''}`);
+  const handleViewPaper = (topicId) => navigate(`/academia/read-contents?courseId=${courseData?.id || courseId || ''}&topicId=${topicId || ''}`);
   const handleRelatedTopic = (topicId) => navigate(`/academia/course-part?courseId=${topicId}`);
   const handleBackToCourses = () => {
     if (window.history.length > 1) {
       navigate(-1);
       return;
     }
-
     navigate('/academia/courses');
   };
 
@@ -107,7 +116,7 @@ function AcademiaCoursePart() {
         const relatedList = Array.isArray(relatedBody?.data) ? relatedBody.data : Array.isArray(relatedBody) ? relatedBody : [];
 
         setCourseData(course || null);
-        setChapterPage(1);
+        setTopicPage(1);
         setRelatedTopics(
           relatedList
             .filter((item) => String(item.id || item._id || item.course_id) !== String(course?.id || resolvedCourseId))
@@ -131,7 +140,7 @@ function AcademiaCoursePart() {
   }, [API_BASE_URL, courseId]);
 
   useEffect(() => {
-    setChapterPage(1);
+    setTopicPage(1);
   }, [courseData?.id]);
 
   return (
@@ -144,7 +153,11 @@ function AcademiaCoursePart() {
               <h1>{courseData?.title || 'Courses'}</h1>
             </div>
             <div className="hsi-contents-b">
-              <p>{courseData?.description || 'Loading course details from the backend...'}</p>
+              {courseData?.description ? (
+                <div dangerouslySetInnerHTML={{ __html: courseData.description }} />
+              ) : (
+                <p>Loading course details from the backend...</p>
+              )}
             </div>
           </div>
         </div>
@@ -174,7 +187,7 @@ function AcademiaCoursePart() {
               <input type="search" placeholder="Search any projects..." />
               <div className="div-h-r-s-f">
                 {filterToggleOptions.map((option, idx) => (
-                  <button key={idx} className={idx === 0 ? 'active' : ''}>
+                  <button key={idx} type="button" className={idx === 0 ? 'active' : ''}>
                     {option}
                   </button>
                 ))}
@@ -222,29 +235,33 @@ function AcademiaCoursePart() {
                 <img src={acUsIcon} alt="Users" />
                 <span>{courseData?.enrolled_users || courseData?.enrollment_count || 0} Students</span>
               </p>
-              <button>
+              <button type="button">
                 <span>Follow</span>
                 <img src={acP1Icon} alt="Plus" />
               </button>
             </div>
           </div>
           <div className="filters-grid-b-sel-b">
-            <p>{courseData?.description || 'This course is loading from the backend.'}</p>
+            {courseData?.description ? (
+              <div dangerouslySetInnerHTML={{ __html: courseData.description }} />
+            ) : (
+              <p>This course is loading from the backend.</p>
+            )}
           </div>
         </div>
 
         {/* Main Content Grid */}
         <div className="main-content-grid">
-          {/* Left: Key Research Themes */}
+          {/* Left: Syllabus Topics (Outlines) */}
           <div className="main-content-grid-l">
             <div className="mcgl-h">
-              <h2>Key research themes</h2>
+              <h2>Syllabus Topics</h2>
             </div>
             <div className="mcgl-b">
               {dataLoading ? (
                 <div className="course-part">
                   <div className="course-part-b">
-                    <p>Loading chapters...</p>
+                    <p>Loading syllabus topics...</p>
                   </div>
                 </div>
               ) : visibleCourseParts.length > 0 ? visibleCourseParts.map((part) => (
@@ -257,7 +274,7 @@ function AcademiaCoursePart() {
                     <div>
                       <button type="button" onClick={() => handleViewPaper(part.id)}>
                         <img src={acBookIcon} alt="View" />
-                        <span>View Paper</span>
+                        <span>View Topic</span>
                       </button>
                       <button type="button">
                         <img src={acDlIcon} alt="Download" />
@@ -266,20 +283,24 @@ function AcademiaCoursePart() {
                     </div>
                   </div>
                   <div className="course-part-b">
-                    <p>{part.description}</p>
+                    {part.description ? (
+                      <div dangerouslySetInnerHTML={{ __html: part.description }} />
+                    ) : (
+                      <p>No description available.</p>
+                    )}
                   </div>
                 </div>
               )) : (
                 <div className="course-part">
                   <div className="course-part-b">
-                    <p>No chapters found for this course.</p>
+                    <p>No syllabus topics found for this course.</p>
                   </div>
                 </div>
               )}
 
               {/* Pagination */}
               <div className="pagination">
-                <button type="button" onClick={() => setChapterPage((page) => Math.max(1, page - 1))} disabled={chapterPage <= 1}>
+                <button type="button" onClick={() => setTopicPage((page) => Math.max(1, page - 1))} disabled={topicPage <= 1}>
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     width="14"
@@ -297,13 +318,13 @@ function AcademiaCoursePart() {
                   </svg>
                 </button>
                 <div>
-                  {chapterPageNumbers.map((num) => (
-                    <button key={num} type="button" className={num === chapterPage ? 'active' : ''} onClick={() => setChapterPage(num)}>
+                  {topicPageNumbers.map((num) => (
+                    <button key={num} type="button" className={num === topicPage ? 'active' : ''} onClick={() => setTopicPage(num)}>
                       {num}
                     </button>
                   ))}
                 </div>
-                <button type="button" onClick={() => setChapterPage((page) => Math.min(totalChapterPages, page + 1))} disabled={chapterPage >= totalChapterPages}>
+                <button type="button" onClick={() => setTopicPage((page) => Math.min(totalTopicPages, page + 1))} disabled={topicPage >= totalTopicPages}>
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     width="14"
@@ -327,7 +348,7 @@ function AcademiaCoursePart() {
           {/* Right: Related Subtopics */}
           <div className="main-content-grid-r">
             <div className="mcgr-h">
-              <h2>Related Subtopics</h2>
+              <h2>Related Courses</h2>
             </div>
             <div className="mcgr-b">
               {relatedTopics.length > 0 ? relatedTopics.map((topic) => (
@@ -335,13 +356,13 @@ function AcademiaCoursePart() {
                   <div className="fgbl-item-l">
                     <h4>{topic.title || topic.name}</h4>
                     <p>
-                      <span>{topic.total_chapters || topic.papersCount || 0} Chapters</span>
+                      <span>{topic.total_outlines || topic.outlinesCount || 0} Topics</span>
                       <span>|</span>
                       <span>{Number(topic.price) === 0 ? 'Free' : 'Paid'}</span>
                     </p>
                   </div>
                   <div className="fgbl-item-r">
-                    <button>
+                    <button type="button">
                       <span>Follow</span>
                       <img src={Number(topic.price) === 0 ? acPpIcon : acLockIcon} alt={Number(topic.price) === 0 ? 'Plus' : 'Locked'} />
                     </button>
@@ -367,7 +388,7 @@ function AcademiaCoursePart() {
           <p>Far far away, behind the word mountains</p>
         </div>
         <div className="newsletter-sec-r">
-          <form>
+          <form onSubmit={preventDefault}>
             <img src={acSmsIcon} alt="Message" className="ac-sms" />
             <input type="email" placeholder="Enter email address" />
             <button type="submit">
@@ -381,4 +402,3 @@ function AcademiaCoursePart() {
 }
 
 export default AcademiaCoursePart;
-

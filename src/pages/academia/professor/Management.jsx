@@ -1,12 +1,12 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import ProfessorLayout from '../../../components/layouts/ProfessorLayout/ProfessorLayout';
-import EmptyState from '../../../components/EmptyState/EmptyState';
 import './management.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 const Management = () => {
+  const navigate = useNavigate();
   const preventDefault = (e) => e.preventDefault();
 
   // --- Tab State ---
@@ -19,54 +19,126 @@ const Management = () => {
     { id: 'management-student-qa', label: 'Student Q&A' },
   ];
 
-  // --- Table Data & Pagination State (server-driven) ---
+  // --- Table & Fetch State ---
   const [rows, setRows] = useState([]);
   const [rowsLoading, setRowsLoading] = useState(true);
-  const [rowsTotal, setRowsTotal] = useState(0);
   const [rowsError, setRowsError] = useState('');
+  
+  // --- Search & Pagination State ---
   const [searchTerm, setSearchTerm] = useState('');
-  const navigate = useNavigate();
-
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [pageSize, setPageSize] = useState(5);
   const [currentPage, setCurrentPage] = useState(1);
-  const totalPages = Math.max(1, Math.ceil((rowsTotal || rows.length) / pageSize));
 
-  const startIndex = (currentPage - 1) * pageSize;
+  // --- Table Selection State ---
+  const [selectedRowIds, setSelectedRowIds] = useState(() => new Set());
+  const selectAllRef = useRef(null);
+
+  // 1. Debounce Search to optimize filtering
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(searchTerm);
+      setCurrentPage(1); // Reset to page 1 on new search
+    }, 300);
+    return () => clearTimeout(handler);
+  }, [searchTerm]);
+
+  // 2. Fetch Data (with AbortController to prevent race conditions)
+  useEffect(() => {
+    const controller = new AbortController();
+    const token = localStorage.getItem('token');
+
+    const loadData = async () => {
+      if (!token) {
+        setRowsError('Authentication missing.');
+        setRowsLoading(false);
+        return;
+      }
+
+      setRowsLoading(true);
+      setRowsError('');
+
+      try {
+        // NOTE: Consider swapping this to /api/instructor/students or /api/instructor/assessments/all
+        const res = await fetch(`${API_BASE_URL}/api/dashboard/instructor`, {
+          headers: { Authorization: `Bearer ${token}` },
+          signal: controller.signal
+        });
+        
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || 'Failed to load dashboard data');
+
+        const courses = data?.data?.courses || [];
+        const earnings = data?.data?.courseEarnings || [];
+
+        const mapped = courses.map((c) => {
+          const earn = earnings.find(e => e.id === c.id) || {};
+          const studentsCount = earn.students || 0;
+          const statusTone = c.status === 'published' ? 'completed' : (c.status === 'draft' ? 'not-published' : 'not-checked');
+
+          return {
+            id: c.id,
+            student: c.title || 'Unknown Student',
+            country: c.level || 'N/A',
+            assessment: c.description || 'No Assessment',
+            progress: c.created_at ? new Date(c.created_at).toLocaleDateString() : 'N/A',
+            type: c.status || 'Draft',
+            questions: `${studentsCount} students`,
+            score: '-',
+            attempts: studentsCount,
+            duration: '-',
+            status: c.status || 'draft',
+            statusTone,
+          };
+        });
+
+        setRows(mapped);
+      } catch (err) {
+        if (err.name !== 'AbortError') {
+          setRowsError(err.message || 'Failed to load rows');
+        }
+      } finally {
+        setRowsLoading(false);
+      }
+    };
+
+    loadData();
+    return () => controller.abort();
+  }, []);
+
+  // 3. Client-Side Filter & Pagination Logic
   const filteredRows = useMemo(() => {
-    const q = (searchTerm || '').trim().toLowerCase();
+    const q = debouncedSearch.trim().toLowerCase();
     if (!q) return rows;
     return rows.filter(r => (
       String(r.student).toLowerCase().includes(q) ||
       String(r.assessment).toLowerCase().includes(q) ||
       String(r.type).toLowerCase().includes(q)
     ));
-  }, [rows, searchTerm]);
+  }, [rows, debouncedSearch]);
 
+  const totalPages = Math.max(1, Math.ceil(filteredRows.length / pageSize));
+  
+  // Safety check to ensure we don't get stuck on an empty page if data shrinks
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+  useEffect(() => {
+    if (currentPage !== safeCurrentPage) setCurrentPage(safeCurrentPage);
+  }, [safeCurrentPage, currentPage]);
+
+  const startIndex = (safeCurrentPage - 1) * pageSize;
   const currentRows = filteredRows.slice(startIndex, startIndex + pageSize);
 
-  // --- Table Selection State ---
-  const [selectedRowIds, setSelectedRowIds] = useState(new Set());
-  const selectAllRef = useRef(null);
+  // Calculate sliding window for pagination buttons (prevents rendering 50 buttons)
+  const visiblePageNumbers = useMemo(() => {
+    if (totalPages <= 3) return Array.from({ length: totalPages }, (_, i) => i + 1);
+    if (safeCurrentPage === 1) return [1, 2, 3];
+    if (safeCurrentPage === totalPages) return [totalPages - 2, totalPages - 1, totalPages];
+    return [safeCurrentPage - 1, safeCurrentPage, safeCurrentPage + 1];
+  }, [safeCurrentPage, totalPages]);
 
+  // --- Checkbox Logic ---
   const isAllVisibleSelected = currentRows.length > 0 && currentRows.every(row => selectedRowIds.has(row.id));
   const isSomeVisibleSelected = currentRows.some(row => selectedRowIds.has(row.id));
-
-  const handleSelectAll = (e) => {
-    const isChecked = e.target.checked;
-    const newSelection = new Set(selectedRowIds);
-    currentRows.forEach(row => {
-      if (isChecked) newSelection.add(row.id);
-      else newSelection.delete(row.id);
-    });
-    setSelectedRowIds(newSelection);
-  };
-
-  const handleSelectRow = (id) => {
-    const newSelection = new Set(selectedRowIds);
-    if (newSelection.has(id)) newSelection.delete(id);
-    else newSelection.add(id);
-    setSelectedRowIds(newSelection);
-  };
 
   useEffect(() => {
     if (selectAllRef.current) {
@@ -74,91 +146,52 @@ const Management = () => {
     }
   }, [isSomeVisibleSelected, isAllVisibleSelected]);
 
-  // Load instructor dashboard data and map courses -> table rows
-  useEffect(() => {
-    let mounted = true;
-    const token = localStorage.getItem('token');
+  const handleSelectAll = (e) => {
+    const isChecked = e.target.checked;
+    setSelectedRowIds(prev => {
+      const next = new Set(prev);
+      currentRows.forEach(row => isChecked ? next.add(row.id) : next.delete(row.id));
+      return next;
+    });
+  };
 
-    const load = async () => {
-      setRowsLoading(true);
-      setRowsError('');
-      try {
-        const res = await fetch(`${API_BASE_URL}/api/dashboard/instructor`, {
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.message || 'Failed to load dashboard');
+  const handleSelectRow = (id) => {
+    setSelectedRowIds(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
 
-        if (!mounted) return;
+  // --- Handlers ---
+  const handlePageSizeChange = (size) => {
+    setPageSize(size);
+    setCurrentPage(1);
+  };
 
-        const courses = data?.data?.courses || [];
-        const earnings = data?.data?.courseEarnings || [];
-
-        const mapped = courses.map((c) => {
-          const earn = earnings.find(e => e.id === c.id) || {};
-          const students = earn.students || 0;
-          const statusTone = c.status === 'published' ? 'completed' : (c.status === 'draft' ? 'not-published' : 'not-checked');
-
-          return {
-            id: c.id,
-            student: c.title,
-            country: c.level || '',
-            assessment: c.description || '',
-            progress: c.created_at ? new Date(c.created_at).toLocaleDateString() : '',
-            type: c.status || '',
-            questions: `${students} students`,
-            score: '-',
-            attempts: students,
-            duration: '-',
-            status: c.status || '',
-            statusTone,
-          };
-        });
-
-        setRows(mapped);
-        setRowsTotal(mapped.length);
-      } catch (err) {
-        if (mounted) setRowsError(err.message || 'Failed to load rows');
-      } finally {
-        if (mounted) setRowsLoading(false);
-      }
-    };
-
-    load();
-    return () => { mounted = false; };
-  }, []);
-
-  // Prepare rows rendering (simpler than long inline ternary)
-  const renderRows = (() => {
-    if (rowsLoading) {
-      return (
-        <tr>
-          <td colSpan={8} style={{ textAlign: 'center', padding: '2rem' }}>Loading...</td>
-        </tr>
-      );
+  const renderRows = () => {
+    if (rowsLoading && rows.length === 0) {
+      return <tr><td colSpan={8} style={{ textAlign: 'center', padding: '2rem' }}>Loading records...</td></tr>;
     }
 
     if (rowsError) {
-      return (
-        <tr>
-          <td colSpan={8} style={{ textAlign: 'center', padding: '2rem', color: 'var(--danger, #c00)' }}>
-            Error: {rowsError}
-          </td>
-        </tr>
-      );
+      return <tr><td colSpan={8} style={{ textAlign: 'center', padding: '2rem', color: 'var(--danger, #c00)' }}>Error: {rowsError}</td></tr>;
     }
 
     if (currentRows.length === 0) {
       return (
         <tr>
           <td colSpan={8} style={{ padding: '2.5rem' }}>
-            <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', justifyContent: 'center', flexDirection: 'column' }}>
-              <img src="/assets/icons/empty-assignments.svg" alt="No assessments" style={{ width: 88, height: 88, opacity: 0.9 }} />
-              <h3 style={{ margin: '0.25rem 0', fontSize: '1.15rem' }}>No assessments yet</h3>
-              <p style={{ margin: 0, color: 'var(--muted, #666)', maxWidth: 520, textAlign: 'center' }}>You don't have any assessments. Create a formative or summative assessment to get started.</p>
-              <div style={{ marginTop: '0.9rem', display: 'flex', gap: '.6rem' }}>
-                <button className="learners-btn learners-btn-primary" onClick={(e) => { e.preventDefault(); navigate('/academia/professor/assignments'); }}>Create Assessment</button>
-                <button className="learners-btn learners-btn-secondary" onClick={(e) => { e.preventDefault(); }}>Import Questions</button>
+            <div className="prof-management-empty-state">
+              <div className="prof-management-empty-state-card">
+                <h3>No records found</h3>
+                <p>{debouncedSearch ? 'Try adjusting your search criteria.' : "You don't have any assessments yet. Create one to get started."}</p>
+                {!debouncedSearch && (
+                  <div className="prof-management-empty-state-actions">
+                    <button className="learners-btn learners-btn-primary" onClick={() => navigate('/academia/professor/assignments')}>Create Assessment</button>
+                    <button className="learners-btn learners-btn-secondary">Import Questions</button>
+                  </div>
+                )}
               </div>
             </div>
           </td>
@@ -167,13 +200,18 @@ const Management = () => {
     }
 
     return currentRows.map((row) => (
-      <tr key={row.id} onClick={() => navigate(`/academia/professor/courses/${row.id}`)} style={{ cursor: 'pointer' }}>
-        <td className="is-checkbox">
+      <tr 
+        key={row.id} 
+        onClick={() => navigate(`/academia/professor/courses/${row.id}`)} 
+        style={{ cursor: 'pointer' }}
+        className={selectedRowIds.has(row.id) ? 'is-selected' : ''}
+      >
+        <td className="is-checkbox" onClick={(e) => e.stopPropagation()}>
           <label className="prof-table-checkbox" aria-label={`Select ${row.student}`}>
             <input
               type="checkbox"
               checked={selectedRowIds.has(row.id)}
-              onChange={(e) => { e.stopPropagation(); handleSelectRow(row.id); }}
+              onChange={() => handleSelectRow(row.id)}
             />
             <span></span>
           </label>
@@ -206,7 +244,7 @@ const Management = () => {
         </td>
       </tr>
     ));
-  })();
+  };
 
   return (
     <ProfessorLayout currentPage="management">
@@ -216,18 +254,15 @@ const Management = () => {
         <section className="learners-home-title">
           <div className="learners-home-title-top">
             <h1>Management</h1>
-
             <div className="learners-home-title-actions">
               <a className="learners-btn learners-btn-secondary" href="#" onClick={preventDefault}>
                 <img src="/assets/icons/plus1.svg" alt="" />
                 <span>Add Event</span>
               </a>
-
               <a className="learners-btn learners-btn-secondary" href="#" onClick={preventDefault}>
                 <img src="/assets/icons/van.svg" alt="" />
                 <span>View Analytics</span>
               </a>
-
               <a className="learners-btn learners-btn-primary" href="#" onClick={preventDefault}>
                 <span>Go to website</span>
                 <img src="/assets/icons/exit-right.svg" alt="" />
@@ -258,17 +293,17 @@ const Management = () => {
 
           <div className="assessments-hero-actions">
             <div className="assessments-search">
-              <img src="/assets/icons/magnifier.svg" alt="Search" />
+              <img src="/assets/icons/magnifier.svg" alt="" aria-hidden="true" />
               <input
                 type="search"
                 placeholder="Search Assignments..."
                 aria-label="Search Assignments"
                 value={searchTerm}
-                onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+                onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
 
-            <button type="button" className="assessments-create-btn" onClick={preventDefault}>
+            <button type="button" className="assessments-create-btn" onClick={() => navigate('/academia/professor/assignments')}>
               <img src="/assets/icons/plus1.svg" alt="" aria-hidden="true" />
               <span>Create new test</span>
             </button>
@@ -292,21 +327,22 @@ const Management = () => {
                       <span></span>
                     </label>
                   </th>
-                  <th><span>Student Details ({rowsTotal || rows.length})</span><img src="/assets/icons/sorter.svg" alt="Sort" /></th>
-                  <th><span>Assessment Details</span><img src="/assets/icons/sorter.svg" alt="Sort" /></th>
-                  <th><span>Assessment Type</span><img src="/assets/icons/sorter.svg" alt="Sort" /></th>
-                  <th><span>Avg. Score</span><img src="/assets/icons/sorter.svg" alt="Sort" /></th>
-                  <th><span>Attempts</span><img src="/assets/icons/sorter.svg" alt="Sort" /></th>
-                  <th><span>Duration (Min)</span><img src="/assets/icons/sorter.svg" alt="Sort" /></th>
-                  <th><span>Status</span><img src="/assets/icons/sorter.svg" alt="Sort" /></th>
+                  <th><span>Student Details ({filteredRows.length})</span><img src="/assets/icons/sorter.svg" alt="" /></th>
+                  <th><span>Assessment Details</span><img src="/assets/icons/sorter.svg" alt="" /></th>
+                  <th><span>Assessment Type</span><img src="/assets/icons/sorter.svg" alt="" /></th>
+                  <th><span>Avg. Score</span><img src="/assets/icons/sorter.svg" alt="" /></th>
+                  <th><span>Attempts</span><img src="/assets/icons/sorter.svg" alt="" /></th>
+                  <th><span>Duration (Min)</span><img src="/assets/icons/sorter.svg" alt="" /></th>
+                  <th><span>Status</span><img src="/assets/icons/sorter.svg" alt="" /></th>
                 </tr>
               </thead>
               <tbody>
-                {renderRows}
+                {renderRows()}
               </tbody>
             </table>
           </div>
 
+          {/* Footer & Pagination */}
           <div className="assessments-footer">
             <div className="assessments-per-page">
               <span>Show</span>
@@ -316,28 +352,52 @@ const Management = () => {
                   <img src="/assets/icons/drop.svg" alt="" />
                 </button>
                 <ul className="dropdown-menu">
-                  <li><a className="dropdown-item" href="#" onClick={(e) => { e.preventDefault(); setPageSize(5); setCurrentPage(1); }}>5</a></li>
-                  <li><a className="dropdown-item" href="#" onClick={(e) => { e.preventDefault(); setPageSize(10); setCurrentPage(1); }}>10</a></li>
-                  <li><a className="dropdown-item" href="#" onClick={(e) => { e.preventDefault(); setPageSize(25); setCurrentPage(1); }}>25</a></li>
+                  {[5, 10, 25].map(size => (
+                    <li key={size}>
+                      <button type="button" className="dropdown-item" onClick={() => handlePageSizeChange(size)}>
+                        {size}
+                      </button>
+                    </li>
+                  ))}
                 </ul>
               </div>
               <span>per page</span>
             </div>
 
             <div className="assessments-pagination">
-              <span>{Math.min(startIndex + 1, rowsTotal || rows.length)}-{Math.min(startIndex + pageSize, rowsTotal || rows.length)} of {rowsTotal || rows.length}</span>
-              <button type="button" className="assessments-page-nav" aria-label="Previous" onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}>←</button>
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map(num => (
+              <span>
+                {filteredRows.length === 0 ? '0-0 of 0' : `${startIndex + 1}-${Math.min(startIndex + pageSize, filteredRows.length)} of ${filteredRows.length}`}
+              </span>
+              <button 
+                type="button" 
+                className="assessments-page-nav" 
+                aria-label="Previous" 
+                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                disabled={safeCurrentPage === 1}
+              >
+                ←
+              </button>
+              
+              {visiblePageNumbers.map(num => (
                 <button 
                   key={num} 
                   type="button" 
-                  className={`assessments-page-num ${currentPage === num ? 'is-active' : ''}`} 
+                  className={`assessments-page-num ${safeCurrentPage === num ? 'is-active' : ''}`} 
                   onClick={() => setCurrentPage(num)}
                 >
                   {num}
                 </button>
               ))}
-              <button type="button" className="assessments-page-nav" aria-label="Next" onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}>→</button>
+
+              <button 
+                type="button" 
+                className="assessments-page-nav" 
+                aria-label="Next" 
+                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                disabled={safeCurrentPage === totalPages}
+              >
+                →
+              </button>
             </div>
           </div>
         </section>

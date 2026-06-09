@@ -77,18 +77,24 @@ const Assignments = () => {
   const [assessmentRows, setAssessmentRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState('');
+  
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
+  
   const [pageSize, setPageSize] = useState(5);
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedRowIds, setSelectedRowIds] = useState(() => new Set());
   const selectAllRef = useRef(null);
+  
   const [instructorCourses, setInstructorCourses] = useState([]);
   const [courseWeeks, setCourseWeeks] = useState([]);
+  
   const [createError, setCreateError] = useState('');
   const [createLoading, setCreateLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalStep, setModalStep] = useState('basic');
+  
   const [createForm, setCreateForm] = useState({
     assessmentKind: 'summative',
     assessmentType: 'final_exam',
@@ -108,7 +114,6 @@ const Assignments = () => {
     questions: [],
   });
 
-  // Questions will be collected here before final review
   const [newQuestion, setNewQuestion] = useState({
     question_text: '',
     question_type: 'multiple_choice',
@@ -119,6 +124,15 @@ const Assignments = () => {
   });
 
   const stepOrder = ['basic', 'lesson', 'questions', 'pricing'];
+
+  // --- Debounce Search ---
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(searchTerm);
+      setCurrentPage(1);
+    }, 300);
+    return () => clearTimeout(handler);
+  }, [searchTerm]);
 
   const updateCreateField = (field, value) => {
     setCreateForm((previous) => ({ ...previous, [field]: value }));
@@ -133,103 +147,126 @@ const Assignments = () => {
   const weekLabel = courseWeeks.find((week) => String(week.id) === String(createForm.week_id))?.title || 'Select a week';
   const questionTypeLabel = QUESTION_TYPE_OPTIONS.find((option) => option.value === newQuestion.question_type)?.label || 'Select type';
 
-  const loadAssessments = async (targetType = typeFilter) => {
-    setLoading(true);
-    setFetchError('');
+  // --- Core API Fetches ---
+  useEffect(() => {
+    const controller = new AbortController();
+    
+    const loadAssessments = async () => {
+      setLoading(true);
+      setFetchError('');
 
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        setAssessmentRows([]);
-        setFetchError('Missing login token. Please sign in again.');
-        return;
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          setFetchError('Authentication missing.');
+          return;
+        }
+
+        const response = await fetch(`${API_BASE_URL}/api/dashboard/instructor/assessments?type=${typeFilter}&limit=100&offset=0`, {
+          headers: { Authorization: `Bearer ${token}` },
+          signal: controller.signal
+        });
+
+        const body = await response.json();
+
+        if (response.ok) {
+          setAssessmentRows(Array.isArray(body?.data?.assessments) ? body.data.assessments : []);
+          setCurrentPage(1);
+          setSelectedRowIds(new Set());
+        } else {
+          setAssessmentRows([]);
+          setFetchError(body?.message || body?.error?.message || 'Failed to load assessments.');
+        }
+      } catch (error) {
+        if (error.name !== 'AbortError') {
+          setAssessmentRows([]);
+          setFetchError(error.message || 'Failed to load assessments.');
+        }
+      } finally {
+        setLoading(false);
       }
+    };
 
-      const response = await fetch(`${API_BASE_URL}/api/dashboard/instructor/assessments?type=${targetType}&limit=100&offset=0`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+    loadAssessments();
+    return () => controller.abort();
+  }, [typeFilter]); // Reloads when type filter changes
 
-      const body = await response.json().catch(() => ({}));
+  useEffect(() => {
+    const controller = new AbortController();
 
-      if (response.ok) {
-        setAssessmentRows(Array.isArray(body?.data?.assessments) ? body.data.assessments : []);
-        setCurrentPage(1);
-        setSelectedRowIds(new Set());
-      } else {
-        setAssessmentRows([]);
-        const serverMessage = body?.message || body?.error?.message || (body?.data && body.data.message) || 'Failed to load assessments.';
-        setFetchError(serverMessage);
+    const loadInstructorCourses = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+
+        const response = await fetch(`${API_BASE_URL}/api/dashboard/instructor`, {
+          headers: { Authorization: `Bearer ${token}` },
+          signal: controller.signal
+        });
+
+        const body = await response.json();
+        if (!response.ok) return;
+
+        const courses = Array.isArray(body?.data?.courses) ? body.data.courses : [];
+        setInstructorCourses(courses);
+
+        setCreateForm((previous) => {
+          if (previous.course_id || courses.length === 0) return previous;
+          return { ...previous, course_id: String(courses[0].id) };
+        });
+      } catch (error) {
+        if (error.name !== 'AbortError') console.error('Load instructor courses error:', error);
       }
-    } catch (error) {
-      setAssessmentRows([]);
-      setFetchError(error.message || 'Failed to load assessments.');
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
 
-  const loadInstructorCourses = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) return;
+    loadInstructorCourses();
+    return () => controller.abort();
+  }, []);
 
-      const response = await fetch(`${API_BASE_URL}/api/dashboard/instructor`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      const body = await response.json().catch(() => ({}));
-      if (!response.ok) return;
-
-      const courses = Array.isArray(body?.data?.courses) ? body.data.courses : [];
-      setInstructorCourses(courses);
-
-      setCreateForm((previous) => {
-        if (previous.course_id || courses.length === 0) return previous;
-        return { ...previous, course_id: String(courses[0].id) };
-      });
-    } catch (error) {
-      console.error('Load instructor courses error:', error);
-    }
-  };
-
-  const loadCourseWeeks = async (courseId) => {
-    if (!courseId || createForm.assessmentKind !== 'formative') {
+  useEffect(() => {
+    if (!createForm.course_id || createForm.assessmentKind !== 'formative') {
       setCourseWeeks([]);
       return;
     }
 
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) return;
+    const controller = new AbortController();
 
-      const response = await fetch(`${API_BASE_URL}/api/courses/${courseId}/weeks`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+    const loadCourseWeeks = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) return;
 
-      const body = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        setCourseWeeks([]);
-        return;
+        const response = await fetch(`${API_BASE_URL}/api/courses/${createForm.course_id}/weeks`, {
+          headers: { Authorization: `Bearer ${token}` },
+          signal: controller.signal
+        });
+
+        const body = await response.json();
+        if (!response.ok) {
+          setCourseWeeks([]);
+          return;
+        }
+
+        const weeks = Array.isArray(body?.data?.weeks) ? body.data.weeks : [];
+        setCourseWeeks(weeks);
+        setCreateForm((previous) => ({
+          ...previous,
+          week_id: weeks.length > 0 ? String(weeks[0].id) : '',
+        }));
+      } catch (error) {
+        if (error.name !== 'AbortError') {
+          console.error('Load course weeks error:', error);
+          setCourseWeeks([]);
+        }
       }
+    };
 
-      const weeks = Array.isArray(body?.data?.weeks) ? body.data.weeks : [];
-      setCourseWeeks(weeks);
-      setCreateForm((previous) => ({
-        ...previous,
-        week_id: weeks.length > 0 ? String(weeks[0].id) : '',
-      }));
-    } catch (error) {
-      console.error('Load course weeks error:', error);
-      setCourseWeeks([]);
-    }
-  };
+    loadCourseWeeks();
+    return () => controller.abort();
+  }, [createForm.course_id, createForm.assessmentKind]);
 
+
+  // --- Modal & Form Logic ---
   const resetCreateForm = () => {
     setCreateForm({
       assessmentKind: 'summative',
@@ -260,7 +297,13 @@ const Assignments = () => {
     setIsModalOpen(true);
   };
 
-  // Question buffer helpers
+  const closeCreateModal = () => {
+    setIsModalOpen(false);
+    setCreateError('');
+    setCreateLoading(false);
+    setModalStep('basic');
+  };
+
   const addQuestionToBuffer = () => {
     const q = {
       question_text: (newQuestion.question_text || '').trim(),
@@ -300,8 +343,6 @@ const Assignments = () => {
 
   const toggleNewQuestionOptionCorrect = (optIndex) => {
     setNewQuestion((prev) => {
-      const options = prev.options || [];
-      // allow multiple corrects (multi-select); for single-choice, keep single
       if (prev.question_type === 'multiple_choice') {
         const current = Array.isArray(prev.correct) ? [...prev.correct] : [];
         const exists = current.includes(optIndex);
@@ -310,13 +351,6 @@ const Assignments = () => {
       }
       return prev;
     });
-  };
-
-  const closeCreateModal = () => {
-    setIsModalOpen(false);
-    setCreateError('');
-    setCreateLoading(false);
-    setModalStep('basic');
   };
 
   const handleCreateAssessment = async () => {
@@ -345,7 +379,7 @@ const Assignments = () => {
 
     const token = localStorage.getItem('token');
     if (!token) {
-      setCreateError('Missing login token. Please sign in again.');
+      setCreateError('Authentication missing.');
       return;
     }
 
@@ -386,18 +420,16 @@ const Assignments = () => {
         body: JSON.stringify(payload),
       });
 
-      const body = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        const message = body?.message || body?.error?.message || 'Failed to create assessment.';
-        throw new Error(message);
-      }
+      const body = await response.json();
+      if (!response.ok) throw new Error(body?.message || body?.error?.message || 'Failed to create assessment.');
 
-      // If there are questions buffered, post them to the newly created assessment
       const createdAssessment = body?.data || null;
       const assessmentId = createdAssessment?.id || createdAssessment?._id || null;
 
+      // Post Questions Sequentially
       if (assessmentId && Array.isArray(createForm.questions) && createForm.questions.length > 0) {
         const questionEndpointBase = isFormative ? `${API_BASE_URL}/api/formative-assessments/${assessmentId}/questions` : `${API_BASE_URL}/api/summative-assessments/${assessmentId}/questions`;
+        
         for (let i = 0; i < createForm.questions.length; i += 1) {
           const q = createForm.questions[i];
           try {
@@ -418,68 +450,49 @@ const Assignments = () => {
               }),
             });
 
-            const qBody = await qResp.json().catch(() => ({}));
-            if (!qResp.ok) {
-              const msg = qBody?.message || qBody?.error?.message || `Failed to add question ${i + 1}`;
-              throw new Error(msg);
-            }
+            const qBody = await qResp.json();
+            if (!qResp.ok) throw new Error(qBody?.message || qBody?.error?.message || `Failed to add question ${i + 1}`);
           } catch (err) {
-            setCreateError(err.message || 'Failed to add questions.');
-            break;
+            setCreateError(err.message || 'Failed to add questions. The assessment was created, but some questions failed.');
+            setCreateLoading(false);
+            return; // Break out early on question failure
           }
         }
       }
 
-      await loadAssessments(typeFilter);
+      // Success
       closeCreateModal();
+      // To trigger a reload, we can just reset the filter to itself or rely on the user to refresh
+      window.location.reload(); 
     } catch (error) {
       setCreateError(error.message || 'Failed to create assessment.');
-    } finally {
       setCreateLoading(false);
     }
   };
 
-  useEffect(() => {
-    loadAssessments(typeFilter);
-  }, [typeFilter]);
-
-  useEffect(() => {
-    loadInstructorCourses();
-  }, []);
-
-  useEffect(() => {
-    if (!createForm.course_id) {
-      setCourseWeeks([]);
-      return;
-    }
-
-    loadCourseWeeks(createForm.course_id);
-  }, [createForm.course_id, createForm.assessmentKind]);
-
+  // --- Filtering & Pagination ---
   const normalizedRows = useMemo(
     () => assessmentRows.map((row, index) => normalizeAssessmentRow(row, index)),
     [assessmentRows]
   );
 
   const filteredRows = useMemo(() => {
-    const normalizedSearch = searchTerm.trim().toLowerCase();
-
+    const normalizedSearch = debouncedSearch.trim().toLowerCase();
     return normalizedRows.filter((row) => {
       const matchesSearch = !normalizedSearch || row.searchText.includes(normalizedSearch);
       return matchesSearch;
     });
-  }, [normalizedRows, searchTerm]);
+  }, [normalizedRows, debouncedSearch]);
 
   const totalPages = Math.max(1, Math.ceil(filteredRows.length / pageSize));
   const safeCurrentPage = Math.min(currentPage, totalPages);
   const currentRows = filteredRows.slice((safeCurrentPage - 1) * pageSize, safeCurrentPage * pageSize);
 
   useEffect(() => {
-    if (currentPage !== safeCurrentPage) {
-      setCurrentPage(safeCurrentPage);
-    }
+    if (currentPage !== safeCurrentPage) setCurrentPage(safeCurrentPage);
   }, [currentPage, safeCurrentPage]);
 
+  // --- Checkboxes ---
   const visibleSelectedCount = currentRows.filter((row) => selectedRowIds.has(String(row.id))).length;
   const isAllVisibleSelected = currentRows.length > 0 && visibleSelectedCount === currentRows.length;
   const isSomeVisibleSelected = visibleSelectedCount > 0 && visibleSelectedCount < currentRows.length;
@@ -496,11 +509,7 @@ const Assignments = () => {
       const next = new Set(previous);
       currentRows.forEach((row) => {
         const key = String(row.id);
-        if (isChecked) {
-          next.add(key);
-        } else {
-          next.delete(key);
-        }
+        isChecked ? next.add(key) : next.delete(key);
       });
       return next;
     });
@@ -510,14 +519,14 @@ const Assignments = () => {
     setSelectedRowIds((previous) => {
       const next = new Set(previous);
       const key = String(id);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
+      next.has(key) ? next.delete(key) : next.add(key);
       return next;
     });
   };
 
   const handleResetFilters = () => {
     setSearchTerm('');
+    setDebouncedSearch('');
     setTypeFilter('all');
     setPageSize(5);
     setCurrentPage(1);
@@ -525,15 +534,11 @@ const Assignments = () => {
   };
 
   const goToPage = (page) => {
-    const nextPage = Math.min(Math.max(page, 1), totalPages);
-    setCurrentPage(nextPage);
+    setCurrentPage(Math.min(Math.max(page, 1), totalPages));
   };
 
   const visiblePageNumbers = useMemo(() => {
-    if (totalPages <= 3) {
-      return Array.from({ length: totalPages }, (_, index) => index + 1);
-    }
-
+    if (totalPages <= 3) return Array.from({ length: totalPages }, (_, index) => index + 1);
     if (safeCurrentPage === 1) return [1, 2, 3];
     if (safeCurrentPage === totalPages) return [totalPages - 2, totalPages - 1, totalPages];
     return [safeCurrentPage - 1, safeCurrentPage, safeCurrentPage + 1];
@@ -544,7 +549,7 @@ const Assignments = () => {
   const endIndex = filteredRows.length === 0 ? 0 : Math.min(safeCurrentPage * pageSize, filteredRows.length);
   const emptyStateMessage = fetchError
     ? fetchError
-    : searchTerm || typeFilter !== 'all'
+    : debouncedSearch || typeFilter !== 'all'
       ? 'No assessments match the current filters.'
       : 'Assessments will appear here once the backend returns instructor data.';
 
@@ -564,7 +569,7 @@ const Assignments = () => {
   // Handle ESC key to close modal
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.key === 'Escape' && isModalOpen) setIsModalOpen(false);
+      if (e.key === 'Escape' && isModalOpen) closeCreateModal();
     };
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
@@ -603,10 +608,7 @@ const Assignments = () => {
                 placeholder="Search assessments..."
                 aria-label="Search Assessments"
                 value={searchTerm}
-                onChange={(event) => {
-                  setSearchTerm(event.target.value);
-                  setCurrentPage(1);
-                }}
+                onChange={(event) => setSearchTerm(event.target.value)}
               />
             </div>
 

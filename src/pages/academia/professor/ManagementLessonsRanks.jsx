@@ -1,17 +1,16 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import ProfessorLayout from '../../../components/layouts/ProfessorLayout/ProfessorLayout';
 import './management-lessons-ranks.css';
-import EmptyState from '../../../components/EmptyState/EmptyState';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 const ManagementLessonsRanks = () => {
+  const navigate = useNavigate();
   const preventDefault = (e) => e.preventDefault();
 
   // --- Tab State ---
-  const [activeTab, setActiveTab] = useState('management-lessons-ranks');
-  
+  const [activeTab] = useState('management-lessons-ranks');
   const managementTabs = [
     { id: 'management', label: 'Students' },
     { id: 'management-schedule', label: 'Schedule' },
@@ -19,60 +18,102 @@ const ManagementLessonsRanks = () => {
     { id: 'management-student-qa', label: 'Student Q&A' },
   ];
 
-  // --- Grid Data & Pagination State (server-driven) ---
+  // --- Grid Data State ---
   const [items, setItems] = useState([]);
   const [itemsLoading, setItemsLoading] = useState(true);
   const [itemsError, setItemsError] = useState('');
+  const [hasEverLoadedData, setHasEverLoadedData] = useState(false); // To determine if they have ANY courses vs just an empty search
 
-  // Filters State
-  const [activeFilter, setActiveFilter] = useState('All');
+  // --- Filters & Search State ---
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [activePriceFilter, setActivePriceFilter] = useState('All'); // All, Free, Paid
+  const [lessonType, setLessonType] = useState('All'); // All, Syllabus, Online Course
+  const [sortOrder, setSortOrder] = useState('Newest'); // Newest, Top Rank, Most Followed
   
-  // Pagination logic
+  // --- Pagination State ---
   const [pageSize, setPageSize] = useState(5);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
-  const totalPages = Math.max(1, Math.ceil((totalItems || items.length) / pageSize));
+
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
   
+  // Safety check to ensure we don't get stuck on an empty page
+  const safeCurrentPage = Math.min(currentPage, totalPages);
   useEffect(() => {
-    let mounted = true;
+    if (currentPage !== safeCurrentPage) setCurrentPage(safeCurrentPage);
+  }, [safeCurrentPage, currentPage]);
+
+  // Debounce search
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(searchTerm);
+      setCurrentPage(1);
+    }, 300);
+    return () => clearTimeout(handler);
+  }, [searchTerm]);
+
+  // --- Fetch Data ---
+  useEffect(() => {
+    const controller = new AbortController();
     const token = localStorage.getItem('token');
 
-    const load = async () => {
+    const loadData = async () => {
       setItemsLoading(true);
       setItemsError('');
+      
       try {
-        const params = new URLSearchParams();
-        params.set('page', String(currentPage));
-        params.set('limit', String(pageSize));
-        if (searchTerm) params.set('q', searchTerm);
-        if (activeFilter && activeFilter !== 'All') params.set('type', activeFilter.toLowerCase());
+        const params = new URLSearchParams({
+          page: String(safeCurrentPage),
+          limit: String(pageSize),
+        });
+        
+        if (debouncedSearch) params.set('search', debouncedSearch);
+        if (activePriceFilter !== 'All') params.set('pricing', activePriceFilter.toLowerCase());
+        if (lessonType !== 'All') params.set('type', lessonType.toLowerCase());
+        if (sortOrder !== 'Newest') params.set('sort', sortOrder.toLowerCase().replace(' ', '_'));
 
         const res = await fetch(`${API_BASE_URL}/api/dashboard/lessons-history?${params.toString()}`, {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
+          signal: controller.signal
         });
+        
         const body = await res.json();
         if (!res.ok) throw new Error(body.message || 'Failed to load lessons');
 
-        if (!mounted) return;
         const data = body?.data || [];
         const pagination = body?.pagination || {};
+        
         setItems(Array.isArray(data) ? data : []);
         setTotalItems(Number(pagination.total || data.length));
+        if (data.length > 0) setHasEverLoadedData(true);
+
       } catch (err) {
-        if (mounted) setItemsError(err.message || 'Failed to load lessons');
+        if (err.name !== 'AbortError') {
+          setItemsError(err.message || 'Failed to load lessons');
+        }
       } finally {
-        if (mounted) setItemsLoading(false);
+        setItemsLoading(false);
       }
     };
 
-    load();
-    return () => { mounted = false; };
-  }, [currentPage, pageSize, searchTerm, activeFilter]);
-  
-  // Notice: Because the original HTML has a separate pager up top that goes 1, 2, 3, 4, 5, 
-  // I am providing dummy functional buttons to match the visual. 
-  // In a real app with 12 items, page size 5 only gives you 3 pages.
+    loadData();
+    return () => controller.abort();
+  }, [safeCurrentPage, pageSize, debouncedSearch, activePriceFilter, lessonType, sortOrder]);
+
+  // --- Pagination Window Calculation ---
+  const visiblePageNumbers = useMemo(() => {
+    if (totalPages <= 3) return Array.from({ length: totalPages }, (_, i) => i + 1);
+    if (safeCurrentPage === 1) return [1, 2, 3];
+    if (safeCurrentPage === totalPages) return [totalPages - 2, totalPages - 1, totalPages];
+    return [safeCurrentPage - 1, safeCurrentPage, safeCurrentPage + 1];
+  }, [safeCurrentPage, totalPages]);
+
+  // --- Handlers ---
+  const handleFilterChange = (setter, value) => {
+    setter(value);
+    setCurrentPage(1);
+  };
 
   return (
     <ProfessorLayout currentPage="management">
@@ -82,19 +123,16 @@ const ManagementLessonsRanks = () => {
         <section className="learners-home-title">
           <div className="learners-home-title-top">
             <h1>Management</h1>
-
             <div className="learners-home-title-actions">
               <a className="learners-btn learners-btn-secondary" href="#" onClick={preventDefault}>
                 <img src="/assets/icons/plus1.svg" alt="" />
                 <span>Add Event</span>
               </a>
-
-              <a className="learners-btn learners-btn-secondary" href="#" onClick={preventDefault}>
+              <a className="learners-btn learners-btn-secondary" href="#" onClick={(e) => { preventDefault(e); navigate('/academia/professor/performance'); }}>
                 <img src="/assets/icons/van.svg" alt="" />
                 <span>View Analytics</span>
               </a>
-
-              <a className="learners-btn learners-btn-primary" href="#" onClick={preventDefault}>
+              <a className="learners-btn learners-btn-primary" href="#" onClick={(e) => { preventDefault(e); navigate('/academia'); }}>
                 <span>Go to website</span>
                 <img src="/assets/icons/exit-right.svg" alt="" />
               </a>
@@ -119,16 +157,20 @@ const ManagementLessonsRanks = () => {
         <section className="assessments-hero">
           <div className="assessments-hero-copy">
             <h2>Lesson Ranks</h2>
-            <p>Courses &amp; Syllabus</p>
+            <p>Courses & Syllabus</p>
           </div>
-
           <div className="assessments-hero-actions">
             <div className="assessments-search">
               <img src="/assets/icons/magnifier.svg" alt="Search" />
-              <input type="search" placeholder="Search lessons..." aria-label="Search lessons" value={searchTerm} onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }} />
+              <input 
+                type="search" 
+                placeholder="Search lessons..." 
+                aria-label="Search lessons" 
+                value={searchTerm} 
+                onChange={(e) => setSearchTerm(e.target.value)} 
+              />
             </div>
-
-            <button type="button" className="assessments-create-btn" onClick={preventDefault}>
+            <button type="button" className="assessments-create-btn" onClick={() => navigate('/academia/professor/prepare-course')}>
               <img src="/assets/icons/plus.svg" alt="" aria-hidden="true" />
               <span>Create new test</span>
             </button>
@@ -141,52 +183,94 @@ const ManagementLessonsRanks = () => {
             <button className="dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
               <div>
                 <img src="/assets/icons/ac-ff.svg" alt="" />
-                <span>All</span>
+                <span>{lessonType}</span>
               </div>
             </button>
             <ul className="dropdown-menu">
-              <li className="dropdown-item active"><a href="#" onClick={preventDefault}>All</a></li>
-              <li className="dropdown-item"><a href="#" onClick={preventDefault}>Syllabus</a></li>
-              <li class="dropdown-item"><a href="#" onClick={preventDefault}>Online Course</a></li>
+              {['All', 'Syllabus', 'Online Course'].map(type => (
+                <li key={type} className="dropdown-item">
+                  <button type="button" className={`dropdown-item ${lessonType === type ? 'active' : ''}`} onClick={() => handleFilterChange(setLessonType, type)} style={{ border: 'none', background: 'transparent', width: '100%', textAlign: 'left' }}>
+                    {type}
+                  </button>
+                </li>
+              ))}
             </ul>
           </div>
 
           <div className="prof-lesson-ranks-search-wrap">
-            <input type="search" placeholder="Search any Lesson..." aria-label="Search lessons" />
-
             <div className="prof-lesson-ranks-filters">
-              <button type="button" className={activeFilter === 'All' ? 'is-active' : ''} onClick={() => setActiveFilter('All')}>All</button>
-              <button type="button" className={activeFilter === 'Free' ? 'is-active' : ''} onClick={() => setActiveFilter('Free')}>Free</button>
-              <button type="button" className={activeFilter === 'Paid' ? 'is-active' : ''} onClick={() => setActiveFilter('Paid')}>Paid</button>
+              {['All', 'Free', 'Paid'].map(price => (
+                <button 
+                  key={price}
+                  type="button" 
+                  className={activePriceFilter === price ? 'is-active' : ''} 
+                  onClick={() => handleFilterChange(setActivePriceFilter, price)}
+                >
+                  {price}
+                </button>
+              ))}
 
               <div className="dropdown">
                 <button className="dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                   <img src="/assets/icons/ac-fi.svg" alt="" />
-                  <span>Filters</span>
+                  <span>{sortOrder}</span>
                 </button>
                 <ul className="dropdown-menu">
-                  <li className="dropdown-item"><a href="#" onClick={preventDefault}>Top Rank</a></li>
-                  <li className="dropdown-item"><a href="#" onClick={preventDefault}>Most Followed</a></li>
-                  <li className="dropdown-item"><a href="#" onClick={preventDefault}>Newest</a></li>
+                  {['Newest', 'Top Rank', 'Most Followed'].map(sort => (
+                    <li key={sort} className="dropdown-item">
+                      <button type="button" className={`dropdown-item ${sortOrder === sort ? 'active' : ''}`} onClick={() => handleFilterChange(setSortOrder, sort)} style={{ border: 'none', background: 'transparent', width: '100%', textAlign: 'left' }}>
+                        {sort}
+                      </button>
+                    </li>
+                  ))}
                 </ul>
               </div>
             </div>
           </div>
         </section>
 
+        {/* Top Pager (Synced with state) */}
+        {totalItems > 0 && (
+          <div className="prof-lesson-ranks-pager" aria-label="Pagination" style={{ marginBottom: '1.5rem', justifyContent: 'flex-end' }}>
+            <button type="button" className="prof-lesson-ranks-pager-nav" onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))} disabled={safeCurrentPage === 1}>
+              <img src="/assets/icons/left1.svg" alt="Previous page" />
+            </button>
+            
+            {visiblePageNumbers.map(num => (
+              <button 
+                key={num} 
+                type="button" 
+                className={`prof-lesson-ranks-pager-num ${safeCurrentPage === num ? 'is-active' : ''}`} 
+                onClick={() => setCurrentPage(num)}
+              >
+                {num}
+              </button>
+            ))}
+            
+            {totalPages > 3 && safeCurrentPage < totalPages - 1 && <span className="prof-lesson-ranks-pager-dots">...</span>}
+            
+            <button type="button" className="prof-lesson-ranks-pager-nav" onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))} disabled={safeCurrentPage === totalPages}>
+              <img src="/assets/icons/right1.svg" alt="Next page" />
+            </button>
+          </div>
+        )}
+
         {/* Image Grid */}
         <section className="prof-lesson-ranks-grid">
           {itemsLoading ? (
-            <div className="prof-lesson-ranks-loading">Loading lessons...</div>
+            <div className="prof-lesson-ranks-loading">Loading records...</div>
           ) : itemsError ? (
             <div className="prof-lesson-ranks-loading is-error">Error: {itemsError}</div>
           ) : items.length === 0 ? (
-            <div style={{ padding: '2rem', textAlign: 'center' }}>
-              <img src="/assets/icons/empty-lessons.svg" alt="No lessons" style={{ width: 96, height: 96, opacity: 0.95 }} />
-              <h3 style={{ marginTop: '.5rem' }}>No lessons yet</h3>
-              <p style={{ margin: 0, color: 'var(--muted, #666)', maxWidth: 520, marginLeft: 'auto', marginRight: 'auto' }}>You haven't published any lessons yet. Create a course or syllabus to see it here.</p>
-              <div style={{ marginTop: '.75rem' }}>
-                <Link to="/academia/professor/prepare-course" className="learners-btn learners-btn-primary">Create course</Link>
+            <div className="prof-management-empty-state" style={{ minHeight: 240, gridColumn: '1 / -1' }}>
+              <div className="prof-management-empty-state-card">
+                <h3>{hasEverLoadedData ? 'No matching lessons' : 'No lessons yet'}</h3>
+                <p>{hasEverLoadedData ? 'Try adjusting your filters or search terms.' : "You haven't published any lessons yet. Create a course or syllabus to see it here."}</p>
+                {!hasEverLoadedData && (
+                  <div className="prof-management-empty-state-actions">
+                    <Link to="/academia/professor/prepare-course" className="learners-btn learners-btn-primary">Create course</Link>
+                  </div>
+                )}
               </div>
             </div>
           ) : (
@@ -202,10 +286,10 @@ const ManagementLessonsRanks = () => {
                     <small>{card.type || card.category || 'Course'}</small>
                     <h3>{card.title || card.name}</h3>
                     <p>Followers : {card.followers || card.enrollments || 0}</p>
-                    <p>Created on : {card.created_at ? new Date(card.created_at).toLocaleDateString() : ''}</p>
+                    <p>Created on : {card.created_at ? new Date(card.created_at).toLocaleDateString() : 'N/A'}</p>
                   </div>
 
-                  <a className="prof-lesson-rank-open" href="#" onClick={preventDefault} aria-label="Open lesson">
+                  <a className="prof-lesson-rank-open" href={`/academia/courses/${card.id}`} onClick={preventDefault} aria-label="Open lesson">
                     <img src="/assets/icons/ac-en.svg" alt="" />
                   </a>
                 </div>
@@ -216,24 +300,6 @@ const ManagementLessonsRanks = () => {
 
         {/* Footers / Pagination */}
         <section className="prof-lesson-ranks-footer">
-          {/* Top Pager (Visual Match from Original HTML) */}
-          <div className="prof-lesson-ranks-pager" aria-label="Pagination">
-            <button type="button" className="prof-lesson-ranks-pager-nav" onClick={preventDefault} aria-label="Previous page">
-              <img src="/assets/icons/left1.svg" alt="" />
-            </button>
-            
-            <button type="button" className={`prof-lesson-ranks-pager-num ${currentPage === 1 ? 'is-active' : ''}`} onClick={() => setCurrentPage(1)}>1</button>
-            <button type="button" className={`prof-lesson-ranks-pager-num ${currentPage === 2 ? 'is-active' : ''}`} onClick={() => setCurrentPage(2)}>2</button>
-            <button type="button" className={`prof-lesson-ranks-pager-num ${currentPage === 3 ? 'is-active' : ''}`} onClick={() => setCurrentPage(3)}>3</button>
-            <button type="button" className={`prof-lesson-ranks-pager-num ${currentPage === 4 ? 'is-active' : ''}`} onClick={() => setCurrentPage(4)}>4</button>
-            <button type="button" className={`prof-lesson-ranks-pager-num ${currentPage === 5 ? 'is-active' : ''}`} onClick={() => setCurrentPage(5)}>5</button>
-            <span className="prof-lesson-ranks-pager-dots">...</span>
-            
-            <button type="button" className="prof-lesson-ranks-pager-nav" onClick={preventDefault} aria-label="Next page">
-              <img src="/assets/icons/right1.svg" alt="" />
-            </button>
-          </div>
-
           <div className="prof-lesson-ranks-footer-bottom">
             <div className="assessments-per-page">
               <span>Show</span>
@@ -243,21 +309,52 @@ const ManagementLessonsRanks = () => {
                   <img src="/assets/icons/drop.svg" alt="" />
                 </button>
                 <ul className="dropdown-menu">
-                  <li><a className="dropdown-item" href="#" onClick={(e) => { preventDefault(e); setPageSize(5); }}>5</a></li>
-                  <li><a className="dropdown-item" href="#" onClick={(e) => { preventDefault(e); setPageSize(10); }}>10</a></li>
-                  <li><a className="dropdown-item" href="#" onClick={(e) => { preventDefault(e); setPageSize(25); }}>25</a></li>
+                  {[5, 10, 25, 50].map(size => (
+                    <li key={size}>
+                      <button type="button" className="dropdown-item" onClick={() => handleFilterChange(setPageSize, size)} style={{ border: 'none', background: 'transparent', width: '100%', textAlign: 'left' }}>
+                        {size}
+                      </button>
+                    </li>
+                  ))}
                 </ul>
               </div>
               <span>per page</span>
             </div>
 
             <div className="assessments-pagination">
-              <span>1-10 of 5</span>
-              <button type="button" className="assessments-page-nav" aria-label="Previous" onClick={preventDefault}>←</button>
-              <button type="button" className="assessments-page-num" onClick={preventDefault}>1</button>
-              <button type="button" className="assessments-page-num is-active" onClick={preventDefault}>2</button>
-              <button type="button" className="assessments-page-num" onClick={preventDefault}>3</button>
-              <button type="button" className="assessments-page-nav" aria-label="Next" onClick={preventDefault}>→</button>
+              <span>
+                {totalItems === 0 ? '0-0 of 0' : `${(safeCurrentPage - 1) * pageSize + 1}-${Math.min(safeCurrentPage * pageSize, totalItems)} of ${totalItems}`}
+              </span>
+              <button 
+                type="button" 
+                className="assessments-page-nav" 
+                aria-label="Previous" 
+                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                disabled={safeCurrentPage === 1}
+              >
+                ←
+              </button>
+              
+              {visiblePageNumbers.map(num => (
+                <button 
+                  key={num}
+                  type="button" 
+                  className={`assessments-page-num ${safeCurrentPage === num ? 'is-active' : ''}`} 
+                  onClick={() => setCurrentPage(num)}
+                >
+                  {num}
+                </button>
+              ))}
+
+              <button 
+                type="button" 
+                className="assessments-page-nav" 
+                aria-label="Next" 
+                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                disabled={safeCurrentPage === totalPages}
+              >
+                →
+              </button>
             </div>
           </div>
         </section>

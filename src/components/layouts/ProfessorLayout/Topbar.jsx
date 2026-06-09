@@ -1,6 +1,8 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const Topbar = ({ profileLoading, profileSummary }) => {
+  const navigate = useNavigate();
   const preventDefault = (e) => e.preventDefault();
 
   return (
@@ -32,7 +34,15 @@ const Topbar = ({ profileLoading, profileSummary }) => {
           </ul>
         </div>
 
-        <div className="prof-user">
+        <div 
+          className="prof-user" 
+          onClick={() => navigate('/academia/professor/account')}
+          style={{ cursor: 'pointer' }}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => { if (e.key === 'Enter') navigate('/academia/professor/account'); }}
+          aria-label="Go to account settings"
+        >
           <div className="prof-user-avatar">
             <img src={profileSummary?.avatar || '/assets/imgs/default-profile.png'} alt="User" />
           </div>

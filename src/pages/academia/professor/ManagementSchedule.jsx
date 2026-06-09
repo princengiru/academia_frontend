@@ -2,11 +2,10 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import ProfessorLayout from '../../../components/layouts/ProfessorLayout/ProfessorLayout';
 import './management-schedule.css';
-import EmptyState from '../../../components/EmptyState/EmptyState';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
-// Helpers for Calendar and Time
+// --- Helpers for Calendar and Time ---
 const startOfWeek = (date) => {
   const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
   const day = d.getDay();
@@ -32,7 +31,6 @@ const formatWeekRange = (weekStart) => {
 };
 
 const pad2 = (value) => String(value).padStart(2, '0');
-
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 
 const formatTime12h = (value) => {
@@ -155,14 +153,17 @@ const ManagementSchedule = () => {
 
   // Time Picker State
   const [isTimePickerOpen, setIsTimePickerOpen] = useState(false);
-  const [selectedDate, setSelectedDate] = useState(new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate(), 12, 0, 0));
+  const [selectedDate, setSelectedDate] = useState(() => {
+    const d = new Date();
+    d.setHours(12, 0, 0, 0);
+    return d;
+  });
   const [calendarMonth, setCalendarMonth] = useState(new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1));
 
   // Upload & Collaborators State
   const fileInputRef = useRef(null);
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [isDragOver, setIsDragOver] = useState(false);
-
   const [collaborators, setCollaborators] = useState([
     { id: 1, name: 'Sheilah MUGABEKAZI', avatar: '/assets/imgs/default-profile.png' },
     { id: 2, name: 'Landry Perly', avatar: '/assets/imgs/default-profile.png' },
@@ -179,7 +180,7 @@ const ManagementSchedule = () => {
   useEffect(() => {
     const handleGlobalEvents = (e) => {
       if (e.key === 'Escape') {
-        if (isModalOpen) setIsModalOpen(false);
+        setIsModalOpen(false);
         setIsWeekMenuOpen(false);
         setIsStatusMenuOpen(false);
         setIsTimePickerOpen(false);
@@ -188,7 +189,7 @@ const ManagementSchedule = () => {
     };
     document.addEventListener('keydown', handleGlobalEvents);
     return () => document.removeEventListener('keydown', handleGlobalEvents);
-  }, [isModalOpen]);
+  }, []);
 
   // --- Time Picker Logic ---
   const adjustTime = (mode) => {
@@ -222,39 +223,44 @@ const ManagementSchedule = () => {
     }
   };
 
+  // --- Fetch Events (With AbortController for Safety) ---
   useEffect(() => {
-    let mounted = true;
+    const controller = new AbortController();
     const token = localStorage.getItem('token');
 
     const loadEvents = async () => {
       setEventsLoading(true);
       setEventsError('');
+      
       try {
         const response = await fetch(`${API_BASE_URL}/api/events/created/my?limit=100&offset=0`, {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
+          signal: controller.signal
         });
+        
         const data = await response.json();
-        if (!response.ok) {
-          throw new Error(data?.message || 'Failed to load schedule events');
-        }
+        if (!response.ok) throw new Error(data?.message || 'Failed to load schedule events');
 
-        if (!mounted) return;
         setEvents(Array.isArray(data?.data) ? data.data : []);
       } catch (error) {
-        if (mounted) setEventsError(error.message || 'Failed to load schedule events');
+        if (error.name !== 'AbortError') {
+          setEventsError(error.message || 'Failed to load schedule events');
+        }
       } finally {
-        if (mounted) setEventsLoading(false);
+        setEventsLoading(false);
       }
     };
 
     loadEvents();
-    return () => { mounted = false; };
+    return () => controller.abort();
   }, []);
 
-  // Create event handler
+  // --- Create Event Handler ---
   const handleCreateEvent = async () => {
     if (!eventName || !selectedDate) {
-      return alert('Please provide an event name and time');
+      // You might want to swap this out for a custom toast notification later
+      alert('Please provide an event name and time.');
+      return;
     }
 
     const token = localStorage.getItem('token');
@@ -276,20 +282,26 @@ const ManagementSchedule = () => {
         },
         body: JSON.stringify(payload),
       });
+      
       const data = await res.json();
       if (!res.ok) throw new Error(data?.message || 'Failed to create event');
 
-      // Prepend created event and close modal
       const created = data?.data || null;
       if (created) setEvents(prev => [created, ...prev]);
+      
+      // Reset Modal State
       setIsModalOpen(false);
-      // reset modal fields
-      setEventName(''); setEventSubtitle(''); setEventDescription(''); setDurationMinutes(60);
+      setEventName(''); 
+      setEventSubtitle(''); 
+      setEventDescription(''); 
+      setDurationMinutes(60);
+      
     } catch (err) {
-      alert(err.message || 'Failed to create event');
+      alert(err.message || 'Failed to create event. Please try again.');
     }
   };
 
+  // Compute Grid Events
   const scheduleEvents = useMemo(() => {
     const weekStart = startOfWeek(weekStartDate);
     const weekEnd = new Date(weekStart);
@@ -298,15 +310,18 @@ const ManagementSchedule = () => {
     return events
       .map((event) => {
         const startsAt = new Date(event.event_datetime);
-        const durationMinutes = Number(event.duration_minutes || 60);
-        const endsAt = event.end_datetime ? new Date(event.end_datetime) : new Date(startsAt.getTime() + durationMinutes * 60000);
+        const durMins = Number(event.duration_minutes || 60);
+        const endsAt = event.end_datetime ? new Date(event.end_datetime) : new Date(startsAt.getTime() + durMins * 60000);
+        
         const dayOffset = diffInDays(startsAt, weekStart);
         const hour = startsAt.getHours();
         const minutes = startsAt.getMinutes();
+        
         const dayColumn = clamp(dayOffset + 2, 2, 8);
         const hourIndex = clamp(hour - 6, 0, scheduleHours.length - 1);
         const rowStart = hourIndex + 2;
         const rowSpan = Math.max(1, Math.ceil(Math.max(30, (endsAt - startsAt) / 60000) / 60));
+        
         const tone = event.status === 'confirmed' || event.status === 'scheduled'
           ? 'mint'
           : event.status === 'draft'
@@ -329,25 +344,23 @@ const ManagementSchedule = () => {
           rowStart,
           rowSpan,
           minutes,
+          originalStart: startsAt // Keep original for filtering
         };
       })
-      .filter(event => {
-        const startsAt = new Date(events.find(item => item.id === event.id)?.event_datetime);
-        return startsAt >= weekStart && startsAt < weekEnd;
-      });
-  }, [events, weekStartDate]);
+      .filter(event => event.originalStart >= weekStart && event.originalStart < weekEnd);
+  }, [events, weekStartDate, scheduleHours.length]);
 
   return (
     <ProfessorLayout currentPage="management">
       <section className="prof-management-page" onClick={() => {
-        // Global click handler to close menus if they are open
         if (isWeekMenuOpen) setIsWeekMenuOpen(false);
         if (openEventMenuId) setOpenEventMenuId(null);
       }}>
+        
+        {/* Header */}
         <section className="learners-home-title">
           <div className="learners-home-title-top">
             <h1>Management</h1>
-
             <div className="learners-home-title-actions">
               <a className="learners-btn learners-btn-secondary" href="#" onClick={(e) => { preventDefault(e); setIsModalOpen(true); }}>
                 <img src="/assets/icons/plus1.svg" alt="" />
@@ -365,6 +378,7 @@ const ManagementSchedule = () => {
           </div>
         </section>
 
+        {/* Navigation Tabs */}
         <nav className="prof-management-tabs" aria-label="Management sections">
           {managementTabs.map((tab) => (
             <Link 
@@ -377,6 +391,7 @@ const ManagementSchedule = () => {
           ))}
         </nav>
 
+        {/* Schedule Board */}
         <section className="prof-schedule-wrap">
           <header className="prof-schedule-header">
             <h2>Schedule</h2>
@@ -417,21 +432,17 @@ const ManagementSchedule = () => {
           </header>
 
           <section className="prof-schedule-board" aria-label="Weekly calendar">
-            {eventsLoading && (
-              <div className="prof-schedule-board-state">Loading schedule...</div>
-            )}
-
-            {!eventsLoading && eventsError && (
-              <div className="prof-schedule-board-state is-error">Error: {eventsError}</div>
-            )}
-
+            {eventsLoading && <div className="prof-schedule-board-state">Loading schedule...</div>}
+            {!eventsLoading && eventsError && <div className="prof-schedule-board-state is-error">Error: {eventsError}</div>}
+            
             {!eventsLoading && !eventsError && scheduleEvents.length === 0 && (
-              <div style={{ padding: '2rem', textAlign: 'center' }}>
-                <img src="/assets/icons/empty-calendar.svg" alt="No events" style={{ width: 96, height: 96, opacity: 0.95 }} />
-                <h3 style={{ marginTop: '.5rem' }}>No events this week</h3>
-                <p style={{ margin: 0, color: 'var(--muted, #666)', maxWidth: 520, marginLeft: 'auto', marginRight: 'auto' }}>There are no scheduled events for the selected week. Create an event to populate your schedule.</p>
-                <div style={{ marginTop: '.75rem' }}>
-                  <button className="learners-btn learners-btn-primary" onClick={(e) => { e.preventDefault(); setIsModalOpen(true); }}>Add Event</button>
+              <div className="prof-management-empty-state" style={{ margin: '18px 0' }}>
+                <div className="prof-management-empty-state-card">
+                  <h3>No events this week</h3>
+                  <p>There are no scheduled events for the selected week. Create an event to populate your schedule.</p>
+                  <div className="prof-management-empty-state-actions">
+                    <button className="learners-btn learners-btn-primary" onClick={() => setIsModalOpen(true)}>Add Event</button>
+                  </div>
                 </div>
               </div>
             )}
@@ -471,7 +482,6 @@ const ManagementSchedule = () => {
                 >
                   <div className="prof-schedule-event-head">
                     <div><h4>{event.title}</h4></div>
-
                     <button 
                       type="button" 
                       className="prof-schedule-event-menu" 
@@ -521,7 +531,7 @@ const ManagementSchedule = () => {
         <div className="assessments-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="scheduleEventModalTitle">
           <div className="assessments-modal__header">
             <h2 id="scheduleEventModalTitle">Add Event</h2>
-            <button type="button" className="assessments-modal__close" onClick={() => setIsModalOpen(false)} aria-label="Close add event modal">
+            <button type="button" className="assessments-modal__close" onClick={() => setIsModalOpen(false)} aria-label="Close modal">
               <img src="/assets/icons/popup-close.svg" alt="" />
             </button>
           </div>
@@ -560,23 +570,43 @@ const ManagementSchedule = () => {
                   </label>
 
                   <div className="prof-schedule-modal-field prof-schedule-modal-field--time">
-                    <span>Event Time</span>
-                    <div 
-                      className={`prof-schedule-modal-time-input ${isTimePickerOpen ? 'is-active' : ''}`}
-                      onClick={(e) => { e.stopPropagation(); setIsTimePickerOpen(!isTimePickerOpen); setIsStatusMenuOpen(false); }}
-                    >
-                      <input type="text" value={`${formatInputDateTime(selectedDate)} - 4/18 04:00 AM`} readOnly />
-                      <img src="/assets/icons/calendar-add.svg" alt="" aria-hidden="true" />
+                    <span>Event Time & Duration</span>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <div 
+                        className={`prof-schedule-modal-time-input ${isTimePickerOpen ? 'is-active' : ''}`}
+                        onClick={(e) => { e.stopPropagation(); setIsTimePickerOpen(!isTimePickerOpen); setIsStatusMenuOpen(false); }}
+                        style={{ flex: 1 }}
+                      >
+                        {/* Dynamically calculate End Time for Display */}
+                        <input 
+                          type="text" 
+                          value={`${formatInputDateTime(selectedDate)} - ${formatTime12h(new Date(selectedDate.getTime() + durationMinutes * 60000))}`} 
+                          readOnly 
+                        />
+                        <img src="/assets/icons/calendar-add.svg" alt="" aria-hidden="true" />
+                      </div>
+
+                      {/* Explicit Duration Input connected to state */}
+                      <input 
+                        type="number" 
+                        min="15" 
+                        step="15"
+                        className="prof-schedule-modal-time-input"
+                        value={durationMinutes} 
+                        onChange={(e) => setDurationMinutes(e.target.value)} 
+                        title="Duration in minutes"
+                        style={{ width: '80px', textAlign: 'center' }}
+                      />
                     </div>
                     
-                    {/* Time & Date Picker */}
+                    {/* Time & Date Picker Panel */}
                     {isTimePickerOpen && (
                       <div className="prof-schedule-modal-picker" onClick={e => e.stopPropagation()}>
                         <div className="prof-schedule-modal-calendar">
                           <div className="prof-schedule-modal-calendar-head">
-                            <button type="button" onClick={() => setCalendarMonth(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() - 1, 1))} aria-label="Previous month"><img src="/assets/icons/left1.svg" alt="" /></button>
+                            <button type="button" onClick={() => setCalendarMonth(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() - 1, 1))}><img src="/assets/icons/left1.svg" alt="" /></button>
                             <strong>{calendarMonth.toLocaleString('en-US', { month: 'short', year: 'numeric' })}</strong>
-                            <button type="button" onClick={() => setCalendarMonth(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 1))} aria-label="Next month"><img src="/assets/icons/right1.svg" alt="" /></button>
+                            <button type="button" onClick={() => setCalendarMonth(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 1))}><img src="/assets/icons/right1.svg" alt="" /></button>
                           </div>
 
                           <div className="prof-schedule-modal-calendar-grid">
@@ -596,15 +626,15 @@ const ManagementSchedule = () => {
 
                         <div className="prof-schedule-modal-timepicker">
                           <div className="prof-schedule-modal-timecol">
-                            <button type="button" onClick={() => adjustTime('hour-up')} aria-label="Increase hour">↑</button>
+                            <button type="button" onClick={() => adjustTime('hour-up')}>↑</button>
                             <strong>{pad2(selectedDate.getHours() % 12 === 0 ? 12 : selectedDate.getHours() % 12)}</strong>
-                            <button type="button" onClick={() => adjustTime('hour-down')} aria-label="Decrease hour">↓</button>
+                            <button type="button" onClick={() => adjustTime('hour-down')}>↓</button>
                           </div>
                           <span className="prof-schedule-modal-time-sep">:</span>
                           <div className="prof-schedule-modal-timecol">
-                            <button type="button" onClick={() => adjustTime('minute-up')} aria-label="Increase minute">↑</button>
+                            <button type="button" onClick={() => adjustTime('minute-up')}>↑</button>
                             <strong>{pad2(selectedDate.getMinutes())}</strong>
-                            <button type="button" onClick={() => adjustTime('minute-down')} aria-label="Decrease minute">↓</button>
+                            <button type="button" onClick={() => adjustTime('minute-down')}>↓</button>
                           </div>
                           <button type="button" className="prof-schedule-modal-meridiem" onClick={toggleMeridiem}>
                             {selectedDate.getHours() >= 12 ? 'PM' : 'AM'}
@@ -654,6 +684,7 @@ const ManagementSchedule = () => {
                     <small>{uploadedFiles.length > 0 ? 'Ready to upload' : 'Upload case files, if any.'}</small>
                   </span>
                 </label>
+                
                 <label className="prof-schedule-modal-field prof-schedule-modal-field--full">
                   <span>Event Description</span>
                   <textarea rows="4" value={eventDescription} onChange={(e) => setEventDescription(e.target.value)} placeholder="Type something..."></textarea>

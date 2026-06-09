@@ -44,6 +44,51 @@
   background: #4A0A73;
 }
 
+.prof-management-empty-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 220px;
+  padding: 24px;
+  border: 1px solid #EEF1F7;
+  border-radius: 12px;
+  background: #FFFFFF;
+}
+
+.prof-management-empty-state-card {
+  max-width: 520px;
+  text-align: center;
+}
+
+.prof-management-empty-state-card h3 {
+  margin: 0 0 8px;
+  font-family: Inter, sans-serif;
+  font-size: 18px;
+  line-height: 1.25;
+  font-weight: 700;
+  color: #071437;
+}
+
+.prof-management-empty-state-card p {
+  margin: 0;
+  font-family: Inter, sans-serif;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #667085;
+}
+
+.prof-management-empty-state-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.prof-management-empty-state-actions .learners-btn {
+  min-width: 150px;
+}
+
 @media (max-width: 991px) {
   .prof-management-tab {
     font-size: 12px;

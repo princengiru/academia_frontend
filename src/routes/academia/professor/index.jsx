@@ -10,6 +10,7 @@ import ManagementSchedule from '../../../pages/academia/professor/ManagementSche
 import ManagementLessonsRanks from '../../../pages/academia/professor/ManagementLessonsRanks';
 import ManagementStudentQA from '../../../pages/academia/professor/ManagementStudentQA';
 import Settings from '../../../pages/academia/professor/Settings';
+import Account from '../../../pages/academia/professor/Account';
 
 function AcademiaProfessorRoutes() {
   // Provide a top-level route so DashboardHome renders without the AcademiaLayout wrapper.
@@ -27,6 +28,7 @@ function AcademiaProfessorRoutes() {
       <Route path="academia/professor/management-lessons-ranks" element={<ManagementLessonsRanks />} />
       <Route path="academia/professor/management-student-qa" element={<ManagementStudentQA />} />
       <Route path="academia/professor/settings" element={<Settings />} />
+      <Route path="academia/professor/account" element={<Account />} />
     </>
   );
 }
