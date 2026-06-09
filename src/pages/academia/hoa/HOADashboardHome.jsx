@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import HOALayout from '../../../components/layouts/HOALayout/HOALayout';
+import { useCurrency, flagOptions } from '../../../hooks/useCurrency';
 import './hoa-dashboard-home.css';
 import hoadollar from '../../../assets/icons/hoadollar.svg';
 import hoausflag from '../../../assets/icons/hoausflag.svg';
@@ -41,19 +42,12 @@ const HOADashboardHome = () => {
   const [isPageSizeOpen, setIsPageSizeOpen] = useState(false);
   const [openActionRowId, setOpenActionRowId] = useState(null);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [sortConfig, setSortConfig] = useState({ key: 'name', direction: 'asc' });
   const [openFlagDropdown, setOpenFlagDropdown] = useState(null);
-  const [flagSelections, setFlagSelections] = useState({
-    revenue: { label: 'US', flag: hoausflag },
-    learner: { label: 'US', flag: hoausflag },
-    tutor: { label: 'US', flag: hoausflag },
-  });
+  const { currency, setCurrency, formatAmount } = useCurrency();
 
   const pageSizeOptions = ['5', '10', '25'];
   const actionMenuItems = ['View details', 'Approve', 'Reject'];
-  const flagOptions = [
-    { label: 'US', flag: hoausflag },
-    { label: 'RW', flag: '/assets/icons/rwanda.svg' },
-  ];
   const filterOptions = ['All requests', 'Completed', 'Pending', 'Rejected'];
 
   const toggleRowSelection = (rowId) => {
@@ -81,17 +75,12 @@ const HOADashboardHome = () => {
     setOpenFlagDropdown((currentKey) => (currentKey === key ? null : key));
   };
 
-  const selectFlagOption = (key, option) => {
-    setFlagSelections((currentSelections) => ({
-      ...currentSelections,
-      [key]: option,
-    }));
+  const selectFlagOption = (option) => {
+    setCurrency(option);
     setOpenFlagDropdown(null);
   };
 
   const renderFlagDropdown = (key) => {
-    const selectedFlag = flagSelections[key];
-
     return (
       <div className="flag-dropdown-wrapper">
         <button
@@ -101,8 +90,8 @@ const HOADashboardHome = () => {
           aria-haspopup="listbox"
           aria-expanded={openFlagDropdown === key}
         >
-          <img src={selectedFlag.flag} alt={selectedFlag.label} className="flag-icon" />
-          <span>{selectedFlag.label}</span>
+          <img src={currency.flag} alt={currency.label} className="flag-icon" />
+          <span>{currency.label}</span>
           <img src={hoadowncaret} alt="Open language options" className="flag-dropdown-caret" />
         </button>
 
@@ -112,8 +101,8 @@ const HOADashboardHome = () => {
               <button
                 key={option.label}
                 type="button"
-                className={`flag-dropdown-option ${selectedFlag.label === option.label ? 'active' : ''}`}
-                onClick={() => selectFlagOption(key, option)}
+                className={`flag-dropdown-option ${currency.label === option.label ? 'active' : ''}`}
+                onClick={() => selectFlagOption(option)}
               >
                 <img src={option.flag} alt={option.label} className="flag-icon" />
                 <span>{option.label}</span>
@@ -123,6 +112,37 @@ const HOADashboardHome = () => {
         )}
       </div>
     );
+  };
+
+  const handleSort = (key) => {
+    let direction = 'asc';
+    if (sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    } else if (sortConfig.key === key && sortConfig.direction === 'desc') {
+      direction = 'asc';
+    }
+    setSortConfig({ key, direction });
+  };
+
+  const getSortedData = (data, config) => {
+    if (!config.key) return data;
+    return [...data].sort((a, b) => {
+      let aVal = a[config.key];
+      let bVal = b[config.key];
+      
+      if (config.key === 'date') {
+         aVal = new Date(aVal).getTime();
+         bVal = new Date(bVal).getTime();
+      }
+
+      if (aVal < bVal) {
+        return config.direction === 'asc' ? -1 : 1;
+      }
+      if (aVal > bVal) {
+        return config.direction === 'asc' ? 1 : -1;
+      }
+      return 0;
+    });
   };
 
   // Updated Data to match image types and icons
@@ -141,6 +161,7 @@ const HOADashboardHome = () => {
 
   return (
     <HOALayout currentPage="index">
+      <div className="hoa-dashboard-home-page">
       
       {/* Page Header */}
       <div className="hoa-page-header">
@@ -254,7 +275,7 @@ const HOADashboardHome = () => {
           </div>
           <div className="amount-details">
             <div className="amt-row">
-              <h3>+ 2.8K <span>USD</span></h3>
+              <h3>+ {formatAmount('2.8K USD').replace(' USD', '').replace(' RWF', '')} <span>{currency.label}</span></h3>
               {renderFlagDropdown('revenue')}
             </div>
             <p>TOTAL REVENUE <span className="trend up"> <img src={hoaincrease} alt="Increase" /> +40.1%</span></p>
@@ -387,7 +408,7 @@ const HOADashboardHome = () => {
       {/* Conditional Rendering of Grid vs List */}
       {viewMode === 'grid' ? (
         <div className="hoa-grid-3">
-          {approvalRequests.map((req) => (
+          {getSortedData(approvalRequests, sortConfig).map((req) => (
             <div key={req.id} className="hoa-card hoa-approval-card">
               
               <div className="approval-user-row">
@@ -444,17 +465,17 @@ const HOADashboardHome = () => {
                     <div className="minus-icon">-</div>
                   </button>
                 </th>
-                <th><div className="th-content">Student Details (34) <span className="sort-icon"><img src={hoaupdowncaret} alt="Sort" /></span></div></th>
-                <th><div className="th-content">Role <span className="sort-icon"><img src={hoaupdowncaret} style={{width: '11px', height: '11px'}} alt="Sort" /></span></div></th>
-                <th><div className="th-content"> Date <span className="sort-icon"><img src={hoaupdowncaret} style={{width: '11px', height: '11px'}} alt="Sort" /></span></div></th>
-                <th><div className="th-content">Assessment Type <span className="sort-icon"><img src={hoaupdowncaret} style={{width: '11px', height: '11px'}} alt="Sort" /></span></div></th>
-                <th><div className="th-content">Status <span className="sort-icon"><img src={hoaupdowncaret} style={{width: '11px', height: '11px'}} alt="Sort" /></span></div></th>
+                <th><div className="th-content" onClick={() => handleSort('name')}>Student Details (34) <span className={`sort-icon ${sortConfig.key === 'name' ? 'active ' + sortConfig.direction : ''}`}><img src={hoaupdowncaret} alt="Sort" /></span></div></th>
+                <th><div className="th-content" onClick={() => handleSort('role')}>Role <span className={`sort-icon ${sortConfig.key === 'role' ? 'active ' + sortConfig.direction : ''}`}><img src={hoaupdowncaret} style={{width: '11px', height: '11px'}} alt="Sort" /></span></div></th>
+                <th><div className="th-content" onClick={() => handleSort('date')}> Date <span className={`sort-icon ${sortConfig.key === 'date' ? 'active ' + sortConfig.direction : ''}`}><img src={hoaupdowncaret} style={{width: '11px', height: '11px'}} alt="Sort" /></span></div></th>
+                <th><div className="th-content" onClick={() => handleSort('fileCount')}>Assessment Type <span className={`sort-icon ${sortConfig.key === 'fileCount' ? 'active ' + sortConfig.direction : ''}`}><img src={hoaupdowncaret} style={{width: '11px', height: '11px'}} alt="Sort" /></span></div></th>
+                <th><div className="th-content" onClick={() => handleSort('status')}>Status <span className={`sort-icon ${sortConfig.key === 'status' ? 'active ' + sortConfig.direction : ''}`}><img src={hoaupdowncaret} style={{width: '11px', height: '11px'}} alt="Sort" /></span></div></th>
                 <th><div className="th-content">Action <span className="sort-icon"><img src={hoaupdowncaret} style={{width: '11px', height: '11px'}} alt="Sort" /></span></div></th>
               </tr>
             </thead>
             <tbody>
-              {approvalRequests.map((req) => (
-                <tr key={req.id}>
+              {getSortedData(approvalRequests, sortConfig).map((req) => (
+                <tr key={req.id} className={selectedRows.includes(req.id) ? 'selected-row' : ''}>
                   <td>
                     <input
                       type="checkbox"
@@ -568,6 +589,7 @@ const HOADashboardHome = () => {
         </div>
       </div>
 
+      </div>
     </HOALayout>
   );
 };

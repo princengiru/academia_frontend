@@ -433,8 +433,6 @@ body[data-role="hoa"] .hoa-topbar {
 /* Content Area - Fixed height issue causing layout overflow */
 body[data-role="hoa"] .hoa-content-area {
   flex: 1;
-  overflow-y: visible;
-  overflow-x: hidden;
   background-color: transparent;
   display: flex;
   flex-direction: column;

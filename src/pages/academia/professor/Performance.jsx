@@ -325,13 +325,13 @@ const Performance = () => {
 
                   <div className="dropdown learners-performance-period-dropdown">
                     <button className="dropdown-toggle learners-performance-period-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                      <span>Monthly</span>
+                      <span>{chartPeriod}</span>
                       <img src="/assets/icons/drop1.svg" alt="" />
                     </button>
                     <ul className="dropdown-menu learners-performance-period-menu">
-                      <li><a className="dropdown-item active" href="#" onClick={preventDefault}>Monthly</a></li>
-                      <li><a className="dropdown-item" href="#" onClick={preventDefault}>Weekly</a></li>
-                      <li><a className="dropdown-item" href="#" onClick={preventDefault}>Quarterly</a></li>
+                      <li><a className={`dropdown-item ${chartPeriod === 'Monthly' ? 'active' : ''}`} href="#" onClick={(e) => { preventDefault(e); setChartPeriod('Monthly'); }}>Monthly</a></li>
+                      <li><a className={`dropdown-item ${chartPeriod === 'Weekly' ? 'active' : ''}`} href="#" onClick={(e) => { preventDefault(e); setChartPeriod('Weekly'); }}>Weekly</a></li>
+                      <li><a className={`dropdown-item ${chartPeriod === 'Quarterly' ? 'active' : ''}`} href="#" onClick={(e) => { preventDefault(e); setChartPeriod('Quarterly'); }}>Quarterly</a></li>
                     </ul>
                   </div>
                 </div>
