@@ -210,13 +210,15 @@
     justify-content: space-between;
     padding: 10px 16px;
     background: #FCFCFC;
-    border: 1.3px solid #DBDFE9;
+    border: 1.3px solid #FCFCFC;
     border-radius: 6px;
     font-size: 13px;
-    color: #4B5675;
+    color: #071437;
     font-weight: 600;
     cursor: pointer;
-    min-width: 160px;
+    min-width: 250px;
+    height: 48px;
+
 }
 
 .hoa-online-courses-page .oc-filter-dropdown-menu {
