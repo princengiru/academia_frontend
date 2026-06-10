@@ -79,6 +79,7 @@ const IconStar = ({ fill = "#FFC700" }) => (
 const HOASyllabus = () => {
     // State to manage drill-down: 1 = Topics Grid, 2 = Papers List, 3 = Paper Detail
     const [currentView, setCurrentView] = useState(1);
+    const [isOutlineOpen, setIsOutlineOpen] = useState(false);
 
     // Sidebar state
     const [expandedCategories, setExpandedCategories] = useState(['math']);
@@ -368,10 +369,26 @@ const HOASyllabus = () => {
                 </p>
             </div>
 
-            <div className="syll-accordion-header">
+            <div className="syll-accordion-header" onClick={() => setIsOutlineOpen(!isOutlineOpen)}>
                 <h3>Outline</h3>
-                <img src={hoadowncaret} alt="" style={{ opacity: 0.5 }} />
+                <IconDownCaret 
+                    width={14} height={8}
+                    style={{ transform: isOutlineOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', color: '#071437' }}
+                />
             </div>
+
+            {isOutlineOpen && (
+                <div className="syll-outline-content" style={{ padding: '20px 0', color: '#78829D', fontSize: '13px', lineHeight: '1.6' }}>
+                    <ul style={{ margin: 0, paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        <li>1. Introduction to Bornological Spaces</li>
+                        <li>2. Semi-Abelian Categories</li>
+                        <li>3. The Structure of Bornological Algebras</li>
+                        <li>4. Homological Properties</li>
+                        <li>5. Applications and Examples</li>
+                        <li>6. Conclusion</li>
+                    </ul>
+                </div>
+            )}
 
             <div className="syll-rating-footer">
                 <div className="syll-rating-left">
