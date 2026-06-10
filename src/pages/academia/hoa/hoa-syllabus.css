@@ -608,7 +608,7 @@
 
 .hoa-syllabus-page .syll-btn-view {
     background: #FCFCFC;
-    border: 1px solid #DBDFE9;
+    border: 1px solid #E2E8F0;
     color: #64748B;
     max-width: 104px;
     width: 100%;
@@ -705,21 +705,26 @@
 
 .hoa-syllabus-page .syll-badge-paid {
     background: #EAFFF1;
-    color: #17C653;
+    color: #04B440;
     padding: 4px 10px;
+    height: 28px;
     border-radius: 4px;
+    border: 1px solid #17C65333;
     font-size: 11px;
     font-weight: 600;
     display: inline-flex;
     align-items: center;
     gap: 4px;
+    cursor: pointer;
 }
 
 .hoa-syllabus-page .syll-badge-free {
     background: #F8F5FF;
     color: #5014D0;
     padding: 4px 10px;
+    height: 28px;
     border-radius: 4px;
+    border: 1px solid #7239EA33;
     font-size: 11px;
     font-weight: 600;
     display: inline-flex;
