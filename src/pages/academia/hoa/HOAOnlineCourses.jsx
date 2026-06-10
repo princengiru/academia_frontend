@@ -215,34 +215,54 @@ const HOAOnlineCourses = () => {
                 </div>
 
                 {/* Filter & Search Bar */}
-                <div className="oc-main-header-bar">
-                    <div className="oc-course-filter" onClick={() => setIsCourseFilterOpen(!isCourseFilterOpen)}>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <img src={hoafilter2} style={{ width: 16, opacity: 0.5 }} alt="" /> {selectedCourseFilter}
-                        </span>
-                        <IconDownCaret width={14} height={8} style={{ transform: isCourseFilterOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', color: '#6B7280' }} />
+                <div className="oc-filters-row">
+                    <div className="oc-course-filter-container">
+                        <div className="oc-course-filter" onClick={() => setIsCourseFilterOpen(!isCourseFilterOpen)}>
+                            <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <img src={hoafilter2} style={{ width: 16, opacity: 0.5 }} alt="" /> {selectedCourseFilter}
+                            </span>
+                            <IconDownCaret width={14} height={8} style={{ transform: isCourseFilterOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', color: '#6B7280' }} />
+                        </div>
+                        {isCourseFilterOpen && (
+                            <div className="oc-filter-dropdown-menu">
+                                {['All Courses', 'My Courses', 'Favorite Courses'].map(opt => (
+                                    <button 
+                                        key={opt}
+                                        className="oc-filter-dropdown-item"
+                                        onClick={() => {
+                                            setSelectedCourseFilter(opt);
+                                            setIsCourseFilterOpen(false);
+                                        }}
+                                    >
+                                        {opt}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
                     </div>
 
-                    <div className="oc-search-bar">
-                        <img src={hoasearch} alt="Search" style={{ opacity: 0.5, width: 14 }} />
-                        <input type="text" placeholder="Search any Courses..." />
-                    </div>
+                    <div className="oc-main-header-bar">
+                        <div className="oc-search-bar">
+                            <img src={hoasearch} alt="Search" style={{ opacity: 0.5, width: 14 }} />
+                            <input type="text" placeholder="Search any Courses..." />
+                        </div>
 
-                    <div className="oc-type-toggles">
-                        {['All', 'Free', 'Paid'].map(filter => (
-                            <button
-                                key={filter}
-                                className={`oc-type-btn ${activeFilter === filter ? 'active' : ''}`}
-                                onClick={() => setActiveFilter(filter)}
-                            >
-                                {filter}
-                            </button>
-                        ))}
+                        <div className="oc-type-toggles">
+                            {['All', 'Free', 'Paid'].map(filter => (
+                                <button
+                                    key={filter}
+                                    className={`oc-type-btn ${activeFilter === filter ? 'active' : ''}`}
+                                    onClick={() => setActiveFilter(filter)}
+                                >
+                                    {filter}
+                                </button>
+                            ))}
+                        </div>
+                        <div className="oc-v-divider"></div>
+                        <button className="oc-btn-filter-pill">
+                            <img src={hoafilter} style={{ width: 12, opacity: 0.5 }} alt="" /> Filters
+                        </button>
                     </div>
-                    <div className="oc-v-divider"></div>
-                    <button className="oc-btn-filter-pill">
-                        <img src={hoafilter} style={{ width: 12, opacity: 0.5 }} alt="" /> Filters
-                    </button>
                 </div>
 
                 {/* Courses Grid */}
