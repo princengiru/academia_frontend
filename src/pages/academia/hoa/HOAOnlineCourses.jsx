@@ -273,8 +273,10 @@ const HOAOnlineCourses = () => {
                             <div className="oc-card-badge" style={{ background: course.isFree ? 'rgba(69, 4, 104, 0.9)' : 'rgba(0,0,0,0.6)' }}>
                                 {course.price}
                             </div>
-                            <div className="oc-card-ribbon">
-                                #{course.id}
+                            <div className="oc-card-ribbon-wrapper">
+                                <div className="oc-ribbon-placeholder"></div>
+                                <img src="/assets/icons/course-ribbon.png" alt="" className="oc-ribbon-img" onError={(e) => e.target.style.display = 'none'} />
+                                <span className="oc-ribbon-number">#{course.id}</span>
                             </div>
                             <div className="oc-card-content">
                                 <p className="oc-card-author">{course.author}</p>
