@@ -957,7 +957,7 @@
 /* Pagination (reusable from Syllabus but scoped) */
 .hoa-online-courses-page .oc-pagination-container {
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
     align-items: center;
     margin-top: 24px;
     font-size: 14px;
@@ -968,6 +968,10 @@
     display: flex;
     align-items: center;
     gap: 12px;
+}
+
+.hoa-online-courses-page .oc-page-size-dropdown {
+    position: relative;
 }
 
 .hoa-online-courses-page .oc-page-size-button {
@@ -984,6 +988,37 @@
     cursor: pointer;
 }
 
+.hoa-online-courses-page .oc-page-size-menu {
+    position: absolute;
+    bottom: 100%;
+    left: 0;
+    margin-bottom: 4px;
+    background: #FFFFFF;
+    border: 1px solid #EEF1F6;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    z-index: 100;
+    overflow: hidden;
+    min-width: 100%;
+}
+
+.hoa-online-courses-page .oc-page-size-option {
+    width: 100%;
+    text-align: left;
+    padding: 8px 12px;
+    background: transparent;
+    border: none;
+    font-size: 13px;
+    color: #4B5675;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.hoa-online-courses-page .oc-page-size-option:hover {
+    background: #F8F9FA;
+    color: #450468;
+}
+
 .hoa-online-courses-page .oc-pagination-right {
     display: flex;
     align-items: center;
@@ -991,19 +1026,21 @@
 }
 
 .hoa-online-courses-page .oc-page-nav {
-    background: transparent;
-    border: none;
+    background: #FFF;
+    border: 1px solid #DBDFE9;
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    opacity: 0.8;
 }
 
 .hoa-online-courses-page .oc-page-num {
     background: transparent;
     border: none;
-    color: #071437;
+    color: #4B5675;
     width: 32px;
     height: 32px;
     border-radius: 6px;
@@ -1016,6 +1053,6 @@
 }
 
 .hoa-online-courses-page .oc-page-num.active {
-    background: #F8F5FF;
-    color: #450468;
+    background: #450468;
+    color: #FFF;
 }

@@ -293,20 +293,19 @@ const HOAOnlineCourses = () => {
 
                 {/* Pagination */}
                 <div className="oc-pagination-container">
-                    <div className="oc-pagination-left">
-                        Show
-                        <button type="button" className="oc-page-size-button">
-                            10 <img src={hoadowncaret} alt="" />
-                        </button>
-                        per page
-                    </div>
                     <div className="oc-pagination-right">
-                        <span>1-10 of 5</span>
-                        <button className="oc-page-nav"><img src={hoaleftarrow} alt="Prev" /></button>
+                        <button className="oc-page-nav" style={{ color: '#D8D8E5' }}>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                        </button>
                         <button className="oc-page-num">1</button>
                         <button className="oc-page-num active">2</button>
                         <button className="oc-page-num">3</button>
-                        <button className="oc-page-nav"><img src={hoarightarrow} alt="Next" /></button>
+                        <button className="oc-page-num">4</button>
+                        <button className="oc-page-num">5</button>
+                        <span style={{margin: '0 4px', color: '#4B5675'}}>...</span>
+                        <button className="oc-page-nav" style={{ color: '#78829D' }}>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                        </button>
                     </div>
                 </div>
 
@@ -512,20 +511,19 @@ const HOAOnlineCourses = () => {
 
                                         {/* Table Pagination */}
                                         <div className="oc-pagination-container">
-                                            <div className="oc-pagination-left">
-                                                Show
-                                                <button type="button" className="oc-page-size-button">
-                                                    10 <img src={hoadowncaret} alt="" />
-                                                </button>
-                                                per page
-                                            </div>
                                             <div className="oc-pagination-right">
-                                                <span>1-10 of 5</span>
-                                                <button className="oc-page-nav"><img src={hoaleftarrow} alt="Prev" /></button>
+                                                <button className="oc-page-nav" style={{ color: '#D8D8E5' }}>
+                                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                                                </button>
                                                 <button className="oc-page-num">1</button>
                                                 <button className="oc-page-num active">2</button>
                                                 <button className="oc-page-num">3</button>
-                                                <button className="oc-page-nav"><img src={hoarightarrow} alt="Next" /></button>
+                                                <button className="oc-page-num">4</button>
+                                                <button className="oc-page-num">5</button>
+                                                <span style={{margin: '0 4px', color: '#4B5675'}}>...</span>
+                                                <button className="oc-page-nav" style={{ color: '#78829D' }}>
+                                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                                                </button>
                                             </div>
                                         </div>
                                     </div>
@@ -565,16 +563,20 @@ const HOAOnlineCourses = () => {
                                         </div>
 
                                         {/* Q&A Pagination */}
-                                        <div className="oc-pagination-container" style={{ justifyContent: 'flex-end', borderTop: 'none', marginTop: 0 }}>
+                                        <div className="oc-pagination-container" style={{ borderTop: 'none', marginTop: 0 }}>
                                             <div className="oc-pagination-right">
-                                                <button className="oc-page-nav"><img src={hoaleftarrow} alt="Prev" /></button>
+                                                <button className="oc-page-nav" style={{ color: '#D8D8E5' }}>
+                                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                                                </button>
                                                 <button className="oc-page-num">1</button>
                                                 <button className="oc-page-num active">2</button>
                                                 <button className="oc-page-num">3</button>
                                                 <button className="oc-page-num">4</button>
                                                 <button className="oc-page-num">5</button>
-                                                <span style={{margin: '0 4px'}}>...</span>
-                                                <button className="oc-page-nav"><img src={hoarightarrow} alt="Next" /></button>
+                                                <span style={{margin: '0 4px', color: '#4B5675'}}>...</span>
+                                                <button className="oc-page-nav" style={{ color: '#78829D' }}>
+                                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                                                </button>
                                             </div>
                                         </div>
                                     </div>
