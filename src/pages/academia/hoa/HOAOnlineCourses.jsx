@@ -506,55 +506,63 @@ const HOAOnlineCourses = () => {
                                             <span className="oc-bc-link">Online courses</span> / <span>Students</span> /
                                         </div>
 
-                                        <div className="oc-table-container">
-                                            <table className="oc-table">
+                                        <div className="hoa-list-container modal-table-container">
+                                            <table className="hoa-list-table mod-table">
                                                 <thead>
                                                     <tr>
-                                                        <th style={{ width: 40 }}><div style={{ width: 14, height: 14, background: '#450468', color: '#FFF', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 2 }}>-</div></th>
-                                                        <th>Students Details (34) <img src={hoaupdowncaret} alt="" /></th>
-                                                        <th>Course Type <img src={hoaupdowncaret} alt="" /></th>
-                                                        <th>Tot. Amount & Visits <img src={hoaupdowncaret} alt="" /></th>
-                                                        <th>Certificates & Avg. Score <img src={hoaupdowncaret} alt="" /></th>
-                                                        <th>Charging Fee <img src={hoaupdowncaret} alt="" /></th>
-                                                        <th>Status <img src={hoaupdowncaret} alt="" /></th>
+                                                        <th className="w-40">
+                                                            <button type="button" className="th-content minus-btn-container minus-select-button">
+                                                                <div className="minus-icon m-auto">-</div>
+                                                            </button>
+                                                        </th>
+                                                        <th><div className="th-content">Students Details (34) <span className="sort-icon"><img src={hoaupdowncaret} alt="" /></span></div></th>
+                                                        <th><div className="th-content">Course Type <span className="sort-icon"><img src={hoaupdowncaret} alt="" /></span></div></th>
+                                                        <th><div className="th-content">Tot. Amount & Visits <span className="sort-icon"><img src={hoaupdowncaret} alt="" /></span></div></th>
+                                                        <th><div className="th-content">Certificates & Avg. Score <span className="sort-icon"><img src={hoaupdowncaret} alt="" /></span></div></th>
+                                                        <th><div className="th-content">Charging Fee <span className="sort-icon"><img src={hoaupdowncaret} alt="" /></span></div></th>
+                                                        <th className="status-col"><div className="th-content">Status <span className="sort-icon"><img src={hoaupdowncaret} alt="" /></span></div></th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
                                                     {studentsData.map(student => (
                                                         <tr key={student.id}>
-                                                            <td><input type="checkbox" /></td>
-                                                            <td>
-                                                                <div className="oc-user-meta">
-                                                                    <h5>{student.name}</h5>
-                                                                    <p>{student.country}</p>
+                                                            <td className="w-40">
+                                                                <div className="checkbox-wrapper m-auto">
+                                                                    <input type="checkbox" className="hoa-checkbox" />
                                                                 </div>
                                                             </td>
                                                             <td>
-                                                                <div className="oc-user-meta">
-                                                                    <h5>{student.type}</h5>
-                                                                    <p>{student.duration}</p>
+                                                                <div className="td-content">
+                                                                    <span className="td-title">{student.name}</span>
+                                                                    <span className="td-subtitle">{student.country}</span>
                                                                 </div>
                                                             </td>
                                                             <td>
-                                                                <div className="oc-user-meta">
-                                                                    <h5>{student.amount}</h5>
-                                                                    <p>{student.visits}</p>
+                                                                <div className="td-content">
+                                                                    <span className="td-title">{student.type}</span>
+                                                                    <span className="td-subtitle">{student.duration}</span>
                                                                 </div>
                                                             </td>
                                                             <td>
-                                                                <div className="oc-user-meta">
-                                                                    <h5>{student.certs}</h5>
-                                                                    <p>{student.score}</p>
+                                                                <div className="td-content">
+                                                                    <span className="td-title">{student.amount}</span>
+                                                                    <span className="td-subtitle">{student.visits}</span>
                                                                 </div>
                                                             </td>
                                                             <td>
-                                                                <div className="oc-user-meta">
-                                                                    <h5 className={student.feeType === 'Free' ? 'oc-fee-free' : 'oc-fee-paid'}>{student.feeType}</h5>
-                                                                    <p>{student.feeAmount}</p>
+                                                                <div className="td-content">
+                                                                    <span className="td-title">{student.certs}</span>
+                                                                    <span className="td-subtitle">{student.score}</span>
                                                                 </div>
                                                             </td>
                                                             <td>
-                                                                <span className={`oc-status-pill ${student.status.toLowerCase().replace(' ', '')}`}>
+                                                                <div className="td-content">
+                                                                    <span className={`td-title ${student.feeType === 'Free' ? 'text-green' : 'text-purple'}`}>{student.feeType}</span>
+                                                                    <span className="td-subtitle">{student.feeAmount}</span>
+                                                                </div>
+                                                            </td>
+                                                            <td className="status-col">
+                                                                <span className={`status-badge ${student.status.toLowerCase().replace(' ', '')}`}>
                                                                     {student.status}
                                                                 </span>
                                                             </td>
@@ -565,20 +573,21 @@ const HOAOnlineCourses = () => {
                                         </div>
 
                                         {/* Table Pagination */}
-                                        <div className="oc-pagination-container">
-                                            <div className="oc-pagination-right">
-                                                <button className="oc-page-nav" style={{ color: '#D8D8E5' }}>
-                                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
-                                                </button>
-                                                <button className="oc-page-num">1</button>
-                                                <button className="oc-page-num active">2</button>
-                                                <button className="oc-page-num">3</button>
-                                                <button className="oc-page-num">4</button>
-                                                <button className="oc-page-num">5</button>
-                                                <span style={{margin: '0 4px', color: '#4B5675'}}>...</span>
-                                                <button className="oc-page-nav" style={{ color: '#78829D' }}>
-                                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
-                                                </button>
+                                        <div className="hoa-pagination-container list-pagination modal-pagination mb-40">
+                                            <div className="pagination-left">
+                                                Show
+                                                <div className="page-size-dropdown mx-8">
+                                                    <button type="button" className="page-size-button px-8-py-2">10 <img src={hoadowncaret} alt="" /></button>
+                                                </div>
+                                                per page
+                                            </div>
+                                            <div className="hoa-pagination">
+                                                <span className="page-range">1-10 of 5</span>
+                                                <button className="page-nav"><img src={hoaleftarrow} className="icon-15" style={{ width: '20px', height: '20px', padding: '0' }} alt="Prev" /></button>
+                                                <button className="page-num">1</button>
+                                                <button className="page-num active">2</button>
+                                                <button className="page-num">3</button>
+                                                <button className="page-nav"><img src={hoarightarrow} className="icon-15" style={{ width: '20px', height: '20px', padding: '0' }} alt="Next" /></button>
                                             </div>
                                         </div>
                                     </div>
