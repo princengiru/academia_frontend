@@ -542,6 +542,11 @@ const HOAOnlineCourses = () => {
 
                                 {/* ==== STUDENTS TAB ==== */}
                                 {activeTab === 'students' && (
+                                    <div>
+                                        <div className="oc-breadcrumbs">
+                                            <span className="oc-bc-link">Online courses</span> / <span>Students</span> /
+                                        </div>
+
                                         <div className="hoa-list-container modal-table-container">
                                             <table className="hoa-list-table mod-table">
                                                 <thead>
