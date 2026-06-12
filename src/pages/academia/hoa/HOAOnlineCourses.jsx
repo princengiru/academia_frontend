@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import HOALayout from '../../../components/layouts/HOALayout/HOALayout';
-import './hoa-online-courses.css';
-
-// Reuse standard project icons
+import { useCurrency, flagOptions } from '../../../hooks/useCurrency';
+import './hoa-online-courses.css';// Reuse standard project icons
 import hoarefresh from '../../../assets/icons/hoarefresh.svg';
 import hoagoto from '../../../assets/icons/hoagoto.svg';
 import hoaupdowncaret from '../../../assets/icons/hoaupdowncaret.svg';
@@ -92,6 +91,48 @@ const HOAOnlineCourses = () => {
     // Modal state
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [activeTab, setActiveTab] = useState('overview'); // 'overview', 'students', 'qa'
+
+    // Add these for the modal table:
+    const [modalSortConfig, setModalSortConfig] = useState({ key: 'name', direction: 'asc' });
+    const [modalSelectedRows, setModalSelectedRows] = useState([]);
+    const [openFlagDropdown, setOpenFlagDropdown] = useState(null);
+    const { currency, setCurrency, formatAmount } = useCurrency();
+
+    const handleModalSort = (key) => {
+        let direction = 'asc';
+        if (modalSortConfig.key === key && modalSortConfig.direction === 'asc') {
+            direction = 'desc';
+        }
+        setModalSortConfig({ key, direction });
+    };
+
+    const getSortedData = (data, config) => {
+        if (!config.key) return data;
+        return [...data].sort((a, b) => {
+            let aVal = a[config.key];
+            let bVal = b[config.key];
+            if (aVal < bVal) return config.direction === 'asc' ? -1 : 1;
+            if (aVal > bVal) return config.direction === 'asc' ? 1 : -1;
+            return 0;
+        });
+    };
+
+    const toggleModalRowSelection = (rowId) => {
+        setModalSelectedRows((currentRows) => (
+            currentRows.includes(rowId)
+                ? currentRows.filter((selectedRowId) => selectedRowId !== rowId)
+                : [...currentRows, rowId]
+        ));
+    };
+
+    const toggleFlagDropdown = (key) => {
+        setOpenFlagDropdown((currentKey) => (currentKey === key ? null : key));
+    };
+
+    const selectFlagOption = (option) => {
+        setCurrency(option);
+        setOpenFlagDropdown(null);
+    };
 
     // Dummy data for courses grid
     const coursesData = Array(10).fill({
@@ -233,7 +274,7 @@ const HOAOnlineCourses = () => {
                         {isCourseFilterOpen && (
                             <div className="oc-filter-dropdown-menu">
                                 {['All Courses', 'My Courses', 'Favorite Courses'].map(opt => (
-                                    <button 
+                                    <button
                                         key={opt}
                                         className="oc-filter-dropdown-item"
                                         onClick={() => {
@@ -308,7 +349,7 @@ const HOAOnlineCourses = () => {
                         <button className="oc-page-num">3</button>
                         <button className="oc-page-num">4</button>
                         <button className="oc-page-num">5</button>
-                        <span style={{margin: '0 4px', color: '#4B5675'}}>...</span>
+                        <span style={{ margin: '0 4px', color: '#4B5675' }}>...</span>
                         <button className="oc-page-nav" style={{ color: '#78829D' }}>
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
                         </button>
@@ -318,7 +359,7 @@ const HOAOnlineCourses = () => {
                 {/* COURSE PREVIEW MODAL OVERLAY */}
                 <div className={`oc-modal-overlay ${isModalOpen ? 'open' : ''}`} onClick={closeModal}>
                     <div className="oc-modal-drawer" onClick={e => e.stopPropagation()}>
-                        
+
                         {/* Modal Header */}
                         <div className="oc-modal-top-header">
                             <button className="oc-modal-back-btn" onClick={closeModal}>
@@ -334,23 +375,23 @@ const HOAOnlineCourses = () => {
 
                         {/* Modal Content Scroll Area */}
                         <div className="oc-modal-content-area">
-                            
+
                             {/* Modal Stats Row */}
                             <div className="oc-modal-stats-row">
                                 <div className="oc-mod-stat">
-                                    <h3>+ 2.8K <span style={{fontSize: 10, color: '#A1A5B7'}}>USD <img src={hoausflag} style={{width: 10, borderRadius: '50%', margin: '0 2px'}} alt=""/> <img src={hoadowncaret} style={{width: 8}} alt=""/></span></h3>
+                                    <h3>+ 2.8K <span style={{ fontSize: 10, color: '#A1A5B7' }}>USD <img src={hoausflag} style={{ width: 10, borderRadius: '50%', margin: '0 2px' }} alt="" /> <img src={hoadowncaret} style={{ width: 8 }} alt="" /></span></h3>
                                     <p>Total Student</p>
                                 </div>
                                 <div className="oc-mod-stat">
-                                    <h3>2,340,044 <span style={{fontSize: 10, color: '#A1A5B7'}}>RWF <img src={rwanda} style={{width: 10, borderRadius: '50%', margin: '0 2px'}} alt=""/> <img src={hoadowncaret} style={{width: 8}} alt=""/></span></h3>
+                                    <h3>2,340,044 <span style={{ fontSize: 10, color: '#A1A5B7' }}>RWF <img src={rwanda} style={{ width: 10, borderRadius: '50%', margin: '0 2px' }} alt="" /> <img src={hoadowncaret} style={{ width: 8 }} alt="" /></span></h3>
                                     <p>Upload Amount</p>
                                 </div>
                                 <div className="oc-mod-stat">
-                                    <h3>+ 2.8K <span style={{fontSize: 10, color: '#A1A5B7'}}>USD <img src={hoausflag} style={{width: 10, borderRadius: '50%', margin: '0 2px'}} alt=""/> <img src={hoadowncaret} style={{width: 8}} alt=""/></span></h3>
+                                    <h3>+ 2.8K <span style={{ fontSize: 10, color: '#A1A5B7' }}>USD <img src={hoausflag} style={{ width: 10, borderRadius: '50%', margin: '0 2px' }} alt="" /> <img src={hoadowncaret} style={{ width: 8 }} alt="" /></span></h3>
                                     <p>Courses Income</p>
                                 </div>
                                 <div className="oc-mod-stat" style={{ borderRight: 'none' }}>
-                                    <h3>23 - March - 2026 <span style={{fontSize: 10, color: '#A1A5B7'}}>14:00:45</span></h3>
+                                    <h3>23 - March - 2026 <span style={{ fontSize: 10, color: '#A1A5B7' }}>14:00:45</span></h3>
                                     <p>Date Uploaded</p>
                                 </div>
                             </div>
@@ -364,7 +405,7 @@ const HOAOnlineCourses = () => {
 
                             {/* Modal Tab Content Area */}
                             <div className="oc-modal-tab-content">
-                                
+
                                 {/* ==== OVERVIEW TAB ==== */}
                                 {activeTab === 'overview' && (
                                     <div>
@@ -417,7 +458,7 @@ const HOAOnlineCourses = () => {
                                                     <img src={hoapayicon} alt="" />
                                                     <p>subscription</p>
                                                 </div>
-                                                <h4><span style={{color: '#EF305E'}}>5$</span> Per month</h4>
+                                                <h4><span style={{ color: '#EF305E' }}>5$</span> Per month</h4>
                                             </div>
                                         </div>
 
@@ -501,70 +542,80 @@ const HOAOnlineCourses = () => {
 
                                 {/* ==== STUDENTS TAB ==== */}
                                 {activeTab === 'students' && (
-                                    <div>
-                                        <div className="oc-breadcrumbs">
-                                            <span className="oc-bc-link">Online courses</span> / <span>Students</span> /
-                                        </div>
-
                                         <div className="hoa-list-container modal-table-container">
                                             <table className="hoa-list-table mod-table">
                                                 <thead>
                                                     <tr>
                                                         <th className="w-40">
-                                                            <button type="button" className="th-content minus-btn-container minus-select-button">
+                                                            <button type="button" className="th-content minus-btn-container minus-select-button" onClick={() => setModalSelectedRows([])}>
                                                                 <div className="minus-icon m-auto">-</div>
                                                             </button>
                                                         </th>
-                                                        <th><div className="th-content">Students Details (34) <span className="sort-icon"><img src={hoaupdowncaret} alt="" /></span></div></th>
-                                                        <th><div className="th-content">Course Type <span className="sort-icon"><img src={hoaupdowncaret} alt="" /></span></div></th>
-                                                        <th><div className="th-content">Tot. Amount & Visits <span className="sort-icon"><img src={hoaupdowncaret} alt="" /></span></div></th>
-                                                        <th><div className="th-content">Certificates & Avg. Score <span className="sort-icon"><img src={hoaupdowncaret} alt="" /></span></div></th>
-                                                        <th><div className="th-content">Charging Fee <span className="sort-icon"><img src={hoaupdowncaret} alt="" /></span></div></th>
-                                                        <th className="status-col"><div className="th-content">Status <span className="sort-icon"><img src={hoaupdowncaret} alt="" /></span></div></th>
+                                                        <th><div className="th-content" onClick={() => handleModalSort('name')}>Students Details (34) <span className={`sort-icon ${modalSortConfig.key === 'name' ? 'active ' + modalSortConfig.direction : ''}`}><img src={hoaupdowncaret} alt="" /></span></div></th>
+                                                        <th><div className="th-content" onClick={() => handleModalSort('type')}>Course Type <span className={`sort-icon ${modalSortConfig.key === 'type' ? 'active ' + modalSortConfig.direction : ''}`}><img src={hoaupdowncaret} alt="" /></span></div></th>
+                                                        <th><div className="th-content" onClick={() => handleModalSort('amount')}>Tot. Amount & Visits <span className={`sort-icon ${modalSortConfig.key === 'amount' ? 'active ' + modalSortConfig.direction : ''}`}><img src={hoaupdowncaret} alt="" /></span></div></th>
+                                                        <th><div className="th-content" onClick={() => handleModalSort('certs')}>Certificates & Avg. Score <span className={`sort-icon ${modalSortConfig.key === 'certs' ? 'active ' + modalSortConfig.direction : ''}`}><img src={hoaupdowncaret} alt="" /></span></div></th>
+                                                        <th style={{ position: 'relative' }}>
+                                                            <div className="th-content" onClick={() => handleModalSort('feeAmount')}>
+                                                                Charging Fee ({currency.label}) <img src={currency.flag} alt="flag" className="icon-12-mx4" onClick={(e) => { e.stopPropagation(); toggleFlagDropdown('modal-fee'); }} style={{ cursor: 'pointer', width: 14, height: 14, borderRadius: '50%' }} />
+                                                                <span className={`sort-icon ${modalSortConfig.key === 'feeAmount' ? 'active ' + modalSortConfig.direction : ''}`}><img src={hoaupdowncaret} alt="" /></span>
+                                                            </div>
+                                                            {openFlagDropdown === 'modal-fee' && (
+                                                                <div className="flag-dropdown-menu" style={{ minWidth: '80px', padding: '4px', top: '100%', right: '50%', transform: 'translateX(50%)', zIndex: 10, position: 'absolute' }}>
+                                                                    {flagOptions.map((option, idx) => (
+                                                                        <button key={idx} type="button" className={`flag-dropdown-option ${currency.label === option.label ? 'active' : ''}`} onClick={() => selectFlagOption(option)}>
+                                                                            <img src={option.flag} alt="flag" className="flag-icon" />
+                                                                            <span>{option.label}</span>
+                                                                        </button>
+                                                                    ))}
+                                                                </div>
+                                                            )}
+                                                        </th>
+                                                        <th className="status-col"><div className="th-content" onClick={() => handleModalSort('status')}>Status <span className={`sort-icon ${modalSortConfig.key === 'status' ? 'active ' + modalSortConfig.direction : ''}`}><img src={hoaupdowncaret} alt="" /></span></div></th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
-                                                    {studentsData.map(student => (
-                                                        <tr key={student.id}>
+                                                    {getSortedData(studentsData, modalSortConfig).map(student => (
+                                                        <tr key={student.id} className={modalSelectedRows.includes(student.id) ? 'selected-row' : ''}>
                                                             <td className="w-40">
                                                                 <div className="checkbox-wrapper m-auto">
-                                                                    <input type="checkbox" className="hoa-checkbox" />
+                                                                    <input type="checkbox" className="hoa-checkbox" checked={modalSelectedRows.includes(student.id)} onChange={() => toggleModalRowSelection(student.id)} />
                                                                 </div>
                                                             </td>
                                                             <td>
-                                                                <div className="td-content">
-                                                                    <span className="td-title">{student.name}</span>
-                                                                    <span className="td-subtitle">{student.country}</span>
+                                                                <div className="user-meta">
+                                                                    <h5>{student.name}</h5>
+                                                                    <p className="font-11-gray">{student.country}</p>
                                                                 </div>
                                                             </td>
                                                             <td>
-                                                                <div className="td-content">
-                                                                    <span className="td-title">{student.type}</span>
-                                                                    <span className="td-subtitle">{student.duration}</span>
+                                                                <div className="user-meta">
+                                                                    <h5 className="fw-500">{student.type}</h5>
+                                                                    <p className="font-11-gray">{student.duration}</p>
                                                                 </div>
                                                             </td>
                                                             <td>
-                                                                <div className="td-content">
-                                                                    <span className="td-title">{student.amount}</span>
-                                                                    <span className="td-subtitle">{student.visits}</span>
+                                                                <div className="user-meta">
+                                                                    <h5 className="fw-600">{student.amount}</h5>
+                                                                    <p className="font-11-gray">{student.visits}</p>
                                                                 </div>
                                                             </td>
                                                             <td>
-                                                                <div className="td-content">
-                                                                    <span className="td-title">{student.certs}</span>
-                                                                    <span className="td-subtitle">{student.score}</span>
+                                                                <div className="user-meta">
+                                                                    <h5 className="fw-600">{student.certs}</h5>
+                                                                    <p className="font-11-gray">{student.score}</p>
                                                                 </div>
                                                             </td>
                                                             <td>
-                                                                <div className="td-content">
-                                                                    <span className={`td-title ${student.feeType === 'Free' ? 'text-green' : 'text-purple'}`}>{student.feeType}</span>
-                                                                    <span className="td-subtitle">{student.feeAmount}</span>
+                                                                <div className="user-meta">
+                                                                    <h5 style={{ fontWeight: '600', color: student.feeType === 'Free' ? '#450468' : '#17C653' }}>{student.feeType}</h5>
+                                                                    <p className="font-11-gray">{student.feeAmount}</p>
                                                                 </div>
                                                             </td>
                                                             <td className="status-col">
-                                                                <span className={`status-badge ${student.status.toLowerCase().replace(' ', '')}`}>
-                                                                    {student.status}
-                                                                </span>
+                                                                <div className="flex-center-end-gap8">
+                                                                    <span className={`mod-status-pill st-${student.status === 'Completed' ? 'uploaded' : student.status === 'Failed' ? 'notpublished' : 'inprogress'}`}>{student.status}</span>
+                                                                </div>
                                                             </td>
                                                         </tr>
                                                     ))}
@@ -614,7 +665,7 @@ const HOAOnlineCourses = () => {
                                                             <span className="oc-qa-title">{qa.title}</span>
                                                         </div>
                                                         <p className="oc-qa-text">{qa.text} <span className="oc-read-more">Read more</span></p>
-                                                        
+
                                                         <div className="oc-qa-footer">
                                                             <div className="oc-qa-replies">
                                                                 <IconReply /> {qa.replies} View Replies
@@ -637,7 +688,7 @@ const HOAOnlineCourses = () => {
                                                 <button className="oc-page-num">3</button>
                                                 <button className="oc-page-num">4</button>
                                                 <button className="oc-page-num">5</button>
-                                                <span style={{margin: '0 4px', color: '#4B5675'}}>...</span>
+                                                <span style={{ margin: '0 4px', color: '#4B5675' }}>...</span>
                                                 <button className="oc-page-nav" style={{ color: '#78829D' }}>
                                                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
                                                 </button>
