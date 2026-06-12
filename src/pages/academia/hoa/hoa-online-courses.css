@@ -378,12 +378,13 @@
     position: absolute;
     top: 12px;
     left: 12px;
-    background: rgba(69, 4, 104, 0.9);
+    background: #450468;
+    border: 1px solid #FFFFFF1A;
     color: #FFF;
     font-size: 11px;
-    font-weight: 600;
+    font-weight: 500;
     padding: 4px 8px;
-    border-radius: 4px;
+    border-radius: 3px;
     z-index: 3;
 }
 

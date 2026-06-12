@@ -271,7 +271,7 @@ const HOAOnlineCourses = () => {
                     {coursesData.map(course => (
                         <div key={course.id} className="oc-card" onClick={() => openCourseModal(course)}>
                             <img src={course.bg} alt="" className="oc-card-bg" />
-                            <div className="oc-card-badge" style={{ background: course.isFree ? 'rgba(69, 4, 104, 0.9)' : 'rgba(0,0,0,0.6)' }}>
+                            <div className="oc-card-badge" >
                                 {course.price}
                             </div>
                             <div className="oc-card-ribbon-wrapper">
