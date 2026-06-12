@@ -387,24 +387,32 @@ const HOAOnlineCourses = () => {
 
                                         <div className="oc-info-cards">
                                             <div className="oc-info-card">
-                                                <IconDuration />
-                                                <p>Duration</p>
+                                                <div className="oc-ic-head">
+                                                    <IconDuration />
+                                                    <p>Duration</p>
+                                                </div>
                                                 <h4>4 weeks</h4>
                                             </div>
                                             <div className="oc-info-card">
-                                                <IconCalendar />
-                                                <p>Weekly study</p>
+                                                <div className="oc-ic-head">
+                                                    <IconCalendar />
+                                                    <p>Weekly study</p>
+                                                </div>
                                                 <h4>4 hours</h4>
                                             </div>
                                             <div className="oc-info-card">
-                                                <IconSkill />
-                                                <p>Skill Level</p>
+                                                <div className="oc-ic-head">
+                                                    <IconSkill />
+                                                    <p>Skill Level</p>
+                                                </div>
                                                 <h4>Intermediate</h4>
                                             </div>
                                             <div className="oc-info-card" style={{ position: 'relative' }}>
                                                 <div className="oc-discount-badge">-4% Off</div>
-                                                <IconWallet />
-                                                <p>subscription</p>
+                                                <div className="oc-ic-head">
+                                                    <IconWallet />
+                                                    <p>subscription</p>
+                                                </div>
                                                 <h4><span style={{color: '#F8285A'}}>5$</span> Per month</h4>
                                             </div>
                                         </div>
