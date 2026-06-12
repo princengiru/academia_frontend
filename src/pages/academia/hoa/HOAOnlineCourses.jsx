@@ -417,7 +417,7 @@ const HOAOnlineCourses = () => {
                                                     <img src={hoapayicon} alt="" />
                                                     <p>subscription</p>
                                                 </div>
-                                                <h4><span style={{color: '#F8285A'}}>5$</span> Per month</h4>
+                                                <h4><span style={{color: '#EF305E'}}>5$</span> Per month</h4>
                                             </div>
                                         </div>
 

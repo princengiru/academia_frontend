@@ -722,27 +722,27 @@
 }
 
 .hoa-online-courses-page .oc-discount-badge {
-    background: #F8285A;
-    color: #FFF;
-    font-size: 10px;
+    background: #EF305E;
+    color: #FFFFFF;
+    font-size: 12px;
     font-weight: 500;
-    padding: 4px 8px;
+    padding: 2px 8px;
     position: absolute;
-    top: -12px;
-    right: 24px;
-    border-radius: 2px;
+    top: -1px;
+    right: 16px;
+    border-radius: 0 0 2px 2px;
 }
 
 .hoa-online-courses-page .oc-discount-badge::after {
     content: '';
     position: absolute;
-    top: 100%;
+    bottom: 100%;
     right: 0;
     width: 0;
     height: 0;
     border-style: solid;
-    border-width: 6px 6px 0 0;
-    border-color: #B8153C transparent transparent transparent;
+    border-width: 0 8px 8px 0;
+    border-color: transparent transparent #B8153C transparent;
 }
 
 .hoa-online-courses-page .oc-section-title {
