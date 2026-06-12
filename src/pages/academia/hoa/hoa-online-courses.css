@@ -1488,3 +1488,29 @@
   color: #FFFFFF;
 }
 
+
+.hoa-online-courses-page .mod-status-pill {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 4px;
+  border: 1px solid transparent;
+}
+
+.hoa-online-courses-page .st-passed {
+  background: #EAFFF1;
+  color: #17C653;
+  border-color: #17C65333;
+}
+
+.hoa-online-courses-page .st-failed {
+  background: #FFEEF3;
+  color: #F8285A;
+  border-color: #F8285A33;
+}
+
+.hoa-online-courses-page .st-retake {
+  background: #FFF8DD;
+  color: #F6B100;
+  border-color: #F6B10033;
+}

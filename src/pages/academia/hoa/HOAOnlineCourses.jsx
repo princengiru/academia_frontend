@@ -557,6 +557,7 @@ const HOAOnlineCourses = () => {
                                                             </button>
                                                         </th>
                                                         <th><div className="th-content" onClick={() => handleModalSort('name')}>Students Details (34) <span className={`sort-icon ${modalSortConfig.key === 'name' ? 'active ' + modalSortConfig.direction : ''}`}><img src={hoaupdowncaret} alt="" /></span></div></th>
+                                                        <th><div className="th-content" onClick={() => handleModalSort('title')}>Course Title <span className={`sort-icon ${modalSortConfig.key === 'title' ? 'active ' + modalSortConfig.direction : ''}`}><img src={hoaupdowncaret} alt="" /></span></div></th>
                                                         <th><div className="th-content" onClick={() => handleModalSort('type')}>Course Type <span className={`sort-icon ${modalSortConfig.key === 'type' ? 'active ' + modalSortConfig.direction : ''}`}><img src={hoaupdowncaret} alt="" /></span></div></th>
                                                         <th><div className="th-content" onClick={() => handleModalSort('amount')}>Tot. Amount & Visits <span className={`sort-icon ${modalSortConfig.key === 'amount' ? 'active ' + modalSortConfig.direction : ''}`}><img src={hoaupdowncaret} alt="" /></span></div></th>
                                                         <th><div className="th-content" onClick={() => handleModalSort('certs')}>Certificates & Avg. Score <span className={`sort-icon ${modalSortConfig.key === 'certs' ? 'active ' + modalSortConfig.direction : ''}`}><img src={hoaupdowncaret} alt="" /></span></div></th>
@@ -595,6 +596,11 @@ const HOAOnlineCourses = () => {
                                                             </td>
                                                             <td>
                                                                 <div className="user-meta">
+                                                                    <h5 className="fw-500" style={{ margin: 0 }}>{student.title}</h5>
+                                                                </div>
+                                                            </td>
+                                                            <td>
+                                                                <div className="user-meta">
                                                                     <h5 className="fw-500">{student.type}</h5>
                                                                     <p className="font-11-gray">{student.duration}</p>
                                                                 </div>
@@ -613,13 +619,13 @@ const HOAOnlineCourses = () => {
                                                             </td>
                                                             <td>
                                                                 <div className="user-meta">
-                                                                    <h5 style={{ fontWeight: '600', color: student.feeType === 'Free' ? '#450468' : '#17C653' }}>{student.feeType}</h5>
+                                                                    <h5 style={{ fontWeight: '600', color: student.feeType === 'Free' ? '#7239EA' : '#17C653' }}>{student.feeType}</h5>
                                                                     <p className="font-11-gray">{student.feeAmount}</p>
                                                                 </div>
                                                             </td>
                                                             <td className="status-col">
                                                                 <div className="flex-center-end-gap8">
-                                                                    <span className={`mod-status-pill st-${student.status === 'Completed' ? 'uploaded' : student.status === 'Failed' ? 'notpublished' : 'inprogress'}`}>{student.status}</span>
+                                                                    <span className={`mod-status-pill st-${student.status === 'Completed' ? 'passed' : student.status === 'Failed' ? 'failed' : 'retake'}`}>{student.status}</span>
                                                                 </div>
                                                             </td>
                                                         </tr>
