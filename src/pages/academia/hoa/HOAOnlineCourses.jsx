@@ -5,6 +5,9 @@ import './hoa-online-courses.css';
 // Reuse standard project icons
 import hoarefresh from '../../../assets/icons/hoarefresh.svg';
 import hoagoto from '../../../assets/icons/hoagoto.svg';
+import hoaupdowncaret from '../../../assets/icons/hoaupdowncaret.svg';
+import rwanda from '../../../assets/icons/rwanda.svg';
+import hoausflag from '../../../assets/icons/hoausflag.svg';
 import hoadowncaret from '../../../assets/icons/hoadowncaret.svg';
 import hoasearch from '../../../assets/icons/hoasearch.svg';
 import hoafilter from '../../../assets/icons/hoafilter.svg';
@@ -14,7 +17,6 @@ import hoawhiteadd from '../../../assets/icons/hoawhiteadd.svg';
 import hoaleftarrow from '../../../assets/icons/hoaleftarrow.svg';
 import hoarightarrow from '../../../assets/icons/hoarightarrow.svg';
 import hoagoback from '../../../assets/icons/hoagoback.svg';
-import rwanda from '../../../assets/icons/rwanda.svg';
 import hoarank from '../../../assets/icons/hoarank.png';
 
 // Custom inline SVGs for specific icons
@@ -332,15 +334,15 @@ const HOAOnlineCourses = () => {
                             {/* Modal Stats Row */}
                             <div className="oc-modal-stats-row">
                                 <div className="oc-mod-stat">
-                                    <h3>+ 2.8K <span style={{fontSize: 10, color: '#A1A5B7'}}>USD <img src={hoadowncaret} style={{width: 8}} alt=""/></span></h3>
+                                    <h3>+ 2.8K <span style={{fontSize: 10, color: '#A1A5B7'}}>USD <img src={hoausflag} style={{width: 10, borderRadius: '50%', margin: '0 2px'}} alt=""/> <img src={hoadowncaret} style={{width: 8}} alt=""/></span></h3>
                                     <p>Total Student</p>
                                 </div>
                                 <div className="oc-mod-stat">
-                                    <h3>2,340,044 <span style={{fontSize: 10, color: '#A1A5B7'}}>RWF <img src={rwanda} style={{width: 10, borderRadius: '50%'}} alt=""/> <img src={hoadowncaret} style={{width: 8}} alt=""/></span></h3>
+                                    <h3>2,340,044 <span style={{fontSize: 10, color: '#A1A5B7'}}>RWF <img src={rwanda} style={{width: 10, borderRadius: '50%', margin: '0 2px'}} alt=""/> <img src={hoadowncaret} style={{width: 8}} alt=""/></span></h3>
                                     <p>Upload Amount</p>
                                 </div>
                                 <div className="oc-mod-stat">
-                                    <h3>+ 2.8K <span style={{fontSize: 10, color: '#A1A5B7'}}>USD <img src={hoadowncaret} style={{width: 8}} alt=""/></span></h3>
+                                    <h3>+ 2.8K <span style={{fontSize: 10, color: '#A1A5B7'}}>USD <img src={hoausflag} style={{width: 10, borderRadius: '50%', margin: '0 2px'}} alt=""/> <img src={hoadowncaret} style={{width: 8}} alt=""/></span></h3>
                                     <p>Courses Income</p>
                                 </div>
                                 <div className="oc-mod-stat" style={{ borderRight: 'none' }}>
