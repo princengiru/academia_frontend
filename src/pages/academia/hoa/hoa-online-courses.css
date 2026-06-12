@@ -415,29 +415,31 @@
     color: #FFF;
     font-size: 9px;
     font-weight: 700;
-    bottom: 8px; /* Center text vertically in the bottom rosette shape */
+    bottom: 10px; /* Center text vertically in the bottom rosette shape */
     width: 100%;
     text-align: center;
 }
 
 .hoa-online-courses-page .oc-card-author {
     font-size: 11px;
-    color: #D1D5DB;
+    color: #FFFFFFCC;
     margin: 0 0 4px 0;
+    font-weight: 400;
 }
 
 .hoa-online-courses-page .oc-card-title {
-    font-size: 14px;
+    font-size: 12px;
     font-weight: 600;
     margin: 0 0 4px 0;
     line-height: 1.2;
-    color: #FFF;
+    color: #FFFFFFCC;
 }
 
 .hoa-online-courses-page .oc-card-students {
     font-size: 10px;
-    color: #D1D5DB;
+    color:#FFFFFFCC;
     margin: 0 0 16px 0;
+    font-weight: 400;
 }
 
 .hoa-online-courses-page .oc-card-footer {
@@ -445,7 +447,8 @@
     justify-content: space-between;
     align-items: center;
     font-size: 10px;
-    color: #D1D5DB;
+    color: #FFFFFFCC;
+    font-weight: 400;
 }
 
 /* Modal Overlay & Drawer */
@@ -957,56 +960,62 @@
     justify-content: space-between;
     align-items: center;
     margin-top: 24px;
-    font-size: 12px;
-    color: #A1A5B7;
+    font-size: 14px;
+    color: #78829D;
 }
 
 .hoa-online-courses-page .oc-pagination-left {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 12px;
 }
 
 .hoa-online-courses-page .oc-page-size-button {
-    background: #FCFCFC;
+    background: #FFF;
     border: 1px solid #DBDFE9;
-    padding: 4px 8px;
+    padding: 6px 12px;
     border-radius: 4px;
-    color: #4B5675;
-    font-size: 11px;
+    color: #450468;
+    font-size: 13px;
+    font-weight: 500;
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
+    cursor: pointer;
 }
 
 .hoa-online-courses-page .oc-pagination-right {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 16px;
 }
 
 .hoa-online-courses-page .oc-page-nav {
     background: transparent;
     border: none;
-    color: #A1A5B7;
     cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.8;
 }
 
 .hoa-online-courses-page .oc-page-num {
     background: transparent;
     border: none;
-    color: #78829D;
-    width: 24px;
-    height: 24px;
-    border-radius: 4px;
+    color: #071437;
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 12px;
+    font-size: 14px;
     font-weight: 500;
+    cursor: pointer;
 }
 
 .hoa-online-courses-page .oc-page-num.active {
-    background: #450468;
-    color: #FFF;
+    background: #F8F5FF;
+    color: #450468;
 }
