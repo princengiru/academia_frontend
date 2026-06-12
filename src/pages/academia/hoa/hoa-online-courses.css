@@ -391,8 +391,8 @@
     position: absolute;
     top: -2px;
     right: 12px;
-    width: 32px;
-    height: 40px;
+    width: 36px;
+    height: 52px;
     z-index: 3;
     display: flex;
     justify-content: center;
@@ -408,24 +408,15 @@
     object-fit: contain;
 }
 
-/* Fallback background if image is missing */
-.hoa-online-courses-page .oc-ribbon-placeholder {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: #450468;
-    clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 80%, 0 100%);
-}
-
 .hoa-online-courses-page .oc-ribbon-number {
-    position: relative;
+    position: absolute;
     z-index: 2;
     color: #FFF;
-    font-size: 10px;
+    font-size: 9px;
     font-weight: 700;
-    margin-top: -8px; /* adjust this to center text perfectly on the ribbon */
+    bottom: 8px; /* Center text vertically in the bottom rosette shape */
+    width: 100%;
+    text-align: center;
 }
 
 .hoa-online-courses-page .oc-card-author {

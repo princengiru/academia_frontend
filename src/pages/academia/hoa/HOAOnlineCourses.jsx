@@ -15,6 +15,7 @@ import hoaleftarrow from '../../../assets/icons/hoaleftarrow.svg';
 import hoarightarrow from '../../../assets/icons/hoarightarrow.svg';
 import hoagoback from '../../../assets/icons/hoagoback.svg';
 import rwanda from '../../../assets/icons/rwanda.svg';
+import hoarank from '../../../assets/icons/hoarank.png';
 
 // Custom inline SVGs for specific icons
 const IconUserBust = () => (
@@ -274,8 +275,7 @@ const HOAOnlineCourses = () => {
                                 {course.price}
                             </div>
                             <div className="oc-card-ribbon-wrapper">
-                                <div className="oc-ribbon-placeholder"></div>
-                                <img src="/assets/icons/course-ribbon.png" alt="" className="oc-ribbon-img" onError={(e) => e.target.style.display = 'none'} />
+                                <img src={hoarank} alt="" className="oc-ribbon-img" onError={(e) => e.target.style.display = 'none'} />
                                 <span className="oc-ribbon-number">#{course.id}</span>
                             </div>
                             <div className="oc-card-content">
