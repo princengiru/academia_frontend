@@ -18,6 +18,10 @@ import hoaleftarrow from '../../../assets/icons/hoaleftarrow.svg';
 import hoarightarrow from '../../../assets/icons/hoarightarrow.svg';
 import hoagoback from '../../../assets/icons/hoagoback.svg';
 import hoarank from '../../../assets/icons/hoarank.png';
+import hoatime from '../../../assets/icons/hoatime.svg';
+import hoagraycalendar from '../../../assets/icons/hoagraycalendar.svg';
+import hoapaperstack from '../../../assets/icons/hoapaperstack.svg';
+import hoapayicon from '../../../assets/icons/hoapayicon.svg';
 
 // Custom inline SVGs for specific icons
 const IconUserBust = () => (
@@ -388,21 +392,21 @@ const HOAOnlineCourses = () => {
                                         <div className="oc-info-cards">
                                             <div className="oc-info-card">
                                                 <div className="oc-ic-head">
-                                                    <IconDuration />
+                                                    <img src={hoatime} alt="" />
                                                     <p>Duration</p>
                                                 </div>
                                                 <h4>4 weeks</h4>
                                             </div>
                                             <div className="oc-info-card">
                                                 <div className="oc-ic-head">
-                                                    <IconCalendar />
+                                                    <img src={hoagraycalendar} alt="" />
                                                     <p>Weekly study</p>
                                                 </div>
                                                 <h4>4 hours</h4>
                                             </div>
                                             <div className="oc-info-card">
                                                 <div className="oc-ic-head">
-                                                    <IconSkill />
+                                                    <img src={hoapaperstack} alt="" />
                                                     <p>Skill Level</p>
                                                 </div>
                                                 <h4>Intermediate</h4>
@@ -410,7 +414,7 @@ const HOAOnlineCourses = () => {
                                             <div className="oc-info-card" style={{ position: 'relative' }}>
                                                 <div className="oc-discount-badge">-4% Off</div>
                                                 <div className="oc-ic-head">
-                                                    <IconWallet />
+                                                    <img src={hoapayicon} alt="" />
                                                     <p>subscription</p>
                                                 </div>
                                                 <h4><span style={{color: '#F8285A'}}>5$</span> Per month</h4>
