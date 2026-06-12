@@ -428,30 +428,71 @@ const HOAOnlineCourses = () => {
 
                                         <h3 className="oc-section-title">Course Breakdown</h3>
                                         <div className="oc-breakdown-list">
-                                            <div className="oc-bd-item">
-                                                <div className="oc-bd-week">Week 1</div>
-                                                <div className="oc-bd-icon-col">
-                                                    <div className="oc-bd-icon"><IconLightbulb /></div>
-                                                    <div className="oc-bd-line"></div>
+                                            {/* ==== WEEK 1 ==== */}
+                                            <div className="oc-bd-week-group">
+                                                <div className="oc-bd-week-col">
+                                                    <div className="oc-bd-week">Week 1</div>
                                                 </div>
-                                                <div className="oc-bd-content">
-                                                    <h4>Basic understanding and breakdowns</h4>
-                                                    <p>Learn new skills, pursue your interests or advance your career with our short online courses.</p>
+                                                <div className="oc-bd-items-col">
+                                                    <div className="oc-bd-item">
+                                                        <div className="oc-bd-icon-col">
+                                                            <div className="oc-bd-icon"><IconLightbulb /></div>
+                                                            <div className="oc-bd-line"></div>
+                                                        </div>
+                                                        <div className="oc-bd-content" style={{ paddingBottom: 24 }}>
+                                                            <h4 style={{ margin: '0 0 4px 0', fontSize: 14, color: '#071437', fontWeight: 600 }}>Basic understanding and breakdowns</h4>
+                                                            <p style={{ margin: 0, fontSize: 13, color: '#4B5675' }}>Learn new skills, pursue your interests or advance your career with our short online courses.</p>
+                                                        </div>
+                                                    </div>
+                                                    {[1, 2, 3, 4, 5].map((num) => (
+                                                        <div className="oc-bd-item" key={num}>
+                                                            <div className="oc-bd-icon-col">
+                                                                <div className="oc-bd-icon" style={{ color: '#450468', fontSize: 12, fontWeight: 700 }}>{num}</div>
+                                                                {num !== 5 && <div className="oc-bd-line"></div>}
+                                                            </div>
+                                                            <div className="oc-bd-content" style={{ display: 'flex', alignItems: 'center', gap: 16, paddingBottom: num !== 5 ? 24 : 0 }}>
+                                                                <img src="https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=100&auto=format&fit=crop" alt="thumb" style={{ width: 80, height: 60, borderRadius: 4, objectFit: 'cover' }} />
+                                                                <div>
+                                                                    <h4 style={{ margin: '0 0 4px 0', fontSize: 14, color: '#071437', fontWeight: 600 }}>Introduction to Entire Course</h4>
+                                                                    <p style={{ margin: 0, fontSize: 11, color: '#A1A5B7' }}>Video • 20 mins</p>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    ))}
                                                 </div>
                                             </div>
-                                            <div className="oc-bd-item" style={{ marginBottom: 0 }}>
-                                                <div className="oc-bd-week" style={{ background: 'transparent', color: '#071437', borderLeftColor: 'transparent' }}>
-                                                    <div style={{ width: 32, height: 32, border: '1px solid #EEF1F6', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}>1</div>
+
+                                            {/* ==== WEEK 2 ==== */}
+                                            <div className="oc-bd-week-group">
+                                                <div className="oc-bd-week-col">
+                                                    <div className="oc-bd-week">Week 2</div>
                                                 </div>
-                                                <div className="oc-bd-icon-col">
-                                                    <div className="oc-bd-icon" style={{ borderColor: 'transparent', width: 4 }}></div>
-                                                </div>
-                                                <div className="oc-bd-content" style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                                                    <img src="https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=100&auto=format&fit=crop" alt="thumb" style={{ width: 80, height: 60, borderRadius: 4, objectFit: 'cover' }} />
-                                                    <div>
-                                                        <h4 style={{ margin: '0 0 4px 0' }}>Introduction to Entire Course</h4>
-                                                        <p style={{ margin: 0, fontSize: 11, color: '#A1A5B7' }}>Video • 20 mins</p>
+                                                <div className="oc-bd-items-col">
+                                                    <div className="oc-bd-item">
+                                                        <div className="oc-bd-icon-col">
+                                                            <div className="oc-bd-icon"><IconLightbulb /></div>
+                                                            <div className="oc-bd-line"></div>
+                                                        </div>
+                                                        <div className="oc-bd-content" style={{ paddingBottom: 24 }}>
+                                                            <h4 style={{ margin: '0 0 4px 0', fontSize: 14, color: '#071437', fontWeight: 600 }}>Advanced Concepts and Patterns</h4>
+                                                            <p style={{ margin: 0, fontSize: 13, color: '#4B5675' }}>Deep dive into complex topics to master the complete scope of the coursework and related elements.</p>
+                                                        </div>
                                                     </div>
+                                                    {[1, 2].map((num) => (
+                                                        <div className="oc-bd-item" key={`w2-${num}`}>
+                                                            <div className="oc-bd-icon-col">
+                                                                <div className="oc-bd-icon" style={{ color: '#450468', fontSize: 12, fontWeight: 700 }}>{num}</div>
+                                                                {num !== 2 && <div className="oc-bd-line"></div>}
+                                                            </div>
+                                                            <div className="oc-bd-content" style={{ display: 'flex', alignItems: 'center', gap: 16, paddingBottom: num !== 2 ? 24 : 0 }}>
+                                                                <img src="https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=100&auto=format&fit=crop" alt="thumb" style={{ width: 80, height: 60, borderRadius: 4, objectFit: 'cover' }} />
+                                                                <div>
+                                                                    <h4 style={{ margin: '0 0 4px 0', fontSize: 14, color: '#071437', fontWeight: 600 }}>In-Depth Analysis Part {num}</h4>
+                                                                    <p style={{ margin: 0, fontSize: 11, color: '#A1A5B7' }}>Video • 25 mins</p>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    ))}
                                                 </div>
                                             </div>
                                         </div>
