@@ -22,7 +22,7 @@ import hoatime from '../../../assets/icons/hoatime.svg';
 import hoagraycalendar from '../../../assets/icons/hoagraycalendar.svg';
 import hoapaperstack from '../../../assets/icons/hoapaperstack.svg';
 import hoapayicon from '../../../assets/icons/hoapayicon.svg';
-
+import hoabasics from '../../../assets/icons/hoabasics.svg';
 // Custom inline SVGs for specific icons
 const IconUserBust = () => (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
@@ -436,7 +436,7 @@ const HOAOnlineCourses = () => {
                                                 <div className="oc-bd-items-col">
                                                     <div className="oc-bd-item">
                                                         <div className="oc-bd-icon-col">
-                                                            <div className="oc-bd-icon"><IconLightbulb /></div>
+                                                            <div className="oc-bd-icon"><img src={hoabasics} alt="" /></div>
                                                             <div className="oc-bd-line"></div>
                                                         </div>
                                                         <div className="oc-bd-content" style={{ paddingBottom: 24 }}>
@@ -470,7 +470,7 @@ const HOAOnlineCourses = () => {
                                                 <div className="oc-bd-items-col">
                                                     <div className="oc-bd-item">
                                                         <div className="oc-bd-icon-col">
-                                                            <div className="oc-bd-icon"><IconLightbulb /></div>
+                                                            <div className="oc-bd-icon"><img src={hoabasics} alt="" /></div>
                                                             <div className="oc-bd-line"></div>
                                                         </div>
                                                         <div className="oc-bd-content" style={{ paddingBottom: 24 }}>
