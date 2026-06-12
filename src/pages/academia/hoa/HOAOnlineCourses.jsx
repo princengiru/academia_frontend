@@ -281,11 +281,10 @@ const HOAOnlineCourses = () => {
                             <div className="oc-card-content">
                                 <p className="oc-card-author">{course.author}</p>
                                 <h4 className="oc-card-title">{course.title}</h4>
+                                <p className="oc-card-students">Student : {course.students}</p>
                                 <div className="oc-card-footer">
-                                    <span>Student : {course.students}</span>
-                                    <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                                        Created on : {course.date} <IconRightArrow />
-                                    </span>
+                                    <span>Created on : {course.date}</span>
+                                    <IconRightArrow />
                                 </div>
                             </div>
                         </div>

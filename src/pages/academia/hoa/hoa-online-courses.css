@@ -423,22 +423,29 @@
 .hoa-online-courses-page .oc-card-author {
     font-size: 11px;
     color: #D1D5DB;
-    margin-bottom: 2px;
+    margin: 0 0 4px 0;
 }
 
 .hoa-online-courses-page .oc-card-title {
     font-size: 14px;
     font-weight: 600;
-    margin: 0 0 8px 0;
+    margin: 0 0 4px 0;
     line-height: 1.2;
+    color: #FFF;
+}
+
+.hoa-online-courses-page .oc-card-students {
+    font-size: 10px;
+    color: #D1D5DB;
+    margin: 0 0 16px 0;
 }
 
 .hoa-online-courses-page .oc-card-footer {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: 9px;
-    color: #9CA3AF;
+    font-size: 10px;
+    color: #D1D5DB;
 }
 
 /* Modal Overlay & Drawer */
