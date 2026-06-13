@@ -16,16 +16,15 @@ import './course-part.css';
 function AcademiaCoursePart() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-
-  // FIX 1: Defined the missing preventDefault function
   const preventDefault = (e) => e.preventDefault();
 
   const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
   const [courseData, setCourseData] = useState(null);
+  const [syllabusOutlines, setSyllabusOutlines] = useState([]); // Explicit state for outlines
   const [relatedTopics, setRelatedTopics] = useState([]);
   const [dataLoading, setDataLoading] = useState(true);
-  const [selectedMode, setSelectedMode] = useState('All');
+  
   const [topicPage, setTopicPage] = useState(1);
   const topicsPerPage = 4;
 
@@ -35,36 +34,27 @@ function AcademiaCoursePart() {
 
   const courseId = searchParams.get('courseId');
 
-  // FIX 2: Switched logic to pull from Syllabus Outlines instead of private Chapters
+  // Safely map the fetched outlines for display
   const courseParts = useMemo(() => {
-    // Depending on your exact backend payload, outlines might be nested. 
-    // This safely checks the most common relational structures.
-    const outlines = courseData?.syllabus?.outlines 
-      || courseData?.syllabuses?.[0]?.outlines 
-      || courseData?.outlines 
-      || [];
-
-    return outlines.map((outline, index) => ({
+    return syllabusOutlines.map((outline, index) => ({
       id: outline.id || index,
       title: outline.title || `Topic ${index + 1}`,
       author: courseData?.instructor_name || courseData?.author_name || 'Academia Team',
-      // Prioritize the abstract for the public view, fallback to description
       description: outline.abstract || outline.description || '', 
     }));
-  }, [courseData]);
+  }, [syllabusOutlines, courseData]);
 
   const totalTopicPages = Math.max(1, Math.ceil(courseParts.length / topicsPerPage));
   const visibleCourseParts = courseParts.slice((topicPage - 1) * topicsPerPage, topicPage * topicsPerPage);
+  
   const topicPageNumbers = (() => {
     const visible = 5;
     const start = Math.max(1, Math.min(topicPage - 2, totalTopicPages - visible + 1));
     const end = Math.min(totalTopicPages, start + visible - 1);
     const pages = [];
-
     for (let page = start; page <= end; page += 1) {
       pages.push(page);
     }
-
     return pages;
   })();
 
@@ -87,6 +77,7 @@ function AcademiaCoursePart() {
 
         let resolvedCourseId = courseId;
 
+        // Fallback: If no ID provided, grab the first available course
         if (!resolvedCourseId) {
           const listResponse = await fetch(`${API_BASE_URL}/api/courses/public/available?page=1&limit=1`);
           const listBody = await listResponse.json().catch(() => ({}));
@@ -97,11 +88,14 @@ function AcademiaCoursePart() {
         if (!resolvedCourseId) {
           if (mounted) {
             setCourseData(null);
+            setSyllabusOutlines([]);
             setRelatedTopics([]);
+            setDataLoading(false);
           }
           return;
         }
 
+        // STEP 1: Fetch Basic Course Info & Related Courses concurrently
         const [courseResponse, relatedResponse] = await Promise.all([
           fetch(`${API_BASE_URL}/api/courses/${resolvedCourseId}`),
           fetch(`${API_BASE_URL}/api/courses/public/available?page=1&limit=6`),
@@ -116,15 +110,42 @@ function AcademiaCoursePart() {
         const relatedList = Array.isArray(relatedBody?.data) ? relatedBody.data : Array.isArray(relatedBody) ? relatedBody : [];
 
         setCourseData(course || null);
-        setTopicPage(1);
+        
+        // Filter out the current course from related topics
         setRelatedTopics(
           relatedList
             .filter((item) => String(item.id || item._id || item.course_id) !== String(course?.id || resolvedCourseId))
             .slice(0, 6)
         );
+
+        // STEP 2: Fetch the Syllabus Outlines IF a syllabus_id exists
+        // (This is the critical fix)
+        const sylId = course?.syllabus_id || course?.syllabus?.id;
+        
+        if (sylId) {
+          try {
+            const syllabusRes = await fetch(`${API_BASE_URL}/api/syllabuses/public/${sylId}`);
+            const syllabusBody = await syllabusRes.json();
+            const outlines = syllabusBody?.data?.outlines || syllabusBody?.outlines || [];
+            
+            if (mounted) {
+              setSyllabusOutlines(outlines);
+            }
+          } catch (sylError) {
+            console.error("Failed to load syllabus outlines:", sylError);
+            if (mounted) setSyllabusOutlines([]);
+          }
+        } else {
+          // If no syllabus ID is attached to the course, reset outlines
+          if (mounted) setSyllabusOutlines([]);
+        }
+
+        if (mounted) setTopicPage(1);
+
       } catch (error) {
         if (mounted) {
           setCourseData(null);
+          setSyllabusOutlines([]);
           setRelatedTopics([]);
         }
       } finally {
@@ -299,49 +320,51 @@ function AcademiaCoursePart() {
               )}
 
               {/* Pagination */}
-              <div className="pagination">
-                <button type="button" onClick={() => setTopicPage((page) => Math.max(1, page - 1))} disabled={topicPage <= 1}>
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="14"
-                    height="14"
-                    fill="currentColor"
-                    className="bi bi-arrow-left"
-                    viewBox="0 0 16 16"
-                    stroke="currentColor"
-                    strokeWidth="0.7"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8"
-                    />
-                  </svg>
-                </button>
-                <div>
-                  {topicPageNumbers.map((num) => (
-                    <button key={num} type="button" className={num === topicPage ? 'active' : ''} onClick={() => setTopicPage(num)}>
-                      {num}
-                    </button>
-                  ))}
+              {totalTopicPages > 1 && (
+                <div className="pagination">
+                  <button type="button" onClick={() => setTopicPage((page) => Math.max(1, page - 1))} disabled={topicPage <= 1}>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="14"
+                      height="14"
+                      fill="currentColor"
+                      className="bi bi-arrow-left"
+                      viewBox="0 0 16 16"
+                      stroke="currentColor"
+                      strokeWidth="0.7"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8"
+                      />
+                    </svg>
+                  </button>
+                  <div>
+                    {topicPageNumbers.map((num) => (
+                      <button key={num} type="button" className={num === topicPage ? 'active' : ''} onClick={() => setTopicPage(num)}>
+                        {num}
+                      </button>
+                    ))}
+                  </div>
+                  <button type="button" onClick={() => setTopicPage((page) => Math.min(totalTopicPages, page + 1))} disabled={topicPage >= totalTopicPages}>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="14"
+                      height="14"
+                      fill="currentColor"
+                      className="bi bi-arrow-right"
+                      viewBox="0 0 16 16"
+                      stroke="currentColor"
+                      strokeWidth="0.7"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M1 8a.5.5 0 0 1 .5-.5h11.793l-3.147-3.146a.5.5 0 0 1 .708-.708l4 4a.5.5 0 0 1 0 .708l-4 4a.5.5 0 0 1-.708-.708L13.293 8.5H1.5A.5.5 0 0 1 1 8"
+                      />
+                    </svg>
+                  </button>
                 </div>
-                <button type="button" onClick={() => setTopicPage((page) => Math.min(totalTopicPages, page + 1))} disabled={topicPage >= totalTopicPages}>
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="14"
-                    height="14"
-                    fill="currentColor"
-                    className="bi bi-arrow-right"
-                    viewBox="0 0 16 16"
-                    stroke="currentColor"
-                    strokeWidth="0.7"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M1 8a.5.5 0 0 1 .5-.5h11.793l-3.147-3.146a.5.5 0 0 1 .708-.708l4 4a.5.5 0 0 1 0 .708l-4 4a.5.5 0 0 1-.708-.708L13.293 8.5H1.5A.5.5 0 0 1 1 8"
-                    />
-                  </svg>
-                </button>
-              </div>
+              )}
             </div>
           </div>
 

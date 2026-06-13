@@ -1,6 +1,6 @@
 ﻿
 .academia-read-contents-page .main-content{
-    padding: 30px;
+    padding: 20px 30px;
     display: flex;
     flex-direction: column;
     gap: 20px;
@@ -351,6 +351,7 @@
     display: grid;
     grid-template-columns: 2fr 1fr;
     gap: 20px;
+    min-width: 0;
 }
 
 .academia-read-contents-page .main-content-grid-l{
@@ -360,6 +361,8 @@
     border-right: 1px solid #E2E8F0;
     padding-right: 20px;
     width: 100%;
+    min-width: 0;
+    overflow: hidden;
 }
 
 .academia-read-contents-page .main-content-grid-r{

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 // Assets (Update paths to match your React project structure)
@@ -11,36 +11,50 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 function AcademiaSignUp() {
   const navigate = useNavigate();
+  const dropdownRef = useRef(null);
   
-  // Using rare variable names for state logic
-  const [apexEmail, setApexEmail] = useState('');
-  const [nexusPassword, setNexusPassword] = useState('');
-  const [zenithConfirm, setZenithConfirm] = useState('');
-  const [slateShowPwd, setSlateShowPwd] = useState(false);
-  const [echoShowConfirm, setEchoShowConfirm] = useState(false);
-  const [huskTerms, setHuskTerms] = useState(false);
-  const [titanLoading, setTitanLoading] = useState(false);
-  const [vortexError, setVortexError] = useState('');
-  const [phoenixRole, setPhoenixRole] = useState('student');
+  // --- Standardized State ---
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [acceptTerms, setAcceptTerms] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [role, setRole] = useState('student');
   const [roleOpen, setRoleOpen] = useState(false);
+
+  // --- Click Outside to Close Dropdown ---
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setRoleOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setVortexError('');
+    setError('');
     
-    // Validate passwords match
-    if (nexusPassword !== zenithConfirm) {
-      setVortexError('Passwords do not match');
+    // Client-side Validation
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters long');
+      return;
+    }
+    if (password !== confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
+    if (!acceptTerms) {
+      setError('You must accept Terms & Conditions');
       return;
     }
 
-    // Validate terms accepted
-    if (!huskTerms) {
-      setVortexError('You must accept Terms & Conditions');
-      return;
-    }
-
-    setTitanLoading(true);
+    setIsLoading(true);
 
     try {
       const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
@@ -49,37 +63,40 @@ function AcademiaSignUp() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          email: apexEmail,
-          password: nexusPassword,
-          role: phoenixRole,
+          email,
+          password,
+          role,
         }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        setVortexError(data.message || 'Registration failed');
-        setTitanLoading(false);
+        setError(data.message || 'Registration failed');
+        setIsLoading(false);
         return;
       }
 
       // Store token and user data
       localStorage.setItem('token', data.data.token);
       localStorage.setItem('user', JSON.stringify(data.data.user));
-      localStorage.setItem('profileCompleted', data.data.profileCompleted);
+      if (data.data.profileCompleted !== undefined) {
+        localStorage.setItem('profileCompleted', data.data.profileCompleted);
+      }
 
       // Redirect based on selected role
       setTimeout(() => {
-        if (phoenixRole === 'student') {
+        if (role === 'student') {
           navigate('/academia/learner/settings', { replace: true });
         } else {
           navigate('/academia/index', { replace: true });
         }
       }, 500);
-    } catch (error) {
-      console.error('Signup error:', error);
-      setVortexError(error.message || 'An error occurred during registration');
-      setTitanLoading(false);
+
+    } catch (err) {
+      console.error('Signup error:', err);
+      setError(err.message || 'An error occurred during registration. Please try again.');
+      setIsLoading(false);
     }
   };
 
@@ -98,6 +115,7 @@ function AcademiaSignUp() {
           --primary-hover: #46066d;
         }
 
+        /* Scoped to prevent CSS leakage */
         .signup-page-wrapper {
           display: grid;
           grid-template-columns: minmax(0, 1fr) auto;
@@ -108,7 +126,7 @@ function AcademiaSignUp() {
           background: var(--page-bg);
         }
 
-        .left-col {
+        .signup-page-wrapper .left-col {
           background: var(--page-bg);
           min-height: 100vh;
           display: flex;
@@ -117,7 +135,7 @@ function AcademiaSignUp() {
           padding: 24px;
         }
 
-        .signin-card {
+        .signup-page-wrapper .signin-card {
           width: 100%;
           max-width: 420px;
           background: white;
@@ -128,175 +146,141 @@ function AcademiaSignUp() {
           box-sizing: border-box;
         }
 
-        .signin-title {
-          font-family: Inter;
+        .signup-page-wrapper .signin-title {
           font-weight: 500;
-          font-size: 18px;
-          line-height: 18px;
-          letter-spacing: -1%;
+          font-size: 20px;
           text-align: center;
           margin: 0;
           color: black;
         }
 
-        .signin-subtitle {
-          margin-top: 7px;
+        .signup-page-wrapper .signin-subtitle {
+          margin-top: 8px;
           margin-bottom: 0;
-          font-family: Inter;
           font-weight: 400;
-          font-size: 13px;
-          line-height: 14px;
+          font-size: 14px;
           text-align: center;
           color: var(--text-muted);
         }
 
-        .signin-subtitle a {
+        .signup-page-wrapper .signin-subtitle a {
           color: var(--primary);
           text-decoration: none;
           margin-left: 6px;
           font-weight: 500;
         }
 
-        .signin-social {
-          margin-top: 20px;
+        .signup-page-wrapper .signin-social {
+          margin-top: 24px;
           display: grid;
           grid-template-columns: 1fr 1fr;
-          gap: 10px;
-          padding: 0 20px;
+          gap: 12px;
+          padding: 0 10px;
         }
 
-        .social-btn {
-          min-height: 32px;
+        .signup-page-wrapper .social-btn {
+          min-height: 38px;
           border: 1px solid var(--field-border);
           border-radius: 8px;
-          background: #f8f9fc;
+          background: #fff;
           display: inline-flex;
           align-items: center;
           justify-content: center;
           gap: 8px;
-          font-family: Inter;
           font-weight: 500;
-          font-size: 12px;
-          line-height: 12px;
+          font-size: 13px;
           cursor: pointer;
           color: var(--text-main);
           padding: 0;
+          transition: background 0.2s ease;
         }
 
-        .social-btn .btn-icon {
+        .signup-page-wrapper .social-btn:hover {
+          background: #f8f9fc;
+        }
+
+        .signup-page-wrapper .social-btn .btn-icon {
           width: 16px;
           height: 16px;
-          display: inline-block;
-          flex: 0 0 auto;
+          display: flex;
+          align-items: center;
+          justify-content: center;
         }
 
-        .social-btn.google .btn-icon {
-          font-style: normal;
-          font-weight: 700;
-          font-size: 16px;
-          line-height: 16px;
-        }
-
-        .social-btn.apple .btn-icon svg {
+        .signup-page-wrapper .social-btn.apple .btn-icon svg {
           width: 16px;
           height: 16px;
-          display: block;
           fill: #000000;
         }
 
-        .signin-divider {
-          margin: 20px 0;
+        .signup-page-wrapper .signin-divider {
+          margin: 24px 0;
           display: flex;
           align-items: center;
-          gap: 8px;
-          font-family: Inter;
+          gap: 12px;
           font-weight: 400;
-          font-size: 11px;
-          line-height: 12px;
-          text-align: center;
+          font-size: 12px;
           color: #78829D;
         }
 
-        .signin-divider::before,
-        .signin-divider::after {
+        .signup-page-wrapper .signin-divider::before,
+        .signup-page-wrapper .signin-divider::after {
           content: "";
           flex: 1;
           height: 1px;
           background: #d7dce6;
         }
 
-        .field-group {
+        .signup-page-wrapper .field-group {
           display: flex;
           flex-direction: column;
-          gap: 10px;
-          margin-top: 20px;
+          gap: 8px;
+          margin-top: 18px;
         }
 
-        .field-label-row {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          font-family: Inter;
-          font-weight: 400;
+        .signup-page-wrapper .field-group > label {
+          font-weight: 500;
           font-size: 13px;
-          line-height: 14px;
           color: #071437;
         }
 
-        .field-group > label {
-          font-family: Inter;
-          font-weight: 400;
-          font-size: 13px;
-          line-height: 14px;
-          color: #071437;
-        }
-
-        .field-label-row a {
-          text-decoration: none;
-          color: var(--primary);
-        }
-
-        .input-wrap {
+        .signup-page-wrapper .input-wrap {
           position: relative;
         }
 
-        .input-wrap input {
+        .signup-page-wrapper .input-wrap input {
           width: 100%;
-          height: 40px;
-          border-radius: 6px;
+          height: 42px;
+          border-radius: 8px;
           border: 1px solid var(--field-border);
           background: transparent;
-          padding: 0 12px;
+          padding: 0 14px;
           color: #2e3a54;
           outline: none;
-          font-family: Inter;
-          font-weight: 400;
-          font-size: 13px;
-          line-height: 14px;
-          box-sizing: border-box;
+          font-size: 14px;
+          transition: border-color 0.2s;
         }
 
-        .input-wrap input::placeholder {
-          color: #8a94a9;
+        .signup-page-wrapper .input-wrap input::placeholder {
+          color: #a1a5b7;
         }
 
-        .input-wrap input:focus {
-          border-color: #b6bfd1;
-          box-shadow: 0 0 0 3px rgba(84, 11, 128, 0.08);
+        .signup-page-wrapper .input-wrap input:focus {
+          border-color: var(--primary);
         }
 
-        .input-wrap.password input {
+        .signup-page-wrapper .input-wrap.password input {
           padding-right: 40px;
         }
 
-        .input-eye {
+        .signup-page-wrapper .input-eye {
           position: absolute;
           right: 12px;
           top: 50%;
           transform: translateY(-50%);
-          width: 18px;
-          height: 18px;
-          display: inline-flex;
+          width: 20px;
+          height: 20px;
+          display: flex;
           align-items: center;
           justify-content: center;
           color: #97a1b5;
@@ -306,38 +290,24 @@ function AcademiaSignUp() {
           padding: 0;
         }
 
-        .input-eye img {
-          width: 18px;
-          height: 18px;
-        }
-
-        /* Keep the role dropdown button from getting a dark Bootstrap hover */
         .signup-page-wrapper .btn-outline-secondary {
-          background: transparent;
+          background: #fff;
           color: #2e3a54;
           border-color: var(--field-border);
         }
 
-        .signup-page-wrapper .btn-outline-secondary:hover,
-        .signup-page-wrapper .btn-outline-secondary:focus {
-          background: transparent !important;
-          color: #2e3a54 !important;
-          box-shadow: none !important;
-          border-color: var(--field-border) !important;
-        }
-
-        .remember-row {
-          margin-top: 16px;
+        .signup-page-wrapper .remember-row {
+          margin-top: 20px;
           display: flex;
           align-items: center;
-          gap: 8px;
-          color: var(--primary);
-          font-size: 14px;
-          font-weight: 500;
+          gap: 10px;
+          color: #4B5675;
+          font-size: 13px;
+          font-weight: 400;
           cursor: pointer;
         }
 
-        .remember-row input {
+        .signup-page-wrapper .remember-row input {
           width: 18px;
           height: 18px;
           appearance: none;
@@ -345,50 +315,46 @@ function AcademiaSignUp() {
           border: 1px solid #c8cfdb;
           border-radius: 4px;
           background: #f5f7fb;
-          accent-color: var(--primary);
           cursor: pointer;
           position: relative;
         }
 
-        .remember-row input:checked {
+        .signup-page-wrapper .remember-row input:checked {
           background: var(--primary);
           border-color: var(--primary);
         }
 
-        .remember-row input:checked::after {
+        .signup-page-wrapper .remember-row input:checked::after {
           content: "";
           position: absolute;
           left: 5px;
-          top: 1px;
-          width: 4px;
-          height: 9px;
+          top: 2px;
+          width: 5px;
+          height: 10px;
           border: solid #ffffff;
           border-width: 0 2px 2px 0;
           transform: rotate(45deg);
         }
 
-        .submit-btn {
-          margin-top: 18px;
+        .signup-page-wrapper .submit-btn {
+          margin-top: 24px;
           width: 100%;
-          height: 40px;
+          height: 44px;
           border: none;
           border-radius: 8px;
           background: var(--primary);
           color: #ffffff;
-          font-family: Inter;
-          font-weight: 500;
-          font-size: 13px;
-          line-height: 14px;
-          letter-spacing: -1%;
+          font-weight: 600;
+          font-size: 14px;
           cursor: pointer;
           transition: background 0.2s ease;
         }
 
-        .submit-btn:hover {
+        .signup-page-wrapper .submit-btn:hover:not(:disabled) {
           background: var(--primary-hover);
         }
 
-        .right-col {
+        .signup-page-wrapper .right-col {
           height: 100vh;
           background: #f5f7fb;
           display: flex;
@@ -396,14 +362,12 @@ function AcademiaSignUp() {
           justify-content: center;
         }
 
-        .right-col img {
+        .signup-page-wrapper .right-col img {
           display: block;
           height: 100vh;
           width: auto;
           max-width: none;
-          -webkit-user-drag: none;
-          user-select: none;
-          pointer-events: none;
+          object-fit: cover;
         }
 
         @media (max-width: 900px) {
@@ -413,53 +377,8 @@ function AcademiaSignUp() {
             min-height: 100vh;
             overflow: auto;
           }
-
-          .right-col {
-            height: auto;
-            min-height: 50vh;
-          }
-
-          .right-col img {
-            height: auto;
-            width: 100%;
-            max-height: 50vh;
-            object-fit: contain;
-          }
-
-          .signin-card {
-            max-width: 560px;
-          }
-        }
-
-        @media (max-width: 560px) {
-          .left-col {
-            padding: 14px;
-          }
-
-          .signin-card {
-            padding: 20px 16px;
-          }
-
-          .signin-title {
-            font-size: 18px;
-            line-height: 18px;
-          }
-
-          .signin-subtitle {
-            font-size: 13px;
-            line-height: 14px;
-          }
-
-          .field-group > label {
-            font-size: 14px;
-          }
-
-          .signin-social {
-            grid-template-columns: 1fr;
-          }
-
-          .submit-btn {
-            font-size: 17px;
+          .signup-page-wrapper .right-col {
+            display: none; /* Usually better to hide illustration on mobile auth pages */
           }
         }
       `}</style>
@@ -467,29 +386,29 @@ function AcademiaSignUp() {
       <main className="signup-page-wrapper">
         <section className="left-col">
           <form className="signin-card" onSubmit={handleSubmit}>
-            <h1 className="signin-title">Sign up</h1>
+            <h1 className="signin-title">Create an Account</h1>
             <p className="signin-subtitle">
-              Already have an Account? <a href="/academia/auth/signin">Sign in</a>
+              Already have an account? <a href="/academia/auth/signin">Sign in</a>
             </p>
 
-            {vortexError && (
+            {error && (
               <div style={{
-                marginTop: '12px',
+                marginTop: '16px',
                 padding: '12px',
-                backgroundColor: '#fee',
-                border: '1px solid #fcc',
-                borderRadius: '6px',
-                color: '#c33',
+                backgroundColor: '#FEF2F2',
+                border: '1px solid #FCA5A5',
+                borderRadius: '8px',
+                color: '#DC2626',
                 fontSize: '13px',
-                fontFamily: 'Inter',
+                fontWeight: '500'
               }}>
-                {vortexError}
+                {error}
               </div>
             )}
 
             <div className="signin-social">
               <button type="button" className="social-btn google">
-                <img className="btn-icon" src={googleIcon} alt="Google" />
+                <span className="btn-icon"><img src={googleIcon} alt="Google" style={{ width: '16px' }} /></span>
                 Use Google
               </button>
               
@@ -507,56 +426,35 @@ function AcademiaSignUp() {
 
             <div className="field-group">
               <label>Role</label>
-              <div className="input-wrap">
-                <div className="dropdown" style={{ position: 'relative' }}>
-                  <button
-                    type="button"
-                    className={`btn btn-outline-secondary dropdown-toggle w-100 text-start`}
-                    aria-haspopup="listbox"
-                    aria-expanded={roleOpen}
-                    onClick={() => setRoleOpen(!roleOpen)}
-                    style={{
-                      height: '40px',
-                      borderRadius: '6px',
-                      padding: '0 12px',
-                      color: '#2e3a54',
-                      fontFamily: 'Inter',
-                      fontWeight: '400',
-                      fontSize: '13px',
-                      lineHeight: '14px',
-                      boxSizing: 'border-box',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    {phoenixRole === 'student' ? 'Student' : 'Instructor'}
-                  </button>
+              <div className="input-wrap" ref={dropdownRef}>
+                <button
+                  type="button"
+                  className="btn btn-outline-secondary dropdown-toggle w-100 text-start"
+                  aria-haspopup="listbox"
+                  aria-expanded={roleOpen}
+                  onClick={() => setRoleOpen(!roleOpen)}
+                  style={{
+                    height: '42px', borderRadius: '8px', padding: '0 14px', fontSize: '14px',
+                    display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+                  }}
+                >
+                  {role === 'student' ? 'Student' : 'Instructor'}
+                </button>
 
-                  <ul
-                    role="listbox"
-                    tabIndex={-1}
-                    className={`dropdown-menu${roleOpen ? ' show' : ''}`}
-                    style={{ width: '100%' }}
-                  >
+                {roleOpen && (
+                  <ul role="listbox" className="dropdown-menu show" style={{ width: '100%', marginTop: '4px', border: '1px solid #E2E8F0', borderRadius: '8px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}>
                     <li>
-                      <button
-                        type="button"
-                        className="dropdown-item"
-                        onClick={() => { setPhoenixRole('student'); setRoleOpen(false); }}
-                      >
+                      <button type="button" className="dropdown-item" style={{ padding: '10px 16px' }} onClick={() => { setRole('student'); setRoleOpen(false); }}>
                         Student
                       </button>
                     </li>
                     <li>
-                      <button
-                        type="button"
-                        className="dropdown-item"
-                        onClick={() => { setPhoenixRole('instructor'); setRoleOpen(false); }}
-                      >
+                      <button type="button" className="dropdown-item" style={{ padding: '10px 16px' }} onClick={() => { setRole('instructor'); setRoleOpen(false); }}>
                         Instructor
                       </button>
                     </li>
                   </ul>
-                </div>
+                )}
               </div>
             </div>
 
@@ -566,35 +464,32 @@ function AcademiaSignUp() {
                 <input 
                   id="signupEmail" 
                   type="email" 
-                  placeholder="email@email.com" 
-                  value={apexEmail}
-                  onChange={(e) => setApexEmail(e.target.value)}
+                  placeholder="name@example.com" 
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   required
                 />
               </div>
             </div>
 
             <div className="field-group">
-              <div className="field-label-row">
-                <label htmlFor="signupPassword">Password</label>
-                <a href="/academia/auth/forgot-password">Forgot Password?</a>
-              </div>
+              <label htmlFor="signupPassword">Password</label>
               <div className="input-wrap password">
                 <input 
                   id="signupPassword" 
-                  type={slateShowPwd ? "text" : "password"} 
-                  placeholder="Enter Password" 
-                  value={nexusPassword}
-                  onChange={(e) => setNexusPassword(e.target.value)}
+                  type={showPassword ? "text" : "password"} 
+                  placeholder="Create a password" 
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   required
                 />
                 <button 
                   type="button" 
                   className="input-eye" 
-                  onClick={() => setSlateShowPwd(!slateShowPwd)}
-                  aria-label={slateShowPwd ? "Hide password" : "Show password"}
+                  onClick={() => setShowPassword(!showPassword)}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
                 >
-                  <img src={eyeIcon} alt="Toggle password visibility" />
+                  <img src={eyeIcon} alt="Toggle visibility" />
                 </button>
               </div>
             </div>
@@ -604,19 +499,19 @@ function AcademiaSignUp() {
               <div className="input-wrap password">
                 <input 
                   id="signupConfirm" 
-                  type={echoShowConfirm ? "text" : "password"} 
-                  placeholder="Re-enter Password" 
-                  value={zenithConfirm}
-                  onChange={(e) => setZenithConfirm(e.target.value)}
+                  type={showConfirm ? "text" : "password"} 
+                  placeholder="Re-enter password" 
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
                   required
                 />
                 <button 
                   type="button" 
                   className="input-eye" 
-                  onClick={() => setEchoShowConfirm(!echoShowConfirm)}
-                  aria-label={echoShowConfirm ? "Hide confirm password" : "Show confirm password"}
+                  onClick={() => setShowConfirm(!showConfirm)}
+                  aria-label={showConfirm ? "Hide confirm password" : "Show confirm password"}
                 >
-                  <img src={eyeIcon} alt="Toggle password visibility" />
+                  <img src={eyeIcon} alt="Toggle visibility" />
                 </button>
               </div>
             </div>
@@ -625,24 +520,24 @@ function AcademiaSignUp() {
               <input 
                 id="signupTerms" 
                 type="checkbox" 
-                checked={huskTerms}
-                onChange={(e) => setHuskTerms(e.target.checked)}
-                disabled={titanLoading}
+                checked={acceptTerms}
+                onChange={(e) => setAcceptTerms(e.target.checked)}
+                disabled={isLoading}
                 required
               />
-              <span>I accept Terms & Conditions</span>
+              <span>I accept the Terms &amp; Conditions</span>
             </label>
 
             <button 
               type="submit" 
               className="submit-btn"
-              disabled={titanLoading}
+              disabled={isLoading}
               style={{
-                opacity: titanLoading ? 0.7 : 1,
-                cursor: titanLoading ? 'not-allowed' : 'pointer',
+                opacity: isLoading ? 0.7 : 1,
+                cursor: isLoading ? 'wait' : 'pointer',
               }}
             >
-              {titanLoading ? 'Creating Account...' : 'Sign up'}
+              {isLoading ? 'Creating Account...' : 'Sign Up'}
             </button>
           </form>
         </section>

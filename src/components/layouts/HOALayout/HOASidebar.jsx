@@ -1,25 +1,29 @@
-import { NavLink } from 'react-router-dom';
+import React from 'react';
+import { NavLink, useNavigate } from 'react-router-dom';
 
 const HOASidebar = ({ currentPage }) => {
+  const navigate = useNavigate();
   const preventDefault = (e) => e.preventDefault();
+  
+  // Categorization for the dual-column layout
   const dashboardPages = ['index', 'learners', 'tutors', 'reports', 'settings'];
   const managementPages = ['assignments', 'passed-courses', 'retaken-courses', 'failed-courses'];
 
   const getDashboardIconClassName = () => (dashboardPages.includes(currentPage) ? 'selected' : '');
   const getManagementIconClassName = () => (managementPages.includes(currentPage) ? 'selected' : '');
 
-  const getSidebarLinkClassName = ({ isActive, isPending }) => {
-    if (isPending) {
-      return '';
-    }
+  const getSidebarLinkClassName = ({ isActive }) => (isActive ? 'active' : '');
 
-    return isActive ? 'active' : '';
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    navigate('/academia/auth/signin');
   };
 
   return (
     <aside className="hoa-sidebar">
 
-      {/* 1. NEW: Unified Top Header Spanning Both Columns */}
+      {/* 1. Unified Top Header Spanning Both Columns */}
       <div className="sidebar-top-header">
         <div className="brand-logo">
           <img src="/assets/icons/Favicon.svg" alt="Gonaraza" />
@@ -28,7 +32,7 @@ const HOASidebar = ({ currentPage }) => {
           <h6>Gonaraza.com</h6>
           <p>All in one digital marketing</p>
         </div>
-        <button className="sidebar-toggle" aria-label="Toggle Sidebar">
+        <button type="button" className="sidebar-toggle" aria-label="Toggle Sidebar">
           <img src="/assets/icons/unfold.svg" alt="Toggle" style={{ width: '16px' }} />
         </button>
       </div>
@@ -36,49 +40,54 @@ const HOASidebar = ({ currentPage }) => {
       {/* 2. Bottom Section Split into Left and Right Columns */}
       <div className="sidebar-bottom-section">
 
-        {/* Left Column: First Links */}
+        {/* --- Left Column: Primary Icons --- */}
         <div className="first-links">
           <div className="sidebar-body">
             <NavLink to="/academia/hoa" end className={getDashboardIconClassName}>
-              <button aria-label="Dashboard">
+              <button type="button" aria-label="Dashboard">
                 <img src="/assets/icons/home-2.svg" alt="Dashboard" />
               </button>
             </NavLink>
             <NavLink to="/academia/hoa/assignments" className={getManagementIconClassName}>
-              <button aria-label="Management">
+              <button type="button" aria-label="Management">
                 <img src="/assets/icons/bill2.svg" alt="Management" />
               </button>
             </NavLink>
-            <a href="#" onClick={preventDefault}>
-              <button aria-label="Reports">
+            <a href="#reports" onClick={preventDefault}>
+              <button type="button" aria-label="Reports">
                 <img src="/assets/icons/agent2.svg" alt="Reports" />
               </button>
             </a>
-            <a href="#" onClick={preventDefault}>
-              <button aria-label="Chat">
+            <a href="#chat" onClick={preventDefault}>
+              <button type="button" aria-label="Chat">
                 <img src="/assets/icons/tsidebar2-1.svg" alt="Chat" />
               </button>
             </a>
           </div>
 
           <div className="sidebar-footer">
-            <a href="#" onClick={preventDefault}>
-              <button aria-label="Help & FAQs">
+            <a href="#help" onClick={preventDefault}>
+              <button type="button" aria-label="Help & FAQs">
                 <img src="/assets/icons/tsidebar7-1.svg" alt="Help" />
               </button>
             </a>
             <NavLink to="/academia/hoa/settings" className={getDashboardIconClassName}>
-              <button aria-label="Settings">
+              <button type="button" aria-label="Settings">
                 <img src="/assets/icons/ss1.svg" alt="Settings" />
               </button>
             </NavLink>
-            <button className="js-logout-btn no-logout-text" aria-label="Logout">
+            <button 
+              type="button" 
+              className="js-logout-btn no-logout-text" 
+              aria-label="Logout"
+              onClick={handleLogout}
+            >
               <img src="/assets/icons/exit-right.svg" alt="Logout" />
             </button>
           </div>
         </div>
 
-        {/* Right Column: Second Links */}
+        {/* --- Right Column: Sub-menus --- */}
         <div className="second-links">
           <div className="links-container">
             <form onSubmit={preventDefault}>
@@ -86,6 +95,7 @@ const HOASidebar = ({ currentPage }) => {
               <input type="search" placeholder="Search any tab ..." />
             </form>
 
+            {/* Render Dashboard Sub-links */}
             {dashboardPages.includes(currentPage) && (
               <div className="links-list">
                 <h6>DASHBOARD</h6>
@@ -104,6 +114,7 @@ const HOASidebar = ({ currentPage }) => {
               </div>
             )}
 
+            {/* Render Management Sub-links */}
             {managementPages.includes(currentPage) && (
               <div className="links-list">
                 <h6>MANAGEMENT</h6>
