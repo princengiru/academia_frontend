@@ -992,11 +992,12 @@
     margin: 0;
     font-size: 14px;
     font-weight: 600;
+    color: #071437;
 }
 
 .hoa-online-courses-page .oc-qa-header span {
     font-size: 11px;
-    color: #A1A5B7;
+    color: #4B5675;
 }
 
 .hoa-online-courses-page .oc-qa-meta-row {
@@ -1007,13 +1008,13 @@
 }
 
 .hoa-online-courses-page .oc-qa-badge {
-    background: #FDFDFD;
-    border: 1px solid #EEF1F6;
+    background: #FCFCFC;
+    border: 1px solid #DBDFE9;
     color: #450468;
     padding: 4px 8px;
     border-radius: 4px;
     font-size: 11px;
-    font-weight: 600;
+    font-weight: 400;
     display: flex;
     align-items: center;
     gap: 4px;
@@ -1027,9 +1028,10 @@
 
 .hoa-online-courses-page .oc-qa-text {
     font-size: 13px;
-    color: #78829D;
+    color: #99A1B7;
     line-height: 1.6;
     margin: 0 0 12px 0;
+    font-weight: 400;
 }
 
 .hoa-online-courses-page .oc-qa-footer {
@@ -1044,8 +1046,8 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    color: #071437;
-    font-weight: 600;
+    color: #4B5675;
+    font-weight: 500;
     cursor: pointer;
 }
 

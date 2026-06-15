@@ -680,7 +680,7 @@ const HOAOnlineCourses = () => {
                                                             <div className="oc-qa-replies">
                                                                 <IconReply /> {qa.replies} View Replies
                                                             </div>
-                                                            <span>Sent on {qa.date}</span>
+                                                            <span>Sent on <span style={{ fontWeight: 600, color: '#071437' }}>{qa.date}</span></span>
                                                         </div>
                                                     </div>
                                                 </div>
