@@ -90,6 +90,14 @@ const HOAOnlineCourses = () => {
     // Modal state
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [activeTab, setActiveTab] = useState('overview'); // 'overview', 'students', 'qa'
+    const [expandedReplies, setExpandedReplies] = useState({});
+
+    const toggleReplies = (id) => {
+        setExpandedReplies(prev => ({
+            ...prev,
+            [id]: !prev[id]
+        }));
+    };
 
     // Add these for the modal table:
     const [modalSortConfig, setModalSortConfig] = useState({ key: 'name', direction: 'asc' });
@@ -186,7 +194,16 @@ const HOAOnlineCourses = () => {
         id: idx + 1,
         week: idx === 2 ? 'Wk2 : Chapter 23' : 'Wk1 : Chapter 4',
         title: idx === 2 ? 'Mathematics and Science' : qa.title,
-        replies: idx === 0 ? 0 : 12
+        replies: idx === 0 ? 0 : 12,
+        replyData: idx === 0 ? [] : [
+            {
+                id: 1,
+                avatar: '/assets/imgs/default-profile.png',
+                name: 'Tutor',
+                timeAgo: '12 Hours ago',
+                text: 'This is a great question. The answer lies in the fundamental principles of mathematics as applied to cybersecurity. Check chapter 5 for more details.'
+            }
+        ]
     }));
 
     const openCourseModal = (course) => {
@@ -664,7 +681,9 @@ const HOAOnlineCourses = () => {
                                         <div className="oc-qa-list">
                                             {qaData.map(qa => (
                                                 <div key={qa.id} className="oc-qa-item">
-                                                    <img src={qa.avatar} alt="Avatar" className="oc-qa-avatar" />
+                                                    <div className="oc-qa-avatar-col">
+                                                        <img src={qa.avatar} alt="Avatar" className="oc-qa-avatar" />
+                                                    </div>
                                                     <div className="oc-qa-content">
                                                         <div className="oc-qa-header">
                                                             <h4>{qa.name}</h4>
@@ -677,11 +696,26 @@ const HOAOnlineCourses = () => {
                                                         <p className="oc-qa-text">{qa.text} <span className="oc-read-more">Read more</span></p>
 
                                                         <div className="oc-qa-footer">
-                                                            <div className="oc-qa-replies">
-                                                                <IconReply /> {qa.replies} View Replies
+                                                            <div className="oc-qa-replies" onClick={() => toggleReplies(qa.id)} style={{ cursor: qa.replies > 0 ? 'pointer' : 'default' }}>
+                                                                <IconReply /> {qa.replies} {expandedReplies[qa.id] && qa.replies > 0 ? 'Hide Replies' : 'View Replies'}
                                                             </div>
                                                             <span>Sent on <span style={{ fontWeight: 600, color: '#071437' }}>{qa.date}</span></span>
                                                         </div>
+                                                        
+                                                        {expandedReplies[qa.id] && qa.replyData && qa.replyData.length > 0 && (
+                                                            <div className="oc-qa-reply-list" style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px dashed #EEF1F6' }}>
+                                                                {qa.replyData.map(reply => (
+                                                                    <div key={reply.id} className="oc-qa-reply-item">
+                                                                        <div className="oc-qa-header">
+                                                                            <img src={reply.avatar} alt="Avatar" style={{ width: '24px', height: '24px', borderRadius: '50%', objectFit: 'cover' }} />
+                                                                            <h4>{reply.name}</h4>
+                                                                            <span>{reply.timeAgo}</span>
+                                                                        </div>
+                                                                        <p className="oc-qa-text" style={{ margin: 0 }}>{reply.text}</p>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 </div>
                                             ))}

@@ -966,8 +966,52 @@
 .hoa-online-courses-page .oc-qa-item {
     display: flex;
     gap: 16px;
-    padding-bottom: 24px;
-    border-bottom: 1px solid #EEF1F6;
+    padding: 16px;
+    margin-bottom: 8px;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.hoa-online-courses-page .oc-qa-item:not(:last-child)::before {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 16px;
+    right: 16px;
+    height: 1px;
+    background: #EEF1F6;
+}
+
+.hoa-online-courses-page .oc-qa-item:hover {
+    background: #FCFCFC;
+    box-shadow: 0px 4px 12px rgba(0,0,0,0.05);
+}
+
+.hoa-online-courses-page .oc-qa-item:hover::before {
+    display: none;
+}
+
+.hoa-online-courses-page .oc-qa-avatar-col {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.hoa-online-courses-page .oc-qa-avatar-col::after {
+    content: '';
+    position: absolute;
+    top: 40px;
+    bottom: 8px; /* Gives space so the thread line doesn't touch the bottom */
+    width: 1px;
+    background: #EEF1F6;
+    z-index: 1;
+}
+
+.hoa-online-courses-page .oc-qa-item:last-child .oc-qa-avatar-col::after {
+    display: none;
 }
 
 .hoa-online-courses-page .oc-qa-avatar {
@@ -975,6 +1019,8 @@
     height: 32px;
     border-radius: 50%;
     object-fit: cover;
+    z-index: 2;
+    background: #FFF;
 }
 
 .hoa-online-courses-page .oc-qa-content {
