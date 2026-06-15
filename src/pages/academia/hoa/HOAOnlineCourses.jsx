@@ -635,7 +635,7 @@ const HOAOnlineCourses = () => {
                                         </div>
 
                                         {/* Table Pagination */}
-                                        <div className="hoa-pagination-container list-pagination modal-pagination mb-40">
+                                        <div className="hoa-pagination-container list-pagination modal-pagination">
                                             <div className="pagination-left">
                                                 Show
                                                 <div className="page-size-dropdown mx-8">
