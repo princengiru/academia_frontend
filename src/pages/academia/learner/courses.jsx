@@ -34,6 +34,10 @@ function LearnersCourses() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [syllabusCourses, setSyllabusCourses] = useState([]);
+  
+  const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+  const [sortOrder, setSortOrder] = useState('Newest');
 
   const resolveAssetUrl = (value) => {
     if (!value) return acOn;
@@ -66,6 +70,16 @@ function LearnersCourses() {
     level: course.level || '',
   });
 
+  // Search Debouncing
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+      setCurrentPage(1);
+    }, 400);
+    return () => clearTimeout(handler);
+  }, [searchTerm]);
+
+  // Load Courses
   useEffect(() => {
     // Load a small syllabus list independent of the current filter so sidebar stays populated
     (async () => {
@@ -91,27 +105,28 @@ function LearnersCourses() {
         let body;
         let list = [];
         let pagination = null;
+        const searchQuery = debouncedSearchTerm ? `&search=${encodeURIComponent(debouncedSearchTerm)}` : '';
 
         if (selectedFilter === 'All') {
-          res = await fetch(`${API_BASE_URL}/api/courses/public/available?page=${currentPage}&limit=10`);
+          res = await fetch(`${API_BASE_URL}/api/courses/public/available?page=${currentPage}&limit=10${searchQuery}`);
           body = await res.json();
           if (!res.ok) throw new Error(body.message || 'Failed to load courses');
           list = extractCourseList(body);
           pagination = extractPagination(body);
         } else if (selectedFilter === 'Free') {
-          res = await fetch(`${API_BASE_URL}/api/courses/public/free?page=${currentPage}&limit=10`);
+          res = await fetch(`${API_BASE_URL}/api/courses/public/free?page=${currentPage}&limit=10${searchQuery}`);
           body = await res.json();
           if (!res.ok) throw new Error(body.message || 'Failed to load free courses');
           list = extractCourseList(body);
           pagination = extractPagination(body);
         } else if (selectedFilter === 'Popular') {
-          res = await fetch(`${API_BASE_URL}/api/courses/public/popular?page=${currentPage}&limit=10`);
+          res = await fetch(`${API_BASE_URL}/api/courses/public/popular?page=${currentPage}&limit=10${searchQuery}`);
           body = await res.json();
           if (!res.ok) throw new Error(body.message || 'Failed to load popular courses');
           list = extractCourseList(body);
           pagination = extractPagination(body);
         } else if (selectedFilter === 'Paid') {
-          res = await fetch(`${API_BASE_URL}/api/courses/public/available?page=${currentPage}&limit=10`);
+          res = await fetch(`${API_BASE_URL}/api/courses/public/available?page=${currentPage}&limit=10${searchQuery}`);
           body = await res.json();
           if (!res.ok) throw new Error(body.message || 'Failed to load courses');
           list = extractCourseList(body).filter((course) => {
@@ -129,6 +144,14 @@ function LearnersCourses() {
             body = await res.json();
             if (!res.ok) throw new Error(body.message || 'Failed to load your courses');
             list = Array.isArray(body?.data?.enrolledCourses) ? body.data.enrolledCourses : [];
+            // If there's a search term, filter locally for "My Courses"
+            if (debouncedSearchTerm) {
+              const lower = debouncedSearchTerm.toLowerCase();
+              list = list.filter(c => 
+                (c.title && c.title.toLowerCase().includes(lower)) || 
+                (c.description && c.description.toLowerCase().includes(lower))
+              );
+            }
             pagination = { pages: 1 };
           }
         }
@@ -151,7 +174,30 @@ function LearnersCourses() {
     return () => {
       cancelled = true;
     };
-  }, [API_BASE_URL, currentPage, selectedFilter]);
+  }, [API_BASE_URL, currentPage, selectedFilter, debouncedSearchTerm]);
+
+  // Client-Side Sorting
+  const sortedCourses = React.useMemo(() => {
+    const list = [...courses];
+    if (sortOrder === 'A-Z') {
+      return list.sort((a, b) => a.title.localeCompare(b.title));
+    } else if (sortOrder === 'Z-A') {
+      return list.sort((a, b) => b.title.localeCompare(a.title));
+    } else if (sortOrder === 'Highest Price') {
+      return list.sort((a, b) => {
+        const pA = a.priceLabel === 'Free' ? 0 : parseFloat(a.priceLabel.replace('$', ''));
+        const pB = b.priceLabel === 'Free' ? 0 : parseFloat(b.priceLabel.replace('$', ''));
+        return pB - pA;
+      });
+    } else if (sortOrder === 'Lowest Price') {
+      return list.sort((a, b) => {
+        const pA = a.priceLabel === 'Free' ? 0 : parseFloat(a.priceLabel.replace('$', ''));
+        const pB = b.priceLabel === 'Free' ? 0 : parseFloat(b.priceLabel.replace('$', ''));
+        return pA - pB;
+      });
+    }
+    return list; // Newest (Default from DB)
+  }, [courses, sortOrder]);
 
   const syllabusItems = syllabusCourses.slice(0, 6).map((course) => ({
     id: course.id,
@@ -184,7 +230,7 @@ function LearnersCourses() {
         </section>
 
       <div className="div-h">
-          <div className="dropdown filter-drop">
+        <div className="dropdown filter-drop">
           <button className="dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
             <div>
               <img src={acFf} alt="Filter" />
@@ -244,30 +290,86 @@ function LearnersCourses() {
         </div>
         <div className="div-h-r">
           <div className="div-h-r-s">
-            <input type="search" placeholder="Search any projects..." />
+            <input
+              type="search"
+              placeholder="Search courses..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
             <div className="div-h-r-s-f">
-              <button className="active" type="button">Free</button>
-              <button type="button">Paid</button>
+              <button
+                className={selectedFilter === 'Free' ? 'active' : ''}
+                type="button"
+                onClick={() => {
+                  setSelectedFilter(selectedFilter === 'Free' ? 'All' : 'Free');
+                  setCurrentPage(1);
+                }}
+              >
+                Free
+              </button>
+              <button
+                className={selectedFilter === 'Paid' ? 'active' : ''}
+                type="button"
+                onClick={() => {
+                  setSelectedFilter(selectedFilter === 'Paid' ? 'All' : 'Paid');
+                  setCurrentPage(1);
+                }}
+              >
+                Paid
+              </button>
               <div className="div-h-r-s-f-f">
                 <div className="dropdown">
                   <button className="dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                     <div>
                       <img src={acFi} alt="Filters" />
-                      <span>Filters</span>
+                      <span>{sortOrder}</span>
                     </div>
                   </button>
                   <ul className="dropdown-menu">
-                    <li className="dropdown-item active">
-                      <a href="/" onClick={preventDefault}>Newest</a>
+                    <li>
+                      <button
+                        className={`dropdown-item ${sortOrder === 'Newest' ? 'active' : ''}`}
+                        type="button"
+                        onClick={() => setSortOrder('Newest')}
+                      >
+                        Newest
+                      </button>
                     </li>
-                    <li className="dropdown-item">
-                      <a href="/" onClick={preventDefault}>Top papers</a>
+                    <li>
+                      <button
+                        className={`dropdown-item ${sortOrder === 'A-Z' ? 'active' : ''}`}
+                        type="button"
+                        onClick={() => setSortOrder('A-Z')}
+                      >
+                        A-Z (Title)
+                      </button>
                     </li>
-                    <li className="dropdown-item">
-                      <a href="/" onClick={preventDefault}>Past Papers</a>
+                    <li>
+                      <button
+                        className={`dropdown-item ${sortOrder === 'Z-A' ? 'active' : ''}`}
+                        type="button"
+                        onClick={() => setSortOrder('Z-A')}
+                      >
+                        Z-A (Title)
+                      </button>
                     </li>
-                    <li className="dropdown-item">
-                      <a href="/" onClick={preventDefault}>Most Downloaded</a>
+                    <li>
+                      <button
+                        className={`dropdown-item ${sortOrder === 'Highest Price' ? 'active' : ''}`}
+                        type="button"
+                        onClick={() => setSortOrder('Highest Price')}
+                      >
+                        Highest Price
+                      </button>
+                    </li>
+                    <li>
+                      <button
+                        className={`dropdown-item ${sortOrder === 'Lowest Price' ? 'active' : ''}`}
+                        type="button"
+                        onClick={() => setSortOrder('Lowest Price')}
+                      >
+                        Lowest Price
+                      </button>
                     </li>
                   </ul>
                 </div>
@@ -283,13 +385,12 @@ function LearnersCourses() {
             <div className="learners-courses-section-head">
               <div>
                 <h2>Online courses</h2>
-                <p>100 Courses Available to learn</p>
+                <p>Courses Available to learn</p>
               </div>
             </div>
 
             <div className="learners-online-sec-contents">
-              {/* Courses loaded from API when "All" filter is active. */}
-              {courses && courses.length > 0 ? courses.map((course) => (
+              {sortedCourses && sortedCourses.length > 0 ? sortedCourses.map((course) => (
                 <div key={course.id} className="osc-item" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleCourseClick(course.id); }} style={{ cursor: 'pointer' }}>
                   <div className="osc-item-img">
                     <img src={course.image || acOn} alt={course.title || 'Online Course'} />
@@ -299,7 +400,7 @@ function LearnersCourses() {
                       <p>{course.priceLabel}</p>
                     </div>
                     <div>
-                      <h6><a href="/course-part" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleCourseClick(course.id); }}>{course.title}</a></h6>
+                      <h6><a href="/academia/learner/course-part" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleCourseClick(course.id); }}>{course.title}</a></h6>
                       <small>{course.author}</small>
                     </div>
                     <div>
@@ -307,7 +408,7 @@ function LearnersCourses() {
                     </div>
                     <div>
                       <small>{course.startsOn || ''}</small>
-                      <a className="learners-course-open" href="/course-part" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleCourseClick(course.id); }}>
+                      <a className="learners-course-open" href="/academia/learner/course-part" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleCourseClick(course.id); }}>
                         <img src={acEn} alt="Enroll" />
                       </a>
                     </div>
@@ -321,7 +422,7 @@ function LearnersCourses() {
               ))}
             </div>
 
-            {courses && courses.length > 0 && (
+            {sortedCourses && sortedCourses.length > 0 && (
               <div className="learners-courses-pagination">
                 <button
                   type="button"

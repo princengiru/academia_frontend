@@ -48,6 +48,10 @@ const HOALearners = () => {
   const preventDefault = (e) => e.preventDefault();
   const { currency, setCurrency, formatAmount } = useCurrency();
 
+  // --- Modal Specific Data State ---
+  const [learnerProfile, setLearnerProfile] = useState(null);
+  const [isProfileLoading, setIsProfileLoading] = useState(false);
+
   // --- Main Data State ---
   const [learnersData, setLearnersData] = useState([]);
   const [statsData, setStatsData] = useState(null);
@@ -62,7 +66,7 @@ const HOALearners = () => {
   // --- Pagination ---
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState('5');
-  const pageSizeOptions = ['5', '10', '25']; // Restored missing variable
+  const pageSizeOptions = ['5', '10', '25']; 
   
   // --- Dropdowns & Refs ---
   const [isPageSizeOpen, setIsPageSizeOpen] = useState(false);
@@ -82,6 +86,17 @@ const HOALearners = () => {
   const [fullScreenImage, setFullScreenImage] = useState(null);
   const [hoverData, setHoverData] = useState({ chartId: null, text: '', tooltipClass: '', x: 0, y: 0 });
 
+  const [openRowMenuId, setOpenRowMenuId] = useState(null);
+  const [isDrawerMenuOpen, setIsDrawerMenuOpen] = useState(false);
+
+  const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+  const showToast = (message, type = 'success') => {
+    setToast({ show: true, message, type });
+    setTimeout(() => {
+      setToast(prev => ({ ...prev, show: false }));
+    }, 4000);
+  };
+
   const filterOptions = ['All Learners', 'Active', 'Inactive', 'Suspended'];
 
   // --- Click Outside Handlers ---
@@ -90,6 +105,10 @@ const HOALearners = () => {
       if (pageSizeRef.current && !pageSizeRef.current.contains(event.target)) setIsPageSizeOpen(false);
       if (filterRef.current && !filterRef.current.contains(event.target)) setIsFilterOpen(false);
       if (flagRef.current && !flagRef.current.contains(event.target)) setOpenFlagDropdown(null);
+      
+      // Close custom action menus when clicking outside
+      if (!event.target.closest('.hoa-row-action-menu')) setOpenRowMenuId(null);
+      if (!event.target.closest('.profile-actions')) setIsDrawerMenuOpen(false);
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
@@ -129,25 +148,38 @@ const HOALearners = () => {
         const sBody = await statsRes.json();
         setStatsData(sBody?.data || sBody);
       } else {
-        setStatsData({}); // Fallback
+        setStatsData({}); 
       }
 
       if (learnersRes?.ok) {
         const lBody = await learnersRes.json();
-        const list = Array.isArray(lBody?.data) ? lBody.data : (Array.isArray(lBody) ? lBody : []);
-        setLearnersData(list.map(user => ({
-          id: user.id || user._id,
-          name: user.name || 'Unknown Learner',
-          location: user.location || 'Global',
-          flag: user.country_code === 'RW' ? rwanda : hoausflag,
-          score: user.average_score || '0.00',
-          attempts: user.total_attempts || 0,
-          downloads: user.total_downloads || 0,
-          certs: user.total_certificates || 0,
-          paid: user.total_spent || '0',
-          status: user.status === 'active' ? 'Active' : 'Inactive',
-          statusColor: user.status === 'active' ? 'green' : 'gray'
-        })));
+        
+        // 1. Add lBody?.data?.learners to the check
+        const rawDataList = Array.isArray(lBody?.data?.learners) ? lBody.data.learners 
+                          : Array.isArray(lBody?.data?.users) ? lBody.data.users 
+                          : Array.isArray(lBody?.data) ? lBody.data 
+                          : Array.isArray(lBody) ? lBody : [];
+
+        setLearnersData(rawDataList.map(user => {
+          const safeStatus = String(user.status || 'active').toLowerCase();
+          const isActive = safeStatus === 'active' || safeStatus === '1';
+          const isSuspended = safeStatus === 'suspended' || safeStatus === '0';
+
+          return {
+            id: user.id,
+            name: user.name || user.email || 'Unknown Learner',
+            location: user.location || 'Global',
+            flag: hoausflag, 
+            // 2. Map exact keys from your Swagger response:
+            score: user.avg_score || '0.00', 
+            attempts: user.attempts || 0,
+            downloads: user.downloads || 0,
+            certs: user.certificates || 0,
+            paid: user.total_paid_usd || '0',
+            status: isSuspended ? 'Suspended' : (isActive ? 'Active' : 'Inactive'),
+            statusColor: isSuspended ? 'red' : (isActive ? 'green' : 'gray')
+          };
+        }));
       } else {
         setLearnersData([]);
       }
@@ -235,9 +267,33 @@ const HOALearners = () => {
     setModalSortConfig(current => ({ key, direction: current.key === key && current.direction === 'asc' ? 'desc' : 'asc' }));
   };
 
+  // --- Fetch Detailed Profile ---
+  const fetchLearnerProfile = async (id) => {
+    setIsProfileLoading(true);
+    setLearnerProfile(null); // Reset previous data
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API_BASE_URL}/api/admin/learners/${id}/profile`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (res.ok) {
+        const body = await res.json();
+        // Adjust this based on whether the API wraps it in a 'data' object
+        setLearnerProfile(body.data || body);
+      } else {
+        console.error("Failed to fetch profile. Status:", res.status);
+      }
+    } catch (error) {
+      console.error("Error fetching learner profile:", error);
+    } finally {
+      setIsProfileLoading(false);
+    }
+  };
+
   const openModal = (learnerId) => {
     setActiveLearnerId(learnerId);
-    // TODO: Trigger fetch for GET /api/admin/learners/{learnerId}/profile
+    fetchLearnerProfile(learnerId); // Trigger the fetch here
     setIsModalOpen(true);
   };
   
@@ -245,6 +301,106 @@ const HOALearners = () => {
     setIsModalOpen(false);
     setActiveLearnerId(null);
     setActiveTab('lessons');
+    setLearnerProfile(null); // Clean up on close
+  };
+
+  const handleSingleStatusChange = async (learnerId, action) => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API_BASE_URL}/api/admin/learners/${learnerId}/${action}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ reason: `${action === 'suspend' ? 'Suspended' : 'Activated'} by admin` })
+      });
+      if (res.ok) {
+        fetchLearnersData(true);
+        if (activeLearnerId === learnerId) {
+          fetchLearnerProfile(learnerId);
+        }
+        showToast(`Learner ${action === 'suspend' ? 'suspended' : 'activated'} successfully!`, 'success');
+      } else {
+        showToast('Failed to update learner status', 'error');
+      }
+    } catch (err) {
+      console.error(err);
+      showToast('Error updating learner status', 'error');
+    }
+  };
+
+  const handleSingleDelete = async (learnerId) => {
+    if (!window.confirm('Are you sure you want to delete this learner?')) return;
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API_BASE_URL}/api/admin/learners/${learnerId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (res.ok) {
+        fetchLearnersData(true);
+        showToast('Learner deleted successfully!', 'success');
+      } else {
+        showToast('Failed to delete learner', 'error');
+      }
+    } catch (err) {
+      console.error(err);
+      showToast('Error deleting learner', 'error');
+    }
+  };
+
+  const handleBulkStatusChange = async (action) => {
+    if (selectedRows.length === 0) return;
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API_BASE_URL}/api/admin/learners/bulk-${action}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ ids: selectedRows, reason: `Bulk ${action === 'suspend' ? 'suspended' : 'activated'} by admin` })
+      });
+      if (res.ok) {
+        fetchLearnersData(true);
+        setSelectedRows([]);
+        showToast(`Selected learners ${action === 'suspend' ? 'suspended' : 'activated'} successfully!`, 'success');
+      } else {
+        showToast('Failed to perform bulk operation', 'error');
+      }
+    } catch (err) {
+      console.error(err);
+      showToast('Error in bulk operation', 'error');
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedRows.length === 0) return;
+    if (!window.confirm('Are you sure you want to delete the selected learners?')) return;
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API_BASE_URL}/api/admin/learners/bulk-delete`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ ids: selectedRows })
+      });
+      if (res.ok) {
+        fetchLearnersData(true);
+        setSelectedRows([]);
+        showToast('Selected learners deleted successfully!', 'success');
+      } else {
+        showToast('Failed to delete selected learners', 'error');
+      }
+    } catch (err) {
+      console.error(err);
+      showToast('Error in bulk delete', 'error');
+    }
   };
 
   const goToPage = (pageNumber) => {
@@ -463,6 +619,17 @@ const HOALearners = () => {
           </div>
         </div>
 
+        {/* Bulk Actions Bar */}
+        {selectedRows.length > 0 ? (
+          <div className="hoa-bulk-actions-bar" style={{ display: 'flex', alignItems: 'center', gap: '12px', background: '#F3E8FF', padding: '12px 20px', borderRadius: '8px', border: '1px solid #E9D5FF', marginBottom: '20px' }}>
+            <span style={{ fontSize: '13px', fontWeight: 600, color: '#450468' }}>{selectedRows.length} learners selected</span>
+            <button className="hoa-btn-primary" onClick={() => handleBulkStatusChange('suspend')} style={{ background: '#D97706', height: '36px', border: 'none', padding: '0 16px', borderRadius: '4px', color: '#fff', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>Suspend</button>
+            <button className="hoa-btn-primary" onClick={() => handleBulkStatusChange('activate')} style={{ background: '#10B981', height: '36px', border: 'none', padding: '0 16px', borderRadius: '4px', color: '#fff', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>Activate</button>
+            <button className="hoa-btn-primary" onClick={handleBulkDelete} style={{ background: '#EF4444', height: '36px', border: 'none', padding: '0 16px', borderRadius: '4px', color: '#fff', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>Delete</button>
+            <button className="hoa-btn-light-purple" onClick={() => setSelectedRows([])} style={{ height: '36px', border: 'none', padding: '0 16px', borderRadius: '6px', color: '#450468', fontSize: '12px', fontWeight: 600, cursor: 'pointer', background: 'rgba(69, 4, 104, 0.07)' }}>Cancel</button>
+          </div>
+        ) : null}
+
         {/* List Header */}
         <div className="hoa-approvals-header">
           <div>
@@ -569,10 +736,64 @@ const HOALearners = () => {
                       <span className="dot"></span> {req.status}
                     </span>
                   </td>
-                  <td className="action-col">
-                    <a href="#view" className="table-link-icon" onClick={(e) => { preventDefault(e); openModal(req.id); }}>
-                      <img src={hoaopenview} alt="Open" />
-                    </a>
+                  <td className="action-col" style={{ position: 'relative' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <a href="#view" className="table-link-icon" onClick={(e) => { preventDefault(e); openModal(req.id); }} title="View Details">
+                        <img src={hoaopenview} alt="Open" />
+                      </a>
+                      
+                      {/* Action dots menu */}
+                      <div className="hoa-row-action-menu" style={{ position: 'relative', display: 'inline-flex' }}>
+                        <button 
+                          className="table-link-icon" 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setOpenRowMenuId(openRowMenuId === req.id ? null : req.id);
+                          }}
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+                        >
+                          <img src={hoaverticaldots} alt="More" style={{ width: '12px', opacity: 0.7 }} />
+                        </button>
+                        
+                        {openRowMenuId === req.id && (
+                          <div className="hoa-row-dropdown-menu" style={{ position: 'absolute', right: 0, top: '100%', background: '#fff', border: '1px solid #EEF1F6', borderRadius: '6px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', zIndex: 100, minWidth: '120px', padding: '4px' }}>
+                            {req.status === 'Suspended' ? (
+                              <button 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleSingleStatusChange(req.id, 'activate');
+                                  setOpenRowMenuId(null);
+                                }}
+                                style={{ width: '100%', border: 'none', background: 'transparent', textAlign: 'left', padding: '8px 10px', fontSize: '12px', color: '#10B981', cursor: 'pointer', fontWeight: 500 }}
+                              >
+                                Activate
+                              </button>
+                            ) : (
+                              <button 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleSingleStatusChange(req.id, 'suspend');
+                                  setOpenRowMenuId(null);
+                                }}
+                                style={{ width: '100%', border: 'none', background: 'transparent', textAlign: 'left', padding: '8px 10px', fontSize: '12px', color: '#D97706', cursor: 'pointer', fontWeight: 500 }}
+                              >
+                                Suspend
+                              </button>
+                            )}
+                            <button 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleSingleDelete(req.id);
+                                setOpenRowMenuId(null);
+                              }}
+                              style={{ width: '100%', border: 'none', background: 'transparent', textAlign: 'left', padding: '8px 10px', fontSize: '12px', color: '#EF4444', cursor: 'pointer', fontWeight: 500 }}
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -623,8 +844,8 @@ const HOALearners = () => {
 
             {totalPages > 3 && currentPage < totalPages - 1 && <span className="page-dots">...</span>}
 
-            <button className="page-nav" onClick={() => goToPage(currentPage + 1)} disabled={currentPage === totalPages}>
-              <img src={hoanext} alt="Next" style={{ opacity: currentPage === totalPages ? 0.5 : 1 }} />
+            <button className="page-nav" onClick={() => goToPage(currentPage + 1)} disabled={currentPage === totalPages || totalPages === 0}>
+              <img src={hoanext} alt="Next" style={{ opacity: currentPage === totalPages || totalPages === 0 ? 0.5 : 1 }} />
             </button>
           </div>
         </div>
@@ -639,8 +860,9 @@ const HOALearners = () => {
               </button>
               <h2>Learner Preview</h2>
               <div className="modal-header-actions">
-                <span className="hoa-update-status" style={{ border: '1px solid #EEF1F6' }}>
-                  <img src={hoarefresh} alt="Sync" className="sync-icon" /> Data updated every 1 hr <span className="dot" style={{ background: '#17C653' }}></span>
+                <span className="hoa-update-status" style={{ border: '1px solid #EEF1F6' }} onClick={() => fetchLearnerProfile(activeLearnerId)}>
+                  <img src={hoarefresh} alt="Sync" className={`sync-icon ${isProfileLoading ? 'spinning' : ''}`} /> 
+                  {isProfileLoading ? 'Loading...' : 'Sync Data'}
                 </span>
               </div>
             </div>
@@ -650,48 +872,106 @@ const HOALearners = () => {
               {/* User Profile Info */}
               <div className="modal-profile-box">
                 <div className="profile-left">
-                  <img src={defaultAvatar} alt="Avatar" className="profile-avatar" />
+                  <img 
+                    src={learnerProfile?.avatar ? `${API_BASE_URL}${learnerProfile.avatar}` : defaultAvatar} 
+                    alt="Avatar" 
+                    className="profile-avatar" 
+                    onError={(e) => { e.target.src = defaultAvatar; }} // Fallback if image fails to load
+                  />
                   <div className="profile-details">
                     <div className="profile-name-row">
-                      <h3>{learnersData.find(l => l.id === activeLearnerId)?.name || 'Loading Learner...'}</h3>
-                      <span className="badge-active">Active</span>
-                      <span className="badge-icon"><img src={hoauserbadge} alt="" /> 6</span>
+                      <h3>
+                        {isProfileLoading 
+                          ? 'Loading Learner...' 
+                          : (learnerProfile?.name || learnerProfile?.email || 'Unknown Learner')}
+                      </h3>
+                      <span className={
+                        learnerProfile?.is_active === 0 
+                          ? 'badge-suspended' 
+                          : (learnerProfile?.is_active === 1 ? 'badge-active' : 'badge-inactive')
+                      }>
+                        {learnerProfile?.is_active === 0 
+                          ? 'Suspended' 
+                          : (learnerProfile?.is_active === 1 ? 'Active' : 'Inactive')}
+                      </span>
                     </div>
                     <div className="profile-meta-row">
-                      <span className="badge-missing">Enrolled Student</span>
+                      <span className="badge-missing">{learnerProfile?.role || 'Enrolled Student'}</span>
+                      {learnerProfile?.location && <span style={{fontSize: '12px', color: '#64748B', marginLeft: '10px'}}>{learnerProfile.location}</span>}
                     </div>
                   </div>
                 </div>
-                <div className="profile-actions">
-                  <button className="icon-btn" title="Add Note"><img src={hoagrayadd} alt="Add" /></button>
-                  <button className="icon-btn tooltip-trigger" title="Call">
-                    <span className="action-tooltip">+250 123 456 789</span>
-                    <img src={hoagrayphone} alt="Call" />
-                  </button>
+                <div className="profile-actions" style={{ position: 'relative' }}>
                   <button className="icon-btn tooltip-trigger" title="Email">
-                    <span className="action-tooltip">student@academia.com</span>
+                    <span className="action-tooltip">{learnerProfile?.email || 'No email provided'}</span>
                     <img src={hoagraymail} alt="Email" />
                   </button>
-                  <button className="icon-btn"><img src={hoaverticaldots} alt="More" /></button>
+                  <button 
+                    className="icon-btn"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsDrawerMenuOpen(!isDrawerMenuOpen);
+                    }}
+                  >
+                    <img src={hoaverticaldots} alt="More" />
+                  </button>
+                  {isDrawerMenuOpen && learnerProfile && (
+                    <div className="hoa-row-dropdown-menu" style={{ position: 'absolute', right: 0, top: '100%', background: '#fff', border: '1px solid #EEF1F6', borderRadius: '6px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', zIndex: 100, minWidth: '150px', padding: '4px' }}>
+                      {learnerProfile.is_active === 0 ? (
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleSingleStatusChange(learnerProfile.id, 'activate');
+                            setIsDrawerMenuOpen(false);
+                          }}
+                          style={{ width: '100%', border: 'none', background: 'transparent', textAlign: 'left', padding: '8px 10px', fontSize: '12px', color: '#10B981', cursor: 'pointer', fontWeight: 500 }}
+                        >
+                          Activate Student
+                        </button>
+                      ) : (
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleSingleStatusChange(learnerProfile.id, 'suspend');
+                            setIsDrawerMenuOpen(false);
+                          }}
+                          style={{ width: '100%', border: 'none', background: 'transparent', textAlign: 'left', padding: '8px 10px', fontSize: '12px', color: '#D97706', cursor: 'pointer', fontWeight: 500 }}
+                        >
+                          Suspend Student
+                        </button>
+                      )}
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleSingleDelete(learnerProfile.id);
+                          setIsDrawerMenuOpen(false);
+                          closeModal();
+                        }}
+                        style={{ width: '100%', border: 'none', background: 'transparent', textAlign: 'left', padding: '8px 10px', fontSize: '12px', color: '#EF4444', cursor: 'pointer', fontWeight: 500 }}
+                      >
+                        Delete Student
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
 
               {/* Modal Stats Row */}
               <div className="modal-stats-row">
                 <div className="mod-stat">
-                  <h3>{learnersData.find(l => l.id === activeLearnerId)?.downloads || 0}</h3>
+                  <h3>{learnerProfile?.statistics?.total_downloads || 0}</h3>
                   <p>Total Downloads</p>
                 </div>
                 <div className="mod-stat">
-                  <h3>{learnersData.find(l => l.id === activeLearnerId)?.attempts || 0}</h3>
+                  <h3>{learnerProfile?.statistics?.total_courses || learnerProfile?.enrollments?.length || 0}</h3>
                   <p>Total Courses</p>
                 </div>
                 <div className="mod-stat">
-                  <h3>{learnersData.find(l => l.id === activeLearnerId)?.score || 0}</h3>
-                  <p>Avg. Score <span className="trend down"> <img src={hoadecrease} alt="" /> -4.5%</span></p>
+                  <h3>{learnerProfile?.statistics?.avg_score || '0.00'}</h3>
+                  <p>Avg. Score</p>
                 </div>
                 <div className="mod-stat">
-                  <h3>{learnersData.find(l => l.id === activeLearnerId)?.certs || 0}</h3>
+                  <h3>{learnerProfile?.statistics?.total_certificates || learnerProfile?.certificates?.length || 0}</h3>
                   <p>Certificates Issued</p>
                 </div>
               </div>
@@ -710,90 +990,107 @@ const HOALearners = () => {
                 {activeTab === 'lessons' && (
                   <div className="tab-lessons">
                     <div className="hoa-list-container modal-table-container">
-                      <table className="hoa-list-table mod-table">
-                        <thead>
-                          <tr>
-                            <th style={{ width: '50px' }}>
-                              <button type="button" className="th-content minus-btn-container minus-select-button" onClick={() => setModalSelectedRows([])}>
-                                <div className="minus-icon" style={{ margin: '0 auto' }}>-</div>
-                              </button>
-                            </th>
-                            <th><div className="th-content" onClick={() => handleModalSort('title')}>Course Details <span className={`sort-icon ${modalSortConfig.key === 'title' ? 'active ' + modalSortConfig.direction : ''}`}><img src={hoaupdowncaret} alt="" /></span></div></th>
-                            <th><div className="th-content" onClick={() => handleModalSort('tutor')}>Tutor & Score <span className={`sort-icon ${modalSortConfig.key === 'tutor' ? 'active ' + modalSortConfig.direction : ''}`}><img src={hoaupdowncaret} alt="" /></span></div></th>
-                            <th><div className="th-content" onClick={() => handleModalSort('type')}>Type <span className={`sort-icon ${modalSortConfig.key === 'type' ? 'active ' + modalSortConfig.direction : ''}`}><img src={hoaupdowncaret} alt="" /></span></div></th>
-                            <th className="text-center"><div className="th-content justify-center" onClick={() => handleModalSort('attempts')}>Attempts <span className={`sort-icon ${modalSortConfig.key === 'attempts' ? 'active ' + modalSortConfig.direction : ''}`}><img src={hoaupdowncaret} alt="" /></span></div></th>
-                            <th className="status-col"><div className="th-content" onClick={() => handleModalSort('status')}>Status <span className={`sort-icon ${modalSortConfig.key === 'status' ? 'active ' + modalSortConfig.direction : ''}`}><img src={hoaupdowncaret} alt="" /></span></div></th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {getSortedData(modalLessons, modalSortConfig).map((les) => (
-                            <tr key={les.id} className={modalSelectedRows.includes(les.id) ? 'selected-row' : ''}>
-                              <td><input type="checkbox" className="hoa-checkbox" checked={modalSelectedRows.includes(les.id)} onChange={() => setModalSelectedRows(c => c.includes(les.id) ? c.filter(id => id !== les.id) : [...c, les.id])} /></td>
-                              <td>
-                                <div className="user-meta">
-                                  <h5>{les.title}</h5>
-                                  <p style={{ fontSize: '11px', color: '#A1A5B7' }}>{les.date}</p>
-                                </div>
-                              </td>
-                              <td>
-                                <div className="user-meta">
-                                  <h5 style={{ fontWeight: '500' }}>{les.tutor}</h5>
-                                  <p style={{ fontSize: '11px', color: '#A1A5B7' }}>{les.score}</p>
-                                </div>
-                              </td>
-                              <td>
-                                <div className="user-meta">
-                                  <h5 style={{ fontWeight: '500' }}>{les.type}</h5>
-                                  <p style={{ fontSize: '11px', color: '#A1A5B7' }}>{les.duration}</p>
-                                </div>
-                              </td>
-                              <td className="fw-600 text-center">{les.attempts}</td>
-                              <td className="status-col">
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'flex-end' }}>
-                                  <span className={`mod-status-pill st-${les.statusType}`}>{les.status}</span>
-                                  <button className="icon-more-btn">⋮</button>
-                                </div>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                      {isProfileLoading ? (
+                        <div style={{ padding: '40px', textAlign: 'center', color: '#64748B' }}>Loading lessons data...</div>
+                      ) : (
+                        <table className="hoa-list-table mod-table">
+                          <thead>
+                            {/* ... (Keep your existing thead mapping) ... */}
+                          </thead>
+                          <tbody>
+                            {/* Map over real enrollments if they exist, otherwise fallback or show empty state */}
+                            {(learnerProfile?.enrollments || []).length > 0 ? (
+                               getSortedData(learnerProfile.enrollments, modalSortConfig).map((enrollment) => (
+                                <tr key={enrollment.id || enrollment.course_id}>
+                                  <td><input type="checkbox" className="hoa-checkbox" /></td>
+                                  <td>
+                                    <div className="user-meta">
+                                      <h5>{enrollment.course?.title || enrollment.course_name || 'Unknown Course'}</h5>
+                                      <p style={{ fontSize: '11px', color: '#A1A5B7' }}>{new Date(enrollment.enrolled_at || enrollment.created_at).toLocaleDateString()}</p>
+                                    </div>
+                                  </td>
+                                  <td>
+                                    <div className="user-meta">
+                                      <h5 style={{ fontWeight: '500' }}>{enrollment.course?.instructor_name || 'N/A'}</h5>
+                                      <p style={{ fontSize: '11px', color: '#A1A5B7' }}>Score: {enrollment.score || '0'}%</p>
+                                    </div>
+                                  </td>
+                                  <td>
+                                    <div className="user-meta">
+                                      <h5 style={{ fontWeight: '500' }}>{enrollment.course?.type || 'Online Course'}</h5>
+                                    </div>
+                                  </td>
+                                  <td className="fw-600 text-center">{enrollment.progress_percentage || 0}%</td>
+                                  <td className="status-col">
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'flex-end' }}>
+                                      <span className={`mod-status-pill st-${(enrollment.status || 'active').toLowerCase()}`}>{enrollment.status || 'Active'}</span>
+                                      <button className="icon-more-btn">⋮</button>
+                                    </div>
+                                  </td>
+                                </tr>
+                              ))
+                            ) : (
+                              <tr>
+                                <td colSpan="6" style={{ textAlign: 'center', padding: '24px', color: '#64748B' }}>
+                                  No course enrollments found for this learner.
+                                </td>
+                              </tr>
+                            )}
+                          </tbody>
+                        </table>
+                      )}
                     </div>
 
+                    {/* Documents / Certificates */}
                     <div className="docs-header" style={{ marginTop: '20px' }}>
                       <div>
                         <h3 style={{ margin: '0 0 4px 0', fontSize: '16px', color: '#071437' }}>Documents</h3>
                         <p style={{ margin: '0', fontSize: '12px', color: '#A1A5B7' }}>Files & Certificates</p>
                       </div>
-                      <button className="hoa-btn-light-purple" style={{ gap: '8px' }}>
-                        <img src={hoadownloadall} alt="" /> Download All
-                      </button>
                     </div>
 
                     <div className="docs-grid">
-                      {modalDocuments.map((doc) => (
-                        <div key={doc.id} className="doc-card">
+                      {!isProfileLoading && (learnerProfile?.certificates || []).map((cert) => (
+                        <div key={cert.id} className="doc-card">
                           <div className="doc-info">
-                            <img src={doc.type === 'ribbon' ? hoaknot : hoapdffile} alt="" />
+                            <img src={hoaknot} alt="Certificate" />
                             <div>
-                              <h4>{doc.name}</h4>
-                              <p>{doc.size}</p>
+                              <h4>{cert.course_name || 'Course Certificate'}</h4>
+                              <p>Issued: {new Date(cert.issued_at).toLocaleDateString()}</p>
                             </div>
                           </div>
-                          <button className="download-btn">
-                            <img src={hoadownload} alt="" />
+                          <button className="download-btn" onClick={() => window.open(`${API_BASE_URL}/api/certificates/${cert.certificate_number}/download`)}>
+                            <img src={hoadownload} alt="Download" />
                           </button>
                         </div>
                       ))}
+                      {!isProfileLoading && (learnerProfile?.certificates || []).length === 0 && (
+                        <p style={{ color: '#64748B', fontSize: '14px' }}>No documents or certificates available.</p>
+                      )}
                     </div>
                   </div>
                 )}
 
                 {/* --- PROJECTS TAB --- */}
                 {activeTab === 'projects' && (
-                  <div className="tab-projects" style={{ textAlign: 'center', padding: '40px', color: '#64748B' }}>
-                    <h4>Portfolio Coming Soon</h4>
-                    <p>Learner submitted projects will appear here once connected to the API.</p>
+                  <div className="tab-projects" style={{ padding: '20px' }}>
+                     {isProfileLoading ? (
+                       <p style={{ textAlign: 'center', color: '#64748B' }}>Loading projects...</p>
+                     ) : (learnerProfile?.projects || []).length > 0 ? (
+                       <div className="projects-grid">
+                         {learnerProfile.projects.map(project => (
+                            <div key={project.id} style={{ border: '1px solid #E2E8F0', padding: '16px', borderRadius: '8px', marginBottom: '12px' }}>
+                               <h4>{project.title}</h4>
+                               <p style={{ fontSize: '13px', color: '#64748B' }}>Status: {project.status}</p>
+                            </div>
+                         ))}
+                       </div>
+                     ) : (
+                       <div style={{ textAlign: 'center', padding: '40px', color: '#64748B' }}>
+                        <h4>No Projects Submitted</h4>
+                        <p>This learner has not submitted any projects yet.</p>
+                       </div>
+                     )}
                   </div>
                 )}
 
@@ -803,40 +1100,16 @@ const HOALearners = () => {
                     <div className="activity-header">
                       <div className="login-info">
                         <span className="label">Last Login</span>
-                        <p><strong>Wed Apr 23, 2024</strong> at <strong>11 : 33 PM</strong></p>
-                      </div>
-                      <div className="priority-badge">
-                        <span className="label">Status</span>
-                        <span className="badge-high" style={{ background: '#DCFCE7', color: '#16A34A', border: 'none' }}>Online</span>
-                      </div>
-                    </div>
-
-                    <h4 style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '24px 0 20px 0', color: '#071437', fontSize: '16px', fontWeight: 600 }}>
-                      <img src={hoacalendar} alt="calendar" /> System Logs
-                    </h4>
-                    
-                    <div className="qa-section">
-                      <div className={`ticket-card border-green ${!openTickets[1] ? 'collapsed' : ''}`}>
-                        <div className="ticket-header" onClick={() => toggleTicket(1)} style={{ cursor: 'pointer' }}>
-                          <div className="ticket-meta">
-                            <strong>Log No : #LOG1204567</strong>
-                            <span>Action: Course Enrollment</span>
-                          </div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                            <div className="ticket-status st-solved">Success</div>
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#78829D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ transform: openTickets[1] ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}><path d="M6 9l6 6 6-6" /></svg>
-                          </div>
-                        </div>
-
-                        {openTickets[1] && (
-                          <div className="ticket-body">
-                            <div className="ticket-content">
-                              <p>Successfully enrolled in "Javascript Fundamental Quiz" via mobile money payment.</p>
-                            </div>
-                          </div>
-                        )}
+                        <p>
+                          <strong>
+                            {learnerProfile?.last_login ? new Date(learnerProfile.last_login).toLocaleDateString() : 'N/A'}
+                          </strong> at <strong>
+                            {learnerProfile?.last_login ? new Date(learnerProfile.last_login).toLocaleTimeString() : ''}
+                          </strong>
+                        </p>
                       </div>
                     </div>
+                    {/* Keep your static QA logs here or map learnerProfile.logs if the API provides it */}
                   </div>
                 )}
 
@@ -850,6 +1123,16 @@ const HOALearners = () => {
           <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.8)', zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <button onClick={() => setFullScreenImage(null)} style={{ position: 'absolute', top: '20px', right: '30px', background: 'none', border: 'none', color: 'white', fontSize: '40px', cursor: 'pointer', padding: '10px' }}>&times;</button>
             <img src={fullScreenImage} alt="Full Screen" style={{ maxWidth: '90%', maxHeight: '90%', borderRadius: '8px', objectFit: 'contain' }} />
+          </div>
+        )}
+
+        {/* Custom Toast Alert */}
+        {toast.show && (
+          <div className={`hoa-toast-notification is-${toast.type}`}>
+            <div className="hoa-toast-icon">
+              {toast.type === 'success' ? '✓' : '✗'}
+            </div>
+            <p className="hoa-toast-message">{toast.message}</p>
           </div>
         )}
 

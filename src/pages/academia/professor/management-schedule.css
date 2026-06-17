@@ -283,23 +283,31 @@
 
 .prof-schedule-event {
   z-index: 2;
-  margin: 10px;
-  padding: 1em;
-  border-radius: 8px;
-  border: none;
-  background: linear-gradient(120deg, #F7F2FB 0%, #EFE8FB 100%);
-  box-shadow: none;
+  margin: 6px;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  background: linear-gradient(135deg, rgba(247, 242, 251, 0.9) 0%, rgba(239, 232, 251, 0.9) 100%);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 4px 14px rgba(74, 10, 115, 0.03);
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
   overflow: visible;
   min-height: 0;
   box-sizing: border-box;
   align-self: stretch;
   font-family: Inter, sans-serif;
-  font-size: 10px;
-  line-height: 1.2;
+  font-size: 11px;
+  line-height: 1.3;
   min-width: 0;
+  transition: all 0.2s ease;
+}
+
+.prof-schedule-event:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 16px rgba(74, 10, 115, 0.06);
+  border-color: rgba(74, 10, 115, 0.15) !important;
 }
 
 .prof-schedule-event-head {
@@ -313,9 +321,9 @@
 .prof-schedule-event-head h4 {
   margin: 0;
   font-family: Inter, sans-serif;
-  font-size: 10px;
-  line-height: 12px;
-  font-weight: 500;
+  font-size: 12px;
+  line-height: 1.3;
+  font-weight: 600;
   letter-spacing: 0;
   color: #071437;
   overflow-wrap: anywhere;
@@ -521,56 +529,57 @@ strong.is-draft::before {
 }
 
 .tone-sand {
-  background: linear-gradient(120deg, #FDFAF6 0%, #FEF5F1 100%);
-  border-color: #FEDCD1;
+  background: linear-gradient(135deg, rgba(253, 250, 246, 0.9) 0%, rgba(254, 245, 241, 0.9) 100%);
+  border: 1px solid rgba(254, 220, 209, 0.8) !important;
 }
 
-.tone-sand .prof-schedule-event-head h4 {
-  color: #071437;
+.tone-sand:hover {
+  border-color: rgba(245, 158, 11, 0.3) !important;
 }
 
 .tone-blue {
-  background: linear-gradient(120deg, #F0F5FB 0%, #E8F1FB 100%);
-  border-color: #D4E3F7;
+  background: linear-gradient(135deg, rgba(240, 245, 251, 0.9) 0%, rgba(232, 241, 251, 0.9) 100%);
+  border: 1px solid rgba(212, 227, 247, 0.8) !important;
 }
 
-.tone-blue .prof-schedule-event-head h4 {
-  color: #071437;
+.tone-blue:hover {
+  border-color: rgba(59, 130, 246, 0.3) !important;
 }
 
 .tone-slate {
-  background: linear-gradient(120deg, #F1F3F7 0%, #EAEFF7 100%);
-  border-color: #D5DCE8;
+  background: linear-gradient(135deg, rgba(241, 243, 247, 0.9) 0%, rgba(234, 239, 247, 0.9) 100%);
+  border: 1px solid rgba(213, 220, 232, 0.8) !important;
 }
 
-.tone-slate .prof-schedule-event-head h4 {
-  color: #071437;
+.tone-slate:hover {
+  border-color: rgba(148, 163, 184, 0.3) !important;
 }
 
 .tone-lavender {
-  background: #E6EAF8;
+  background: linear-gradient(135deg, rgba(230, 234, 248, 0.9) 0%, rgba(220, 226, 244, 0.9) 100%);
+  border: 1px solid rgba(192, 202, 236, 0.8) !important;
 }
 
-.tone-lavender .prof-schedule-event-head h4 {
-  color: #071437;
+.tone-lavender:hover {
+  border-color: rgba(74, 10, 115, 0.3) !important;
 }
 
 .tone-mint {
-  background: linear-gradient(120deg, #F0FDFA 0%, #E8FCFB 100%);
-  border-color: #D1F5F2;
+  background: linear-gradient(135deg, rgba(240, 253, 250, 0.9) 0%, rgba(232, 252, 251, 0.9) 100%);
+  border: 1px solid rgba(209, 245, 242, 0.8) !important;
 }
 
-.tone-mint .prof-schedule-event-head h4 {
-  color: #071437;
+.tone-mint:hover {
+  border-color: rgba(16, 185, 129, 0.3) !important;
 }
 
 .tone-rose {
-  background: linear-gradient(120deg, #FCF0F5 0%, #FBE8F0 100%);
-  border-color: #F5D8E5;
+  background: linear-gradient(135deg, rgba(252, 240, 245, 0.9) 0%, rgba(251, 232, 240, 0.9) 100%);
+  border: 1px solid rgba(245, 216, 229, 0.8) !important;
 }
 
-.tone-rose .prof-schedule-event-head h4 {
-  color: #071437;
+.tone-rose:hover {
+  border-color: rgba(239, 68, 68, 0.3) !important;
 }
 
 .prof-schedule-modal .assessments-modal__dialog {
@@ -867,7 +876,7 @@ strong.is-draft::before {
 .prof-schedule-modal-picker {
   position: absolute;
   top: calc(100% + 8px);
-  left: -250px;
+  left: 0;
   width: 514px;
   display: grid;
   grid-template-columns: minmax(0, 1fr) 242px;
@@ -1046,10 +1055,6 @@ strong.is-draft::before {
 }
 
 @media (max-width: 960px) {
-  .prof-schedule-modal .assessments-modal__dialog {
-    width: min(820px, calc(100vw - 20px));
-  }
-
   .prof-schedule-modal-row {
     grid-template-columns: 1fr;
   }
@@ -1063,11 +1068,330 @@ strong.is-draft::before {
 }
 
 @media (max-width: 640px) {
-  .prof-schedule-modal .assessments-modal__body {
-    padding: 16px;
-  }
-
   .prof-schedule-modal-upload {
     align-items: flex-start;
   }
+}
+
+/* =========================================
+   TOASTS, DIALOGS, & PREMIUM CONFIRMATION MODALS
+   ========================================= */
+
+/* Floating Toast */
+.prof-toast-container {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  background: #FFFFFF;
+  border-left: 4px solid #10B981;
+  border-radius: 6px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+  padding: 12px 18px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  z-index: 2000;
+  animation: slide-in 0.3s ease-out;
+}
+
+.prof-toast-container.toast-error {
+  border-left-color: #EF4444;
+}
+
+.toast-icon {
+  font-size: 14px;
+  font-weight: 700;
+  color: #10B981;
+}
+
+.prof-toast-container.toast-error .toast-icon {
+  color: #EF4444;
+}
+
+.toast-message {
+  font-size: 12px;
+  font-weight: 600;
+  color: #1F2937;
+}
+
+@keyframes slide-in {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.25s ease-out;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Enrolled Students / Events Modal */
+.prof-management-modal {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 40px 20px;
+  z-index: 1300;
+  overflow-y: auto;
+}
+
+.prof-management-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.4);
+  backdrop-filter: blur(4px);
+}
+
+.prof-management-modal-dialog {
+  position: relative;
+  background: #FFFFFF;
+  border: 1px solid #E4E8F2;
+  border-radius: 12px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+  width: min(650px, calc(100vw - 32px));
+  z-index: 1301;
+  display: flex;
+  flex-direction: column;
+  overflow: visible;
+}
+
+.prof-management-modal-dialog.event-form-dialog {
+  width: min(860px, calc(100vw - 28px)) !important;
+}
+
+.prof-management-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid #EEF2F6;
+}
+
+.prof-management-modal-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: #1F2937;
+}
+
+.prof-management-modal-close {
+  border: none;
+  background: transparent;
+  font-size: 18px;
+  color: #9CA3AF;
+  cursor: pointer;
+  padding: 4px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.prof-management-modal-close:hover {
+  color: #4B5563;
+}
+
+.prof-management-modal-body {
+  padding: 24px;
+  overflow: visible;
+}
+
+/* Confirmation Dialog Styling */
+.confirmation-dialog {
+  width: min(450px, calc(100vw - 32px)) !important;
+  border-radius: 12px;
+}
+
+.confirmation-header h3 {
+  color: #EF4444 !important; /* Warning red */
+}
+
+.confirmation-body p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #4B5563;
+}
+
+.confirmation-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 16px 24px 20px;
+  border-top: 1px solid #EEF2F6;
+  background: #F9FAFB;
+}
+
+.confirm-btn-cancel {
+  height: 36px;
+  background: #FFFFFF;
+  border: 1px solid #D1D5DB;
+  border-radius: 6px;
+  padding: 0 16px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #374151;
+  cursor: pointer;
+  outline: none;
+  transition: background 0.15s;
+}
+
+.confirm-btn-cancel:hover {
+  background: #F3F4F6;
+}
+
+.confirm-btn-danger:hover {
+  opacity: 0.9;
+}
+
+/* =========================================
+   ADDITIONAL MODAL UI CONTROLS
+   ========================================= */
+
+/* Course selector dropdown */
+.prof-schedule-modal-select-input {
+  width: 100%;
+  border: none;
+  border-bottom: 1px solid #D7DEE9;
+  background: #FCFCFC;
+  outline: none;
+  font-family: Inter, sans-serif;
+  font-size: 13px;
+  color: #64748B;
+  padding: 11px 12px 12px;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 12px;
+}
+
+/* 3-Column Modal Row */
+.prof-schedule-modal-row.prof-schedule-modal-row--3 {
+  grid-template-columns: 2fr 1fr 1fr;
+}
+
+@media (max-width: 768px) {
+  .prof-schedule-modal-row.prof-schedule-modal-row--3 {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Event Format Segmented Buttons */
+.prof-schedule-format-segments {
+  display: flex;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.format-segment-btn {
+  flex: 1;
+  height: 40px;
+  border: 1px solid #EEF1F7;
+  border-radius: 8px;
+  background: #FFFFFF;
+  color: #64748B;
+  font-family: Inter, sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.format-segment-btn:hover {
+  background: #F8FBFF;
+  color: #4A0A73;
+  border-color: #DBC4E6;
+}
+
+.format-segment-btn.is-active {
+  background: #F4EBFB;
+  color: #4A0A73;
+  border-color: #4A0A73;
+  box-shadow: 0 4px 12px rgba(74, 10, 115, 0.08);
+}
+
+/* Sleek Switch Toggle */
+.prof-schedule-toggle-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  user-select: none;
+  margin-top: 8px;
+  min-height: 28px;
+}
+
+.prof-schedule-toggle-wrap input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.prof-schedule-toggle-slider {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 22px;
+  background-color: #E2E8F0;
+  border-radius: 99px;
+  transition: all 0.3s ease;
+}
+
+.prof-schedule-toggle-slider::before {
+  content: "";
+  position: absolute;
+  height: 18px;
+  width: 18px;
+  left: 2px;
+  bottom: 2px;
+  background-color: white;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.prof-schedule-toggle-wrap input:checked + .prof-schedule-toggle-slider {
+  background-color: #4A0A73;
+}
+
+.prof-schedule-toggle-wrap input:checked + .prof-schedule-toggle-slider::before {
+  transform: translateX(22px);
+}
+
+.prof-schedule-toggle-label {
+  font-family: Inter, sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: #64748B;
+}
+
+/* Capacity input fade control */
+.is-hidden-capacity {
+  opacity: 0.45;
+  pointer-events: none;
+  transition: all 0.25s ease;
 }

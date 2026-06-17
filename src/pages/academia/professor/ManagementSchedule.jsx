@@ -96,9 +96,10 @@ const generateCalendarDays = (year, month, selectedDate) => {
 const ManagementSchedule = () => {
   const preventDefault = (e) => e.preventDefault();
 
-  // --- Data Setup ---
+  // --- Tab Setup ---
   const managementTabs = [
-    { id: 'management', label: 'Students' },
+    { id: 'management', label: 'Courses' },
+    { id: 'management-syllabuses', label: 'Syllabuses' },
     { id: 'management-schedule', label: 'Schedule' },
     { id: 'management-lessons-ranks', label: 'Lessons Ranks' },
     { id: 'management-student-qa', label: 'Student Q&A' },
@@ -106,21 +107,57 @@ const ManagementSchedule = () => {
 
   const [activeTab, setActiveTab] = useState('management-schedule');
 
-  const scheduleDays = [
-    { label: '1- Mon', isActive: false },
-    { label: '2- Tue', isActive: true },
-    { label: '3- Wed', isActive: false },
-    { label: '4- Thu', isActive: false },
-    { label: '5- Fri', isActive: false },
-    { label: '6- Sat', isActive: false },
-    { label: '7- Sun', isActive: false },
-  ];
+  // --- UI Alerts & Modals ---
+  const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+  const showToast = (message, type = 'success') => {
+    setToast({ show: true, message, type });
+    setTimeout(() => {
+      setToast(prev => ({ ...prev, show: false }));
+    }, 4000);
+  };
 
-  const scheduleHours = ['6:00', '7:00', '8:00', '9:00', '10:00', '11:00', '12:00'];
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: null,
+  });
 
+  // --- Data Fetching ---
   const [events, setEvents] = useState([]);
   const [eventsLoading, setEventsLoading] = useState(true);
   const [eventsError, setEventsError] = useState('');
+
+  const loadEvents = async (signal) => {
+    const token = localStorage.getItem('token');
+    setEventsLoading(true);
+    setEventsError('');
+    
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/events/created/my?limit=100&offset=0`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        signal: signal
+      });
+      
+      const data = await response.json();
+      if (!response.ok) throw new Error(data?.message || 'Failed to load schedule events');
+
+      setEvents(Array.isArray(data?.data) ? data.data : []);
+    } catch (error) {
+      if (error.name !== 'AbortError') {
+        setEventsError(error.message || 'Failed to load schedule events');
+        showToast(error.message || 'Failed to load schedule events', 'error');
+      }
+    } finally {
+      setEventsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    const controller = new AbortController();
+    loadEvents(controller.signal);
+    return () => controller.abort();
+  }, []);
 
   // --- Schedule Week Navigation State ---
   const [weekStartDate, setWeekStartDate] = useState(startOfWeek(new Date()));
@@ -141,15 +178,72 @@ const ManagementSchedule = () => {
     setIsWeekMenuOpen(false);
   };
 
-  // --- Add Event Modal State ---
+  // Dynamic weekly day labels mapping actual dates of the selected week
+  const scheduleDays = useMemo(() => {
+    const today = new Date();
+    const currentWeekStart = startOfWeek(today);
+    const selectedWeekStart = startOfWeek(weekStartDate);
+    const isCurrentWeek = currentWeekStart.getTime() === selectedWeekStart.getTime();
+
+    const labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const todayDay = today.getDay();
+    const todayIndex = todayDay === 0 ? 6 : todayDay - 1;
+
+    return labels.map((label, idx) => {
+      const dayDate = new Date(selectedWeekStart);
+      dayDate.setDate(selectedWeekStart.getDate() + idx);
+      const dateNum = dayDate.getDate();
+      return {
+        label: `${dateNum}- ${label}`,
+        isActive: isCurrentWeek && idx === todayIndex
+      };
+    });
+  }, [weekStartDate]);
+
+  const scheduleHours = ['6:00', '7:00', '8:00', '9:00', '10:00', '11:00', '12:00'];
+
+  // --- Add/Edit/Duplicate Event Modal State & DB fields ---
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [eventStatus, setEventStatus] = useState('In-Review');
-  const [isStatusMenuOpen, setIsStatusMenuOpen] = useState(false);
+  const [editingEventId, setEditingEventId] = useState(null);
+  const [isEditMode, setIsEditMode] = useState(false);
 
   const [eventName, setEventName] = useState('');
   const [eventSubtitle, setEventSubtitle] = useState('');
   const [eventDescription, setEventDescription] = useState('');
   const [durationMinutes, setDurationMinutes] = useState(60);
+  const [eventStatus, setEventStatus] = useState('In-Review');
+  const [isStatusMenuOpen, setIsStatusMenuOpen] = useState(false);
+
+  // New DB fields states
+  const [instructorCourses, setInstructorCourses] = useState([]);
+  const [courseId, setCourseId] = useState('');
+  const [isVirtual, setIsVirtual] = useState(true);
+  const [meetingLink, setMeetingLink] = useState('');
+  const [location, setLocation] = useState('');
+  const [registrationRequired, setRegistrationRequired] = useState(false);
+  const [maxParticipants, setMaxParticipants] = useState('');
+  const [isCourseMenuOpen, setIsCourseMenuOpen] = useState(false);
+
+  // Fetch instructor courses once on mount
+  const loadInstructorCourses = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/dashboard/instructor`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (res.ok && data?.data?.courses) {
+        setInstructorCourses(data.data.courses);
+      }
+    } catch (err) {
+      console.error('Failed to load instructor courses for selector:', err);
+    }
+  };
+
+  useEffect(() => {
+    loadInstructorCourses();
+  }, []);
 
   // Time Picker State
   const [isTimePickerOpen, setIsTimePickerOpen] = useState(false);
@@ -163,6 +257,7 @@ const ManagementSchedule = () => {
   // Upload & Collaborators State
   const fileInputRef = useRef(null);
   const [uploadedFiles, setUploadedFiles] = useState([]);
+  const [existingAttachmentName, setExistingAttachmentName] = useState('');
   const [isDragOver, setIsDragOver] = useState(false);
   const [collaborators, setCollaborators] = useState([
     { id: 1, name: 'Sheilah MUGABEKAZI', avatar: '/assets/imgs/default-profile.png' },
@@ -180,7 +275,7 @@ const ManagementSchedule = () => {
   useEffect(() => {
     const handleGlobalEvents = (e) => {
       if (e.key === 'Escape') {
-        setIsModalOpen(false);
+        handleCloseModal();
         setIsWeekMenuOpen(false);
         setIsStatusMenuOpen(false);
         setIsTimePickerOpen(false);
@@ -219,86 +314,244 @@ const ManagementSchedule = () => {
 
   const handleFiles = (files) => {
     if (files && files.length > 0) {
-      setUploadedFiles(prev => [...prev, ...Array.from(files)]);
+      setUploadedFiles([files[0]]); // single file upload supported on backend
     }
   };
 
-  // --- Fetch Events (With AbortController for Safety) ---
-  useEffect(() => {
-    const controller = new AbortController();
-    const token = localStorage.getItem('token');
+  // Close and reset event modal states
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setEditingEventId(null);
+    setIsEditMode(false);
+    setEventName('');
+    setEventSubtitle('');
+    setEventDescription('');
+    setDurationMinutes(60);
+    setEventStatus('In-Review');
+    setExistingAttachmentName('');
+    setUploadedFiles([]);
+    setCourseId('');
+    setIsVirtual(true);
+    setMeetingLink('');
+    setLocation('');
+    setRegistrationRequired(false);
+    setMaxParticipants('');
+    const d = new Date();
+    d.setHours(12, 0, 0, 0);
+    setSelectedDate(d);
+  };
 
-    const loadEvents = async () => {
-      setEventsLoading(true);
-      setEventsError('');
-      
-      try {
-        const response = await fetch(`${API_BASE_URL}/api/events/created/my?limit=100&offset=0`, {
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-          signal: controller.signal
-        });
-        
-        const data = await response.json();
-        if (!response.ok) throw new Error(data?.message || 'Failed to load schedule events');
+  // --- Edit & Duplicate Open Trigger Actions ---
+  const handleEditEventClick = (eventId) => {
+    const originalEvent = events.find(e => e.id === eventId);
+    if (!originalEvent) return;
 
-        setEvents(Array.isArray(data?.data) ? data.data : []);
-      } catch (error) {
-        if (error.name !== 'AbortError') {
-          setEventsError(error.message || 'Failed to load schedule events');
-        }
-      } finally {
-        setEventsLoading(false);
-      }
+    setEditingEventId(originalEvent.id);
+    setIsEditMode(true);
+    setEventName(originalEvent.name || '');
+    setEventSubtitle(originalEvent.subtitle || '');
+    setEventDescription(originalEvent.description || '');
+    setDurationMinutes(originalEvent.duration_minutes || 60);
+    setExistingAttachmentName(originalEvent.attachment_name || '');
+    setUploadedFiles([]); // clear staging
+    
+    // Bind database state columns
+    setCourseId(originalEvent.course_id || '');
+    setIsVirtual(originalEvent.is_virtual === 1 || originalEvent.is_virtual === true);
+    setMeetingLink(originalEvent.meeting_link || '');
+    setLocation(originalEvent.location || '');
+    setRegistrationRequired(originalEvent.registration_required === 1 || originalEvent.registration_required === true);
+    setMaxParticipants(originalEvent.max_participants || '');
+    
+    const statusMap = {
+      'in_review': 'In-Review',
+      'in-review': 'In-Review',
+      'confirmed': 'Confirmed',
+      'draft': 'Draft'
     };
+    const mappedStatus = statusMap[originalEvent.status?.toLowerCase()] || 'In-Review';
+    setEventStatus(mappedStatus);
 
-    loadEvents();
-    return () => controller.abort();
-  }, []);
+    if (originalEvent.event_datetime) {
+      const dateObj = new Date(originalEvent.event_datetime);
+      setSelectedDate(dateObj);
+      setCalendarMonth(new Date(dateObj.getFullYear(), dateObj.getMonth(), 1));
+    }
+
+    setIsModalOpen(true);
+    setOpenEventMenuId(null);
+  };
+
+  const handleDuplicateEventClick = (eventId) => {
+    const originalEvent = events.find(e => e.id === eventId);
+    if (!originalEvent) return;
+
+    setEditingEventId(null);
+    setIsEditMode(false);
+    setEventName(`${originalEvent.name || ''} (Copy)`);
+    setEventSubtitle(originalEvent.subtitle || '');
+    setEventDescription(originalEvent.description || '');
+    setDurationMinutes(originalEvent.duration_minutes || 60);
+    setExistingAttachmentName('');
+    setUploadedFiles([]);
+
+    // Bind database state columns
+    setCourseId(originalEvent.course_id || '');
+    setIsVirtual(originalEvent.is_virtual === 1 || originalEvent.is_virtual === true);
+    setMeetingLink(originalEvent.meeting_link || '');
+    setLocation(originalEvent.location || '');
+    setRegistrationRequired(originalEvent.registration_required === 1 || originalEvent.registration_required === true);
+    setMaxParticipants(originalEvent.max_participants || '');
+    
+    const statusMap = {
+      'in_review': 'In-Review',
+      'in-review': 'In-Review',
+      'confirmed': 'Confirmed',
+      'draft': 'Draft'
+    };
+    const mappedStatus = statusMap[originalEvent.status?.toLowerCase()] || 'In-Review';
+    setEventStatus(mappedStatus);
+
+    if (originalEvent.event_datetime) {
+      const dateObj = new Date(originalEvent.event_datetime);
+      setSelectedDate(dateObj);
+      setCalendarMonth(new Date(dateObj.getFullYear(), dateObj.getMonth(), 1));
+    }
+
+    setIsModalOpen(true);
+    setOpenEventMenuId(null);
+  };
 
   // --- Create Event Handler ---
   const handleCreateEvent = async () => {
     if (!eventName || !selectedDate) {
-      // You might want to swap this out for a custom toast notification later
-      alert('Please provide an event name and time.');
+      showToast('Please provide an event name and time.', 'error');
       return;
     }
 
     const token = localStorage.getItem('token');
-    const payload = {
-      name: eventName,
-      subtitle: eventSubtitle,
-      description: eventDescription,
-      status: eventStatus.toLowerCase().replace(/ /g, '_'),
-      event_datetime: selectedDate.toISOString(),
-      duration_minutes: Number(durationMinutes) || 60,
-    };
+    const formData = new FormData();
+    formData.append('name', eventName);
+    if (eventSubtitle) formData.append('subtitle', eventSubtitle);
+    if (eventDescription) formData.append('description', eventDescription);
+    formData.append('status', eventStatus.toLowerCase().replace(/ /g, '_'));
+    formData.append('event_datetime', selectedDate.toISOString());
+    formData.append('duration_minutes', String(Number(durationMinutes) || 60));
+
+    // Append database fields
+    if (courseId) {
+      formData.append('course_id', String(courseId));
+    }
+    formData.append('is_virtual', isVirtual ? '1' : '0');
+    if (isVirtual && meetingLink) {
+      formData.append('meeting_link', meetingLink);
+    }
+    if (!isVirtual && location) {
+      formData.append('location', location);
+    }
+    formData.append('registration_required', registrationRequired ? '1' : '0');
+    if (registrationRequired && maxParticipants) {
+      formData.append('max_participants', String(maxParticipants));
+    }
+
+    if (uploadedFiles.length > 0) {
+      formData.append('attachment', uploadedFiles[0]);
+    }
 
     try {
       const res = await fetch(`${API_BASE_URL}/api/events`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify(payload),
+        body: formData,
       });
       
       const data = await res.json();
       if (!res.ok) throw new Error(data?.message || 'Failed to create event');
 
-      const created = data?.data || null;
-      if (created) setEvents(prev => [created, ...prev]);
-      
-      // Reset Modal State
-      setIsModalOpen(false);
-      setEventName(''); 
-      setEventSubtitle(''); 
-      setEventDescription(''); 
-      setDurationMinutes(60);
-      
+      showToast('Event created successfully!', 'success');
+      loadEvents();
+      handleCloseModal();
     } catch (err) {
-      alert(err.message || 'Failed to create event. Please try again.');
+      showToast(err.message || 'Failed to create event. Please try again.', 'error');
     }
+  };
+
+  // --- Update Event Handler ---
+  const handleSaveEvent = async () => {
+    if (!eventName || !selectedDate) {
+      showToast('Please provide an event name and time.', 'error');
+      return;
+    }
+
+    const token = localStorage.getItem('token');
+    const formData = new FormData();
+    formData.append('name', eventName);
+    formData.append('subtitle', eventSubtitle || '');
+    formData.append('description', eventDescription || '');
+    formData.append('status', eventStatus.toLowerCase().replace(/ /g, '_'));
+    formData.append('event_datetime', selectedDate.toISOString());
+    formData.append('duration_minutes', String(Number(durationMinutes) || 60));
+
+    // Overwrite database fields
+    formData.append('course_id', courseId ? String(courseId) : '');
+    formData.append('is_virtual', isVirtual ? '1' : '0');
+    formData.append('meeting_link', isVirtual ? (meetingLink || '') : '');
+    formData.append('location', !isVirtual ? (location || '') : '');
+    formData.append('registration_required', registrationRequired ? '1' : '0');
+    formData.append('max_participants', registrationRequired ? (maxParticipants ? String(maxParticipants) : '') : '');
+
+    if (uploadedFiles.length > 0) {
+      formData.append('attachment', uploadedFiles[0]);
+    }
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/events/${editingEventId}`, {
+        method: 'PUT',
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.message || 'Failed to update event');
+
+      showToast('Event updated successfully!', 'success');
+      loadEvents();
+      handleCloseModal();
+    } catch (err) {
+      showToast(err.message || 'Failed to update event. Please try again.', 'error');
+    }
+  };
+
+  // --- Delete Event Handler ---
+  const handleDeleteEventClick = (eventId, eventTitle) => {
+    setConfirmModal({
+      isOpen: true,
+      title: 'Delete Event',
+      message: `Are you sure you want to delete the event "${eventTitle}"? This action cannot be undone.`,
+      onConfirm: async () => {
+        const token = localStorage.getItem('token');
+        try {
+          const res = await fetch(`${API_BASE_URL}/api/events/${eventId}`, {
+            method: 'DELETE',
+            headers: {
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            }
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data?.message || 'Failed to delete event');
+
+          showToast('Event deleted successfully!', 'success');
+          setEvents(prev => prev.filter(e => e.id !== eventId));
+        } catch (err) {
+          showToast(err.message || 'Failed to delete event', 'error');
+        }
+      }
+    });
+    setOpenEventMenuId(null);
   };
 
   // Compute Grid Events
@@ -344,7 +597,7 @@ const ManagementSchedule = () => {
           rowStart,
           rowSpan,
           minutes,
-          originalStart: startsAt // Keep original for filtering
+          originalStart: startsAt
         };
       })
       .filter(event => event.originalStart >= weekStart && event.originalStart < weekEnd);
@@ -357,22 +610,28 @@ const ManagementSchedule = () => {
         if (openEventMenuId) setOpenEventMenuId(null);
       }}>
         
+        {/* Floating Toast Notification */}
+        {toast.show && (
+          <div className={`prof-toast-container toast-${toast.type}`}>
+            <span className="toast-icon">
+              {toast.type === 'success' ? '✓' : '✕'}
+            </span>
+            <span className="toast-message">{toast.message}</span>
+          </div>
+        )}
+
         {/* Header */}
         <section className="learners-home-title">
           <div className="learners-home-title-top">
             <h1>Management</h1>
             <div className="learners-home-title-actions">
-              <a className="learners-btn learners-btn-secondary" href="#" onClick={(e) => { preventDefault(e); setIsModalOpen(true); }}>
-                <img src="/assets/icons/plus1.svg" alt="" />
-                <span>Add Event</span>
+              <a className="learners-btn learners-btn-secondary" href="#" onClick={(e) => { preventDefault(e); loadEvents(); }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path></svg>
+                <span>Refresh Data</span>
               </a>
-              <a className="learners-btn learners-btn-secondary" href="#" onClick={preventDefault}>
-                <img src="/assets/icons/van.svg" alt="" />
-                <span>View Analytics</span>
-              </a>
-              <a className="learners-btn learners-btn-primary" href="#" onClick={preventDefault}>
+              <a className="learners-btn learners-btn-primary" href="/" target="_blank" rel="noreferrer">
                 <span>Go to website</span>
-                <img src="/assets/icons/exit-right.svg" alt="" />
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ transform: 'rotate(-45deg)' }}><line x1="7" y1="17" x2="17" y2="7"></line><polyline points="7 7 17 7 17 17"></polyline></svg>
               </a>
             </div>
           </div>
@@ -398,11 +657,11 @@ const ManagementSchedule = () => {
 
             <div className="prof-schedule-period" aria-label="Current week">
               <button type="button" className="prof-schedule-nav" onClick={() => handleWeekNav(-7)} aria-label="Previous week">
-                <img src="/assets/icons/left1.svg" alt="" aria-hidden="true" />
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
               </button>
               <span>{formatWeekRange(weekStartDate)}</span>
               <button type="button" className="prof-schedule-nav" onClick={() => handleWeekNav(7)} aria-label="Next week">
-                <img src="/assets/icons/right1.svg" alt="" aria-hidden="true" />
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
               </button>
             </div>
 
@@ -413,7 +672,7 @@ const ManagementSchedule = () => {
                 onClick={(e) => { e.stopPropagation(); setIsWeekMenuOpen(!isWeekMenuOpen); }}
               >
                 <span>This Week</span>
-                <img src="/assets/icons/drop.svg" alt="" aria-hidden="true" />
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginLeft: '4px' }}><polyline points="6 9 12 15 18 9"></polyline></svg>
               </button>
               
               {isWeekMenuOpen && (
@@ -425,7 +684,7 @@ const ManagementSchedule = () => {
               )}
 
               <button type="button" className="prof-schedule-btn is-primary" onClick={() => setIsModalOpen(true)}>
-                <img src="/assets/icons/plus.svg" alt="" aria-hidden="true" />
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '6px' }}><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                 <span>Add Event</span>
               </button>
             </div>
@@ -488,14 +747,14 @@ const ManagementSchedule = () => {
                       onClick={(e) => { e.stopPropagation(); setOpenEventMenuId(openEventMenuId === event.id ? null : event.id); }} 
                       aria-label="Event options"
                     >
-                      <img src="/assets/icons/dots-horizontal.svg" alt="" aria-hidden="true" />
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle></svg>
                     </button>
 
                     {openEventMenuId === event.id && (
                       <div className="prof-schedule-event-actions" onClick={e => e.stopPropagation()}>
-                        <button type="button" onClick={preventDefault}>Edit</button>
-                        <button type="button" onClick={preventDefault}>Duplicate</button>
-                        <button type="button" onClick={preventDefault}>Delete</button>
+                        <button type="button" onClick={() => handleEditEventClick(event.id)}>Edit</button>
+                        <button type="button" onClick={() => handleDuplicateEventClick(event.id)}>Duplicate</button>
+                        <button type="button" onClick={() => handleDeleteEventClick(event.id, event.title)} style={{ color: '#EF4444' }}>Delete</button>
                       </div>
                     )}
                   </div>
@@ -524,181 +783,353 @@ const ManagementSchedule = () => {
         </section>
       </section>
 
-      {/* --- ADD EVENT MODAL --- */}
-      <div className={`assessments-modal prof-schedule-modal ${isModalOpen ? 'is-open' : ''}`} aria-hidden={!isModalOpen}>
-        <div className="assessments-modal__backdrop" onClick={() => setIsModalOpen(false)}></div>
-        
-        <div className="assessments-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="scheduleEventModalTitle">
-          <div className="assessments-modal__header">
-            <h2 id="scheduleEventModalTitle">Add Event</h2>
-            <button type="button" className="assessments-modal__close" onClick={() => setIsModalOpen(false)} aria-label="Close modal">
-              <img src="/assets/icons/popup-close.svg" alt="" />
-            </button>
-          </div>
+      {/* --- ADD / EDIT / DUPLICATE EVENT MODAL --- */}
+      {isModalOpen && (
+        <div className="prof-management-modal is-open" aria-hidden={!isModalOpen}>
+          <div className="prof-management-modal-backdrop" onClick={handleCloseModal}></div>
+          
+          <div className="prof-management-modal-dialog event-form-dialog" role="dialog" aria-modal="true" aria-labelledby="scheduleEventModalTitle">
+            <div className="prof-management-modal-header">
+              <h3 id="scheduleEventModalTitle">{isEditMode ? 'Edit Event' : (editingEventId === null && eventName.includes('(Copy)') ? 'Duplicate Event' : 'Add Event')}</h3>
+              <button type="button" className="prof-management-modal-close" onClick={handleCloseModal} aria-label="Close modal">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+              </button>
+            </div>
 
-          <div className="assessments-modal__body prof-schedule-modal__body" onClick={() => {
-            if (isStatusMenuOpen) setIsStatusMenuOpen(false);
-            if (isTimePickerOpen) setIsTimePickerOpen(false);
-          }}>
-            <div className="prof-schedule-modal-grid">
-              <div className="prof-schedule-modal-fields">
-                
-                <label className="prof-schedule-modal-field prof-schedule-modal-field--full">
-                  <span>Event name</span>
-                  <input type="text" value={eventName} onChange={(e) => setEventName(e.target.value)} placeholder="Event title" />
-                </label>
-
-                <div className="prof-schedule-modal-row">
-                  <label className="prof-schedule-modal-field">
-                    <span>Status</span>
-                    <button 
-                      type="button" 
-                      className="prof-schedule-modal-select" 
-                      onClick={(e) => { e.stopPropagation(); setIsStatusMenuOpen(!isStatusMenuOpen); setIsTimePickerOpen(false); }}
-                    >
-                      <span className="prof-schedule-modal-status-dot"></span>
-                      <span>{eventStatus}</span>
-                      <img src="/assets/icons/drop.svg" alt="" />
-                    </button>
-                    {isStatusMenuOpen && (
-                      <div className="prof-schedule-modal-status-menu" onClick={e => e.stopPropagation()}>
-                        <button type="button" onClick={() => { setEventStatus('In-Review'); setIsStatusMenuOpen(false); }}>In-Review</button>
-                        <button type="button" onClick={() => { setEventStatus('Confirmed'); setIsStatusMenuOpen(false); }}>Confirmed</button>
-                        <button type="button" onClick={() => { setEventStatus('Draft'); setIsStatusMenuOpen(false); }}>Draft</button>
-                      </div>
-                    )}
+            <div className="prof-management-modal-body" onClick={() => {
+              if (isStatusMenuOpen) setIsStatusMenuOpen(false);
+              if (isTimePickerOpen) setIsTimePickerOpen(false);
+              if (isCourseMenuOpen) setIsCourseMenuOpen(false);
+            }}>
+              <div className="prof-schedule-modal-grid">
+                <div className="prof-schedule-modal-fields">
+                  
+                  {/* Row 1 (Title) */}
+                  <label className="prof-schedule-modal-field prof-schedule-modal-field--full">
+                    <span>Event Name</span>
+                    <input type="text" value={eventName} onChange={(e) => setEventName(e.target.value)} placeholder="Event title" />
                   </label>
 
-                  <div className="prof-schedule-modal-field prof-schedule-modal-field--time">
-                    <span>Event Time & Duration</span>
-                    <div style={{ display: 'flex', gap: '8px' }}>
+                  {/* Row 2 (Subtitle & Associated Course) */}
+                  <div className="prof-schedule-modal-row">
+                    <label className="prof-schedule-modal-field">
+                      <span>Event Subtitle</span>
+                      <input type="text" value={eventSubtitle} onChange={(e) => setEventSubtitle(e.target.value)} placeholder="Optional subtitle" />
+                    </label>
+
+                    <div className="prof-schedule-modal-field" style={{ position: 'relative' }}>
+                      <span>Associated Course</span>
+                      <button 
+                        type="button" 
+                        className="prof-schedule-modal-select" 
+                        onClick={(e) => { e.stopPropagation(); setIsCourseMenuOpen(!isCourseMenuOpen); setIsStatusMenuOpen(false); setIsTimePickerOpen(false); }}
+                      >
+                        <span>{instructorCourses.find(c => String(c.id) === String(courseId))?.title || '-- None (General Event) --'}</span>
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ marginLeft: 'auto' }}><polyline points="6 9 12 15 18 9"></polyline></svg>
+                      </button>
+                      {isCourseMenuOpen && (
+                        <div className="prof-schedule-modal-status-menu" style={{ maxHeight: '200px', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
+                          <button type="button" onClick={() => { setCourseId(''); setIsCourseMenuOpen(false); }}>-- None (General Event) --</button>
+                          {instructorCourses.map(course => (
+                            <button 
+                              key={course.id} 
+                              type="button" 
+                              onClick={() => { setCourseId(String(course.id)); setIsCourseMenuOpen(false); }}
+                            >
+                              {course.title}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Row 3 (Date/Time, Duration, Status) */}
+                  <div className="prof-schedule-modal-row prof-schedule-modal-row--3">
+                    <div className="prof-schedule-modal-field prof-schedule-modal-field--time">
+                      <span>Event Time</span>
                       <div 
                         className={`prof-schedule-modal-time-input ${isTimePickerOpen ? 'is-active' : ''}`}
                         onClick={(e) => { e.stopPropagation(); setIsTimePickerOpen(!isTimePickerOpen); setIsStatusMenuOpen(false); }}
-                        style={{ flex: 1 }}
                       >
-                        {/* Dynamically calculate End Time for Display */}
                         <input 
                           type="text" 
-                          value={`${formatInputDateTime(selectedDate)} - ${formatTime12h(new Date(selectedDate.getTime() + durationMinutes * 60000))}`} 
+                          value={`${formatInputDateTime(selectedDate)} - ${formatTime12h(new Date(selectedDate.getTime() + Number(durationMinutes) * 60000))}`} 
                           readOnly 
                         />
-                        <img src="/assets/icons/calendar-add.svg" alt="" aria-hidden="true" />
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.7 }}><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
                       </div>
+                      
+                      {/* Time & Date Picker Panel */}
+                      {isTimePickerOpen && (
+                        <div className="prof-schedule-modal-picker" onClick={e => e.stopPropagation()}>
+                          <div className="prof-schedule-modal-calendar">
+                            <div className="prof-schedule-modal-calendar-head">
+                              <button type="button" onClick={() => setCalendarMonth(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() - 1, 1))}>
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                              </button>
+                              <strong>{calendarMonth.toLocaleString('en-US', { month: 'short', year: 'numeric' })}</strong>
+                              <button type="button" onClick={() => setCalendarMonth(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 1))}>
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                              </button>
+                            </div>
 
-                      {/* Explicit Duration Input connected to state */}
+                            <div className="prof-schedule-modal-calendar-grid">
+                              <span className="prof-schedule-modal-dow">Su</span><span className="prof-schedule-modal-dow">Mo</span><span className="prof-schedule-modal-dow">Tu</span><span className="prof-schedule-modal-dow">We</span><span className="prof-schedule-modal-dow">Th</span><span className="prof-schedule-modal-dow">Fr</span><span className="prof-schedule-modal-dow">Sa</span>
+                              {generateCalendarDays(calendarMonth.getFullYear(), calendarMonth.getMonth(), selectedDate).map((day, idx) => (
+                                <button 
+                                  key={idx} 
+                                  type="button" 
+                                  className={`${day.isMuted ? 'is-muted' : ''} ${day.isSelected ? 'is-selected' : ''}`}
+                                  onClick={() => selectDay(day.dateObj)}
+                                >
+                                  {day.dayNumber}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+
+                          <div className="prof-schedule-modal-timepicker">
+                            <div className="prof-schedule-modal-timecol">
+                              <button type="button" onClick={() => adjustTime('hour-up')}>
+                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
+                              </button>
+                              <strong>{pad2(selectedDate.getHours() % 12 === 0 ? 12 : selectedDate.getHours() % 12)}</strong>
+                              <button type="button" onClick={() => adjustTime('hour-down')}>
+                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                              </button>
+                            </div>
+                            <span className="prof-schedule-modal-time-sep">:</span>
+                            <div className="prof-schedule-modal-timecol">
+                              <button type="button" onClick={() => adjustTime('minute-up')}>
+                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
+                              </button>
+                              <strong>{pad2(selectedDate.getMinutes())}</strong>
+                              <button type="button" onClick={() => adjustTime('minute-down')}>
+                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                              </button>
+                            </div>
+                            <button type="button" className="prof-schedule-modal-meridiem" onClick={toggleMeridiem}>
+                              {selectedDate.getHours() >= 12 ? 'PM' : 'AM'}
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    <label className="prof-schedule-modal-field">
+                      <span>Duration (Minutes)</span>
                       <input 
                         type="number" 
                         min="15" 
                         step="15"
-                        className="prof-schedule-modal-time-input"
                         value={durationMinutes} 
                         onChange={(e) => setDurationMinutes(e.target.value)} 
                         title="Duration in minutes"
-                        style={{ width: '80px', textAlign: 'center' }}
                       />
+                    </label>
+
+                    <label className="prof-schedule-modal-field">
+                      <span>Status</span>
+                      <button 
+                        type="button" 
+                        className="prof-schedule-modal-select" 
+                        onClick={(e) => { e.stopPropagation(); setIsStatusMenuOpen(!isStatusMenuOpen); setIsTimePickerOpen(false); }}
+                      >
+                        <span className="prof-schedule-modal-status-dot"></span>
+                        <span>{eventStatus}</span>
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginLeft: 'auto' }}><polyline points="6 9 12 15 18 9"></polyline></svg>
+                      </button>
+                      {isStatusMenuOpen && (
+                        <div className="prof-schedule-modal-status-menu" onClick={e => e.stopPropagation()}>
+                          <button type="button" onClick={() => { setEventStatus('In-Review'); setIsStatusMenuOpen(false); }}>In-Review</button>
+                          <button type="button" onClick={() => { setEventStatus('Confirmed'); setIsStatusMenuOpen(false); }}>Confirmed</button>
+                          <button type="button" onClick={() => { setEventStatus('Draft'); setIsStatusMenuOpen(false); }}>Draft</button>
+                        </div>
+                      )}
+                    </label>
+                  </div>
+
+                  {/* Row 4 (Event Format - Segments) */}
+                  <div className="prof-schedule-modal-field prof-schedule-modal-field--full">
+                    <span>Event Format</span>
+                    <div className="prof-schedule-format-segments">
+                      <button 
+                        type="button" 
+                        className={`format-segment-btn ${isVirtual ? 'is-active' : ''}`}
+                        onClick={() => setIsVirtual(true)}
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '6px' }}><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>
+                        Virtual Event
+                      </button>
+                      <button 
+                        type="button" 
+                        className={`format-segment-btn ${!isVirtual ? 'is-active' : ''}`}
+                        onClick={() => setIsVirtual(false)}
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '6px' }}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                        In-Person Event
+                      </button>
                     </div>
-                    
-                    {/* Time & Date Picker Panel */}
-                    {isTimePickerOpen && (
-                      <div className="prof-schedule-modal-picker" onClick={e => e.stopPropagation()}>
-                        <div className="prof-schedule-modal-calendar">
-                          <div className="prof-schedule-modal-calendar-head">
-                            <button type="button" onClick={() => setCalendarMonth(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() - 1, 1))}><img src="/assets/icons/left1.svg" alt="" /></button>
-                            <strong>{calendarMonth.toLocaleString('en-US', { month: 'short', year: 'numeric' })}</strong>
-                            <button type="button" onClick={() => setCalendarMonth(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 1))}><img src="/assets/icons/right1.svg" alt="" /></button>
-                          </div>
-
-                          <div className="prof-schedule-modal-calendar-grid">
-                            <span className="prof-schedule-modal-dow">Su</span><span className="prof-schedule-modal-dow">Mo</span><span className="prof-schedule-modal-dow">Tu</span><span className="prof-schedule-modal-dow">We</span><span className="prof-schedule-modal-dow">Th</span><span className="prof-schedule-modal-dow">Fr</span><span className="prof-schedule-modal-dow">Sa</span>
-                            {generateCalendarDays(calendarMonth.getFullYear(), calendarMonth.getMonth(), selectedDate).map((day, idx) => (
-                              <button 
-                                key={idx} 
-                                type="button" 
-                                className={`${day.isMuted ? 'is-muted' : ''} ${day.isSelected ? 'is-selected' : ''}`}
-                                onClick={() => selectDay(day.dateObj)}
-                              >
-                                {day.dayNumber}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-
-                        <div className="prof-schedule-modal-timepicker">
-                          <div className="prof-schedule-modal-timecol">
-                            <button type="button" onClick={() => adjustTime('hour-up')}>↑</button>
-                            <strong>{pad2(selectedDate.getHours() % 12 === 0 ? 12 : selectedDate.getHours() % 12)}</strong>
-                            <button type="button" onClick={() => adjustTime('hour-down')}>↓</button>
-                          </div>
-                          <span className="prof-schedule-modal-time-sep">:</span>
-                          <div className="prof-schedule-modal-timecol">
-                            <button type="button" onClick={() => adjustTime('minute-up')}>↑</button>
-                            <strong>{pad2(selectedDate.getMinutes())}</strong>
-                            <button type="button" onClick={() => adjustTime('minute-down')}>↓</button>
-                          </div>
-                          <button type="button" className="prof-schedule-modal-meridiem" onClick={toggleMeridiem}>
-                            {selectedDate.getHours() >= 12 ? 'PM' : 'AM'}
-                          </button>
-                        </div>
-                      </div>
-                    )}
                   </div>
+
+                  {/* Row 5 (Conditional Venue Link / Location) */}
+                  {isVirtual ? (
+                    <label className="prof-schedule-modal-field prof-schedule-modal-field--full">
+                      <span>Meeting Link (Zoom, Meet, Teams...)</span>
+                      <input 
+                        type="url" 
+                        value={meetingLink} 
+                        onChange={(e) => setMeetingLink(e.target.value)} 
+                        placeholder="https://zoom.us/j/..." 
+                      />
+                    </label>
+                  ) : (
+                    <label className="prof-schedule-modal-field prof-schedule-modal-field--full">
+                      <span>Physical Location / Venue Address</span>
+                      <input 
+                        type="text" 
+                        value={location} 
+                        onChange={(e) => setLocation(e.target.value)} 
+                        placeholder="Room 102, Science Hall or Building Address" 
+                      />
+                    </label>
+                  )}
+
+                  {/* Row 6 (Access & Capacity Toggles) */}
+                  <div className="prof-schedule-modal-row">
+                    <div className="prof-schedule-modal-field">
+                      <span>Registration Requirements</span>
+                      <label className="prof-schedule-toggle-wrap">
+                        <input 
+                          type="checkbox" 
+                          checked={registrationRequired} 
+                          onChange={(e) => setRegistrationRequired(e.target.checked)} 
+                        />
+                        <span className="prof-schedule-toggle-slider"></span>
+                        <span className="prof-schedule-toggle-label">Registration Required</span>
+                      </label>
+                    </div>
+
+                    <label className={`prof-schedule-modal-field ${!registrationRequired ? 'is-hidden-capacity' : ''}`}>
+                      <span>Max Attendees / Capacity</span>
+                      <input 
+                        type="number" 
+                        min="1" 
+                        value={maxParticipants} 
+                        onChange={(e) => setMaxParticipants(e.target.value)} 
+                        placeholder="Unlimited" 
+                        disabled={!registrationRequired}
+                      />
+                    </label>
+                  </div>
+
+                  {/* Row 7 (Audience Collaboration) */}
+                  <div className="prof-schedule-modal-field prof-schedule-modal-field--full">
+                    <span>Add Collaboration</span>
+                    <div className="prof-schedule-modal-search">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.7 }}><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                      <span>@</span>
+                      <input type="text" defaultValue="All Student" />
+                    </div>
+
+                    <div className="prof-schedule-modal-chips">
+                      {collaborators.map(collab => (
+                        <span key={collab.id} className="prof-schedule-modal-chip">
+                          <img src={collab.avatar} alt="" />
+                          <span>{collab.name}</span>
+                          <button type="button" onClick={() => setCollaborators(collaborators.filter(c => c.id !== collab.id))} aria-label="Remove collaborator">×</button>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Row 8 (Upload Files) */}
+                  <label 
+                    className={`prof-schedule-modal-upload ${isDragOver ? 'is-dragover' : ''}`}
+                    onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
+                    onDragLeave={() => setIsDragOver(false)}
+                    onDrop={(e) => { e.preventDefault(); setIsDragOver(false); handleFiles(e.dataTransfer.files); }}
+                  >
+                    <input type="file" ref={fileInputRef} onChange={(e) => handleFiles(e.target.files)} />
+                    <span className="prof-schedule-modal-upload-icon">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: '#4A0A73' }}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                    </span>
+                    <span className="prof-schedule-modal-upload-copy">
+                      <strong>
+                        {uploadedFiles.length > 0 
+                          ? `${uploadedFiles[0].name}` 
+                          : (existingAttachmentName 
+                              ? `Existing: ${existingAttachmentName}` 
+                              : 'Drop a file here or click to upload.')
+                        }
+                      </strong>
+                      <small>
+                        {uploadedFiles.length > 0 
+                          ? 'Ready to upload' 
+                          : (existingAttachmentName 
+                              ? 'Click to replace attachment' 
+                              : 'Upload event case files, if any.')
+                        }
+                      </small>
+                    </span>
+                  </label>
+                  
+                  {/* Row 9 (Description) */}
+                  <label className="prof-schedule-modal-field prof-schedule-modal-field--full">
+                    <span>Event Description</span>
+                    <textarea rows="4" value={eventDescription} onChange={(e) => setEventDescription(e.target.value)} placeholder="Type something..."></textarea>
+                  </label>
                 </div>
-
-                <label className="prof-schedule-modal-field prof-schedule-modal-field--full">
-                  <span>Event Subtitle</span>
-                  <input type="text" value={eventSubtitle} onChange={(e) => setEventSubtitle(e.target.value)} placeholder="Optional subtitle" />
-                </label>
-
-                <div className="prof-schedule-modal-field prof-schedule-modal-field--full">
-                  <span>Add Collaboration</span>
-                  <div className="prof-schedule-modal-search">
-                    <img src="/assets/icons/magnifier.svg" alt="" aria-hidden="true" />
-                    <span>@</span>
-                    <input type="text" defaultValue="All Student" />
-                  </div>
-
-                  <div className="prof-schedule-modal-chips">
-                    {collaborators.map(collab => (
-                      <span key={collab.id} className="prof-schedule-modal-chip">
-                        <img src={collab.avatar} alt="" />
-                        <span>{collab.name}</span>
-                        <button type="button" onClick={() => setCollaborators(collaborators.filter(c => c.id !== collab.id))} aria-label="Remove collaborator">×</button>
-                      </span>
-                    ))}
-                  </div>
-                </div>
-
-                <label 
-                  className={`prof-schedule-modal-upload ${isDragOver ? 'is-dragover' : ''}`}
-                  onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
-                  onDragLeave={() => setIsDragOver(false)}
-                  onDrop={(e) => { e.preventDefault(); setIsDragOver(false); handleFiles(e.dataTransfer.files); }}
-                >
-                  <input type="file" ref={fileInputRef} multiple onChange={(e) => handleFiles(e.target.files)} />
-                  <span className="prof-schedule-modal-upload-icon">
-                    <img src="/assets/icons/file.svg" alt="" aria-hidden="true" />
-                  </span>
-                  <span className="prof-schedule-modal-upload-copy">
-                    <strong>{uploadedFiles.length > 0 ? `${uploadedFiles.length} file(s) selected` : 'Drop files here or click to upload.'}</strong>
-                    <small>{uploadedFiles.length > 0 ? 'Ready to upload' : 'Upload case files, if any.'}</small>
-                  </span>
-                </label>
-                
-                <label className="prof-schedule-modal-field prof-schedule-modal-field--full">
-                  <span>Event Description</span>
-                  <textarea rows="4" value={eventDescription} onChange={(e) => setEventDescription(e.target.value)} placeholder="Type something..."></textarea>
-                </label>
               </div>
-            </div>
 
-            <div className="prof-schedule-modal-actions">
-              <button type="button" className="prof-schedule-modal-cancel" onClick={() => setIsModalOpen(false)}>Cancel</button>
-              <button type="button" className="prof-schedule-modal-submit" onClick={handleCreateEvent}>Create Event</button>
+              <div className="prof-schedule-modal-actions">
+                <button type="button" className="prof-schedule-modal-cancel" onClick={handleCloseModal}>Cancel</button>
+                <button type="button" className="prof-schedule-modal-submit" onClick={isEditMode ? handleSaveEvent : handleCreateEvent}>
+                  {isEditMode ? 'Save Changes' : 'Create Event'}
+                </button>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
+
+      {/* Premium Confirmation Modal */}
+      {confirmModal.isOpen && (
+        <div className="prof-management-modal is-open">
+          <div className="prof-management-modal-backdrop" onClick={() => setConfirmModal({ ...confirmModal, isOpen: false })}></div>
+          <div className="prof-management-modal-dialog confirmation-dialog animate-fade-in">
+            <div className="prof-management-modal-header confirmation-header">
+              <h3>{confirmModal.title}</h3>
+              <button type="button" className="prof-management-modal-close" onClick={() => setConfirmModal({ ...confirmModal, isOpen: false })} aria-label="Close">
+                ✕
+              </button>
+            </div>
+            <div className="prof-management-modal-body confirmation-body">
+              <p>{confirmModal.message}</p>
+            </div>
+            <div className="confirmation-actions">
+              <button 
+                type="button" 
+                className="confirm-btn-cancel" 
+                onClick={() => setConfirmModal({ ...confirmModal, isOpen: false })}
+              >
+                Cancel
+              </button>
+              <button 
+                type="button" 
+                className="confirm-btn-danger" 
+                onClick={() => {
+                  if (confirmModal.onConfirm) confirmModal.onConfirm();
+                  setConfirmModal({ ...confirmModal, isOpen: false });
+                }}
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </ProfessorLayout>
   );
 };

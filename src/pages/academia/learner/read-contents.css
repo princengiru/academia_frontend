@@ -1700,3 +1700,251 @@
     color: #4B5675;
   }
 
+/* --- Paywall Lock Overlay Style --- */
+.learners-read-article-media-preview-locked {
+  position: relative;
+  width: 100%;
+  margin-top: 18px;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.blur-locked {
+  filter: blur(10px) brightness(0.75);
+  transition: filter 0.3s ease;
+  pointer-events: none;
+  user-select: none;
+}
+
+.learners-read-lock-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(15, 23, 42, 0.25);
+  backdrop-filter: blur(4px);
+  padding: 24px;
+  z-index: 10;
+  min-height: 320px;
+}
+
+.learners-read-lock-card {
+  max-width: 440px;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 16px;
+  padding: 32px 28px;
+  text-align: center;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  animation: lock-card-pop 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes lock-card-pop {
+  from {
+    transform: scale(0.92) translateY(10px);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+}
+
+.learners-read-lock-icon {
+  width: 54px;
+  height: 54px;
+  background: #F4EBFB;
+  color: #450468;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 4px;
+}
+
+.learners-read-lock-card h3 {
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+  font-size: 18px;
+  font-weight: 600;
+  color: #071437;
+}
+
+.learners-read-lock-card p {
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  line-height: 20px;
+  color: #4B5675;
+}
+
+.learners-read-lock-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+  margin-top: 8px;
+}
+
+.learners-read-lock-enroll-btn {
+  background: #450468 !important;
+  color: #ffffff !important;
+}
+
+.learners-read-lock-enroll-btn:hover {
+  background: #340350 !important;
+}
+
+/* ==========================================================================
+   Chapter Resources / Attachments downloads in player
+   ========================================================================== */
+
+.learners-read-attachments-section {
+  margin-top: 28px;
+  margin-bottom: 24px;
+}
+
+.learners-read-attachments-section h3 {
+  font-family: Inter, sans-serif;
+  font-weight: 600;
+  font-size: 16px;
+  line-height: 20px;
+  color: #071437;
+  margin-bottom: 14px;
+}
+
+.learners-attachments-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.learners-attachment-download-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: #FCFCFC;
+  border: 1px solid #E2E8F0;
+  border-radius: 8px;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.learners-attachment-download-card:hover {
+  border-color: #450468;
+  background: #FDFBFF;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px rgba(69, 4, 104, 0.03);
+}
+
+.learners-attachment-ext-badge {
+  background: rgba(69, 4, 104, 0.05);
+  border-radius: 6px;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: #450468;
+  font-weight: 700;
+  font-size: 10px;
+}
+
+.learners-attachment-meta {
+  min-width: 0;
+  flex: 1;
+}
+
+.learners-attachment-meta p {
+  font-size: 12px;
+  font-weight: 600;
+  color: #071437;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.learners-attachment-meta span {
+  font-size: 10px;
+  color: #78829D;
+  display: block;
+  margin-top: 2px;
+}
+
+.learners-pdf-pagination-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #FCFCFC;
+  border: 1px solid #E2E8F0;
+  border-radius: 8px;
+  padding: 10px 16px;
+  margin-bottom: 12px;
+  gap: 12px;
+}
+
+.learners-pdf-pagination-btn {
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: Inter, sans-serif;
+}
+
+.learners-pdf-pagination-btn:not(:disabled) {
+  background: #450468;
+  color: #FFFFFF;
+}
+
+.learners-pdf-pagination-btn:not(:disabled):hover {
+  background: #340350;
+  transform: translateY(-1px);
+}
+
+.learners-pdf-pagination-btn:disabled {
+  background: #F1F5F9;
+  color: #94A3B8;
+  cursor: not-allowed;
+}
+
+.learners-pdf-pagination-info {
+  font-size: 12px;
+  font-weight: 600;
+  color: #071437;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 60%;
+  text-align: center;
+  font-family: Inter, sans-serif;
+}
+
+.learners-attachment-download-card.is-active-pdf {
+  border-color: #450468;
+  background: #F7F3FA;
+}
+
+.learners-attachment-download-card.is-active-pdf .learners-attachment-ext-badge {
+  background: #450468;
+  color: #FFFFFF;
+}
+
+.learners-attachment-download-card.is-active-pdf .learners-attachment-meta span {
+  color: #450468;
+  font-weight: 600;
+}
+
+
+

@@ -81,7 +81,11 @@ function AcademiaCoursePart() {
         if (!resolvedCourseId) {
           const listResponse = await fetch(`${API_BASE_URL}/api/courses/public/available?page=1&limit=1`);
           const listBody = await listResponse.json().catch(() => ({}));
-          const firstCourse = Array.isArray(listBody?.data) ? listBody.data[0] : Array.isArray(listBody) ? listBody[0] : null;
+          const firstCourse = Array.isArray(listBody?.data?.data)
+            ? listBody.data.data[0]
+            : (Array.isArray(listBody?.data)
+              ? listBody.data[0]
+              : (Array.isArray(listBody) ? listBody[0] : null));
           resolvedCourseId = firstCourse?.id || firstCourse?._id || firstCourse?.course_id || '';
         }
 
@@ -107,7 +111,11 @@ function AcademiaCoursePart() {
         if (!mounted) return;
 
         const course = courseBody?.data || courseBody;
-        const relatedList = Array.isArray(relatedBody?.data) ? relatedBody.data : Array.isArray(relatedBody) ? relatedBody : [];
+        const relatedList = Array.isArray(relatedBody?.data?.data)
+            ? relatedBody.data.data
+            : (Array.isArray(relatedBody?.data)
+              ? relatedBody.data
+              : (Array.isArray(relatedBody) ? relatedBody : []));
 
         setCourseData(course || null);
         

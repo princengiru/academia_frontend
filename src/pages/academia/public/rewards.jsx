@@ -63,7 +63,9 @@ function AcademiaRewards() {
         
         if (!mounted) return;
 
-        const dataList = Array.isArray(body?.data) ? body.data : [];
+        const dataList = Array.isArray(body?.data?.data)
+          ? body.data.data
+          : (Array.isArray(body?.data) ? body.data : []);
         
         if (dataList.length > 0) {
           setRewardsData(dataList.map((item, idx) => ({

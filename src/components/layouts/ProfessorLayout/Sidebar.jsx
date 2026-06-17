@@ -28,10 +28,7 @@ const Sidebar = ({ currentPage, profileLoading, profileSummary, profileCompletio
           <img src="/assets/icons/home-2.svg" alt="Home" />
           <span>Home</span>
         </Link>
-        <Link to="/academia/professor/prepare-course" className={checkActive('prepare-course')}>
-          <img src="/assets/icons/lea3.svg" alt="Prepare Course" />
-          <span>Prepare Course</span>
-        </Link>
+
         <Link to="/academia/professor/assignments" className={checkActive('assignments')}>
           <img src="/assets/icons/lea3.svg" alt="Assessments" />
           <span>Assessments</span>

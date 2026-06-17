@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 const CURRENCIES = ['USD', 'EUR', 'GBP', 'RWF'];
@@ -12,6 +12,30 @@ const Pricing = ({ courseId, setActiveStep, pushFeedback }) => {
     amount: 50, 
     currency: CURRENCIES[0] 
   });
+
+  useEffect(() => {
+    if (!courseId) return;
+    const fetchPricing = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(`${API_BASE_URL}/api/courses/${courseId}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (res.ok && data.data) {
+          const course = data.data;
+          setPricing({
+            isFree: parseFloat(course.price) === 0,
+            amount: parseFloat(course.price) || 0,
+            currency: 'USD'
+          });
+        }
+      } catch (err) {
+        console.error("Failed to fetch course pricing details:", err);
+      }
+    };
+    fetchPricing();
+  }, [courseId]);
 
   const { isFree, amount, currency } = pricing;
 
@@ -68,40 +92,35 @@ const Pricing = ({ courseId, setActiveStep, pushFeedback }) => {
 
   return (
     <div className="prof-step-pane is-active animate-fade-in">
-      <div style={{ marginBottom: '2.5rem' }}>
-        <h3 style={{ fontSize: '1.2rem', color: '#0F172A', marginBottom: '8px' }}>Pricing & Monetization</h3>
-        <p style={{ color: '#64748B', fontSize: '0.9rem' }}>
+      <div className="prof-step-header">
+        <h3>Pricing & Monetization</h3>
+        <p>
           Select a pricing model for your course. Free courses drive more enrollments, while paid courses generate revenue.
         </p>
       </div>
 
       {/* --- PRO PRICING CARDS --- */}
       <div className="prof-field-group">
-        <label style={{ display: 'block', fontWeight: 500, color: '#0F172A', marginBottom: '12px' }}>
-          Select Pricing Model
-        </label>
+        <label className="prof-field-label">Select Pricing Model</label>
         
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '2rem' }}>
+        <div className="prof-pricing-model-grid">
           
           {/* Free Card */}
           <div 
             onClick={() => handlePricingChange('isFree', true)}
-            style={{ 
-              border: `2px solid ${isFree ? '#450468' : '#E2E8F0'}`, 
-              background: isFree ? '#F3E8FF' : '#fff', 
-              borderRadius: '12px', padding: '20px', cursor: 'pointer', transition: 'all 0.2s ease',
-              display: 'flex', alignItems: 'flex-start', gap: '12px'
-            }}
+            className={`prof-pricing-card ${isFree ? 'is-selected' : ''}`}
           >
-            <input 
-              type="radio" 
-              checked={isFree} 
-              onChange={() => handlePricingChange('isFree', true)} 
-              style={{ accentColor: '#450468', marginTop: '4px', transform: 'scale(1.2)' }} 
-            />
-            <div>
-              <strong style={{ display: 'block', color: '#0F172A', fontSize: '1.05rem', marginBottom: '4px' }}>Free Course</strong>
-              <span style={{ color: '#64748B', fontSize: '0.85rem', lineHeight: '1.4', display: 'block' }}>
+            <div className="prof-pricing-card-checkbox">
+              <input 
+                type="radio" 
+                checked={isFree} 
+                onChange={() => handlePricingChange('isFree', true)} 
+              />
+              <span className="prof-pricing-card-dot"></span>
+            </div>
+            <div className="prof-pricing-card-info">
+              <strong>Free Course</strong>
+              <span>
                 Allow anyone to enroll at no cost. Great for building an audience and capturing leads.
               </span>
             </div>
@@ -110,22 +129,19 @@ const Pricing = ({ courseId, setActiveStep, pushFeedback }) => {
           {/* Paid Card */}
           <div 
             onClick={() => handlePricingChange('isFree', false)}
-            style={{ 
-              border: `2px solid ${!isFree ? '#450468' : '#E2E8F0'}`, 
-              background: !isFree ? '#F3E8FF' : '#fff', 
-              borderRadius: '12px', padding: '20px', cursor: 'pointer', transition: 'all 0.2s ease',
-              display: 'flex', alignItems: 'flex-start', gap: '12px'
-            }}
+            className={`prof-pricing-card ${!isFree ? 'is-selected' : ''}`}
           >
-            <input 
-              type="radio" 
-              checked={!isFree} 
-              onChange={() => handlePricingChange('isFree', false)} 
-              style={{ accentColor: '#450468', marginTop: '4px', transform: 'scale(1.2)' }} 
-            />
-            <div>
-              <strong style={{ display: 'block', color: '#0F172A', fontSize: '1.05rem', marginBottom: '4px' }}>Paid Course</strong>
-              <span style={{ color: '#64748B', fontSize: '0.85rem', lineHeight: '1.4', display: 'block' }}>
+            <div className="prof-pricing-card-checkbox">
+              <input 
+                type="radio" 
+                checked={!isFree} 
+                onChange={() => handlePricingChange('isFree', false)} 
+              />
+              <span className="prof-pricing-card-dot"></span>
+            </div>
+            <div className="prof-pricing-card-info">
+              <strong>Paid Course</strong>
+              <span>
                 Charge a one-time fee for lifetime access. Platform service fees will apply to sales.
               </span>
             </div>
@@ -136,33 +152,34 @@ const Pricing = ({ courseId, setActiveStep, pushFeedback }) => {
 
       {/* --- PRICE INPUTS (Only visible if Paid) --- */}
       {!isFree && (
-        <div className="prof-grid-two prof-basic-grid animate-fade-in" style={{ background: '#F8FAFC', padding: '24px', borderRadius: '12px', border: '1px solid #E2E8F0' }}>
-          <div className="prof-field-group" style={{ marginBottom: 0 }}>
-            <label style={{ fontWeight: 500, color: '#0F172A' }}>Course Price</label>
-            <div style={{ position: 'relative' }}>
-              <span style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#64748B', fontWeight: 600 }}>
+        <div className="prof-paid-details-card animate-fade-in">
+          <div className="prof-field-group">
+            <label className="prof-field-label">Course Price</label>
+            <div className="prof-price-input-wrapper">
+              <span className="prof-price-currency-symbol">
                 {currency === 'USD' ? '$' : currency === 'EUR' ? '€' : currency === 'GBP' ? '£' : 'RF'}
               </span>
               <input 
-                className="learners-settings-field-control prof-step-input" 
+                className="prof-step-input-premium" 
                 type="number" 
                 min="1" 
                 step="0.01"
                 value={amount} 
                 onChange={(e) => handlePricingChange('amount', e.target.value)} 
-                style={{ paddingLeft: '40px', fontSize: '1.1rem', fontWeight: 500 }}
               />
             </div>
           </div>
           
-          <div className="prof-field-group" style={{ marginBottom: 0 }}>
-            <label style={{ fontWeight: 500, color: '#0F172A' }}>Currency</label>
+          <div className="prof-field-group">
+            <label className="prof-field-label">Currency</label>
             <div className="dropdown prof-generic-dropdown">
-              <button className="learners-settings-field-control dropdown-toggle prof-dropdown-toggle prof-step-input" type="button" data-bs-toggle="dropdown" style={{ background: '#fff' }}>
-                <span className="prof-dropdown-value" style={{ fontSize: '1.1rem', fontWeight: 500 }}>{currency}</span>
-                <img className="prof-dropdown-caret" src="/assets/icons/drop.svg" alt="" />
+              <button className="prof-dropdown-toggle-premium" type="button" data-bs-toggle="dropdown">
+                <span className="prof-dropdown-value">{currency}</span>
+                <svg className="prof-dropdown-caret-svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
               </button>
-              <ul className="dropdown-menu prof-dropdown-menu">
+              <ul className="dropdown-menu prof-dropdown-menu-premium">
                 {CURRENCIES.map(curr => (
                   <li key={curr}>
                     <button className="dropdown-item" type="button" onClick={() => handlePricingChange('currency', curr)}>
@@ -177,21 +194,19 @@ const Pricing = ({ courseId, setActiveStep, pushFeedback }) => {
       )}
 
       {/* --- FOOTER ACTIONS --- */}
-      <div className="prof-lesson-actions-row" style={{ display: 'flex', gap: '16px', marginTop: '40px', paddingTop: '24px', borderTop: '1px solid #E2E8F0' }}>
+      <div className="prof-actions-footer-premium">
         <button 
           type="button" 
-          className="btn btn-outline-secondary" 
+          className="prof-btn-back-premium" 
           onClick={() => setActiveStep('weeks')} 
-          style={{ flex: 1, padding: '14px', borderRadius: '8px', fontWeight: 600, transition: 'all 0.2s ease' }}
         >
           Back to Curriculum
         </button>
         <button 
           type="button" 
-          className="btn btn-primary" 
+          className="prof-btn-primary-premium" 
           onClick={savePricing} 
-          disabled={isSubmitting} 
-          style={{ flex: 3, background: '#450468', color: '#fff', padding: '14px', borderRadius: '8px', border: 'none', fontWeight: 600, transition: 'background 0.2s ease' }}
+          disabled={isSubmitting}
         >
           {isSubmitting ? 'Saving...' : 'Save Pricing & Review'}
         </button>

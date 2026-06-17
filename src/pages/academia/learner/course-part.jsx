@@ -10,6 +10,7 @@ import fe3 from '../../../assets/icons/fe3.svg';
 import fe4 from '../../../assets/icons/fe4.svg';
 import fe5 from '../../../assets/icons/fe5.svg';
 import acCal from '../../../assets/icons/ac-cal.svg';
+import acLe from '../../../assets/icons/ac-le.svg';
 import acUs from '../../../assets/icons/ac-us.svg';
 import acBook from '../../../assets/icons/ac-book.svg';
 import leTec from '../../../assets/icons/le-tec.svg';
@@ -35,10 +36,90 @@ function CoursePart() {
   const [loading, setLoading] = useState(true);
   const [course, setCourse] = useState(null);
   const [chapters, setChapters] = useState([]);
+  const [weeks, setWeeks] = useState([]);
+  const [activeWeekIndex, setActiveWeekIndex] = useState(0);
   const [error, setError] = useState(null);
+  const [isEnrolled, setIsEnrolled] = useState(false);
+  const [isEnrolling, setIsEnrolling] = useState(false);
+  const [toast, setToast] = useState({ message: '', visible: false, tone: 'success' });
+  const [expandedChapters, setExpandedChapters] = useState({});
+  const [isSummaryExpanded, setIsSummaryExpanded] = useState(false);
+
+  const resolveAssetUrl = (value) => {
+    if (!value) return acOn;
+    if (value.startsWith('http://') || value.startsWith('https://') || value.startsWith('data:')) return value;
+    if (value.startsWith('/')) return `${API_BASE_URL}${value}`;
+    return `${API_BASE_URL}/${value}`;
+  };
+
+  const showToast = (message, tone = 'success') => {
+    setToast({ message, visible: true, tone });
+    setTimeout(() => {
+      setToast((prev) => ({ ...prev, visible: false }));
+    }, 4000);
+  };
 
   const inboundId = location.state?.courseId || searchParams.get('id');
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const checkEnrollmentStatus = async () => {
+      const token = localStorage.getItem('token');
+      if (!token || !inboundId) return;
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/progress`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const body = await res.json();
+          const progressList = body?.data?.progress || body?.progress || [];
+          const enrolled = progressList.some(p => Number(p.course_id) === Number(inboundId));
+          setIsEnrolled(enrolled);
+        }
+      } catch (err) {
+        console.error("Failed to check enrollment status:", err);
+      }
+    };
+    checkEnrollmentStatus();
+  }, [inboundId]);
+
+  const handleJoinToday = async (e) => {
+    e.preventDefault();
+    if (!course?.id) return;
+    
+    const token = localStorage.getItem('token');
+    if (!token) {
+      showToast("Please sign in to join this course.", "warning");
+      setTimeout(() => {
+        navigate('/academia/auth/signin');
+      }, 1500);
+      return;
+    }
+    
+    setIsEnrolling(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/courses/${course.id}/enroll`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          payment_method: 'credit_card'
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.message || 'Failed to enroll in the course.');
+      }
+      setIsEnrolled(true);
+      navigate(`/academia/learner/read-contents?id=${course.id}`, { state: { courseId: course.id } });
+    } catch (err) {
+      showToast(err.message || 'Failed to enroll in the course.', 'danger');
+    } finally {
+      setIsEnrolling(false);
+    }
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -74,16 +155,22 @@ function CoursePart() {
           discount: '',
           intro: courseData.intro_message || courseData.description || '',
           audience: courseData.target_audience || '',
+          category: courseData.category || '',
         });
 
         // set chapters if available
         const ch = data?.chapters || data?.data?.chapters || courseData.chapters || [];
         setChapters(Array.isArray(ch) ? ch : []);
+
+        // set weeks if available
+        const w = data?.weeks || data?.data?.weeks || courseData.weeks || [];
+        setWeeks(Array.isArray(w) ? w : []);
       } catch (err) {
         if (cancelled) return;
         setError(err.message || 'Failed to load');
         setCourse(null);
         setChapters([]);
+        setWeeks([]);
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -114,6 +201,24 @@ function CoursePart() {
     };
   }, [inboundId]);
 
+  // Group chapters by week if weeks list is empty but chapters exist
+  useEffect(() => {
+    if (weeks.length === 0 && chapters.length > 0) {
+      const grouped = [];
+      chapters.forEach((c) => {
+        const weekNum = c.week_number || 1;
+        let wk = grouped.find(w => w.week_number === weekNum);
+        if (!wk) {
+          wk = { id: `week-${weekNum}`, week_number: weekNum, title: `Week ${weekNum}`, chapters: [] };
+          grouped.push(wk);
+        }
+        wk.chapters.push(c);
+      });
+      grouped.sort((a, b) => a.week_number - b.week_number);
+      setWeeks(grouped);
+    }
+  }, [chapters, weeks]);
+
   const featureList = [
     { icon: fe1, label: course?.duration || '—' },
     { icon: fe2, label: course?.weekly || '—' },
@@ -129,15 +234,12 @@ function CoursePart() {
     { label: 'subscription', value: course?.price || '—', icon: acBook },
   ];
 
-  const weeks = Array.isArray(chapters) && chapters.length ? chapters.map((_, i) => `Week ${i + 1}`) : [];
-
-  const syllabusItems = Array.isArray(chapters) && chapters.length
-    ? chapters.flatMap((ch, chIndex) => (Array.isArray(ch.exercises) ? ch.exercises.map((ex, exIndex) => ({ id: ex.id || `${chIndex + 1}.${exIndex + 1}`, title: ex.title || ex.name || ex.headline || 'Lesson', image: ex.thumbnail ? (ex.thumbnail.startsWith('/') ? `${API_BASE_URL}${ex.thumbnail}` : ex.thumbnail) : acOn })) : []))
-    : [];
+  const activeWeek = weeks[activeWeekIndex];
+  const activeChapters = activeWeek ? (activeWeek.chapters || []) : [];
 
   const outcomes = course?.objectives ? (typeof course.objectives === 'string' ? course.objectives.split('\n') : Array.isArray(course.objectives) ? course.objectives : []) : [];
 
-  const hasSyllabus = Array.isArray(chapters) && chapters.length > 0;
+  const hasSyllabus = Array.isArray(weeks) && weeks.length > 0;
   const hasOutcomes = Array.isArray(outcomes) && outcomes.length > 0;
   const showContentSections = !loading && (hasSyllabus || hasOutcomes);
 
@@ -161,13 +263,13 @@ function CoursePart() {
       </section>
 
       <div className="filters-grid-b-h">
-        <button type="button">
-          <img src={acCal} alt="Left" />
+        <button type="button" onClick={() => navigate('/academia/learner/courses')}>
+          <img src={acLe} alt="back" />
         </button>
         <div>
-          <p>Mathematics &amp; Science</p>
+          <p>{course?.category || 'Courses'}</p>
           <span>/</span>
-          <span>Algebra</span>
+          <span>{course?.title || 'Details'}</span>
           <span>/</span>
         </div>
       </div>
@@ -218,7 +320,28 @@ function CoursePart() {
                 <section className="learners-course-specific-section">
                   <h3>Introduction</h3>
                   <p>
-                    {course?.intro || ''} {course?.intro ? <a href="#" onClick={(e) => e.preventDefault()}>Read more</a> : null}
+                    {course?.intro && course.intro.length > 200 && !isSummaryExpanded
+                      ? `${course.intro.slice(0, 200)}...`
+                      : course?.intro || ''}
+                    {course?.intro && course.intro.length > 200 && (
+                      <button
+                        type="button"
+                        onClick={() => setIsSummaryExpanded(!isSummaryExpanded)}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: '#5B0A86',
+                          fontWeight: 600,
+                          marginLeft: '6px',
+                          padding: 0,
+                          fontSize: '12px',
+                          cursor: 'pointer',
+                          textDecoration: 'underline'
+                        }}
+                      >
+                        {isSummaryExpanded ? 'Read less' : 'Read more'}
+                      </button>
+                    )}
                   </p>
                 </section>
 
@@ -238,9 +361,14 @@ function CoursePart() {
                           <div className="learners-empty">No weeks available for this course.</div>
                         ) : (
                           weeks.map((week, wi) => (
-                            <button key={`${week}-${wi}`} type="button" className={`learners-course-week${wi === 0 ? ' active' : ''}`}>
-                              <span>{week}</span>
-                              {wi === 0 && <img src={arrowUpRight} alt="Current" />}
+                            <button
+                              key={week.id || wi}
+                              type="button"
+                              className={`learners-course-week${wi === activeWeekIndex ? ' active' : ''}`}
+                              onClick={() => setActiveWeekIndex(wi)}
+                            >
+                              <span>Week {week.week_number || (wi + 1)}</span>
+                              {wi === activeWeekIndex && <img src={arrowUpRight} alt="Current" />}
                             </button>
                           ))
                         )}
@@ -270,27 +398,133 @@ function CoursePart() {
                               </div>
                             </article>
                           ))
-                        ) : syllabusItems.length === 0 ? (
-                          <div className="learners-empty">No syllabus items available.</div>
+                        ) : activeChapters.length === 0 ? (
+                          <div className="learners-empty">No chapters available for this week.</div>
                         ) : (
-                          syllabusItems.map((item) => (
-                            <article key={`${item.id}-${item.title || ''}`} className="learners-course-specific-syllabus-item">
-                              <div className="learners-course-specific-step">
-                                <span>{item.id}</span>
+                          <div style={{ position: 'relative' }}>
+                            <div className={!isEnrolled ? "blur-locked-syllabus" : ""} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                              {activeChapters.map((ch, idx) => {
+                                const isExpanded = !!expandedChapters[ch.id];
+                                const needsTruncation = ch.intro_message && ch.intro_message.length > 120;
+                                const displayText = needsTruncation && !isExpanded 
+                                  ? `${ch.intro_message.slice(0, 120)}...` 
+                                  : ch.intro_message || '';
+                                return (
+                                  <article 
+                                    key={ch.id} 
+                                    className="learners-course-specific-syllabus-item"
+                                    style={{ cursor: isEnrolled ? 'pointer' : 'default' }}
+                                    onClick={() => {
+                                      if (isEnrolled) {
+                                        navigate('/academia/learner/read-contents', { state: { courseId: course?.id, chapterId: ch.id } });
+                                      }
+                                    }}
+                                  >
+                                    <div className="learners-course-specific-step">
+                                      {!isEnrolled ? (
+                                        <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                                            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                                          </svg>
+                                        </span>
+                                      ) : (
+                                        <span>{idx + 1}</span>
+                                      )}
+                                    </div>
+                                    <div className="learners-course-specific-syllabus-thumb">
+                                      <img src={ch.thumbnail ? resolveAssetUrl(ch.thumbnail) : acOn} alt={ch.title} />
+                                    </div>
+                                    <div className="learners-course-specific-syllabus-copy">
+                                      <h4>{ch.title}</h4>
+                                      <p>
+                                        {displayText}
+                                        {needsTruncation && (
+                                          <button 
+                                            type="button" 
+                                            onClick={(e) => {
+                                              e.preventDefault();
+                                              e.stopPropagation();
+                                              setExpandedChapters(prev => ({ ...prev, [ch.id]: !isExpanded }));
+                                            }}
+                                            style={{
+                                              background: 'none',
+                                              border: 'none',
+                                              color: '#5B0A86',
+                                              fontWeight: 600,
+                                              marginLeft: '6px',
+                                              padding: 0,
+                                              fontSize: '11px',
+                                              cursor: 'pointer',
+                                              textDecoration: 'underline'
+                                            }}
+                                          >
+                                            {isExpanded ? 'Read less' : 'Read more'}
+                                          </button>
+                                        )}
+                                      </p>
+                                    </div>
+                                  </article>
+                                );
+                              })}
+                            </div>
+                            
+                            {!isEnrolled && (
+                              <div className="learners-syllabus-lock-overlay" style={{
+                                position: 'absolute',
+                                inset: 0,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                background: 'rgba(255, 255, 255, 0.4)',
+                                backdropFilter: 'blur(1px)',
+                                borderRadius: '12px',
+                                zIndex: 5,
+                                padding: '24px',
+                                textAlign: 'center'
+                              }}>
+                                <div style={{
+                                  background: '#fff',
+                                  border: '1px solid #E2E8F0',
+                                  borderRadius: '12px',
+                                  padding: '24px 32px',
+                                  maxWidth: '400px',
+                                  boxShadow: '0 10px 15px -3px rgba(15, 23, 42, 0.08)',
+                                  display: 'flex',
+                                  flexDirection: 'column',
+                                  alignItems: 'center'
+                                }}>
+                                  <div style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    width: '40px',
+                                    height: '40px',
+                                    borderRadius: '50%',
+                                    background: 'rgba(121, 40, 202, 0.08)',
+                                    color: '#450468',
+                                    marginBottom: '16px'
+                                  }}>
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                                      <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                                    </svg>
+                                  </div>
+                                  <h4 style={{ fontSize: '16px', fontWeight: 700, margin: '0 0 8px 0', color: '#0F172A', fontFamily: 'Inter, sans-serif' }}>Curriculum Content Locked</h4>
+                                  <p style={{ fontSize: '13px', color: '#64748B', margin: '0 0 16px 0', lineHeight: 1.4, fontFamily: 'Inter, sans-serif' }}>Enroll in the course to unlock chapters, reading contents, exercise questions, and assessments.</p>
+                                  <button 
+                                    type="button" 
+                                    className="learners-btn learners-btn-primary" 
+                                    style={{ width: '100%', padding: '10px 16px', fontSize: '13px' }}
+                                    onClick={handleJoinToday}
+                                    disabled={isEnrolling}
+                                  >
+                                    <span>{isEnrolling ? 'Joining...' : 'Unlock Content'}</span>
+                                  </button>
+                                </div>
                               </div>
-                              <div className="learners-course-specific-syllabus-thumb">
-                                <img src={item.image} alt={item.title} />
-                              </div>
-                              <div className="learners-course-specific-syllabus-copy">
-                                <h4>{item.title}</h4>
-                                {item.description ? <p>{item.description}</p> : null}
-                                <a className="learners-course-specific-syllabus-link" href="/academia/learner/read-contents" onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigate('/academia/learner/read-contents', { state: { courseId: course?.id, chapterId: item.id } }); }}>
-                                  <span>Open course contents</span>
-                                  <img src={arrowUpRight} alt="Open course contents" />
-                                </a>
-                              </div>
-                            </article>
-                          ))
+                            )}
+                          </div>
                         )}
                       </div>
                     </div>
@@ -335,7 +569,18 @@ function CoursePart() {
               </div>
 
               {hasSyllabus ? (
-                <a className="learners-course-specific-cta learners-course-specific-cta-secondary" href="/academia/learner/read-contents" onClick={(e) => { e.preventDefault(); navigate('/academia/learner/read-contents', { state: { courseId: course?.id } }); }}>
+                <a 
+                  className="learners-course-specific-cta learners-course-specific-cta-secondary" 
+                  href="/academia/learner/read-contents" 
+                  onClick={(e) => { 
+                    e.preventDefault(); 
+                    if (isEnrolled) {
+                      navigate('/academia/learner/read-contents', { state: { courseId: course?.id } }); 
+                    } else {
+                      handleJoinToday(e);
+                    }
+                  }}
+                >
                   <span>Course contents</span>
                   <img src={playIcon} alt="Course contents" />
                 </a>
@@ -345,10 +590,17 @@ function CoursePart() {
                 </div>
               )}
 
-              <button type="button" className="learners-course-specific-cta" onClick={(e) => e.preventDefault()}>
-                <span>Join Today</span>
-                <img src={jo1} alt="Join" />
-              </button>
+              {isEnrolled ? (
+                <button type="button" className="learners-course-specific-cta" onClick={() => navigate(`/academia/learner/read-contents?id=${course.id}`, { state: { courseId: course.id } })}>
+                  <span>Go to Course</span>
+                  <img src={arrowUpRight} alt="Go" />
+                </button>
+              ) : (
+                <button type="button" className="learners-course-specific-cta" onClick={handleJoinToday} disabled={isEnrolling}>
+                  <span>{isEnrolling ? 'Joining...' : 'Join Today'}</span>
+                  <img src={jo1} alt="Join" />
+                </button>
+              )}
             </div>
           </aside>
         </div>
@@ -407,6 +659,11 @@ function CoursePart() {
           </div>
         </section>
       </section>
+      {toast.visible && (
+        <div className={`toast-notification is-${toast.tone}`} role="alert" aria-live="assertive">
+          <span>{toast.message}</span>
+        </div>
+      )}
     </section>
   );
 }

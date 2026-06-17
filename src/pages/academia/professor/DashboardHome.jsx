@@ -411,7 +411,7 @@ const DashboardHome = () => {
               <div className="prof-quick-actions">
                 <button type="button" onClick={() => handleQuickAction('/academia/professor/prepare-course')}><span><img src="/assets/icons/ed.svg" alt="" /></span>Prepare Course</button>
                 <button type="button" onClick={() => handleQuickAction('/academia/professor/assignments')}><span><img src="/assets/icons/ed.svg" alt="" /></span>Create Test</button>
-                <button type="button" onClick={() => handleQuickAction('/academia/professor/management')}><span><img src="/assets/icons/ed.svg" alt="" /></span>Prepare Syllabus</button>
+                <button type="button" onClick={() => handleQuickAction('/academia/professor/prepare-syllabus')}><span><img src="/assets/icons/ed.svg" alt="" /></span>Prepare Syllabus</button>
                 <button type="button" onClick={() => handleQuickAction('/academia/professor/performance')}><span><img src="/assets/icons/ed.svg" alt="" /></span>Payment History</button>
               </div>
             </div>

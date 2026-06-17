@@ -6,7 +6,8 @@ import './management-student-qa.css';
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 const managementTabs = [
-  { id: 'management', label: 'Students' },
+  { id: 'management', label: 'Courses' },
+  { id: 'management-syllabuses', label: 'Syllabuses' },
   { id: 'management-schedule', label: 'Schedule' },
   { id: 'management-lessons-ranks', label: 'Lessons Ranks' },
   { id: 'management-student-qa', label: 'Student Q&A' },

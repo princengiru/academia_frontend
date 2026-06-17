@@ -1,22 +1,22 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import ProfessorLayout from '../../../components/layouts/ProfessorLayout/ProfessorLayout';
 import './prepare-course.css';
 
 // Import all the separated steps
 import BasicInfo from './prepare/BasicInfo';
-import Syllabus from './prepare/Syllabus';
 import Curriculum from './prepare/Curriculum';
 import Pricing from './prepare/Pricing';
 import Review from './prepare/Review';
 
 const PrepareCourse = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const feedbackTimerRef = useRef(null);
 
   // --- Central State ---
   const [activeStep, setActiveStep] = useState('basic');
-  const [courseId, setCourseId] = useState(null); 
+  const [courseId, setCourseId] = useState(location.state?.courseId || null); 
   const [syllabusId, setSyllabusId] = useState(null);
   const [feedback, setFeedback] = useState({ message: '', tone: 'success', visible: false });
 
@@ -34,7 +34,7 @@ const PrepareCourse = () => {
     };
   }, []);
 
-  const stepOrder = ['basic', 'syllabus', 'weeks', 'pricing', 'review'];
+  const stepOrder = ['basic', 'weeks', 'pricing', 'review'];
   const getStepIcon = (stepName) => {
     const currentIndex = stepOrder.indexOf(activeStep);
     const thisIndex = stepOrder.indexOf(stepName);
@@ -77,34 +77,44 @@ const PrepareCourse = () => {
           <div className={`prof-prepare-card prof-step-${activeStep}`}>
             <div className="prof-prepare-card-head">
               <h2>Course Builder Workspace</h2>
+              <span className="prof-prepare-card-subtitle">Complete all steps to launch your new program.</span>
             </div>
 
-            <div className="prof-prepare-steps" aria-label="Steps" style={{ gridTemplateColumns: 'repeat(5, 1fr)' }}>
-              <div className={`prof-prepare-step ${activeStep === 'basic' ? 'is-active' : ''}`}>
-                <img className="prof-prepare-step-icon" src={getStepIcon('basic')} alt="" />
-                <span>1. Course Profile</span>
-              </div>
-              <div className={`prof-prepare-step ${activeStep === 'syllabus' ? 'is-active' : ''}`}>
-                <img className="prof-prepare-step-icon" src={getStepIcon('syllabus')} alt="" />
-                <span>2. Public Syllabus</span>
-              </div>
-              <div className={`prof-prepare-step ${activeStep === 'weeks' ? 'is-active' : ''}`}>
-                <img className="prof-prepare-step-icon" src={getStepIcon('weeks')} alt="" />
-                <span>3. Curriculum Builder</span>
-              </div>
-              <div className={`prof-prepare-step ${activeStep === 'pricing' ? 'is-active' : ''}`}>
-                <img className="prof-prepare-step-icon" src={getStepIcon('pricing')} alt="" />
-                <span>4. Pricing</span>
-              </div>
-              <div className={`prof-prepare-step ${activeStep === 'review' ? 'is-active' : ''}`}>
-                <img className="prof-prepare-step-icon" src={getStepIcon('review')} alt="" />
-                <span>5. Review & Publish</span>
-              </div>
+            <div className="prof-prepare-steps" aria-label="Steps">
+              {stepOrder.map((step, idx) => {
+                const isActive = activeStep === step;
+                const isCompleted = stepOrder.indexOf(activeStep) > stepOrder.indexOf(step);
+                const stepNames = {
+                  basic: 'Course Profile',
+                  weeks: 'Curriculum Builder',
+                  pricing: 'Pricing',
+                  review: 'Review & Publish'
+                };
+                return (
+                  <div 
+                    key={step} 
+                    className={`prof-prepare-step ${isActive ? 'is-active' : ''} ${isCompleted ? 'is-completed' : ''}`}
+                    onClick={() => {
+                      if (courseId || step === 'basic') {
+                        setActiveStep(step);
+                      }
+                    }}
+                  >
+                    <div className="prof-step-number-bubble">
+                      {isCompleted ? (
+                        <svg className="prof-step-check-svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                      ) : idx + 1}
+                    </div>
+                    <span className="prof-step-label">{stepNames[step]}</span>
+                  </div>
+                );
+              })}
             </div>
 
-            <div className="prof-prepare-body" style={{ padding: '32px' }}>
+            <div className="prof-prepare-body">
               {activeStep === 'basic' && <BasicInfo {...stepProps} />}
-              {activeStep === 'syllabus' && <Syllabus {...stepProps} />}
               {activeStep === 'weeks' && <Curriculum {...stepProps} />}
               {activeStep === 'pricing' && <Pricing {...stepProps} />}
               {activeStep === 'review' && <Review {...stepProps} />}

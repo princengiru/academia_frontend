@@ -12,7 +12,8 @@ const ManagementLessonsRanks = () => {
   // --- Tab State ---
   const [activeTab] = useState('management-lessons-ranks');
   const managementTabs = [
-    { id: 'management', label: 'Students' },
+    { id: 'management', label: 'Courses' },
+    { id: 'management-syllabuses', label: 'Syllabuses' },
     { id: 'management-schedule', label: 'Schedule' },
     { id: 'management-lessons-ranks', label: 'Lessons Ranks' },
     { id: 'management-student-qa', label: 'Student Q&A' },

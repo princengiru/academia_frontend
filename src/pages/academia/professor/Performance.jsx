@@ -24,6 +24,7 @@ const Performance = () => {
   // --- Global UI State ---
   const [analytics, setAnalytics] = useState(null);
   const [analyticsLoading, setAnalyticsLoading] = useState(true);
+
   
   const [events, setEvents] = useState([]);
   const [eventsLoading, setEventsLoading] = useState(true);
@@ -38,6 +39,9 @@ const Performance = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedRowIds, setSelectedRowIds] = useState(() => new Set());
   const selectAllRef = useRef(null);
+
+  // --- Chart UI State ---
+  const [chartPeriod, setChartPeriod] = useState('Monthly');
 
   // --- Fetch Analytics (Stats & Charts) ---
   useEffect(() => {

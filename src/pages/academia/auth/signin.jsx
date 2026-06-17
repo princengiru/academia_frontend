@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 // Assets (Update paths to match your React project structure)
 import googleIcon from '../../../assets/icons/google.svg';
@@ -10,6 +10,7 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 function AcademiaSignIn() {
   const navigate = useNavigate();
+  const location = useLocation();
   
   // --- Standardized State ---
   const [email, setEmail] = useState('');
@@ -17,7 +18,7 @@ function AcademiaSignIn() {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(location.state?.error || new URLSearchParams(location.search).get('error') || '');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -39,7 +40,7 @@ function AcademiaSignIn() {
       const data = await response.json();
 
       if (!response.ok) {
-        setError(data.message || 'Invalid email or password.');
+        setError(data.error?.message || data.message || 'Invalid email or password.');
         setIsLoading(false);
         return;
       }

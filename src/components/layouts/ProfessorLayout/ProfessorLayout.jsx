@@ -25,6 +25,7 @@ const ProfessorLayout = ({ children, currentPage }) => {
   });
   const [profileCompletion, setProfileCompletion] = useState(0);
   const [profileError, setProfileError] = useState('');
+  const [isSuspended, setIsSuspended] = useState(false);
 
   const openLogoutModal = (event) => {
     if (event && event.preventDefault) event.preventDefault();
@@ -104,10 +105,19 @@ const ProfessorLayout = ({ children, currentPage }) => {
           },
         });
 
+        if (response.status === 403) {
+          localStorage.clear();
+          navigate('/academia/auth/signin', {
+            replace: true,
+            state: { error: 'This account has been deactivated. Please contact support.' }
+          });
+          return;
+        }
+
         const data = await response.json();
 
         if (!response.ok) {
-          throw new Error(data.message || 'Failed to load profile');
+          throw new Error(data.error?.message || data.message || 'Failed to load profile');
         }
 
         if (!mounted) return;
@@ -134,8 +144,11 @@ const ProfessorLayout = ({ children, currentPage }) => {
 
     loadProfile();
 
+    const interval = setInterval(loadProfile, 30000);
+
     return () => {
       mounted = false;
+      clearInterval(interval);
     };
   }, []);
 
@@ -159,6 +172,34 @@ const ProfessorLayout = ({ children, currentPage }) => {
 
   if (!token) {
     return <Navigate to="/academia/auth/signin" replace />;
+  }
+
+  if (isSuspended) {
+    return (
+      <div className="modal-overlay" role="dialog" aria-modal="true" aria-label="Account Suspended">
+        <div className="logout-modal suspension-modal" style={{ borderTop: '4px solid #EF4444' }}>
+          <h4 style={{ color: '#EF4444', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '20px' }}>⚠️</span> Account Deactivated
+          </h4>
+          <p style={{ marginTop: '12px', lineHeight: '1.5' }}>
+            Your account has been deactivated or suspended. You can no longer access this platform. Please contact support if you believe this is an error.
+          </p>
+          <div className="logout-modal-buttons" style={{ marginTop: '20px' }}>
+            <button 
+              type="button" 
+              className="logout-confirm" 
+              style={{ background: '#EF4444', color: '#fff', width: '100%', padding: '10px' }} 
+              onClick={() => {
+                localStorage.clear();
+                navigate('/academia/auth/signin');
+              }}
+            >
+              Return to Sign In
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (

@@ -170,12 +170,19 @@ function AcademiasCourses() {
     const loadCourses = async () => {
       try {
         setCoursesLoading(true);
-        const coursesRes = await fetch(`${API_BASE_URL}/api/courses?page=${currentPage}&limit=${COURSES_PAGE_SIZE}`);
+
+        // Alternatively, you can use /api/courses/public/available
+        const coursesRes = await fetch(`${API_BASE_URL}/api/courses/public/available?page=${currentPage}&limit=${COURSES_PAGE_SIZE}`);
+        
         const coursesBody = await coursesRes.json().catch(() => ({}));
 
         if (mounted) {
-          const list = Array.isArray(coursesBody?.data) ? coursesBody.data : (Array.isArray(coursesBody) ? coursesBody : []);
-          const pagination = coursesBody?.pagination || {};
+          const list = Array.isArray(coursesBody?.data?.data)
+            ? coursesBody.data.data
+            : (Array.isArray(coursesBody?.data)
+              ? coursesBody.data
+              : (Array.isArray(coursesBody) ? coursesBody : []));
+          const pagination = coursesBody?.data?.pagination || coursesBody?.pagination || {};
           const pages = Number(pagination.pages || pagination.total_pages || 1) || 1;
 
           setCoursesData(list);
@@ -200,6 +207,7 @@ function AcademiasCourses() {
 
     return () => { mounted = false; };
   }, [API_BASE_URL, currentPage]);
+
 
   // --- Data Fetching: Stories ---
   useEffect(() => {

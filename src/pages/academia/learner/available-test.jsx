@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import LearnersPageShell from './LearnersPageShell';
 
 // Icons & Images
@@ -14,6 +14,7 @@ import acLock from '../../../assets/icons/ac-lock.svg';
 import './available-test.css';
 
 function LearnersAvailableTest() {
+  const navigate = useNavigate();
   const preventDefault = (e) => e.preventDefault();
 
   // No static slate fallback — rely on backend data only
@@ -30,6 +31,7 @@ function LearnersAvailableTest() {
   const extractList = (body) => {
     if (!body) return [];
     if (Array.isArray(body)) return body;
+    if (Array.isArray(body.data?.assessments)) return body.data.assessments;
     if (Array.isArray(body.data?.data)) return body.data.data;
     if (Array.isArray(body.data?.items)) return body.data.items;
     if (Array.isArray(body.data)) return body.data;
@@ -39,8 +41,7 @@ function LearnersAvailableTest() {
   useEffect(() => {
     let cancelled = false;
     const tryEndpoints = [
-      `${API_BASE_URL}/api/tests/public/available?page=${page}&limit=${limit}`,
-      `${API_BASE_URL}/api/tests?page=${page}&limit=${limit}`,
+      `${API_BASE_URL}/api/summative-assessments/public/all?limit=${limit}&offset=${(page - 1) * limit}`,
       `${API_BASE_URL}/api/courses/public/available?page=1&limit=12`,
     ];
 
@@ -56,22 +57,23 @@ function LearnersAvailableTest() {
             if (cancelled) return;
             // map to test shape
             const mapped = list.map((it, idx) => ({
-              id: it.id || it.serverId || idx,
-              title: it.title || it.name || it.course_title || 'Untitled',
-              level: it.level || it.education_level || 'Intermediate',
-              levelTone: (it.level || '').toLowerCase() || 'intermediate',
-              author: it.instructor_name || it.author || 'Academia',
-              summary: it.description || it.summary || '',
-              questions: it.question_count || it.questions || '0',
-              minutes: it.duration_minutes || it.minutes || '0',
-              attempts: it.attempts || '0',
-              score: it.passing_score ? `${it.passing_score}%` : (it.min_score ? `${it.min_score}%` : '0%'),
+              id: it.id || idx,
+              courseId: it.courseId,
+              title: it.title || it.courseName || 'Untitled Test',
+              level: it.minCourseProgress ? `Req. Progress: ${it.minCourseProgress}%` : 'All Levels',
+              levelTone: 'intermediate',
+              author: it.instructor?.name || 'Academia',
+              summary: it.description || it.courseDescription || '',
+              questions: it.totalQuestions || '0',
+              minutes: it.durationMinutes || '0',
+              attempts: it.attemptLimit || '1',
+              score: it.passingScore ? `${it.passingScore}%` : '0%',
             }));
             setTests(mapped);
             // attempt to extract pagination meta
-            const meta = body?.data?.meta || body?.meta || {};
-            const total = meta.total || meta.total_items || meta.totalItems || meta.count || 0;
-            const totalPages = meta.total_pages || meta.totalPages || (total ? Math.ceil(total / limit) : 1);
+            const meta = body?.data?.pagination || body?.pagination || {};
+            const total = meta.total || 0;
+            const totalPages = meta.pages || (total ? Math.ceil(total / limit) : 1);
             setPageCount(totalPages || 1);
             break;
           }
@@ -254,7 +256,11 @@ function LearnersAvailableTest() {
                       </div>
                     </div>
 
-                    <button type="button" className="learners-available-test-cta" onClick={preventDefault}>
+                    <button 
+                      type="button" 
+                      className="learners-available-test-cta" 
+                      onClick={() => navigate('/academia/learner/course-part', { state: { courseId: husk.courseId } })}
+                    >
                       Enroll Test
                     </button>
                   </article>

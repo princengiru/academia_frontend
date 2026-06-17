@@ -9,7 +9,6 @@ const Review = ({ courseId, setActiveStep, pushFeedback }) => {
   const [isLoading, setIsLoading] = useState(true);
   
   const [courseData, setCourseData] = useState(null);
-  const [syllabusOutlines, setSyllabusOutlines] = useState([]);
   const [chapters, setChapters] = useState([]);
 
   useEffect(() => {
@@ -29,26 +28,6 @@ const Review = ({ courseId, setActiveStep, pushFeedback }) => {
         const course = courseJson.data || courseJson;
         setCourseData(course);
         setChapters(course.chapters || []);
-
-        // 2. Fetch Syllabus Outlines from DB (linked via course.syllabus_id or course_id on syllabus)
-        let sId = course.syllabus_id || course.syllabus?.id;
-        let sylJson = null;
-
-        if (sId) {
-          const sylRes = await fetch(`${API_BASE_URL}/api/syllabuses/${sId}`, {
-            headers: { Authorization: `Bearer ${token}` }
-          });
-          sylJson = await sylRes.json();
-        } else {
-          const linkedRes = await fetch(`${API_BASE_URL}/api/courses/${courseId}/syllabus`, {
-            headers: { Authorization: `Bearer ${token}` }
-          });
-          if (linkedRes.ok) {
-            sylJson = await linkedRes.json();
-          }
-        }
-
-        setSyllabusOutlines(sylJson?.data?.outlines || sylJson?.outlines || []);
       } catch (error) {
         console.error(error);
         pushFeedback("Could not load full course summary from database.", "error");
@@ -81,17 +60,23 @@ const Review = ({ courseId, setActiveStep, pushFeedback }) => {
 
   if (isLoading) {
     return (
-      <div className="prof-step-pane is-active">
-        <p style={{ color: '#64748B' }}>Loading final course summary from the database...</p>
+      <div className="prof-step-pane is-active prof-review-loading-pane">
+        <div className="prof-review-spinner"></div>
+        <p>Loading final course summary from the database...</p>
       </div>
     );
   }
 
   if (!courseData) {
     return (
-      <div className="prof-step-pane is-active">
-        <p style={{ color: '#EF4444', marginBottom: '1rem' }}>No course data found in the database. Please go back to Step 1.</p>
-        <button type="button" className="btn btn-outline-secondary" onClick={() => setActiveStep('basic')} style={{ padding: '8px 16px', borderRadius: '6px' }}>
+      <div className="prof-step-pane is-active prof-review-empty-pane">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="8" x2="12" y2="12"/>
+          <line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        <p>No course data found in the database. Please go back to Step 1.</p>
+        <button type="button" className="prof-btn-back-premium" onClick={() => setActiveStep('basic')}>
           &larr; Go to Step 1
         </button>
       </div>
@@ -99,80 +84,81 @@ const Review = ({ courseId, setActiveStep, pushFeedback }) => {
   }
 
   return (
-    <div className="prof-step-pane is-active">
-      <div style={{ background: '#F8FAFC', padding: '2rem', borderRadius: '12px', border: '1px solid #E2E8F0' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '2rem' }}>
-          <div>
-            <h3 style={{ marginTop: 0, color: '#0F172A', marginBottom: '8px', fontSize: '1.5rem' }}>
-              {courseData.title || 'Untitled Course'}
-            </h3>
-            <span style={{ display: 'inline-block', background: '#E0E7FF', color: '#166534', padding: '4px 12px', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 600 }}>
-              Ready to Publish
-            </span>
-          </div>
-          <div style={{ textAlign: 'right' }}>
-            <strong style={{ display: 'block', fontSize: '1.5rem', color: '#450468' }}>
-              {Number(courseData.price) === 0 ? 'FREE' : `${courseData.price} ${courseData.currency || 'USD'}`}
-            </strong>
-            <span style={{ color: '#64748B', fontSize: '0.85rem' }}>
-              {courseData.category || 'Category'} ({courseData.education_level || 'Level'})
-            </span>
-          </div>
-        </div>
+    <div className="prof-step-pane is-active animate-fade-in">
+      <div className="prof-review-container">
         
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '2rem', padding: '1.5rem', background: '#fff', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
-          <div>
-            <strong style={{ display: 'block', fontSize: '0.85rem', color: '#64748B', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              Duration
-            </strong>
-            <span style={{ color: '#0F172A', fontWeight: 500 }}>{courseData.duration_weeks} Weeks</span>
+        {/* Course Card Preview Mockup */}
+        <div className="prof-review-card-mockup">
+          <div className="prof-review-card-header">
+            <div className="prof-review-header-details">
+              <h3>{courseData.title || 'Untitled Course'}</h3>
+              <span className="prof-review-status-badge">Ready to Publish</span>
+            </div>
+            <div className="prof-review-header-pricing">
+              <strong className="prof-review-price-value">
+                {Number(courseData.price) === 0 ? 'FREE' : `${courseData.price} ${courseData.currency || 'USD'}`}
+              </strong>
+              <span className="prof-review-meta-tag">
+                {courseData.category || 'Category'} &bull; {courseData.education_level || 'Level'}
+              </span>
+            </div>
           </div>
-          <div>
-            <strong style={{ display: 'block', fontSize: '0.85rem', color: '#64748B', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              Commitment
-            </strong>
-            <span style={{ color: '#0F172A', fontWeight: 500 }}>{courseData.required_hours_per_week} Hours / Week</span>
+          
+          <div className="prof-review-metrics-grid">
+            <div className="prof-review-metric-item">
+              <strong className="prof-review-metric-label">Duration</strong>
+              <span className="prof-review-metric-val">{courseData.duration_weeks} Weeks</span>
+            </div>
+            <div className="prof-review-metric-item">
+              <strong className="prof-review-metric-label">Commitment</strong>
+              <span className="prof-review-metric-val">{courseData.required_hours_per_week} Hours / Week</span>
+            </div>
           </div>
-        </div>
 
-        <h4 style={{ margin: '0 0 1rem 0', color: '#0F172A', borderBottom: '2px solid #E2E8F0', paddingBottom: '8px' }}>
-          Syllabus Overview ({syllabusOutlines.length} Topics)
-        </h4>
-        <ul style={{ margin: '0 0 1.5rem 0', paddingLeft: '1.2rem', color: '#475569' }}>
-          {syllabusOutlines.length > 0 ? (
-            syllabusOutlines.map((o, i) => <li key={i} style={{ marginBottom: '8px' }}>{o.title}</li>)
-          ) : (
-            <li>No public topics found in database.</li>
-          )}
-        </ul>
 
-        <h4 style={{ margin: '0 0 1rem 0', color: '#0F172A' }}>
-          Curriculum Snapshot ({chapters.length} Chapters)
-        </h4>
-        <ul style={{ margin: '0 0 1.5rem 0', paddingLeft: '1.2rem', color: '#475569' }}>
-          {chapters.length > 0 ? (
-            chapters.slice(0, 3).map((chap, i) => (
-              <li key={i} style={{ marginBottom: '8px' }}>
-                Week {chap.week_number}: {chap.title}
+
+          <h4 className="prof-review-section-title">
+            Curriculum Snapshot <span>({chapters.length} Chapters)</span>
+          </h4>
+          <ul className="prof-review-list">
+            {chapters.length > 0 ? (
+              chapters.slice(0, 3).map((chap, i) => (
+                <li key={i}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                  <span>Week {chap.week_number}: {chap.title}</span>
+                </li>
+              ))
+            ) : (
+              <li className="is-empty-item">No chapters found in curriculum database.</li>
+            )}
+            {chapters.length > 3 && (
+              <li className="prof-review-list-more">
+                ...and {chapters.length - 3} more chapters in syllabus.
               </li>
-            ))
-          ) : (
-            <li>No chapters found in database.</li>
-          )}
-          {chapters.length > 3 && <li style={{ fontStyle: 'italic' }}>...and {chapters.length - 3} more chapters.</li>}
-        </ul>
+            )}
+          </ul>
 
-        <div style={{ padding: '16px', background: '#FEF3C7', border: '1px solid #FCD34D', borderRadius: '8px', color: '#92400E', fontSize: '0.9rem' }}>
-          <strong>Note:</strong> Once published, students will immediately be able to enroll in this course. You can still add more chapters and weeks later through your dashboard.
+          <div className="prof-review-notice-box">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="16" x2="12" y2="12"/>
+              <line x1="12" y1="9" x2="12.01" y2="9"/>
+            </svg>
+            <p>
+              Once published, students will immediately be able to view and enroll in this course. You can still append new weeks or edit chapters later through your professor dashboard.
+            </p>
+          </div>
         </div>
       </div>
 
-      <div className="prof-lesson-actions-row" style={{ display: 'flex', gap: '16px', marginTop: '32px' }}>
-        <button type="button" className="btn btn-outline-secondary" onClick={() => setActiveStep('pricing')} style={{ flex: 1, padding: '14px', borderRadius: '8px', fontWeight: 600, cursor: 'pointer' }}>
+      <div className="prof-actions-footer-premium">
+        <button type="button" className="prof-btn-back-premium" onClick={() => setActiveStep('pricing')}>
           Go Back
         </button>
-        <button type="button" className="btn btn-primary" onClick={publishCourse} disabled={isPublishing} style={{ flex: 3, background: '#22C55E', color: '#fff', padding: '14px', borderRadius: '8px', border: 'none', fontWeight: 600, fontSize: '1.1rem', cursor: 'pointer' }}>
-          {isPublishing ? 'Publishing to Database...' : 'Launch Course!'}
+        <button type="button" className="prof-btn-launch-premium" onClick={publishCourse} disabled={isPublishing}>
+          {isPublishing ? 'Launching Course...' : 'Launch Course Now!'}
         </button>
       </div>
     </div>

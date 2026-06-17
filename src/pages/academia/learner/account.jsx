@@ -10,7 +10,7 @@ import fileIcon from '../../../assets/icons/file.svg';
 import pdfIcon from '../../../assets/icons/pdf1.svg';
 
 import trashIcon from '../../../assets/icons/trash.svg';
-import xIcon from '../../../assets/icons/dX.svg';
+import xIcon from '../../../assets/icons/hoacancel.svg';
 import plusIcon from '../../../assets/icons/plus1.svg';
 
 import twoFa1Icon from '../../../assets/icons/2fa1.svg';

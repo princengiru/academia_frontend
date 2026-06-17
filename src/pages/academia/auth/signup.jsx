@@ -66,13 +66,14 @@ function AcademiaSignUp() {
           email,
           password,
           role,
+          is_active: role === 'instructor' ? 0 : 1, 
         }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        setError(data.message || 'Registration failed');
+        setError(data.error?.message || data.message || 'Registration failed');
         setIsLoading(false);
         return;
       }
@@ -89,6 +90,8 @@ function AcademiaSignUp() {
         if (role === 'student') {
           navigate('/academia/learner/settings', { replace: true });
         } else {
+          // If they are an instructor (is_active: 0), you might want to route them 
+          // to a specific "Pending Approval" page rather than the index, depending on your flow.
           navigate('/academia/index', { replace: true });
         }
       }, 500);

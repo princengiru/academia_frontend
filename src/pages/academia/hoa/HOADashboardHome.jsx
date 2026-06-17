@@ -92,10 +92,11 @@ const HOADashboardHome = () => {
       const token = localStorage.getItem('token');
       const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
 
-      const [statsRes, syllabusesRes, coursesRes] = await Promise.all([
+      const [statsRes, syllabusesRes, coursesRes, projectsRes] = await Promise.all([
         fetch(`${API_BASE_URL}/api/dashboard/metrics`, { headers }).catch(() => null),
         fetch(`${API_BASE_URL}/api/syllabuses/admin/pending-approval`, { headers }).catch(() => null),
-        fetch(`${API_BASE_URL}/api/courses/admin/pending-approval`, { headers }).catch(() => null)
+        fetch(`${API_BASE_URL}/api/courses/admin/pending-approval`, { headers }).catch(() => null),
+        fetch(`${API_BASE_URL}/api/projects/admin/pending`, { headers }).catch(() => null) // Added Projects
       ]);
 
       if (!mounted) return;
@@ -112,7 +113,13 @@ const HOADashboardHome = () => {
       // Combine Syllabuses
       if (syllabusesRes?.ok) {
         const sylBody = await syllabusesRes.json();
-        const sylArray = Array.isArray(sylBody?.data) ? sylBody.data : (Array.isArray(sylBody) ? sylBody : []);
+        
+        // ADDED: Check for sylBody.data.data
+        const sylArray = Array.isArray(sylBody?.data?.syllabuses) ? sylBody.data.syllabuses 
+                       : Array.isArray(sylBody?.data?.data) ? sylBody.data.data 
+                       : Array.isArray(sylBody?.data) ? sylBody.data 
+                       : (Array.isArray(sylBody) ? sylBody : []);
+                       
         const formattedSyls = sylArray.map(item => ({
           id: item.id || item._id,
           type: 'syllabus',
@@ -133,7 +140,13 @@ const HOADashboardHome = () => {
       // Combine Courses
       if (coursesRes?.ok) {
         const crsBody = await coursesRes.json();
-        const crsArray = Array.isArray(crsBody?.data) ? crsBody.data : (Array.isArray(crsBody) ? crsBody : []);
+        
+        // ADDED: Check for crsBody.data.data
+        const crsArray = Array.isArray(crsBody?.data?.courses) ? crsBody.data.courses 
+                       : Array.isArray(crsBody?.data?.data) ? crsBody.data.data 
+                       : Array.isArray(crsBody?.data) ? crsBody.data 
+                       : (Array.isArray(crsBody) ? crsBody : []);
+                       
         const formattedCrs = crsArray.map(item => ({
           id: item.id || item._id,
           type: 'course',
@@ -149,6 +162,28 @@ const HOADashboardHome = () => {
           title: item.title || item.name || 'Untitled Course'
         }));
         pendingList = [...pendingList, ...formattedCrs];
+      }
+
+
+      // Combine Projects
+      if (projectsRes?.ok) {
+        const projBody = await projectsRes.json();
+        const projArray = Array.isArray(projBody?.data?.projects) ? projBody.data.projects : Array.isArray(projBody?.data) ? projBody.data : (Array.isArray(projBody) ? projBody : []);
+        const formattedProj = projArray.map(item => ({
+          id: item.id || item._id,
+          type: 'project',
+          name: item.user?.name || item.student_name || 'Student',
+          location: item.user?.location || '—',
+          status: 'Pending',
+          statusColor: 'gray',
+          date: new Date(item.created_at || Date.now()).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+          rawDate: item.created_at || Date.now(),
+          role: 'Project',
+          fileCount: item.files?.length || item.images?.length || 1,
+          fileIcon: hoadocfile,
+          title: item.title || 'Untitled Project'
+        }));
+        pendingList = [...pendingList, ...formattedProj];
       }
 
       setApprovalRequests(pendingList);
@@ -175,7 +210,12 @@ const HOADashboardHome = () => {
     try {
       const token = localStorage.getItem('token');
       const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
-      const endpointBase = item.type === 'syllabus' ? `/api/syllabuses/${item.id}/admin` : `/api/courses/${item.id}/admin`;
+      
+      let endpointBase = '';
+      if (item.type === 'syllabus') endpointBase = `/api/syllabuses/${item.id}/admin`;
+      else if (item.type === 'course') endpointBase = `/api/courses/${item.id}/admin`;
+      else if (item.type === 'project') endpointBase = `/api/projects/${item.id}`; // Notice projects don't use /admin at the end
+
       const response = await fetch(`${API_BASE_URL}${endpointBase}/${action}`, { method: 'POST', headers });
       
       if (!response.ok) throw new Error(`Failed to ${action} item.`);

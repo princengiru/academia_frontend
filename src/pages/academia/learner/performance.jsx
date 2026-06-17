@@ -44,12 +44,23 @@ function LearnersPerformance() {
     let cancelled = false;
 
     const loadPerformance = async () => {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setLoading(false);
+        return;
+      }
       setLoading(true);
       try {
         const [performanceRes, certStatsRes, certListRes] = await Promise.allSettled([
-          fetch(`${API_BASE_URL}/api/profile/performance?limit=10&offset=0`),
-          fetch(`${API_BASE_URL}/api/certificates/user/statistics`),
-          fetch(`${API_BASE_URL}/api/certificates/user/my-certificates`),
+          fetch(`${API_BASE_URL}/api/profile/performance?limit=10&offset=0`, {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+          fetch(`${API_BASE_URL}/api/certificates/user/statistics`, {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+          fetch(`${API_BASE_URL}/api/certificates/user/my-certificates`, {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
         ]);
 
         if (cancelled) return;

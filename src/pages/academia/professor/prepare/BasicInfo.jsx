@@ -1,10 +1,10 @@
-import React, { useState, useRef, useMemo } from 'react';
+import React, { useState, useRef, useMemo, useEffect } from 'react';
 import ReactQuill from 'react-quill-new'; 
 import 'react-quill-new/dist/quill.snow.css'; 
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
-const CATEGORIES = [
+const FALLBACK_CATEGORIES = [
   { id: 1, name: 'Web Development' },
   { id: 2, name: 'Mobile Development' },
   { id: 3, name: 'Data Science' },
@@ -12,23 +12,95 @@ const CATEGORIES = [
   { id: 6, name: 'Mathematics and Science' }
 ];
 const LEVELS = ['Beginner', 'Intermediate', 'Advanced'];
+const LANGUAGES = ['English', 'French', 'Spanish', 'Swahili', 'Kinyarwanda'];
 
 const BasicInfo = ({ courseId, setCourseId, setActiveStep, pushFeedback }) => {
   // --- UI & Loading State ---
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [categories, setCategories] = useState(FALLBACK_CATEGORIES);
 
   // --- Form Data State ---
   const [basicInfo, setBasicInfo] = useState({
     title: '',
-    categoryId: CATEGORIES[0].id,
-    categoryName: CATEGORIES[0].name,
+    subtitle: '',
+    description: '',
+    intro_message: '',
+    categoryId: FALLBACK_CATEGORIES[0].id,
+    categoryName: FALLBACK_CATEGORIES[0].name,
     level: LEVELS[0],
+    language: 'English',
     durationWeeks: 4,
     requiredHours: 6,
     audience: '',
     goals: '',
   });
+
+  // Fetch categories from DB
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/categories`);
+        const data = await res.json();
+        if (res.ok && data.success && Array.isArray(data.data)) {
+          const filtered = data.data.filter(cat => cat.type === 'course' || cat.type === 'general');
+          setCategories(filtered);
+          if (filtered.length > 0) {
+            setBasicInfo(prev => {
+              if (!prev.categoryId || prev.categoryId === FALLBACK_CATEGORIES[0].id) {
+                return {
+                  ...prev,
+                  categoryId: filtered[0].id,
+                  categoryName: filtered[0].name
+                };
+              }
+              return prev;
+            });
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching categories:", err);
+      }
+    };
+    fetchCategories();
+  }, []);
+
+  // Fetch course details if courseId exists
+  useEffect(() => {
+    if (!courseId) return;
+    const fetchCourse = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(`${API_BASE_URL}/api/courses/${courseId}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (res.ok && data.data) {
+          const course = data.data;
+          setBasicInfo({
+            title: course.title || '',
+            subtitle: course.subtitle || '',
+            description: course.description || '',
+            intro_message: course.intro_message || '',
+            categoryId: course.category_id || FALLBACK_CATEGORIES[0].id,
+            categoryName: course.category || FALLBACK_CATEGORIES[0].name,
+            level: course.level ? (course.level.charAt(0).toUpperCase() + course.level.slice(1)) : LEVELS[0],
+            language: course.language || 'English',
+            durationWeeks: course.duration_weeks || 4,
+            requiredHours: course.required_hours_per_week || 6,
+            audience: course.target_audience || '',
+            goals: course.objectives || '',
+          });
+          if (course.thumbnail_url) {
+            setCourseThumbnailPreview(course.thumbnail_url.startsWith('http') ? course.thumbnail_url : `${API_BASE_URL}${course.thumbnail_url}`);
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching course details:", err);
+      }
+    };
+    fetchCourse();
+  }, [courseId]);
 
   // --- File Upload State ---
   const [courseThumbnail, setCourseThumbnail] = useState(null);
@@ -104,10 +176,14 @@ const BasicInfo = ({ courseId, setCourseId, setActiveStep, pushFeedback }) => {
       // ---------------------------------------------------------
       const payload = {
         title: basicInfo.title,
+        subtitle: basicInfo.subtitle,
+        description: basicInfo.description,
+        intro_message: basicInfo.intro_message,
         category_id: Number(basicInfo.categoryId),
         category: basicInfo.categoryName,
         level: basicInfo.level.toLowerCase(),
         education_level: basicInfo.level,
+        language: basicInfo.language,
         duration_weeks: Number(basicInfo.durationWeeks),
         required_hours_per_week: Number(basicInfo.requiredHours),
         target_audience: basicInfo.audience,
@@ -159,7 +235,7 @@ const BasicInfo = ({ courseId, setCourseId, setActiveStep, pushFeedback }) => {
       }
       
       pushFeedback('Course basics saved successfully.', 'success');
-      setActiveStep('syllabus'); 
+      setActiveStep('weeks'); 
 
     } catch (error) { 
       pushFeedback(error.message, 'error'); 
@@ -169,95 +245,111 @@ const BasicInfo = ({ courseId, setCourseId, setActiveStep, pushFeedback }) => {
   };
 
   // Destructure for cleaner HTML below
-  const { title, categoryName, level, durationWeeks, requiredHours, audience, goals } = basicInfo;
+  const { title, subtitle, description, intro_message, categoryName, level, language, durationWeeks, requiredHours, audience, goals } = basicInfo;
 
   return (
     <div className="prof-step-pane is-active animate-fade-in">
       
-      <div style={{ marginBottom: '2rem' }}>
-        <h3 style={{ fontSize: '1.2rem', color: '#0F172A', marginBottom: '8px' }}>Course Marketing Profile</h3>
-        <p style={{ color: '#64748B', fontSize: '0.9rem' }}>
+      <div className="prof-step-header">
+        <h3>Course Marketing Profile</h3>
+        <p>
           This information will be visible on the public course landing page. Make it compelling to attract students.
         </p>
       </div>
 
       {/* --- IMAGE UPLOAD --- */}
       <div className="prof-field-group">
-        <label style={{ display: 'block', color: '#0F172A', fontWeight: 500, marginBottom: '8px' }}>
-          Course Cover Image
-        </label>
-        <div 
-          className="prof-upload-dropzone" 
-          style={{ 
-            border: `2px dashed ${isDragging ? '#450468' : '#CBD5E1'}`, 
-            background: isDragging ? '#F3E8FF' : '#fff', 
-            borderRadius: '8px', 
-            padding: '16px', 
-            cursor: 'pointer', 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: '16px', 
-            marginBottom: '1.5rem',
-            transition: 'all 0.2s ease-in-out'
-          }}
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
-          onClick={() => courseFileInputRef.current?.click()}
-        >
-          <input 
-            type="file" 
-            ref={courseFileInputRef} 
-            style={{ display: 'none' }} 
-            accept="image/png, image/jpeg, image/webp" 
-            onChange={(e) => { if (e.target.files?.length) processImageFile(e.target.files[0]) }} 
-          />
-          
-          <div style={{ background: '#F3E8FF', padding: '12px', borderRadius: '8px' }}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#450468" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-              <polyline points="17 8 12 3 7 8"/>
-              <line x1="12" y1="3" x2="12" y2="15"/>
-            </svg>
+        <label className="prof-field-label">Course Cover Image</label>
+        {courseThumbnailPreview ? (
+          <div className="prof-cover-preview-card">
+            <img src={courseThumbnailPreview} alt="Course Preview" className="prof-cover-preview-image" />
+            <div className="prof-cover-preview-overlay">
+              <button 
+                type="button" 
+                className="prof-cover-change-btn"
+                onClick={() => courseFileInputRef.current?.click()}
+              >
+                Change Image
+              </button>
+              <button 
+                type="button" 
+                className="prof-cover-remove-btn"
+                onClick={() => {
+                  setCourseThumbnail(null);
+                  setCourseThumbnailPreview('');
+                }}
+              >
+                Remove
+              </button>
+            </div>
           </div>
-          
-          <div>
-            {courseThumbnailPreview ? (
-              <img src={courseThumbnailPreview} alt="Course Preview" style={{ maxHeight: '60px', borderRadius: '4px', objectFit: 'contain' }} />
-            ) : (
-              <>
-                <strong style={{ display: 'block', color: '#0F172A', fontSize: '0.9rem' }}>
-                  {isDragging ? "Drop it right here!" : "Drop image here or click to upload."}
-                </strong>
-                <span style={{ color: '#64748B', fontSize: '0.8rem' }}>1920x1080 resolution recommended. (JPG, PNG, WEBP)</span>
-              </>
-            )}
+        ) : (
+          <div 
+            className={`prof-upload-dropzone ${isDragging ? 'is-dragging' : ''}`} 
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            onClick={() => courseFileInputRef.current?.click()}
+          >
+            <input 
+              type="file" 
+              ref={courseFileInputRef} 
+              style={{ display: 'none' }} 
+              accept="image/png, image/jpeg, image/webp" 
+              onChange={(e) => { if (e.target.files?.length) processImageFile(e.target.files[0]) }} 
+            />
+            
+            <div className="prof-upload-dropzone-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                <circle cx="8.5" cy="8.5" r="1.5"/>
+                <polyline points="21 15 16 10 5 21"/>
+              </svg>
+            </div>
+            
+            <div className="prof-upload-dropzone-text">
+              <strong>Drag & drop a course cover, or <span>browse files</span></strong>
+              <small>Recommend 16:9 aspect ratio. JPG, PNG or WEBP.</small>
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* --- FORM FIELDS --- */}
       <div className="prof-field-group">
-        <label>Course Title</label>
+        <label className="prof-field-label">Course Title</label>
         <input 
-          className="learners-settings-field-control prof-step-input" 
+          className="prof-step-input-premium" 
           type="text" 
           placeholder="e.g. Complete React Developer Course" 
           value={title} 
           onChange={(e) => handleInputChange('title', e.target.value)} 
         />
       </div>
+
+      <div className="prof-field-group">
+        <label className="prof-field-label">Course Subtitle</label>
+        <input 
+          className="prof-step-input-premium" 
+          type="text" 
+          placeholder="e.g. Master React, Redux, Hooks, and GraphQL from scratch" 
+          value={subtitle} 
+          onChange={(e) => handleInputChange('subtitle', e.target.value)} 
+        />
+      </div>
       
-      <div className="prof-grid-two prof-basic-grid">
+      <div className="prof-grid-two">
         <div className="prof-field-group">
-          <label>Category</label>
+          <label className="prof-field-label">Category</label>
           <div className="dropdown prof-generic-dropdown">
-            <button className="learners-settings-field-control dropdown-toggle prof-dropdown-toggle prof-step-input" type="button" data-bs-toggle="dropdown">
+            <button className="prof-dropdown-toggle-premium" type="button" data-bs-toggle="dropdown">
               <span className="prof-dropdown-value">{categoryName}</span>
-              <img className="prof-dropdown-caret" src="/assets/icons/drop.svg" alt="" />
+              <svg className="prof-dropdown-caret-svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
             </button>
-            <ul className="dropdown-menu prof-dropdown-menu">
-              {CATEGORIES.map(cat => (
+            <ul className="dropdown-menu prof-dropdown-menu-premium">
+              {categories.map(cat => (
                 <li key={cat.id}>
                   <button 
                     className="dropdown-item" 
@@ -275,13 +367,15 @@ const BasicInfo = ({ courseId, setCourseId, setActiveStep, pushFeedback }) => {
         </div>
 
         <div className="prof-field-group">
-          <label>Difficulty Level</label>
+          <label className="prof-field-label">Difficulty Level</label>
           <div className="dropdown prof-generic-dropdown">
-            <button className="learners-settings-field-control dropdown-toggle prof-dropdown-toggle prof-step-input" type="button" data-bs-toggle="dropdown">
+            <button className="prof-dropdown-toggle-premium" type="button" data-bs-toggle="dropdown">
               <span className="prof-dropdown-value">{level}</span>
-              <img className="prof-dropdown-caret" src="/assets/icons/drop.svg" alt="" />
+              <svg className="prof-dropdown-caret-svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
             </button>
-            <ul className="dropdown-menu prof-dropdown-menu">
+            <ul className="dropdown-menu prof-dropdown-menu-premium">
               {LEVELS.map(lvl => (
                 <li key={lvl}>
                   <button className="dropdown-item" type="button" onClick={() => handleInputChange('level', lvl)}>
@@ -294,21 +388,43 @@ const BasicInfo = ({ courseId, setCourseId, setActiveStep, pushFeedback }) => {
         </div>
       </div>
 
-      <div className="prof-grid-two prof-basic-grid">
-        <div className="prof-field-group">
-          <label>Total Duration (Weeks)</label>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '24px', marginBottom: '24px' }}>
+        <div className="prof-field-group" style={{ marginBottom: 0 }}>
+          <label className="prof-field-label">Language</label>
+          <div className="dropdown prof-generic-dropdown">
+            <button className="prof-dropdown-toggle-premium" type="button" data-bs-toggle="dropdown">
+              <span className="prof-dropdown-value">{language}</span>
+              <svg className="prof-dropdown-caret-svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </button>
+            <ul className="dropdown-menu prof-dropdown-menu-premium">
+              {LANGUAGES.map(lang => (
+                <li key={lang}>
+                  <button className="dropdown-item" type="button" onClick={() => handleInputChange('language', lang)}>
+                    {lang}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+
+        <div className="prof-field-group" style={{ marginBottom: 0 }}>
+          <label className="prof-field-label">Total Duration (Weeks)</label>
           <input 
-            className="learners-settings-field-control prof-step-input" 
+            className="prof-step-input-premium" 
             type="number" 
             min="1" 
             value={durationWeeks} 
             onChange={(e) => handleInputChange('durationWeeks', e.target.value)} 
           />
         </div>
-        <div className="prof-field-group">
-          <label>Time Commitment (Hours/Week)</label>
+        
+        <div className="prof-field-group" style={{ marginBottom: 0 }}>
+          <label className="prof-field-label">Time Commitment (Hours/Week)</label>
           <input 
-            className="learners-settings-field-control prof-step-input" 
+            className="prof-step-input-premium" 
             type="number" 
             min="1" 
             value={requiredHours} 
@@ -316,40 +432,67 @@ const BasicInfo = ({ courseId, setCourseId, setActiveStep, pushFeedback }) => {
           />
         </div>
       </div>
+
+      <div className="prof-field-group">
+        <label className="prof-field-label">Short Description</label>
+        <textarea 
+          className="prof-step-input-premium" 
+          rows="3" 
+          placeholder="Provide a concise summary of the course..." 
+          value={description} 
+          onChange={(e) => handleInputChange('description', e.target.value)} 
+          style={{ resize: 'vertical' }}
+        />
+      </div>
+
+      <div className="prof-field-group">
+        <label className="prof-field-label">Welcome/Intro Message for Enrolled Students</label>
+        <textarea 
+          className="prof-step-input-premium" 
+          rows="3" 
+          placeholder="A welcome message that students see when they enroll..." 
+          value={intro_message} 
+          onChange={(e) => handleInputChange('intro_message', e.target.value)} 
+          style={{ resize: 'vertical' }}
+        />
+      </div>
       
       {/* --- RICH TEXT EDITORS --- */}
       <div className="prof-field-group">
-        <label>Target Audience (Who is this for?)</label>
-        <ReactQuill 
-          theme="snow" 
-          modules={quillModules} 
-          value={audience} 
-          onChange={(val) => handleInputChange('audience', val)} 
-          placeholder="e.g. Beginners wanting to learn web development..." 
-        />
+        <label className="prof-field-label">Target Audience (Who is this for?)</label>
+        <div className="prof-quill-wrapper-premium">
+          <ReactQuill 
+            theme="snow" 
+            modules={quillModules} 
+            value={audience} 
+            onChange={(val) => handleInputChange('audience', val)} 
+            placeholder="e.g. Beginners wanting to learn web development..." 
+          />
+        </div>
       </div>
 
       <div className="prof-field-group">
-        <label>Course Objectives (What will they learn?)</label>
-        <ReactQuill 
-          theme="snow" 
-          modules={quillModules} 
-          value={goals} 
-          onChange={(val) => handleInputChange('goals', val)} 
-          placeholder="By the end of this course, students will be able to..." 
-        />
+        <label className="prof-field-label">Course Objectives (What will they learn?)</label>
+        <div className="prof-quill-wrapper-premium">
+          <ReactQuill 
+            theme="snow" 
+            modules={quillModules} 
+            value={goals} 
+            onChange={(val) => handleInputChange('goals', val)} 
+            placeholder="By the end of this course, students will be able to..." 
+          />
+        </div>
       </div>
 
       {/* --- SUBMIT --- */}
-      <div className="prof-lesson-actions-row" style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '32px' }}>
+      <div className="prof-actions-footer-premium">
         <button 
           type="button" 
-          className="btn btn-primary" 
+          className="prof-btn-primary-premium" 
           onClick={saveBasicInfo} 
-          disabled={isSubmitting} 
-          style={{ background: '#450468', color: '#fff', padding: '10px 32px', borderRadius: '8px', border: 'none', fontWeight: 600, transition: 'background 0.2s' }}
+          disabled={isSubmitting}
         >
-          {isSubmitting ? 'Saving...' : 'Save & Continue to Syllabus'}
+          {isSubmitting ? 'Saving Profile...' : 'Save & Continue to Curriculum'}
         </button>
       </div>
       

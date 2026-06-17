@@ -1,7 +1,7 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 
-const HOASidebar = ({ currentPage }) => {
+const HOASidebar = ({ currentPage, onLogout }) => {
   const navigate = useNavigate();
   const preventDefault = (e) => e.preventDefault();
   
@@ -14,10 +14,14 @@ const HOASidebar = ({ currentPage }) => {
 
   const getSidebarLinkClassName = ({ isActive }) => (isActive ? 'active' : '');
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    navigate('/academia/auth/signin');
+  const handleLogout = (e) => {
+    if (onLogout) {
+      onLogout(e);
+    } else {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      navigate('/academia/auth/signin');
+    }
   };
 
   return (

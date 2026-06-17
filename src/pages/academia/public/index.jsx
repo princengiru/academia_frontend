@@ -195,8 +195,8 @@ function AcademiaIndex() {
         if (!mounted) return;
 
         setStoriesData(Array.isArray(storiesBody?.data) ? storiesBody.data : (Array.isArray(storiesBody) ? storiesBody : []));
-        setPopularData(Array.isArray(popularBody?.data) ? popularBody.data : (Array.isArray(popularBody) ? popularBody : []));
-        setFreeData(Array.isArray(freeBody?.data) ? freeBody.data : (Array.isArray(freeBody) ? freeBody : []));
+        setPopularData(Array.isArray(popularBody?.data?.data) ? popularBody.data.data : (Array.isArray(popularBody?.data) ? popularBody.data : (Array.isArray(popularBody) ? popularBody : [])));
+        setFreeData(Array.isArray(freeBody?.data?.data) ? freeBody.data.data : (Array.isArray(freeBody?.data) ? freeBody.data : (Array.isArray(freeBody) ? freeBody : [])));
       } catch (err) {
         console.error("Error loading public data:", err);
       } finally {

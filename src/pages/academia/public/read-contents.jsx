@@ -15,6 +15,11 @@ import './read-contents.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
+const formatHtmlContent = (html) => {
+  if (!html) return '';
+  return html.replace(/src="\/uploads\//g, `src="${API_BASE_URL}/uploads/`);
+};
+
 function AcademiaReadContents() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -79,7 +84,11 @@ function AcademiaReadContents() {
         try {
           const relRes = await fetch(`${API_BASE_URL}/api/courses/public/available?page=1&limit=6`);
           const relBody = await relRes.json().catch(() => ({}));
-          const relList = Array.isArray(relBody?.data) ? relBody.data : (Array.isArray(relBody) ? relBody : []);
+          const relList = Array.isArray(relBody?.data?.data)
+            ? relBody.data.data
+            : (Array.isArray(relBody?.data)
+              ? relBody.data
+              : (Array.isArray(relBody) ? relBody : []));
           if (mounted) {
             setRelatedCourses(relList.filter((item) => String(item.id || item._id) !== String(courseId)));
           }
@@ -299,7 +308,7 @@ function AcademiaReadContents() {
               <p style={{ color: '#64748B' }}>Loading summary…</p>
             ) : (
               <div 
-                dangerouslySetInnerHTML={{ __html: contentAbstract }} 
+                dangerouslySetInnerHTML={{ __html: formatHtmlContent(contentAbstract) }} 
                 style={{ 
                   color: '#475569', 
                   lineHeight: '1.6',
@@ -330,7 +339,7 @@ function AcademiaReadContents() {
                 <div style={{ background: '#fff', padding: '32px', borderRadius: '12px', border: '1px solid #E2E8F0', marginBottom: '24px', overflowX: 'auto' }}>
                   <div 
                     className="rich-text-content" 
-                    dangerouslySetInnerHTML={{ __html: contentBodyHTML }} 
+                    dangerouslySetInnerHTML={{ __html: formatHtmlContent(contentBodyHTML) }} 
                     style={{ 
                       color: '#334155', 
                       lineHeight: '1.8', 
