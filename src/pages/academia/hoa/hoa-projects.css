@@ -318,18 +318,19 @@
 .hoap-projects-page .hoap-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 20px;
+    gap: 10px;
     margin-bottom: 40px;
 }
 
 .hoap-projects-page .hoap-card {
     border: 1px solid #EEF1F6;
-    border-radius: 8px;
+    border-radius: 4px;
     overflow: hidden;
     background: #FFFFFF;
     display: flex;
     flex-direction: column;
     cursor: pointer;
+    box-shadow: 0px 1px 4px 0px #0000001A;
     transition: transform 0.2s, box-shadow 0.2s;
 }
 
@@ -357,7 +358,7 @@
 
 .hoap-projects-page .hoap-card-author {
     font-size: 11px;
-    color: #A1A5B7;
+    color: #999999;
     display: flex;
     align-items: center;
 }

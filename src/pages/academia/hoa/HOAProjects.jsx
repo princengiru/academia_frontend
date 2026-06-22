@@ -263,7 +263,7 @@ const HOAProjects = () => {
                             <div className="hoap-card-content">
                                 <div className="hoap-card-meta">
                                     <span className="hoap-card-author">
-                                        By <span style={{ textDecoration: 'underline', color: '#071437', fontWeight: 500 }}>{project.author}</span>
+                                        By <span style={{ textDecoration: 'underline', color: '#071437', fontWeight: 500, marginLeft: '5px' }}>{project.author}</span>
                                         {project.isTeam && <IconDownCaret style={{ marginLeft: 4, width: 10 }} />}
                                     </span>
                                     <div className="hoap-card-stats">
