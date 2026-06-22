@@ -366,8 +366,8 @@
 .hoap-projects-page .hoap-card-stats {
     display: flex;
     align-items: center;
-    gap: 12px;
-    font-size: 11px;
+    gap: 4px;
+    font-size: 10px;
     color: #A1A5B7;
 }
 
