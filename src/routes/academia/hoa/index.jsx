@@ -11,6 +11,8 @@ import HOAFailedCourses from '../../../pages/academia/hoa/HOAFailedCourses';
 import HOASyllabus from '../../../pages/academia/hoa/HOASyllabus';
 import HOAOnlineCourses from '../../../pages/academia/hoa/HOAOnlineCourses';
 import HOAProjects from '../../../pages/academia/hoa/HOAProjects';
+import HOACommunity from '../../../pages/academia/hoa/HOACommunity';
+
 const HOAPlaceholderPage = ({ currentPage, title, description }) => (
   <HOALayout currentPage={currentPage}>
     <div style={{ padding: '12px 0 32px' }}>
@@ -34,6 +36,7 @@ function AcademiaHOARoutes() {
       <Route path="academia/hoa/syllabus" element={<HOASyllabus />} />
       <Route path="academia/hoa/online-courses" element={<HOAOnlineCourses />} />
       <Route path="academia/hoa/projects" element={<HOAProjects />} />
+      <Route path="academia/hoa/community" element={<HOACommunity />} />
 
 
       <Route
