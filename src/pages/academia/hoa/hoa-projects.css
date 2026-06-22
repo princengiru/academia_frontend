@@ -65,13 +65,17 @@
 }
 
 /* Top Stats Card */
+.hoap-stats-top-container{
+    padding: 10px 10px;
+    background: #FAFAFA;
+    margin-bottom: 24px;
+}
 .hoap-projects-page .hoap-stats-container {
     background: #FFFFFF;
     border: 1px solid #EEF1F6;
     border-radius: 8px;
     display: flex;
     padding: 24px 0;
-    margin-bottom: 24px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
 }
 

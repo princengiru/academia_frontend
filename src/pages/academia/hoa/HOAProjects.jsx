@@ -159,6 +159,7 @@ const HOAProjects = () => {
                 </div>
 
                 {/* Top Stats */}
+            <div className="hoap-stats-top-container">
                 <div className="hoap-stats-container">
                     <div className="hoap-stat-block">
                         <h3>13.3M</h3>
@@ -191,6 +192,7 @@ const HOAProjects = () => {
                         <p>Course Payments <span className="hoap-trend up">↗ +4.1</span></p>
                     </div>
                 </div>
+            </div>
 
                 {/* Sub Header & Actions */}
                 <div className="hoap-sub-header">
