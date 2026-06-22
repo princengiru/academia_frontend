@@ -571,3 +571,37 @@
     flex-wrap: wrap;
   }
 }
+
+/* Quill Q&A reply composer customization overrides */
+.prof-qa-reply-box .ql-container.ql-snow {
+  border: none !important;
+  font-family: Inter, sans-serif;
+  font-size: 13px;
+  background: #FFFFFF;
+}
+
+.prof-qa-reply-box .ql-editor {
+  min-height: 160px;
+  padding: 14px 12px 12px;
+  color: #4B5675;
+  line-height: 22px;
+}
+
+.prof-qa-reply-box .ql-editor.ql-blank::before {
+  left: 12px;
+  font-style: normal;
+  color: #9AA5BE;
+}
+
+.prof-qa-editor-toolbar.ql-toolbar.ql-snow {
+  border: none !important;
+  border-bottom: 1px solid #E7ECF4 !important;
+}
+
+/* Fix Quill styling overrides from layout CSS */
+.prof-qa-editor-toolbar button.ql-active {
+  opacity: 1 !important;
+}
+.prof-qa-editor-toolbar button.ql-active svg {
+  stroke: #450468 !important;
+}

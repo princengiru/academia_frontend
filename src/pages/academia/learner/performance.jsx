@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import LearnersPageShell from './LearnersPageShell';
 import './index.css';
@@ -6,7 +6,6 @@ import './index.css';
 // Icons & Images
 import acSav from '../../../assets/icons/ac-sav.svg';
 import wExitRight from '../../../assets/icons/w-exit-right.svg';
-import drop1 from '../../../assets/icons/drop1.svg';
 import certt from '../../../assets/icons/certt.svg';
 import right1 from '../../../assets/icons/right1.svg';
 import calendar2 from '../../../assets/icons/calendar2.svg';
@@ -14,31 +13,40 @@ import filtersIcon from '../../../assets/icons/filters-icon.svg';
 import fe3 from '../../../assets/icons/fe3.svg';
 import arrowsLoop from '../../../assets/icons/arrows-loop.svg';
 import resumeIcon from '../../../assets/icons/resume.svg';
+import hoadowncaret from '../../../assets/icons/hoadowncaret.svg';
 import './performance.css';
+
+const extractBody = (body) => body?.data?.data || body?.data || body;
+const extractList = (body) => {
+  const data = extractBody(body);
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data?.items)) return data.items;
+  if (Array.isArray(data?.rows)) return data.rows;
+  if (Array.isArray(data?.assessmentHistory)) return data.assessmentHistory;
+  if (Array.isArray(data?.certificates)) return data.certificates;
+  return [];
+};
 
 function LearnersPerformance() {
   const preventDefault = (e) => e.preventDefault();
   const navigate = useNavigate();
   const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
-  const extractBody = (body) => body?.data?.data || body?.data || body;
-  const extractList = (body) => {
-    const data = extractBody(body);
-    if (Array.isArray(data)) return data;
-    if (Array.isArray(data?.items)) return data.items;
-    if (Array.isArray(data?.rows)) return data.rows;
-    if (Array.isArray(data?.assessmentHistory)) return data.assessmentHistory;
-    if (Array.isArray(data?.certificates)) return data.certificates;
-    return [];
-  };
-
-  // State for Chart highlight (nexus) and Checkboxes (echo)
-  const [nexus, setNexus] = useState(0);
+  // State for Chart and Checkboxes
+  const [areaChartPeriod, setAreaChartPeriod] = useState('Monthly');
+  const [activeAreaIndex, setActiveAreaIndex] = useState(0);
+  const areaWrapRef = useRef(null);
   const [selectedEcho, setSelectedEcho] = useState([]);
   const [loading, setLoading] = useState(true);
   const [performanceState, setPerformanceState] = useState(null);
   const [certificateStatsState, setCertificateStatsState] = useState(null);
   const [certificatesState, setCertificatesState] = useState([]);
+
+  // Pagination & Filter states
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [timePeriod, setTimePeriod] = useState('all');
+  const [status, setStatus] = useState('all');
 
   useEffect(() => {
     let cancelled = false;
@@ -51,8 +59,9 @@ function LearnersPerformance() {
       }
       setLoading(true);
       try {
+        const offset = (page - 1) * pageSize;
         const [performanceRes, certStatsRes, certListRes] = await Promise.allSettled([
-          fetch(`${API_BASE_URL}/api/profile/performance?limit=10&offset=0`, {
+          fetch(`${API_BASE_URL}/api/profile/performance?limit=${pageSize}&offset=${offset}&timePeriod=${timePeriod}&status=${status}`, {
             headers: { Authorization: `Bearer ${token}` },
           }),
           fetch(`${API_BASE_URL}/api/certificates/user/statistics`, {
@@ -91,6 +100,7 @@ function LearnersPerformance() {
           setCertificatesState([]);
         }
       } catch (err) {
+        console.error('Error loading performance:', err);
         if (!cancelled) {
           setPerformanceState({ metrics: {}, assessmentHistory: [], pagination: {} });
           setCertificateStatsState({});
@@ -104,11 +114,11 @@ function LearnersPerformance() {
     loadPerformance();
 
     return () => { cancelled = true; };
-  }, [API_BASE_URL]);
+  }, [API_BASE_URL, page, pageSize, timePeriod, status]);
 
-  const metrics = performanceState?.metrics || {};
-  const historyRows = performanceState?.assessmentHistory || [];
-  const recentCertificates = certificatesState || [];
+  const metrics = useMemo(() => performanceState?.metrics || {}, [performanceState?.metrics]);
+  const historyRows = useMemo(() => performanceState?.assessmentHistory || [], [performanceState?.assessmentHistory]);
+  const recentCertificates = useMemo(() => certificatesState || [], [certificatesState]);
   const topCertificate = recentCertificates[0] || null;
 
   const slate = [
@@ -146,6 +156,9 @@ function LearnersPerformance() {
   const zenith = useMemo(() => {
     return historyRows.map((item, idx) => ({
       id: item.id || idx,
+      courseId: item.courseId,
+      category: item.category,
+      isPassed: item.isPassed,
       course: item.courseTitle || item.assessmentTitle || 'Assessment',
       date: item.startTime || item.endTime || item.createdAt ? new Date(item.startTime || item.endTime || item.createdAt).toLocaleDateString() : '--',
       author: item.instructor?.name || item.instructorName || 'Academia',
@@ -153,95 +166,120 @@ function LearnersPerformance() {
       timeTaken: item.duration || item.timeTaken || '--',
       status: item.status === 'graded' ? (item.isPassed ? 'Passed' : 'Failed') : item.status === 'submitted' ? 'Submitted' : 'In Progress',
       statusTone: item.status === 'graded' ? (item.isPassed ? 'passed' : 'failed') : item.status === 'submitted' ? 'progress' : 'progress',
-      action: item.status === 'graded' ? 'Download Certificate' : item.status === 'submitted' ? 'View' : 'Resume',
-      actionTone: item.status === 'graded' ? 'download' : item.status === 'submitted' ? 'retake' : 'resume',
+      action: item.status === 'graded' 
+        ? (item.category === 'summative' && item.isPassed ? 'Download Certificate' : 'Review')
+        : (item.status === 'submitted' ? 'View' : 'Resume'),
+      actionTone: item.status === 'graded' 
+        ? (item.category === 'summative' && item.isPassed ? 'download' : 'resume')
+        : (item.status === 'submitted' ? 'retake' : 'resume'),
     }));
   }, [historyRows]);
 
-  // Chart Logic equivalent to PHP rendering
-  const chartData = useMemo(() => {
-    const values = historyRows
-      .slice(-12)
-      .map((item) => Number(item.percentage ?? item.score ?? 0))
-      .filter((value) => Number.isFinite(value));
+  const totalItems = performanceState?.pagination?.total || 0;
+  const totalPages = performanceState?.pagination?.pages || 1;
+  const startIndex = totalItems === 0 ? 0 : (page - 1) * pageSize + 1;
+  const endIndex = Math.min(page * pageSize, totalItems);
 
-    const labels = historyRows
-      .slice(-12)
-      .map((item) => {
-        const date = item.startTime || item.endTime || item.createdAt;
-        const parsedDate = date ? new Date(date) : null;
-        return parsedDate && !Number.isNaN(parsedDate.getTime())
-          ? parsedDate.toLocaleString('en-US', { month: 'short' })
-          : item.courseTitle?.slice(0, 3).toUpperCase() || '—';
-      });
-
-    if (!values.length) return null;
-
-    const width = 560;
-    const height = 210;
-    const paddingTop = 14;
-    const paddingBottom = 16;
-    const plotHeight = height - paddingTop - paddingBottom;
-    const max = Math.max(100, ...values);
-    
-    const points = [];
-    const pointData = [];
-
-    values.forEach((val, idx) => {
-      const x = values.length === 1 ? width / 2 : (width * idx) / (values.length - 1);
-      const y = paddingTop + plotHeight - ((val / max) * plotHeight);
-      points.push({ x: Number(x.toFixed(2)), y: Number(y.toFixed(2)) });
-      
-      const valStr = val.toFixed(1).replace(/\.0$/, '');
-      pointData.push({
-        month: labels[idx] || '—',
-        value: val,
-        label: `${valStr}% Score`,
-        xPercent: Number((values.length === 1 ? 50 : ((idx / (values.length - 1)) * 100)).toFixed(2)),
-        yPercent: Number(((val / max) * 100).toFixed(2))
-      });
-    });
-
-    let linePath = '';
-    if (points.length > 0) {
-      linePath = `M ${points[0].x} ${points[0].y}`;
-      for (let i = 0; i < points.length - 1; i++) {
-        const curr = points[i];
-        const next = points[i + 1];
-        const ctrlX = ((curr.x + next.x) / 2).toFixed(2);
-        linePath += ` C ${ctrlX} ${curr.y}, ${ctrlX} ${next.y}, ${next.x} ${next.y}`;
-      }
+  const pageNumbers = useMemo(() => {
+    const pages = [];
+    for (let i = 1; i <= totalPages; i++) {
+      pages.push(i);
     }
+    return pages;
+  }, [totalPages]);
 
-    const areaPath = `${linePath} L ${width} ${paddingTop + plotHeight} L 0 ${paddingTop + plotHeight} Z`;
+  const currentMonthIndex = new Date().getMonth();
+  const currentDayIndex = (new Date().getDay() + 6) % 7; // Monday = 0
+  const currentQuarterIndex = Math.floor(currentMonthIndex / 3);
 
-    return { width, height, points, pointData, linePath, areaPath };
-  }, [historyRows]);
-
-  // Handlers for Chart Interactivity
-  const handleChartMouseMove = (e) => {
-    if (!chartData?.pointData?.length) return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    const localX = e.clientX - rect.left;
-    const canvasWidth = rect.width;
-    
-    let nearestIdx = 0;
-    let nearestDist = Infinity;
-
-    chartData.pointData.forEach((pt, idx) => {
-      const ptX = canvasWidth * (pt.xPercent / 100);
-      const dist = Math.abs(localX - ptX);
-      if (dist < nearestDist) {
-        nearestDist = dist;
-        nearestIdx = idx;
-      }
-    });
-    setNexus(nearestIdx);
+  const getDefaultActiveIndex = (period, dataLength) => {
+    let idx = 0;
+    if (period === 'Monthly') idx = currentMonthIndex;
+    else if (period === 'Weekly') idx = currentDayIndex;
+    else if (period === 'Quarterly') idx = currentQuarterIndex;
+    return Math.max(0, Math.min(idx, dataLength - 1));
   };
 
-  const activePoint = chartData?.pointData?.[nexus] || chartData?.pointData?.[0] || null;
+  const getStudyChartData = useMemo(() => {
+    let labels;
+    let numSlots;
+    if (areaChartPeriod === 'Monthly') {
+      labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      numSlots = 12;
+    } else if (areaChartPeriod === 'Weekly') {
+      labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+      numSlots = 7;
+    } else {
+      labels = ['Q1', 'Q2', 'Q3', 'Q4'];
+      numSlots = 4;
+    }
+
+    const formativeScores = Array(numSlots).fill(null).map(() => []);
+    const summativeScores = Array(numSlots).fill(null).map(() => []);
+
+    historyRows.forEach(item => {
+      const dStr = item.startTime || item.endTime || item.createdAt;
+      if (!dStr) return;
+      const date = new Date(dStr);
+      if (Number.isNaN(date.getTime())) return;
+
+      let slotIdx = 0;
+      if (areaChartPeriod === 'Monthly') {
+        slotIdx = date.getMonth();
+      } else if (areaChartPeriod === 'Weekly') {
+        slotIdx = (date.getDay() + 6) % 7; // Monday = 0
+      } else if (areaChartPeriod === 'Quarterly') {
+        slotIdx = Math.floor(date.getMonth() / 3);
+      }
+
+      const val = Number(item.percentage ?? item.score ?? 0);
+      if (item.category === 'summative') {
+        summativeScores[slotIdx].push(val);
+      } else {
+        formativeScores[slotIdx].push(val);
+      }
+    });
+
+    const quizzes = formativeScores.map(arr => arr.length ? Math.round(arr.reduce((a, b) => a + b, 0) / arr.length) : 0);
+    const exams = summativeScores.map(arr => arr.length ? Math.round(arr.reduce((a, b) => a + b, 0) / arr.length) : 0);
+
+    return {
+      labels,
+      quizzes,
+      exams
+    };
+  }, [historyRows, areaChartPeriod]);
+
+  const handleAreaMouseMove = (e) => {
+    if (!areaWrapRef.current) return;
+    const rect = areaWrapRef.current.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const numPoints = getStudyChartData.labels.length - 1;
+    let index = Math.round((x / rect.width) * numPoints);
+    setActiveAreaIndex(Math.max(0, Math.min(index, numPoints)));
+  };
+
+  const handleAreaMouseLeave = () => {
+    setActiveAreaIndex(getDefaultActiveIndex(areaChartPeriod, getStudyChartData.labels.length));
+  };
+
+  const generateSmoothPath = (values) => {
+    if (!values || values.length === 0) return '';
+    const segments = values.length - 1;
+    const xStep = 110 / Math.max(1, segments);
+    const points = values.map((val, i) => [i * xStep, 100 - val]);
+    let d = `M${points[0][0]},${points[0][1]}`;
+    for (let i = 1; i < points.length; i++) {
+      const prev = points[i - 1];
+      const curr = points[i];
+      const cpDist = xStep * 0.4;
+      d += ` C${prev[0] + cpDist},${prev[1]} ${curr[0] - cpDist},${curr[1]} ${curr[0]},${curr[1]}`;
+    }
+    return d;
+  };
+
   const hasSummaryData = Object.keys(metrics).length > 0 || recentCertificates.length > 0 || Object.keys(certificateStatsState || {}).length > 0;
-  const hasChartSectionData = Boolean(chartData?.pointData?.length);
+  const hasChartSectionData = historyRows.length > 0;
   const hasScheduleData = apex.length > 0;
   const hasHistoryData = zenith.length > 0;
   const hasCertificateData = Boolean(topCertificate);
@@ -278,8 +316,7 @@ function LearnersPerformance() {
     );
   }
 
-  // Adjust tooltip positioning to prevent overflow (similar to JS logic)
-  const tooltipLeftStyle = activePoint ? (activePoint.xPercent < 15 ? '15%' : activePoint.xPercent > 85 ? '85%' : `${activePoint.xPercent}%`) : '50%';
+  // Tooltip positioning is handled via responsive transform shifts
 
   // Handlers for Table Checkboxes
   const handleSelectAll = (e) => {
@@ -352,73 +389,100 @@ function LearnersPerformance() {
               <section className="learners-performance-chart-card">
                 {hasChartSectionData ? (
                   <>
-                    <div className="learners-performance-chart-top">
-                      <div className="learners-performance-chart-badge-row">
-                        <span className="learners-performance-score-badge">{metrics.averageScore != null ? `${Number(metrics.averageScore).toFixed(1).replace(/\.0$/, '')}%` : '0%'}</span>
-                        <h3>Average score</h3>
+                    <div className="rep-chart-header">
+                      <div className="rep-chart-title">
+                        <span className="rep-badge-purple">{metrics.averageScore != null ? `${Number(metrics.averageScore).toFixed(1).replace(/\.0$/, '')}%` : '0%'}</span>
+                        Quizzes & Exams
                       </div>
-
                       <div className="dropdown learners-performance-period-dropdown">
-                        <button className="dropdown-toggle learners-performance-period-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                          <span>Monthly</span>
-                          <img src={drop1} alt="Dropdown" />
+                        <button className="dropdown-toggle rep-dropdown-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                          <span>{areaChartPeriod}</span>
+                          <img src={hoadowncaret} alt="" />
                         </button>
                         <ul className="dropdown-menu learners-performance-period-menu">
-                          <li><a className="dropdown-item active" href="/" onClick={preventDefault}>Monthly</a></li>
-                          <li><a className="dropdown-item" href="/" onClick={preventDefault}>Weekly</a></li>
-                          <li><a className="dropdown-item" href="/" onClick={preventDefault}>Quarterly</a></li>
+                          <li><a className={`dropdown-item ${areaChartPeriod === 'Monthly' ? 'active' : ''}`} href="#" onClick={(e) => { preventDefault(e); setAreaChartPeriod('Monthly'); setActiveAreaIndex(getDefaultActiveIndex('Monthly', 12)); }}>Monthly</a></li>
+                          <li><a className={`dropdown-item ${areaChartPeriod === 'Weekly' ? 'active' : ''}`} href="#" onClick={(e) => { preventDefault(e); setAreaChartPeriod('Weekly'); setActiveAreaIndex(getDefaultActiveIndex('Weekly', 7)); }}>Weekly</a></li>
+                          <li><a className={`dropdown-item ${areaChartPeriod === 'Quarterly' ? 'active' : ''}`} href="#" onClick={(e) => { preventDefault(e); setAreaChartPeriod('Quarterly'); setActiveAreaIndex(getDefaultActiveIndex('Quarterly', 4)); }}>Quarterly</a></li>
                         </ul>
                       </div>
                     </div>
 
-                    <div className="learners-performance-chart-wrap">
-                      <div className="learners-performance-chart-yaxis">
-                        <span>90</span><span>80</span><span>70</span><span>60</span><span>50</span>
-                        <span>40</span><span>30</span><span>20</span><span>10</span><span>0</span>
+                    {/* SVG Replica of Area Chart */}
+                    <div style={{ display: 'flex', marginTop: '20px', height: '220px', position: 'relative', width: '100%', paddingBottom: '20px' }}>
+                      
+                      {/* Global Grid Lines */}
+                      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', pointerEvents: 'none' }}>
+                          {[...Array(10)].map((_, i) => (
+                            <div key={i} style={{ borderBottom: '1.5px dashed #EEF1F6', width: '100%', height: '1px' }}></div>
+                          ))}
                       </div>
 
-                      <div 
-                        className="learners-performance-chart-canvas" 
-                        onMouseMove={handleChartMouseMove}
-                        onMouseLeave={() => setNexus(0)}
-                      >
-                        <div className="learners-performance-chart-grid">
-                          {Array.from({ length: 10 }).map((_, i) => <span key={i}></span>)}
-                        </div>
-
-                        <svg className="learners-performance-chart-svg" viewBox={`0 0 ${chartData.width} ${chartData.height}`} preserveAspectRatio="none" aria-hidden="true">
-                          <path d={chartData.areaPath} className="learners-performance-chart-area"></path>
-                          <path d={chartData.linePath} className="learners-performance-chart-line"></path>
-                        </svg>
-
-                        <div className="learners-performance-chart-guide" style={{ left: `${activePoint.xPercent}%`, top: `calc(100% - ${activePoint.yPercent}%)` }}></div>
-                        <div className="learners-performance-chart-point" style={{ left: `${activePoint.xPercent}%`, top: `calc(100% - ${activePoint.yPercent}%)` }}></div>
-
-                        {chartData.pointData.map((pt, idx) => (
-                          <button
-                            key={idx}
-                            type="button"
-                            className={`learners-performance-chart-hotspot ${idx === nexus ? 'is-active' : ''}`}
-                            onMouseEnter={() => setNexus(idx)}
-                            onFocus={() => setNexus(idx)}
-                            style={{ left: `${pt.xPercent}%`, top: `calc(100% - ${pt.yPercent}%)` }}
-                            aria-label={`${pt.month} score ${pt.label}`}
-                          ></button>
+                      {/* Y-Axis */}
+                      <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', color: '#A1A5B7', fontSize: '10px', paddingRight: '12px', position: 'relative', height: '100%' }}>
+                        {[100, 90, 80, 70, 60, 50, 40, 30, 20, 10, 0].map((y, idx) => (
+                          <span key={y} style={{ lineHeight: '10px', marginTop: idx === 0 ? '-4px' : 0, marginBottom: idx === 10 ? '-4px' : 0, backgroundColor: 'white', zIndex: 1 }}>{y}</span>
                         ))}
+                      </div>
 
-                        <div className="learners-performance-chart-tooltip" style={{ left: tooltipLeftStyle, top: `calc(100% - ${activePoint.yPercent}% - 54px)`, transform: 'translateX(-50%)' }}>
-                          <span>{activePoint.month}</span>
-                          <strong>{activePoint.label}</strong>
+                      {/* Chart Content Area */}
+                      <div 
+                        style={{ position: 'relative', flex: 1, height: '100%', cursor: 'default' }}
+                        ref={areaWrapRef}
+                        onMouseMove={handleAreaMouseMove}
+                        onMouseLeave={handleAreaMouseLeave}
+                      >
+                        
+                        {/* SVG */}
+                        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, pointerEvents: 'none' }}>
+                          <svg width="100%" height="100%" viewBox="0 0 110 100" preserveAspectRatio="none" style={{ overflow: 'visible' }}>
+                            <defs>
+                              <linearGradient id="areaGreen" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stopColor="rgba(34, 197, 94, 0.15)" />
+                                <stop offset="100%" stopColor="rgba(34, 197, 94, 0)" />
+                              </linearGradient>
+                              <linearGradient id="areaPurple" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stopColor="rgba(185, 152, 206, 0.25)" />
+                                <stop offset="100%" stopColor="rgba(185, 152, 206, 0)" />
+                              </linearGradient>
+                            </defs>
+
+                            <path d={`${generateSmoothPath(getStudyChartData.exams)} L110,100 L0,100 Z`} fill="url(#areaGreen)" />
+                            <path d={generateSmoothPath(getStudyChartData.exams)} fill="none" stroke="#22C55E" strokeWidth="2" vectorEffect="non-scaling-stroke" />
+                            
+                            <path d={`${generateSmoothPath(getStudyChartData.quizzes)} L110,100 L0,100 Z`} fill="url(#areaPurple)" />
+                            <path d={generateSmoothPath(getStudyChartData.quizzes)} fill="none" stroke="#B998CE" strokeWidth="2" vectorEffect="non-scaling-stroke" />
+                          </svg>
+                          
+                          {/* Tooltip Overlay Dot & Line */}
+                          <div style={{ position: 'absolute', left: `${(activeAreaIndex / Math.max(1, getStudyChartData.labels.length - 1))*100}%`, top: `${100 - getStudyChartData.quizzes[activeAreaIndex]}%`, bottom: '-25px', width: '1px', backgroundColor: '#374151', transform: 'translateX(-50%)' }}></div>
+                          <div style={{ position: 'absolute', left: `${(activeAreaIndex / Math.max(1, getStudyChartData.labels.length - 1))*100}%`, top: `${100 - getStudyChartData.quizzes[activeAreaIndex]}%`, width: '14px', height: '14px', backgroundColor: '#450468', border: '3px solid white', borderRadius: '50%', transform: 'translate(-50%, -50%)', zIndex: 5 }}></div>
+                          <div style={{ position: 'absolute', left: `${(activeAreaIndex / Math.max(1, getStudyChartData.labels.length - 1))*100}%`, top: `${100 - getStudyChartData.exams[activeAreaIndex]}%`, width: '14px', height: '14px', backgroundColor: '#22C55E', border: '3px solid white', borderRadius: '50%', transform: 'translate(-50%, -50%)', zIndex: 5 }}></div>
+                        </div>
+
+                        {/* Tooltip Overlay */}
+                        <div style={{ position: 'absolute', left: `${(activeAreaIndex / Math.max(1, getStudyChartData.labels.length - 1))*100}%`, top: '52%', transform: `translate(-${(activeAreaIndex / Math.max(1, getStudyChartData.labels.length - 1))*100}%, -100%)`, '--caret-pos': `${(activeAreaIndex / Math.max(1, getStudyChartData.labels.length - 1))*100}%`, paddingBottom: '12px', zIndex: 10, pointerEvents: 'none', transition: 'left 180ms cubic-bezier(0.22, 1, 0.36, 1), transform 180ms ease' }}>
+                          <div className="rep-chart-tooltip" style={{ padding: '16px', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px', fontSize: '13px', fontWeight: 'bold', color: '#071437' }}>
+                                {getStudyChartData.labels[activeAreaIndex]}
+                            </div>
+                            <div style={{ fontSize: '13px', color: '#4B5675', marginBottom: '10px', display: 'flex', justifyContent: 'space-between', gap: '24px' }}>
+                                <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><span style={{color:'#450468', fontSize: 16, lineHeight: 1}}>●</span> Quizzes</span> <strong style={{ color: '#071437', fontSize: '14px' }}>{getStudyChartData.quizzes[activeAreaIndex]}%</strong>
+                            </div>
+                            <div style={{ fontSize: '13px', color: '#4B5675', display: 'flex', justifyContent: 'space-between' }}>
+                                <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><span style={{color:'#22C55E', fontSize: 16, lineHeight: 1}}>●</span> Exams</span> <strong style={{ color: '#071437', fontSize: '14px' }}>{getStudyChartData.exams[activeAreaIndex]}%</strong>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* X Axis Labels */}
+                        <div style={{ position: 'absolute', bottom: '-25px', left: 0, right: 0, pointerEvents: 'none' }}>
+                          {getStudyChartData.labels.map((m, i) => (
+                            <span key={m} style={{ position: 'absolute', left: `${(i / Math.max(1, getStudyChartData.labels.length - 1))*100}%`, transform: 'translateX(-50%)', color: i === activeAreaIndex ? '#450468' : '#A1A5B7', fontWeight: i === activeAreaIndex ? 600 : 'normal', fontSize: '10px' }}>
+                              {m}
+                            </span>
+                          ))}
                         </div>
                       </div>
-                    </div>
-
-                    <div className="learners-performance-chart-months">
-                      {chartData.pointData.map((pt, idx) => (
-                        <span key={idx} className={idx === nexus ? 'is-active' : ''} style={{ left: `${pt.xPercent}%` }}>
-                          {pt.month}
-                        </span>
-                      ))}
                     </div>
                   </>
                 ) : (
@@ -539,24 +603,26 @@ function LearnersPerformance() {
               <div className="dropdown learners-performance-history-dropdown">
                 <button type="button" className="dropdown-toggle learners-performance-history-tool learners-performance-history-tool-date" data-bs-toggle="dropdown" aria-expanded="false">
                   <img src={calendar2} alt="Calendar" />
-                  <span>Today</span>
+                  <span>{timePeriod === 'all' ? 'All Time' : timePeriod === 'today' ? 'Today' : timePeriod === 'this_week' ? 'This Week' : 'This Month'}</span>
                 </button>
                 <ul className="dropdown-menu learners-performance-history-menu">
-                  <li><a className="dropdown-item active" href="/" onClick={preventDefault}>Today</a></li>
-                  <li><a className="dropdown-item" href="/" onClick={preventDefault}>This Week</a></li>
-                  <li><a className="dropdown-item" href="/" onClick={preventDefault}>This Month</a></li>
+                  <li><a className={`dropdown-item ${timePeriod === 'all' ? 'active' : ''}`} href="/" onClick={(e) => { preventDefault(e); setTimePeriod('all'); setPage(1); }}>All Time</a></li>
+                  <li><a className={`dropdown-item ${timePeriod === 'today' ? 'active' : ''}`} href="/" onClick={(e) => { preventDefault(e); setTimePeriod('today'); setPage(1); }}>Today</a></li>
+                  <li><a className={`dropdown-item ${timePeriod === 'this_week' ? 'active' : ''}`} href="/" onClick={(e) => { preventDefault(e); setTimePeriod('this_week'); setPage(1); }}>This Week</a></li>
+                  <li><a className={`dropdown-item ${timePeriod === 'this_month' ? 'active' : ''}`} href="/" onClick={(e) => { preventDefault(e); setTimePeriod('this_month'); setPage(1); }}>This Month</a></li>
                 </ul>
               </div>
 
               <div className="dropdown learners-performance-history-dropdown">
                 <button type="button" className="dropdown-toggle learners-performance-history-tool learners-performance-history-tool-filter" data-bs-toggle="dropdown" aria-expanded="false">
                   <img src={filtersIcon} alt="Filters" />
-                  <span>Filters</span>
+                  <span>{status === 'all' ? 'Filters' : status === 'passed' ? 'Passed' : status === 'failed' ? 'Failed' : 'In Progress'}</span>
                 </button>
                 <ul className="dropdown-menu learners-performance-history-menu learners-performance-history-menu-filter">
-                  <li><a className="dropdown-item active" href="/" onClick={preventDefault}>Passed</a></li>
-                  <li><a className="dropdown-item" href="/" onClick={preventDefault}>Failed</a></li>
-                  <li><a className="dropdown-item" href="/" onClick={preventDefault}>In Progress</a></li>
+                  <li><a className={`dropdown-item ${status === 'all' ? 'active' : ''}`} href="/" onClick={(e) => { preventDefault(e); setStatus('all'); setPage(1); }}>All</a></li>
+                  <li><a className={`dropdown-item ${status === 'passed' ? 'active' : ''}`} href="/" onClick={(e) => { preventDefault(e); setStatus('passed'); setPage(1); }}>Passed</a></li>
+                  <li><a className={`dropdown-item ${status === 'failed' ? 'active' : ''}`} href="/" onClick={(e) => { preventDefault(e); setStatus('failed'); setPage(1); }}>Failed</a></li>
+                  <li><a className={`dropdown-item ${status === 'in_progress' ? 'active' : ''}`} href="/" onClick={(e) => { preventDefault(e); setStatus('in_progress'); setPage(1); }}>In Progress</a></li>
                 </ul>
               </div>
             </div>
@@ -622,7 +688,17 @@ function LearnersPerformance() {
                         <span className={`learners-performance-history-status is-${husk.statusTone}`}>{husk.status}</span>
                       </td>
                       <td>
-                        <button type="button" className={`learners-performance-history-action is-${husk.actionTone}`}>
+                        <button 
+                          type="button" 
+                          className={`learners-performance-history-action is-${husk.actionTone}`}
+                          onClick={() => {
+                            if (husk.action === 'Download Certificate') {
+                              navigate('/academia/learner/certificates');
+                            } else {
+                              navigate(`/academia/learner/read-contents?id=${husk.courseId}`, { state: { courseId: husk.courseId } });
+                            }
+                          }}
+                        >
                           {husk.actionTone === 'download' && <img src={fe3} alt="Download" />}
                           {husk.actionTone === 'retake' && <img src={arrowsLoop} alt="Retake" />}
                           {husk.actionTone === 'resume' && <img src={resumeIcon} alt="Resume" />}
@@ -642,24 +718,48 @@ function LearnersPerformance() {
               <span>Show</span>
               <div className="dropdown learners-performance-history-dropdown">
                 <button type="button" className="dropdown-toggle learners-performance-history-page-btn" data-bs-toggle="dropdown" aria-expanded="false">
-                  <span>10</span>
+                  <span>{pageSize}</span>
                 </button>
                 <ul className="dropdown-menu learners-performance-history-menu learners-performance-history-page-menu">
-                  <li><a className="dropdown-item active" href="/" onClick={preventDefault}>10</a></li>
-                  <li><a className="dropdown-item" href="/" onClick={preventDefault}>20</a></li>
-                  <li><a className="dropdown-item" href="/" onClick={preventDefault}>50</a></li>
+                  <li><a className={`dropdown-item ${pageSize === 10 ? 'active' : ''}`} href="/" onClick={(e) => { preventDefault(e); setPageSize(10); setPage(1); }}>10</a></li>
+                  <li><a className={`dropdown-item ${pageSize === 20 ? 'active' : ''}`} href="/" onClick={(e) => { preventDefault(e); setPageSize(20); setPage(1); }}>20</a></li>
+                  <li><a className={`dropdown-item ${pageSize === 50 ? 'active' : ''}`} href="/" onClick={(e) => { preventDefault(e); setPageSize(50); setPage(1); }}>50</a></li>
                 </ul>
               </div>
               <span>per page</span>
             </div>
 
             <div className="learners-performance-history-pagination">
-              <span>1-10 of 50</span>
-              <button type="button" aria-label="Previous page">&#8592;</button>
-              <button type="button" aria-label="Page 1">1</button>
-              <button type="button" className="is-active" aria-current="page">2</button>
-              <button type="button" aria-label="Page 3">3</button>
-              <button type="button" aria-label="Next page">&#8594;</button>
+              <span>{startIndex}-{endIndex} of {totalItems}</span>
+              <button 
+                type="button" 
+                aria-label="Previous page"
+                disabled={page <= 1}
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                style={{ cursor: page <= 1 ? 'not-allowed' : 'pointer', opacity: page <= 1 ? 0.5 : 1 }}
+              >
+                &#8592;
+              </button>
+              {pageNumbers.map(num => (
+                <button 
+                  key={num}
+                  type="button" 
+                  className={page === num ? 'is-active' : ''}
+                  aria-label={`Page ${num}`}
+                  onClick={() => setPage(num)}
+                >
+                  {num}
+                </button>
+              ))}
+              <button 
+                type="button" 
+                aria-label="Next page"
+                disabled={page >= totalPages}
+                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                style={{ cursor: page >= totalPages ? 'not-allowed' : 'pointer', opacity: page >= totalPages ? 0.5 : 1 }}
+              >
+                &#8594;
+              </button>
             </div>
           </div>
           )}

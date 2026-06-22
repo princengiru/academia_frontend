@@ -74,6 +74,7 @@ function AcademiaIndex() {
   // --- Dynamic State ---
   const [popularData, setPopularData] = useState([]);
   const [freeData, setFreeData] = useState([]);
+  const [syllabusesData, setSyllabusesData] = useState([]);
   const [storiesData, setStoriesData] = useState([]);
   const [dataLoading, setDataLoading] = useState(true);
   
@@ -114,7 +115,7 @@ function AcademiaIndex() {
       },
     });
 
-    // 2. Popular Courses
+    // 2. Popular Syllabuses
     const pscSwiper = new Swiper('.psc-swiper', {
       modules: [Pagination],
       spaceBetween: 20,
@@ -174,7 +175,7 @@ function AcademiaIndex() {
       swiperInstancesRef.current.forEach((instance) => instance?.destroy(true, true));
       swiperInstancesRef.current = [];
     };
-  }, [popularData, storiesData]); // Re-bind swipers when data arrives
+  }, [syllabusesData, popularData, storiesData]); // Re-bind swipers when data arrives
 
   // --- Fetch API Data ---
   useEffect(() => {
@@ -182,21 +183,24 @@ function AcademiaIndex() {
 
     const loadPublicData = async () => {
       try {
-        const [storiesRes, popularRes, freeRes] = await Promise.all([
+        const [storiesRes, popularRes, freeRes, syllabusesRes] = await Promise.all([
           fetch(`${API_BASE_URL}/api/community-stories`),
           fetch(`${API_BASE_URL}/api/courses/public/popular`),
           fetch(`${API_BASE_URL}/api/courses/public/free`),
+          fetch(`${API_BASE_URL}/api/syllabuses?status_approval=approved`),
         ]);
 
         const storiesBody = await storiesRes.json().catch(() => ({}));
         const popularBody = await popularRes.json().catch(() => ({}));
         const freeBody = await freeRes.json().catch(() => ({}));
+        const syllabusesBody = await syllabusesRes.json().catch(() => ({}));
 
         if (!mounted) return;
 
         setStoriesData(Array.isArray(storiesBody?.data) ? storiesBody.data : (Array.isArray(storiesBody) ? storiesBody : []));
         setPopularData(Array.isArray(popularBody?.data?.data) ? popularBody.data.data : (Array.isArray(popularBody?.data) ? popularBody.data : (Array.isArray(popularBody) ? popularBody : [])));
         setFreeData(Array.isArray(freeBody?.data?.data) ? freeBody.data.data : (Array.isArray(freeBody?.data) ? freeBody.data : (Array.isArray(freeBody) ? freeBody : [])));
+        setSyllabusesData(Array.isArray(syllabusesBody?.data) ? syllabusesBody.data : (Array.isArray(syllabusesBody) ? syllabusesBody : []));
       } catch (err) {
         console.error("Error loading public data:", err);
       } finally {
@@ -224,18 +228,18 @@ function AcademiaIndex() {
     { icon: acStat1Icon, value: '20,000+', label: 'Enrolled Students' },
     { icon: acStat2Icon, value: '20,000+', label: 'Trusted Tutors' },
     { icon: acStat3Icon, value: '20,000+', label: 'Schedules' },
-    { icon: acStat4Icon, value: '20,000+', label: 'Courses' },
+    { icon: acStat4Icon, value: '20,000+', label: 'Syllabuses' },
   ];
 
   const features = [
-    { icon: ac1Icon, title: 'Online Courses', desc: 'Secure, fast, and comprehensive access to online learning modules.' },
+    { icon: ac1Icon, title: 'Online Syllabuses', desc: 'Secure, fast, and comprehensive access to online learning modules.' },
     { icon: ac2Icon, title: 'Earn Certificates', desc: 'Get verified certificates to boost your professional resume.' },
     { icon: ac3Icon, title: 'Learn with Expert', desc: 'Direct interaction with industry leaders and experienced tutors.' },
   ];
 
   const whyChoose = [
     { icon: acAca2Icon, title: 'Expert & experienced instructors', desc: 'Our instructors are experts in their fields and have years of experience teaching.' },
-    { icon: acAca3Icon, title: 'Lifetime free access', desc: 'Once enrolled, you maintain access to the course materials forever.' },
+    { icon: acAca3Icon, title: 'Lifetime free access', desc: 'Once enrolled, you maintain access to the syllabus materials forever.' },
     { icon: acAca4Icon, title: 'Dedicated support', desc: 'Our support team is available 24/7 to help you with your learning journey.' },
   ];
 
@@ -255,9 +259,9 @@ function AcademiaIndex() {
                   <img src={acPlusIcon} alt="Plus Icon" />
                   <span>Post your project</span>
                 </button>
-                <button type="button" onClick={() => navigate('/academia/courses')}>
+                <button type="button" onClick={() => navigate('/academia/syllabuses')}>
                   <img src={bookOpenIcon} alt="Book Icon" />
-                  <span>View Courses</span>
+                  <span>View Syllabuses</span>
                 </button>
               </div>
               <div className="hero-sec-inner-r-b">
@@ -280,7 +284,7 @@ function AcademiaIndex() {
               <h2>Best Online Education Expertise</h2>
             </div>
             <div>
-              <p>Discover a world of knowledge with our expertly crafted courses. Whether you are looking to advance your career or explore a new hobby, Academia provides the tools and community you need to succeed.</p>
+              <p>Discover a world of knowledge with our expertly crafted syllabuses. Whether you are looking to advance your career or explore a new hobby, Academia provides the tools and community you need to succeed.</p>
             </div>
           </div>
         </div>
@@ -305,7 +309,7 @@ function AcademiaIndex() {
       <section className="journals-sec">
         <div className="sec-h">
           <p>Orientation Guide projects</p>
-          <h1>All Courses & Journals</h1>
+          <h1>All Syllabuses & Journals</h1>
         </div>
         
         <div className="swiper journalsSwiper">
@@ -334,11 +338,11 @@ function AcademiaIndex() {
         </div>
       </section>
 
-      {/* Popular Courses Section */}
+      {/* Popular Syllabuses Section */}
       <section className="popular-sec">
         <div className="sec-h">
           <p>Explore our top research interests</p>
-          <h1>Popular Courses</h1>
+          <h1>Popular Syllabuses</h1>
         </div>
         <div className="popular-sec-contents">
           <div className="swiper psc-swiper">
@@ -348,22 +352,22 @@ function AcademiaIndex() {
                 <div className="swiper-slide psc-card">
                   <div className="psc-card-h">
                     <div className="psc-card-h-l">
-                      <h5>Loading popular courses...</h5>
+                      <h5>Loading popular syllabuses...</h5>
                       <p>Please wait</p>
                     </div>
                   </div>
                 </div>
               )}
 
-              {!dataLoading && popularData && popularData.length > 0 && (
-                popularData.map((course, i) => (
-                  <div key={course.id || course._id || i} className="swiper-slide psc-card">
+              {!dataLoading && syllabusesData && syllabusesData.length > 0 && (
+                syllabusesData.map((syllabus, i) => (
+                  <div key={syllabus.id || i} className="swiper-slide psc-card">
                     <div className="psc-card-h">
                       <div className="psc-card-h-l">
-                        <h5>{course.title || course.name || 'Course'}</h5>
+                        <h5>{syllabus.title || 'Syllabus'}</h5>
                         <p>
-                          <span>{course.followers || course.enrollments || course.enrolled_count || '0'}</span>
-                          <small>Followers</small>
+                          <span>{syllabus.outline_count || '0'}</span>
+                          <small>Papers</small>
                         </p>
                       </div>
                       <div className="psc-card-h-r">
@@ -375,21 +379,25 @@ function AcademiaIndex() {
                     </div>
                     <div className="psc-card-b">
                       <div className="psc-card-b-item">
-                        <h6>{course.instructors_count || course.authors || '1'}</h6>
-                        <p>Authors</p>
+                        <h6 style={{ fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '80px' }}>
+                          {syllabus.instructor_name || 'Academia Team'}
+                        </h6>
+                        <p>Author</p>
                       </div>
                       <div className="psc-card-b-item">
-                        <h6>{course.learners_count || course.enrolled_count || '0'}</h6>
-                        <p>Learners</p>
+                        <h6 style={{ textTransform: 'capitalize' }}>
+                          {syllabus.education_level || 'Syllabus'}
+                        </h6>
+                        <p>Level</p>
                       </div>
                       <div className="psc-card-b-item">
-                        <h6>{course.papers_count || course.resources_count || course.chapters_count || '0'}</h6>
+                        <h6>{syllabus.outline_count || '0'}</h6>
                         <p>Papers</p>
                       </div>
                     </div>
                     <div className="psc-card-f">
-                      <button type="button" onClick={() => navigate(`/academia/course-part?courseId=${course.id}`)}>
-                        View course
+                      <button type="button" onClick={() => navigate(`/academia/read-contents?syllabusId=${syllabus.id}`)}>
+                        View Syllabus
                       </button>
                     </div>
                   </div>
@@ -397,9 +405,9 @@ function AcademiaIndex() {
               )}
 
               {/* Browse All / CTA Card */}
-              {!dataLoading && popularData && popularData.length > 0 && (
+              {!dataLoading && syllabusesData && syllabusesData.length > 0 && (
                 <div className="swiper-slide psc-last-card">
-                  <h3>1000+ Popular courses</h3>
+                  <h3>100+ Syllabuses</h3>
                   <div className="psc-last-card-imgs">
                     {[...Array(3)].map((_, i) => (
                       <div key={i} className="psc-last-card-img">
@@ -409,17 +417,17 @@ function AcademiaIndex() {
                     <div className="psc-last-card-number">9+</div>
                   </div>
                   <div className="psc-last-card-btn">
-                    <button type="button" onClick={() => navigate('/academia/courses')}>Explore Courses</button>
+                    <button type="button" onClick={() => navigate('/academia/syllabuses')}>Explore Syllabuses</button>
                   </div>
                 </div>
               )}
 
-              {!dataLoading && (!popularData || popularData.length === 0) && (
+              {!dataLoading && (!syllabusesData || syllabusesData.length === 0) && (
                 <div className="swiper-slide psc-card psc-empty" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '250px' }}>
-                  <div className="empty-title">No popular courses yet</div>
-                  <div className="empty-desc" style={{ marginBottom: '16px', color: '#64748B' }}>We couldn't find trending courses right now.</div>
-                  <button type="button" className="empty-cta btn btn-primary" onClick={() => navigate('/academia/courses')} style={{ background: '#450468', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: '8px' }}>
-                    Browse all courses
+                  <div className="empty-title">No syllabuses yet</div>
+                  <div className="empty-desc" style={{ marginBottom: '16px', color: '#64748B' }}>We couldn't find syllabuses right now.</div>
+                  <button type="button" className="empty-cta btn btn-primary" onClick={() => navigate('/academia/syllabuses')} style={{ background: '#450468', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: '8px' }}>
+                    Browse all syllabuses
                   </button>
                 </div>
               )}
@@ -447,7 +455,7 @@ function AcademiaIndex() {
 
           {!dataLoading && popularData && popularData.length > 0 && (
             popularData.slice(0, 4).map((course, i) => (
-              <div key={course.id || course._id || i} className="osc-item" onClick={() => navigate(`/academia/course-part?courseId=${course.id}`)} style={{ cursor: 'pointer' }}>
+              <div key={course.id || course._id || i} className="osc-item" onClick={() => navigate(`/academia/read-contents?courseId=${course.id}`)} style={{ cursor: 'pointer' }}>
                 <div className="osc-item-img">
                   <img src={course.thumbnail ? resolveStoryImage(course.thumbnail) : acOnImg} alt={course.title} />
                 </div>
@@ -464,7 +472,7 @@ function AcademiaIndex() {
                   </div>
                   <div>
                     <small>{course.starts_on || course.startsAt || 'Self-paced'}</small>
-                    <button type="button" onClick={(e) => { e.stopPropagation(); navigate(`/academia/course-part?courseId=${course.id}`); }}>
+                    <button type="button" onClick={(e) => { e.stopPropagation(); navigate(`/academia/read-contents?courseId=${course.id}`); }}>
                       <img src={acEnIcon} alt="Enroll" />
                     </button>
                   </div>
@@ -474,7 +482,7 @@ function AcademiaIndex() {
           )}
         </div>
         <div className="sec-CTA">
-          <button type="button" onClick={() => navigate('/academia/courses')}>
+          <button type="button" onClick={() => navigate('/academia/syllabuses')}>
             <span>View More</span>
             <img src={acNextIcon} alt="Next" />
           </button>
@@ -499,7 +507,7 @@ function AcademiaIndex() {
 
           {!dataLoading && freeData && freeData.length > 0 && (
             freeData.map((course, i) => (
-              <div key={course.id || course._id || i} className="fsc-item" onClick={() => navigate(`/academia/course-part?courseId=${course.id}`)} style={{ cursor: 'pointer' }}>
+              <div key={course.id || course._id || i} className="fsc-item" onClick={() => navigate(`/academia/read-contents?courseId=${course.id}`)} style={{ cursor: 'pointer' }}>
                 <div className="fsc-item-img">
                   <img src={course.thumbnail ? resolveStoryImage(course.thumbnail) : acOnImg} alt="Free Course" />
                 </div>
@@ -516,7 +524,7 @@ function AcademiaIndex() {
               <div className="fsc-item-text">
                 <h6 style={{ fontWeight: 600 }}>No free courses</h6>
                 <p style={{ color: '#64748B', marginBottom: '16px' }}>There are no free courses to show at the moment.</p>
-                <button type="button" className="btn btn-primary" onClick={() => navigate('/academia/courses')} style={{ background: '#450468', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: '8px' }}>
+                <button type="button" className="btn btn-primary" onClick={() => navigate('/academia/syllabuses')} style={{ background: '#450468', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: '8px' }}>
                   Explore all courses
                 </button>
               </div>
@@ -524,7 +532,7 @@ function AcademiaIndex() {
           )}
         </div>
         <div className="sec-CTA">
-          <button type="button" onClick={() => navigate('/academia/courses?type=free')}>
+          <button type="button" onClick={() => navigate('/academia/syllabuses?type=free')}>
             <span>View More</span>
             <img src={acNextIcon} alt="Next" />
           </button>

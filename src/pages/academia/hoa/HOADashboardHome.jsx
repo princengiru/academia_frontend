@@ -653,7 +653,7 @@ const HOADashboardHome = () => {
                       <a href={`#/approval/${req.id}`} onClick={preventDefault}>View All <img src={hoaviewall} style={{width: '4px', height: '8px'}} alt="" /></a>
                     </div>
                   </div>
-                  <button className="open-btn" onClick={() => window.open(`/academia/course-part?courseId=${req.id}`, '_blank')}><img src={hoaopenfile} alt="Open" /></button>
+                  <button className="open-btn" onClick={() => window.open(`/academia/syllabus-part?courseId=${req.id}`, '_blank')}><img src={hoaopenfile} alt="Open" /></button>
                 </div>
 
                 <div className="approval-action-row">
@@ -744,7 +744,7 @@ const HOADashboardHome = () => {
                           </button>
                           {openActionRowId === req.id && (
                             <div className="action-dropdown" role="menu">
-                              <button type="button" className="action-dropdown-item" onClick={() => window.open(`/academia/course-part?courseId=${req.id}`, '_blank')}>View Details</button>
+                              <button type="button" className="action-dropdown-item" onClick={() => window.open(`/academia/syllabus-part?courseId=${req.id}`, '_blank')}>View Details</button>
                               <button type="button" className="action-dropdown-item" style={{color: '#10B981'}} onClick={() => handleApprovalAction(req, 'approve')}>Approve</button>
                               <button type="button" className="action-dropdown-item" style={{color: '#EF4444'}} onClick={() => handleApprovalAction(req, 'reject')}>Reject</button>
                             </div>

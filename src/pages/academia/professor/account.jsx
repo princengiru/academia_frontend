@@ -235,8 +235,6 @@ const ProfessorAccount = () => {
   const [basicRoleOpen, setBasicRoleOpen] = useState(false);
   const [basicVisibilityOpen, setBasicVisibilityOpen] = useState(false);
   const [isDocumentDragging, setIsDocumentDragging] = useState(false);
-  const [isBasicEditing, setIsBasicEditing] = useState(false);
-  const [isPreferencesEditing, setIsPreferencesEditing] = useState(false);
   const [openActivityMenuId, setOpenActivityMenuId] = useState(null);
   
   const [profileError, setProfileError] = useState('');
@@ -285,23 +283,17 @@ const ProfessorAccount = () => {
     setProfileLoading(true);
     setProfileError('');
 
-    try {
-      const headers = { Authorization: `Bearer ${token}` };
-      const requests = await Promise.allSettled([
-        fetch(`${API_BASE_URL}/api/profile`, { headers, signal }).then(res => res.json()),
-        fetch(`${API_BASE_URL}/api/profile/documents`, { headers, signal }).then(res => res.json()),
-        fetch(`${API_BASE_URL}/api/profile/payment-methods`, { headers, signal }).then(res => res.json()),
-        fetch(`${API_BASE_URL}/api/certificates/user/statistics`, { headers, signal }).then(res => res.json()),
-        fetch(`${API_BASE_URL}/api/certificates/user/my-certificates?limit=6&offset=0`, { headers, signal }).then(res => res.json()),
-        fetch(`${API_BASE_URL}/api/auth/account-status`, { headers, signal }).then(res => res.json()),
-      ]);
+    const headers = { Authorization: `Bearer ${token}` };
 
+    // Load basic profile first so we can unlock editing quickly
+    try {
+      const profileRes = await fetch(`${API_BASE_URL}/api/profile`, { headers, signal });
+      const profileData = await profileRes.json();
       if (signal?.aborted) return;
 
-      // 1. Profile Data
-      if (requests[0].status === 'fulfilled' && !requests[0].value.error) {
-        const user = requests[0].value?.data?.user || {};
-        setProfileCompletionStatus(requests[0].value?.data?.completionStatus || null);
+      if (profileRes.ok && !profileData.error) {
+        const user = profileData?.data?.user || {};
+        setProfileCompletionStatus(profileData?.data?.completionStatus || null);
         setBasicProfile({
           id: user.id || '',
           email: user.email || '',
@@ -333,42 +325,90 @@ const ProfessorAccount = () => {
           emailVisibility: Boolean(user.email_visibility),
         });
       } else {
-        setProfileError(requests[0].reason?.message || 'Failed to load profile');
-      }
-
-      // 2. Documents
-      if (requests[1].status === 'fulfilled' && !requests[1].value.error) {
-        const docs = Array.isArray(requests[1].value?.data?.documents) ? requests[1].value.data.documents.map(doc => ({
-          id: String(doc.id), serverId: doc.id, name: doc.document_name, size: formatFileSize(doc.file_size),
-          filePath: doc.file_path, fileType: doc.file_type, isPublic: Boolean(doc.is_public), createdAt: doc.created_at, isPersisted: true,
-        })) : [];
-        setDocuments(docs);
-      }
-
-      // 3. Payment Methods
-      if (requests[2].status === 'fulfilled' && !requests[2].value.error) {
-        setPaymentMethods(normalizePaymentMethods(requests[2].value?.data?.paymentMethods));
-      }
-
-      // 4 & 5. Certificates
-      if (requests[3].status === 'fulfilled') setCertificateStats(requests[3].value?.data || null);
-      if (requests[4].status === 'fulfilled' && !requests[4].value.error) {
-        const items = requests[4].value?.data?.certificates || requests[4].value?.data?.data || [];
-        setCertificates(Array.isArray(items) ? items : []);
-      }
-
-      // 6. Account Status & 2FA
-      if (requests[5].status === 'fulfilled' && !requests[5].value.error) {
-        const accData = requests[5].value?.data || {};
-        setAccountStatus(accData);
-        setTwoFactorEnabled(Boolean(accData.twoFactorEnabled));
-        setSwitchState(prev => ({ ...prev, twoFaSms: Boolean(accData.twoFactorEnabled) }));
+        setProfileError(profileData.message || 'Failed to load profile');
       }
     } catch (error) {
-      if (error.name !== 'AbortError') setProfileError(error.message || 'Failed to load settings');
+      if (signal?.aborted) return;
+      if (error.name !== 'AbortError') {
+        setProfileError(error.message || 'Failed to load profile');
+      }
     } finally {
       if (!signal?.aborted) setProfileLoading(false);
     }
+
+    // Load other secondary items asynchronously/safely without blocking basic settings
+    if (signal?.aborted) return;
+
+    // 2. Documents
+    fetch(`${API_BASE_URL}/api/profile/documents`, { headers, signal })
+      .then(res => res.json())
+      .then(data => {
+        if (signal?.aborted) return;
+        if (!data.error) {
+          const docs = Array.isArray(data?.data?.documents) ? data.data.documents.map(doc => ({
+            id: String(doc.id), serverId: doc.id, name: doc.document_name, size: formatFileSize(doc.file_size),
+            filePath: doc.file_path, fileType: doc.file_type, isPublic: Boolean(doc.is_public), createdAt: doc.created_at, isPersisted: true,
+          })) : [];
+          setDocuments(docs);
+        }
+      })
+      .catch(err => {
+        if (err.name !== 'AbortError') console.error('Failed to load documents:', err);
+      });
+
+    // 3. Payment Methods
+    fetch(`${API_BASE_URL}/api/profile/payment-methods`, { headers, signal })
+      .then(res => res.json())
+      .then(data => {
+        if (signal?.aborted) return;
+        if (!data.error) {
+          setPaymentMethods(normalizePaymentMethods(data?.data?.paymentMethods));
+        }
+      })
+      .catch(err => {
+        if (err.name !== 'AbortError') console.error('Failed to load payment methods:', err);
+      });
+
+    // 4. Certificates Statistics
+    fetch(`${API_BASE_URL}/api/certificates/user/statistics`, { headers, signal })
+      .then(res => res.json())
+      .then(data => {
+        if (signal?.aborted) return;
+        setCertificateStats(data?.data || null);
+      })
+      .catch(err => {
+        if (err.name !== 'AbortError') console.error('Failed to load certificates stats:', err);
+      });
+
+    // 5. My Certificates
+    fetch(`${API_BASE_URL}/api/certificates/user/my-certificates?limit=6&offset=0`, { headers, signal })
+      .then(res => res.json())
+      .then(data => {
+        if (signal?.aborted) return;
+        if (!data.error) {
+          const items = data?.data?.certificates || data?.data?.data || [];
+          setCertificates(Array.isArray(items) ? items : []);
+        }
+      })
+      .catch(err => {
+        if (err.name !== 'AbortError') console.error('Failed to load certificates:', err);
+      });
+
+    // 6. Account Status & 2FA
+    fetch(`${API_BASE_URL}/api/auth/account-status`, { headers, signal })
+      .then(res => res.json())
+      .then(data => {
+        if (signal?.aborted) return;
+        if (!data.error) {
+          const accData = data?.data || {};
+          setAccountStatus(accData);
+          setTwoFactorEnabled(Boolean(accData.twoFactorEnabled));
+          setSwitchState(prev => ({ ...prev, twoFaSms: Boolean(accData.twoFactorEnabled) }));
+        }
+      })
+      .catch(err => {
+        if (err.name !== 'AbortError') console.error('Failed to load account status:', err);
+      });
   };
 
   useEffect(() => {
@@ -449,7 +489,6 @@ const ProfessorAccount = () => {
         if (!res.ok) throw new Error('Failed to save profile');
       }
       pushFeedback('Basic settings saved successfully.');
-      setIsBasicEditing(false);
     } catch (error) {
       pushFeedback(error.message, 'error');
     } finally {
@@ -532,6 +571,10 @@ const ProfessorAccount = () => {
     setDocuments(prev => [...prev, ...newDocs]);
   };
 
+  const openDocumentPicker = () => {
+    documentInputRef.current?.click();
+  };
+
   const removeDocument = async (id) => {
     const doc = documents.find(d => d.id === id);
     if (doc?.serverId && doc.isPersisted) {
@@ -577,7 +620,6 @@ const ProfessorAccount = () => {
       });
       if (!res.ok) throw new Error('Failed to save preferences');
       pushFeedback('Preferences saved.');
-      setIsPreferencesEditing(false);
     } catch (e) {
       pushFeedback(e.message, 'error');
     } finally {
@@ -718,9 +760,6 @@ const ProfessorAccount = () => {
           <section className="learners-account-section" data-section-key="basic-settings" ref={(el) => sectionRefs.current['basic-settings'] = el}>
             <header>
               <h2>Basic Settings</h2>
-              <button type="button" className="section-edit-btn" onClick={() => setIsBasicEditing(!isBasicEditing)}>
-                <img src={bPencil} alt="Edit" />
-              </button>
             </header>
 
             <div className="learners-account-section-body">
@@ -750,7 +789,7 @@ const ProfessorAccount = () => {
               <div className="learners-account-field-row">
                 <label>Name</label>
                 <div className="learners-account-field-control">
-                  <input type="text" value={basicProfile.name} onChange={(e) => setBasicProfile(p => ({ ...p, name: e.target.value }))} disabled={!isBasicEditing} />
+                  <input type="text" value={basicProfile.name} onChange={(e) => setBasicProfile(p => ({ ...p, name: e.target.value }))} disabled={profileLoading} />
                 </div>
               </div>
 
@@ -758,10 +797,10 @@ const ProfessorAccount = () => {
                 <label>Role</label>
                 <div className="learners-account-field-control">
                   <div className="dropdown learners-account-dropdown" style={{ position: 'relative' }}>
-                    <button className="learners-account-dropdown-btn dropdown-toggle" type="button" onClick={() => isBasicEditing && setBasicRoleOpen(!basicRoleOpen)}>
+                    <button className="learners-account-dropdown-btn dropdown-toggle" type="button" onClick={() => setBasicRoleOpen(!basicRoleOpen)}>
                       <span style={{ textTransform: 'capitalize' }}>{basicProfile.role}</span>
                     </button>
-                    {basicRoleOpen && isBasicEditing && (
+                    {basicRoleOpen && (
                       <ul className="dropdown-menu learners-account-dropdown-menu show">
                         <li><button className="dropdown-item" type="button" onClick={() => { setBasicProfile(p => ({ ...p, role: 'instructor' })); setBasicRoleOpen(false); }}>Instructor</button></li>
                         <li><button className="dropdown-item" type="button" onClick={() => { setBasicProfile(p => ({ ...p, role: 'student' })); setBasicRoleOpen(false); }}>Student</button></li>
@@ -776,7 +815,7 @@ const ProfessorAccount = () => {
                 <div className="learners-account-field-control">
                   <div className="learners-account-phone">
                     <span className="learners-account-phone-prefix">+250</span><span className="learners-account-phone-sep">|</span>
-                    <input type="tel" value={basicProfile.phone} onChange={(e) => setBasicProfile(p => ({ ...p, phone: e.target.value }))} disabled={!isBasicEditing} />
+                    <input type="tel" value={basicProfile.phone} onChange={(e) => setBasicProfile(p => ({ ...p, phone: e.target.value }))} disabled={profileLoading} />
                   </div>
                 </div>
               </div>
@@ -785,10 +824,10 @@ const ProfessorAccount = () => {
                 <label>Visibility</label>
                 <div className="learners-account-field-control">
                   <div className="dropdown learners-account-dropdown" style={{ position: 'relative' }}>
-                    <button className="learners-account-dropdown-btn dropdown-toggle" type="button" onClick={() => isBasicEditing && setBasicVisibilityOpen(!basicVisibilityOpen)}>
+                    <button className="learners-account-dropdown-btn dropdown-toggle" type="button" onClick={() => setBasicVisibilityOpen(!basicVisibilityOpen)}>
                       {basicProfile.visibility === 'private' ? 'Private' : 'Public'}
                     </button>
-                    {basicVisibilityOpen && isBasicEditing && (
+                    {basicVisibilityOpen && (
                       <ul className="dropdown-menu learners-account-dropdown-menu show">
                         <li><button className="dropdown-item" type="button" onClick={() => { setBasicProfile(p => ({ ...p, visibility: 'public' })); setBasicVisibilityOpen(false); }}>Public</button></li>
                         <li><button className="dropdown-item" type="button" onClick={() => { setBasicProfile(p => ({ ...p, visibility: 'private' })); setBasicVisibilityOpen(false); }}>Private</button></li>
@@ -802,12 +841,12 @@ const ProfessorAccount = () => {
                 <label>Availability</label>
                 <div className="learners-account-toggle-copy">
                   <span>Available to hire</span>
-                  <button type="button" className={getSwitchClassName('availability')} disabled={!isBasicEditing} onClick={() => toggleSwitch('availability')}><span /></button>
+                  <button type="button" className={getSwitchClassName('availability')} disabled={profileLoading} onClick={() => toggleSwitch('availability')}><span /></button>
                 </div>
               </div>
 
               <div className="learners-account-section-actions">
-                <button type="button" className="learners-account-save-btn" onClick={handleBasicSave} disabled={profileSaving || !isBasicEditing}>
+                <button type="button" className="learners-account-save-btn" onClick={handleBasicSave} disabled={profileSaving || profileLoading}>
                   {profileSaving ? 'Saving...' : 'Save Changes'}
                 </button>
               </div>

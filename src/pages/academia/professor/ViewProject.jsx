@@ -1,58 +1,60 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import ProfessorLayout from '../../../components/layouts/ProfessorLayout/ProfessorLayout';
-import { Link } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import './view-project.css';
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
+function normalizeAssetUrl(value) {
+  if (!value) return '';
+  if (/^https?:\/\//i.test(value) || value.startsWith('data:')) return value;
+  return `${API_BASE_URL}${value.startsWith('/') ? '' : '/'}${value}`;
+}
+
+function isImageAsset(value) {
+  if (!value) return false;
+  const cleanValue = String(value).split('?')[0].toLowerCase();
+  return /\.(avif|webp|png|jpe?g|gif|bmp|svg)$/.test(cleanValue) || cleanValue.startsWith('data:image/');
+}
+
+function galleryItemClass(index) {
+  if (index === 0) return 'is-feature';
+  if (index === 1 || index === 2) return 'is-tall';
+  return 'is-half';
+}
+
+function timeAgo(dateString) {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  const now = new Date();
+  const seconds = Math.floor((now - date) / 1000);
+  if (seconds < 60) return 'Just now';
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days === 1) return 'Yesterday';
+  return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
 const ViewProject = () => {
-  const preventDefault = (e) => e.preventDefault();
+  const navigate = useNavigate();
+  const location = useLocation();
 
-  // --- Profile Data ---
-  const profile = {
-    name: 'John Doe',
-    role: 'UI/UX Designer',
-    email: 'johndoe@gonaraza.com',
-    avatar: '/assets/imgs/prof.jpg',
-    status: 'Active',
-    projects: '6',
-  };
+  const [project, setProject] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  // --- Project Details Data ---
-  const projectInfo = {
-    title: 'Build your software & engineering dream career',
-    subtitle: 'A portfolio-led product concept focused on collaborative learning, mentorship, and practical design systems.',
-    image: '/assets/imgs/ac-jr.jpg',
-    abstract: 'Statistics is the branch of mathematics that deals with the collection, analysis, interpretation, presentation, and organization of data. It provides methodologies for making inferences about populations based on sample data, enabling researchers to quantify uncertainty and variability in empirical findings.',
-    team: 'Team owners',
-    comments: [
-      { id: 1, name: 'Mr. Anderson', avatar: '/assets/imgs/prof.jpg', time: '1 Day ago', message: 'Long before you sit down to put digital pen to paper you need to make sure you have to sit down and write. I’ll show you how to write a great blog post in five simple steps that people will actually want to read. Ready?', posted: 'Apr 23, 2025' },
-      { id: 2, name: 'Mrs. Anderson', avatar: '/assets/imgs/ac-on.jpg', time: '1 Day ago', message: 'Nice Project', posted: 'Apr 23, 2025' },
-      { id: 3, name: 'Mrs. Anderson', avatar: '/assets/imgs/ac-on.jpg', time: '1 Day ago', message: 'Nice Project', posted: 'Apr 23, 2025' },
-      { id: 4, name: 'Mrs. Anderson', avatar: '/assets/imgs/ac-on.jpg', time: '1 Day ago', message: 'Nice Project', posted: 'Apr 23, 2025' },
-      { id: 5, name: 'Mrs. Anderson', avatar: '/assets/imgs/ac-on.jpg', time: '1 Day ago', message: 'Nice Project', posted: 'Apr 23, 2025' },
-    ],
-    tools: ['Adobe XD', 'Figma', 'HTML', 'CSS', 'React'],
-    gallery: [
-      { id: 1, image: '/assets/imgs/d1.jpg', alt: 'Project showcase 1', class: 'is-wide is-tall' },
-      { id: 2, image: '/assets/imgs/ac-on.jpg', alt: 'Project showcase 2', class: 'is-half' },
-      { id: 3, image: '/assets/imgs/ac-jr.jpg', alt: 'Project showcase 3', class: 'is-half' },
-      { id: 4, image: '/assets/imgs/ac-hr.jpg', alt: 'Project showcase 4', class: 'is-wide' },
-    ],
-  };
+  // Active user engagement states
+  const [likesCount, setLikesCount] = useState(0);
+  const [savesCount, setSavesCount] = useState(0);
+  const [commentsCount, setCommentsCount] = useState(0);
+  const [hasLiked, setHasLiked] = useState(false);
+  const [hasSaved, setHasSaved] = useState(false);
+  const [commentsList, setCommentsList] = useState([]);
+  const [newCommentText, setNewCommentText] = useState('');
 
-  // State to manage toggleable engagement metrics
-  const [engagement, setEngagement] = useState([
-    { id: 'comments', label: 'Comments', value: '800', icon: '/assets/icons/ac-com.svg', active: true },
-    { id: 'likes', label: 'Likes', value: '47k', icon: '/assets/icons/heart.svg', active: false },
-    { id: 'saves', label: 'Saves', value: '900', icon: '/assets/icons/ac-sav.svg', active: false },
-  ]);
-
-  const toggleEngagement = (id) => {
-    setEngagement(engagement.map(item => 
-      item.id === id ? { ...item, active: !item.active } : item
-    ));
-  };
-
-  // --- Modal State & Collaborators ---
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [collaborators, setCollaborators] = useState([
     { id: 1, name: 'Sheilah MUGABEKAZI', avatar: '/assets/imgs/prof.jpg' },
@@ -61,6 +63,145 @@ const ViewProject = () => {
 
   const removeCollaborator = (id) => {
     setCollaborators(collaborators.filter(collab => collab.id !== id));
+  };
+
+  const preventDefault = (e) => e.preventDefault();
+  const projectFromState = location.state?.project || null;
+
+  const queryParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
+  const projectId = useMemo(() => queryParams.get('id') || projectFromState?.id, [queryParams, projectFromState]);
+
+  useEffect(() => {
+    if (!projectId) {
+      setProject(null);
+      setError('empty');
+      setLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    const fetchAllData = async () => {
+      setLoading(true);
+      setError('');
+      try {
+        const token = localStorage.getItem('token');
+        
+        // 1. Fetch project details
+        const projectRes = await fetch(`${API_BASE_URL}/api/projects/${projectId}`);
+        if (!projectRes.ok) throw new Error('Project not found');
+        const projectData = await projectRes.json();
+        const proj = projectData?.data;
+        
+        if (cancelled) return;
+        setProject(proj);
+        setLikesCount(proj?.likes_count || 0);
+        setSavesCount(proj?.saves_count || 0);
+        setCommentsCount(proj?.comments_count || 0);
+
+        // 2. Fetch comments
+        const commentsRes = await fetch(`${API_BASE_URL}/api/projects/${projectId}/comments`);
+        if (commentsRes.ok) {
+          const commentsData = await commentsRes.json();
+          if (!cancelled) setCommentsList(commentsData?.data || []);
+        }
+
+        // 3. Fetch check likes/saves status if token exists
+        if (token) {
+          const headers = { Authorization: `Bearer ${token}` };
+          
+          const [likeCheckRes, saveCheckRes] = await Promise.all([
+            fetch(`${API_BASE_URL}/api/projects/${projectId}/likes/check`, { headers }),
+            fetch(`${API_BASE_URL}/api/projects/${projectId}/saves/check`, { headers })
+          ]);
+
+          if (likeCheckRes.ok) {
+            const likeStatus = await likeCheckRes.json();
+            if (!cancelled) setHasLiked(!!likeStatus?.data?.hasLiked);
+          }
+          if (saveCheckRes.ok) {
+            const saveStatus = await saveCheckRes.json();
+            if (!cancelled) setHasSaved(!!saveStatus?.data?.hasSaved);
+          }
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(err.message || 'Could not load project.');
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    fetchAllData();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [projectId]);
+
+  const handleLikeToggle = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    try {
+      const method = hasLiked ? 'DELETE' : 'POST';
+      const res = await fetch(`${API_BASE_URL}/api/projects/${projectId}/likes`, {
+        method,
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        setHasLiked(!hasLiked);
+        setLikesCount(prev => hasLiked ? Math.max(0, prev - 1) : prev + 1);
+      }
+    } catch (err) {
+      console.error('Like toggle failed', err);
+    }
+  };
+
+  const handleSaveToggle = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    try {
+      const method = hasSaved ? 'DELETE' : 'POST';
+      const res = await fetch(`${API_BASE_URL}/api/projects/${projectId}/saves`, {
+        method,
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        setHasSaved(!hasSaved);
+        setSavesCount(prev => hasSaved ? Math.max(0, prev - 1) : prev + 1);
+      }
+    } catch (err) {
+      console.error('Save toggle failed', err);
+    }
+  };
+
+  const handleCommentSubmit = async (e) => {
+    e.preventDefault();
+    if (!newCommentText.trim()) return;
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/projects/${projectId}/comments`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ content: newCommentText.trim() })
+      });
+      if (res.ok) {
+        setNewCommentText('');
+        // Refresh comments list
+        const commentsRes = await fetch(`${API_BASE_URL}/api/projects/${projectId}/comments`);
+        if (commentsRes.ok) {
+          const commentsData = await commentsRes.json();
+          setCommentsList(commentsData?.data || []);
+          setCommentsCount(prev => prev + 1);
+        }
+      }
+    } catch (err) {
+      console.error('Comment submit failed', err);
+    }
   };
 
   // Lock body scroll when modal is open
@@ -79,6 +220,49 @@ const ViewProject = () => {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [isUploadModalOpen]);
 
+  const apexProfile = project ? {
+    name: project.user_name || 'Unknown',
+    role: project.user_role || 'Professor',
+    email: project.user_email || '',
+    avatar: normalizeAssetUrl(project.user_avatar) || '/assets/imgs/prof.jpg',
+    status: project.approval_status || 'Active',
+    projects: project.user_projects_count || '1',
+  } : { name: 'loading...', role: '', email: '', avatar: '/assets/imgs/prof.jpg', status: 'loading...', projects: '0' };
+
+  const zenithProject = project ? {
+    title: project.title,
+    subtitle: project.subtitle || project.abstract || '',
+    image: normalizeAssetUrl(project.thumbnail_url) || (project.images && project.images[0] ? normalizeAssetUrl(project.images[0]) : ''),
+    abstract: project.abstract || '',
+    team: (project.collaborators && project.collaborators.length) ? `${project.collaborators.length} collaborators` : 'No collaborators',
+    engagement: [
+      { id: 'comments', label: 'Comments', value: commentsCount, icon: '/assets/icons/ac-com.svg', active: true },
+      { id: 'likes', label: 'Likes', value: likesCount, icon: '/assets/icons/heart.svg', active: hasLiked },
+      { id: 'saves', label: 'Saves', value: savesCount, icon: '/assets/icons/ac-sav.svg', active: hasSaved },
+    ],
+    comments: commentsList,
+    tools: project.tools || [],
+    gallery: [project.thumbnail_url, ...(project.images || [])]
+      .filter(Boolean)
+      .filter((img) => isImageAsset(img))
+      .map((img, index) => ({ image: normalizeAssetUrl(img), alt: project.title || 'Project image', class: galleryItemClass(index) })),
+  } : null;
+
+  const displayTitle = zenithProject?.title || (loading ? 'loading...' : 'empty');
+  const displaySubtitle = zenithProject?.subtitle || '';
+  const displayAbstract = zenithProject?.abstract || '';
+  const displayGallery = zenithProject?.gallery || [];
+  const displayTeam = zenithProject?.team || '';
+  const displayEngagement = zenithProject?.engagement || [];
+  const displayComments = commentsList.map(item => ({
+    id: item.id,
+    name: item.user_name || 'Anonymous',
+    avatar: normalizeAssetUrl(item.user_avatar) || '/assets/imgs/prof.jpg',
+    time: timeAgo(item.created_at),
+    message: item.content,
+    posted: new Date(item.created_at).toLocaleDateString()
+  }));
+
   return (
     <ProfessorLayout currentPage="projects">
       <section className="learners-view-project-page">
@@ -87,23 +271,23 @@ const ViewProject = () => {
         <section className="learners-projects-profile-strip">
           <div className="learners-projects-profile-strip-main">
             <div className="learners-projects-profile-avatar">
-              <img src={profile.avatar} alt={profile.name} />
+              <img src={apexProfile.avatar} alt={apexProfile.name} />
             </div>
 
             <div className="learners-projects-profile-copy">
               <div className="learners-projects-profile-name-row">
-                <h1>{profile.name}</h1>
-                <span className="learners-projects-status-badge">{profile.status}</span>
+                <h1>{apexProfile.name}</h1>
+                <span className="learners-projects-status-badge">{apexProfile.status}</span>
                 <span className="learners-projects-count-badge">
                   <img src="/assets/icons/badge-1.svg" alt="" />
-                  <span>{profile.projects}</span>
+                  <span>{apexProfile.projects}</span>
                 </span>
               </div>
 
               <div className="learners-projects-profile-meta">
-                <span>{profile.role}</span>
+                <span>{apexProfile.role}</span>
                 <span>&bull;</span>
-                <span>{profile.email}</span>
+                <span>{apexProfile.email}</span>
               </div>
             </div>
           </div>
@@ -122,35 +306,59 @@ const ViewProject = () => {
         {/* --- Project Details Shell --- */}
         <section className="learners-view-project-shell">
           <div className="learners-view-project-main">
-            <div className="learners-view-project-head">
-              <Link to="/academia/professor/projects" className="learners-view-project-back">
-                <img src="/assets/icons/ac-le.svg" alt="" />
-                <span>Back to Projects</span>
-              </Link>
-              <h2>{projectInfo.title}</h2>
-              <p>{projectInfo.subtitle}</p>
-            </div>
-
-            <section className="learners-view-project-abstract-card">
-              <h3>Abstract</h3>
-              <p>{projectInfo.abstract}</p>
-
-              <button type="button" className="learners-view-project-tools-toggle" onClick={preventDefault}>
-                <span className="learners-view-project-tools-toggle-icon">
-                  <img src="/assets/icons/ac-sd1.svg" alt="" />
-                </span>
-                <span>Tools Used</span>
-                <span className="learners-view-project-tools-toggle-caret"></span>
-              </button>
-            </section>
-
-            <section className="learners-view-project-gallery" aria-label="Project gallery">
-              {projectInfo.gallery.map((item) => (
-                <div key={item.id} className={`learners-view-project-gallery-item ${item.class}`}>
-                  <img src={item.image} alt={item.alt} />
+            {error === 'empty' ? (
+              <div className="learners-view-project-empty-state learners-view-project-empty-state--full">
+                <h3>empty</h3>
+                <p>Select a project from the Projects page to view it here.</p>
+                <button type="button" className="learners-projects-primary-btn" onClick={() => navigate('/academia/professor/projects')}>
+                  Back to Projects
+                </button>
+              </div>
+            ) : (
+              <>
+                <div className="learners-view-project-head">
+                  <Link to="/academia/professor/projects" className="learners-view-project-back">
+                    <img src="/assets/icons/ac-le.svg" alt="" />
+                    <span>Back to Projects</span>
+                  </Link>
+                  <h2>{displayTitle}</h2>
+                  <p>{displaySubtitle || (loading ? 'Fetching project details from the backend.' : 'No project data available.')}</p>
                 </div>
-              ))}
-            </section>
+
+                <section className="learners-view-project-abstract-card">
+                  <h3>Abstract</h3>
+                  {loading ? <p>loading...</p> : <p>{displayAbstract || 'empty'}</p>}
+
+                  <button type="button" className="learners-view-project-tools-toggle" onClick={preventDefault}>
+                    <span className="learners-view-project-tools-toggle-icon">
+                      <img src="/assets/icons/ac-sd1.svg" alt="" />
+                    </span>
+                    <span>Tools Used</span>
+                    <span className="learners-view-project-tools-toggle-caret"></span>
+                  </button>
+                </section>
+
+                <section className="learners-view-project-gallery" aria-label="Project gallery">
+                  {loading ? (
+                    <div className="learners-view-project-empty-state">
+                      <h3>loading...</h3>
+                      <p>Preparing the project gallery.</p>
+                    </div>
+                  ) : displayGallery.length > 0 ? (
+                    displayGallery.map((husk, idx) => (
+                      <div key={idx} className={`learners-view-project-gallery-item ${husk.class}`}>
+                        <img src={husk.image} alt={husk.alt} />
+                      </div>
+                    ))
+                  ) : (
+                    <div className="learners-view-project-empty-state">
+                      <h3>empty</h3>
+                      <p>No gallery images were uploaded for this project.</p>
+                    </div>
+                  )}
+                </section>
+              </>
+            )}
           </div>
 
           {/* --- Right Sidebar / Comments Panel --- */}
@@ -158,9 +366,9 @@ const ViewProject = () => {
             <section className="learners-view-project-comments-panel">
               <div className="learners-view-project-comments-head">
                 <div>
-                  <h3>{projectInfo.title}</h3>
+                  <h3>{displayTitle}</h3>
                   <button type="button" className="learners-view-project-team-toggle" onClick={preventDefault}>
-                    <span>1 {projectInfo.team}</span>
+                    <span>{displayTeam}</span>
                     <span className="learners-view-project-team-caret"></span>
                   </button>
                 </div>
@@ -171,44 +379,75 @@ const ViewProject = () => {
               </div>
 
               <div className="learners-view-project-engagement-row">
-                {engagement.map((item) => (
+                {displayEngagement.length > 0 ? displayEngagement.map((husk) => (
                   <button 
-                    key={item.id} 
+                    key={husk.id} 
                     type="button" 
-                    className={`learners-view-project-engagement-pill ${item.active ? 'is-active' : ''}`} 
-                    onClick={() => toggleEngagement(item.id)}
+                    className={`learners-view-project-engagement-pill ${husk.active ? 'is-active' : ''}`} 
+                    onClick={(e) => {
+                      e.preventDefault();
+                      if (husk.id === 'likes') handleLikeToggle();
+                      if (husk.id === 'saves') handleSaveToggle();
+                    }}
                   >
-                    <img src={item.icon} alt="" />
-                    <span>{item.value} {item.label}</span>
+                    <img src={husk.id === 'likes' && hasLiked ? '/assets/icons/ac-her2.svg' : husk.icon} alt="" />
+                    <span>{husk.value} {husk.label}</span>
                   </button>
-                ))}
+                )) : <div className="learners-view-project-empty-state"><h3>empty</h3><p>No engagement stats yet.</p></div>}
               </div>
 
               <div className="learners-view-project-comments-list">
-                {projectInfo.comments.map((comment) => (
-                  <article key={comment.id} className="learners-view-project-comment">
-                    <div className="learners-view-project-comment-avatar">
-                      <img src={comment.avatar} alt={comment.name} />
-                    </div>
-
-                    <div className="learners-view-project-comment-body">
-                      <div className="learners-view-project-comment-meta">
-                        <strong>{comment.name}</strong>
-                        <span>{comment.time}</span>
+                {loading ? (
+                  <div className="learners-view-project-empty-state">
+                    <h3>loading...</h3>
+                    <p>Loading comments.</p>
+                  </div>
+                ) : displayComments.length > 0 ? (
+                  displayComments.map((comment) => (
+                    <article key={comment.id} className="learners-view-project-comment">
+                      <div className="learners-view-project-comment-avatar">
+                        <img src={comment.avatar} alt={comment.name} />
                       </div>
 
-                      <p>{comment.message}</p>
+                      <div className="learners-view-project-comment-body">
+                        <div className="learners-view-project-comment-meta">
+                          <strong>{comment.name}</strong>
+                          <span>{comment.time}</span>
+                        </div>
 
-                      <div className="learners-view-project-comment-foot">
-                        <button type="button" className="learners-view-project-comment-reply" onClick={preventDefault}>
-                          <img src="/assets/icons/ac-rep.svg" alt="" />
-                          <span>Reply</span>
-                        </button>
-                        <span>Posted on <strong>{comment.posted}</strong></span>
+                        <p>{comment.message}</p>
+
+                        <div className="learners-view-project-comment-foot">
+                          <button type="button" className="learners-view-project-comment-reply" onClick={preventDefault}>
+                            <img src="/assets/icons/ac-rep.svg" alt="" />
+                            <span>Reply</span>
+                          </button>
+                          <span>Posted on <strong>{comment.posted}</strong></span>
+                        </div>
                       </div>
-                    </div>
-                  </article>
-                ))}
+                    </article>
+                  ))
+                ) : (
+                  <div className="learners-view-project-empty-state">
+                    <h3>empty</h3>
+                    <p>No comments yet.</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Add Comment Form */}
+              <div className="learners-view-project-comment-composer">
+                <form onSubmit={handleCommentSubmit} className="learners-view-project-comment-form">
+                  <textarea 
+                    placeholder="Write a comment..." 
+                    value={newCommentText} 
+                    onChange={(e) => setNewCommentText(e.target.value)}
+                    required
+                  />
+                  <button type="submit" className="learners-projects-primary-btn" disabled={!newCommentText.trim()}>
+                    <span>Post Comment</span>
+                  </button>
+                </form>
               </div>
             </section>
           </aside>

@@ -52,6 +52,13 @@ function CoursePart() {
     return `${API_BASE_URL}/${value}`;
   };
 
+  const formatHtmlContent = (html) => {
+    if (!html) return '';
+    return html
+      .replace(/src="\/uploads\//g, `src="${API_BASE_URL}/uploads/`)
+      .replace(/&nbsp;/g, ' ');
+  };
+
   const showToast = (message, tone = 'success') => {
     setToast({ message, visible: true, tone });
     setTimeout(() => {
@@ -156,6 +163,7 @@ function CoursePart() {
           intro: courseData.intro_message || courseData.description || '',
           audience: courseData.target_audience || '',
           category: courseData.category || '',
+          objectives: courseData.objectives || '',
         });
 
         // set chapters if available
@@ -237,11 +245,10 @@ function CoursePart() {
   const activeWeek = weeks[activeWeekIndex];
   const activeChapters = activeWeek ? (activeWeek.chapters || []) : [];
 
-  const outcomes = course?.objectives ? (typeof course.objectives === 'string' ? course.objectives.split('\n') : Array.isArray(course.objectives) ? course.objectives : []) : [];
-
   const hasSyllabus = Array.isArray(weeks) && weeks.length > 0;
-  const hasOutcomes = Array.isArray(outcomes) && outcomes.length > 0;
-  const showContentSections = !loading && (hasSyllabus || hasOutcomes);
+  const hasOutcomes = !!course?.objectives;
+  const hasAudience = !!course?.audience;
+  const showContentSections = !loading && (hasSyllabus || hasOutcomes || hasAudience);
 
   return (
     <section className="learners-course-part-page">
@@ -531,15 +538,17 @@ function CoursePart() {
                   </section>
                 )}
 
+                {course?.audience && (
+                  <section className="learners-course-specific-section learners-course-specific-audience">
+                    <h3>Who is the course for?</h3>
+                    <div className="learners-audience-content" dangerouslySetInnerHTML={{ __html: formatHtmlContent(course.audience) }} />
+                  </section>
+                )}
+
                 {hasOutcomes && (
                   <section className="learners-course-specific-section learners-course-specific-outcomes">
                     <h3>What will you achieve?</h3>
-                    <p>By the end of the course, you'll be able to...</p>
-                    <ul>
-                      {outcomes.map((o, idx) => (
-                        <li key={`${String(o).slice(0,20)}-${idx}`}>{o}</li>
-                      ))}
-                    </ul>
+                    <div className="learners-outcomes-content" dangerouslySetInnerHTML={{ __html: formatHtmlContent(course.objectives) }} />
                   </section>
                 )}
               </>

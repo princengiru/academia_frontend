@@ -41,6 +41,67 @@ const Projects = () => {
   const [abstract, setAbstract] = useState('');
   const [collaboratorDraft, setCollaboratorDraft] = useState('');
   const [collaborators, setCollaborators] = useState([]);
+  const [searchResults, setSearchResults] = useState([]);
+  const [showDropdown, setShowDropdown] = useState(false);
+
+  // Debounced search for collaborators by name and/or email
+  useEffect(() => {
+    if (!collaboratorDraft || collaboratorDraft.trim().length < 1) {
+      setSearchResults([]);
+      setShowDropdown(false);
+      return;
+    }
+
+    const query = collaboratorDraft.startsWith('@')
+      ? collaboratorDraft.slice(1).trim()
+      : collaboratorDraft.trim();
+
+    if (!query) {
+      setSearchResults([]);
+      setShowDropdown(false);
+      return;
+    }
+
+    const delayDebounceFn = setTimeout(async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(`${API_BASE_URL}/api/users/search?q=${encodeURIComponent(query)}`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        if (res.ok) {
+          const body = await res.json();
+          if (body?.success && Array.isArray(body?.data)) {
+            setSearchResults(body.data);
+            setShowDropdown(body.data.length > 0);
+          } else {
+            setSearchResults([]);
+            setShowDropdown(false);
+          }
+        } else {
+          setSearchResults([]);
+          setShowDropdown(false);
+        }
+      } catch (err) {
+        console.error('Error searching users:', err);
+        setSearchResults([]);
+        setShowDropdown(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [collaboratorDraft]);
+
+  // Click outside to close dropdown
+  useEffect(() => {
+    const handleOutsideClick = () => {
+      setShowDropdown(false);
+    };
+    document.addEventListener('click', handleOutsideClick);
+    return () => {
+      document.removeEventListener('click', handleOutsideClick);
+    };
+  }, []);
+
   const [imagesFiles, setImagesFiles] = useState([]);
   const [deliverableFile, setDeliverableFile] = useState(null);
 
@@ -122,10 +183,147 @@ const Projects = () => {
     else if (page > totalPages) setPage(totalPages);
   }, [projects, page, totalPages]);
 
+  const [likedProjects, setLikedProjects] = useState({});
+  const [savedProjects, setSavedProjects] = useState({});
+
   const visibleProjects = useMemo(() => {
     const start = (page - 1) * pageSize;
     return projects.slice(start, start + pageSize);
   }, [projects, page, pageSize]);
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token || !visibleProjects.length) return;
+
+    let cancelled = false;
+    const checkStatuses = async () => {
+      const headers = { Authorization: `Bearer ${token}` };
+      const likesMap = { ...likedProjects };
+      const savesMap = { ...savedProjects };
+
+      await Promise.all(
+        visibleProjects.map(async (p) => {
+          if (!p.id) return;
+          try {
+            const [likeRes, saveRes] = await Promise.all([
+              fetch(`${API_BASE_URL}/api/projects/${p.id}/likes/check`, { headers }),
+              fetch(`${API_BASE_URL}/api/projects/${p.id}/saves/check`, { headers })
+            ]);
+            if (likeRes.ok) {
+              const checkLikeData = await likeRes.json();
+              likesMap[p.id] = !!checkLikeData?.data?.hasLiked;
+            }
+            if (saveRes.ok) {
+              const checkSaveData = await saveRes.json();
+              savesMap[p.id] = !!checkSaveData?.data?.hasSaved;
+            }
+          } catch (e) {
+            console.error('Check failed for project', p.id, e);
+          }
+        })
+      );
+
+      if (!cancelled) {
+        setLikedProjects(likesMap);
+        setSavedProjects(savesMap);
+      }
+    };
+
+    checkStatuses();
+    return () => { cancelled = true; };
+  }, [visibleProjects]);
+
+  // Autocomplete user search side-effect
+  useEffect(() => {
+    if (!collaboratorDraft.trim()) {
+      setSearchResults([]);
+      setShowDropdown(false);
+      return;
+    }
+
+    const token = localStorage.getItem('token');
+    const delayDebounce = setTimeout(async () => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/users/search?q=${encodeURIComponent(collaboratorDraft)}`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {}
+        });
+        if (res.ok) {
+          const body = await res.json();
+          setSearchResults(body?.data || []);
+          setShowDropdown(true);
+        }
+      } catch (err) {
+        console.error('Error searching users:', err);
+      }
+    }, 300);
+
+    return () => clearTimeout(delayDebounce);
+  }, [collaboratorDraft]);
+
+  // Close search dropdown on click outside
+  useEffect(() => {
+    const handleDocumentClick = () => {
+      setShowDropdown(false);
+    };
+    document.addEventListener('click', handleDocumentClick);
+    return () => document.removeEventListener('click', handleDocumentClick);
+  }, []);
+
+  const handleLikeToggle = async (projectId, event) => {
+    event.stopPropagation();
+    event.preventDefault();
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    const currentlyLiked = !!likedProjects[projectId];
+    try {
+      const method = currentlyLiked ? 'DELETE' : 'POST';
+      const res = await fetch(`${API_BASE_URL}/api/projects/${projectId}/likes`, {
+        method,
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        setLikedProjects(prev => ({ ...prev, [projectId]: !currentlyLiked }));
+        setProjects(prevProjects => 
+          prevProjects.map(p => 
+            p.id === projectId 
+              ? { ...p, likes_count: currentlyLiked ? Math.max(0, (p.likes_count || 0) - 1) : (p.likes_count || 0) + 1 }
+              : p
+          )
+        );
+      }
+    } catch (err) {
+      console.error('Error toggling like from grid:', err);
+    }
+  };
+
+  const handleSaveToggle = async (projectId, event) => {
+    event.stopPropagation();
+    event.preventDefault();
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    const currentlySaved = !!savedProjects[projectId];
+    try {
+      const method = currentlySaved ? 'DELETE' : 'POST';
+      const res = await fetch(`${API_BASE_URL}/api/projects/${projectId}/saves`, {
+        method,
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        setSavedProjects(prev => ({ ...prev, [projectId]: !currentlySaved }));
+        setProjects(prevProjects => 
+          prevProjects.map(p => 
+            p.id === projectId 
+              ? { ...p, saves_count: currentlySaved ? Math.max(0, (p.saves_count || 0) - 1) : (p.saves_count || 0) + 1 }
+              : p
+          )
+        );
+      }
+    } catch (err) {
+      console.error('Error toggling save from grid:', err);
+    }
+  };
 
   const goToPage = (n) => setPage(Math.min(Math.max(1, n), totalPages));
 
@@ -135,8 +333,26 @@ const Projects = () => {
     e.preventDefault();
     const value = collaboratorDraft.trim();
     if (!value) return;
-    setCollaborators(prev => [...prev, value]);
+    if (collaborators.some(c => (c.name || c) === value)) return;
+    setCollaborators(prev => [...prev, { name: value }]);
     setCollaboratorDraft('');
+    setShowDropdown(false);
+  };
+
+  const handleSelectCollaborator = (user) => {
+    if (collaborators.some(c => c.id === user.id || c.email === user.email)) {
+      setCollaboratorDraft('');
+      setShowDropdown(false);
+      return;
+    }
+    setCollaborators(prev => [...prev, {
+      id: user.id,
+      name: user.name || user.email.split('@')[0],
+      email: user.email,
+      avatar: user.avatar
+    }]);
+    setCollaboratorDraft('');
+    setShowDropdown(false);
   };
 
   const removeCollaborator = (item) => {
@@ -148,6 +364,8 @@ const Projects = () => {
     setAbstract('');
     setCollaboratorDraft('');
     setCollaborators([]);
+    setSearchResults([]);
+    setShowDropdown(false);
     setImagesFiles([]);
     setDeliverableFile(null);
     setUploadError('');
@@ -166,8 +384,7 @@ const Projects = () => {
     form.append('title', title.trim());
     if (abstract.trim()) form.append('abstract', abstract.trim());
     if (collaborators.length > 0) {
-       // Backend logic handling array of strings
-       form.append('collaborators', JSON.stringify(collaborators.map((name, i) => ({ id: i, name }))));
+       form.append('collaborators', JSON.stringify(collaborators));
     }
 
     imagesFiles.forEach(file => form.append('images', file));
@@ -278,13 +495,25 @@ const Projects = () => {
                         </div>
 
                         <div className="learners-project-card-actions">
-                          <button type="button" onClick={preventDefault}>
-                            <img src="/assets/icons/ac-her1.svg" alt="" />
-                            <span>{formatCount(card.likes || 0)}</span>
+                          <button 
+                            type="button" 
+                            onClick={(e) => handleLikeToggle(card.id, e)}
+                            className={`learners-project-card-action-btn ${likedProjects[card.id] ? 'is-active' : ''}`}
+                          >
+                            <img src={likedProjects[card.id] ? '/assets/icons/ac-her2.svg' : '/assets/icons/heart.svg'} alt="Like" />
+                            <span>{formatCount(card.likes_count || 0)}</span>
                           </button>
                           <button type="button" onClick={preventDefault}>
-                            <img src="/assets/icons/ac-eye.svg" alt="" />
-                            <span>{formatCount(card.views || 0)}</span>
+                            <img src="/assets/icons/ac-eye.svg" alt="Views" />
+                            <span>{formatCount(card.views_count || 0)}</span>
+                          </button>
+                          <button 
+                            type="button" 
+                            onClick={(e) => handleSaveToggle(card.id, e)}
+                            className={`learners-project-card-action-btn ${savedProjects[card.id] ? 'is-active' : ''}`}
+                          >
+                            <img src="/assets/icons/ac-sav.svg" alt="Save" />
+                            <span>{formatCount(card.saves_count || 0)}</span>
                           </button>
                         </div>
                       </div>
@@ -427,25 +656,43 @@ const Projects = () => {
               <textarea placeholder="Type something..." value={abstract} onChange={(e) => setAbstract(e.target.value)}></textarea>
             </div>
 
-            <div className="learners-upload-modal__field">
+            <div className="learners-upload-modal__field" onClick={(e) => e.stopPropagation()}>
               <label>Add Collaboration</label>
-              <div className="learners-upload-modal__search">
+              <div className="learners-upload-modal__search" style={{ position: 'relative' }}>
                 <img src="/assets/icons/ac-see.svg" alt="" />
                 <input 
                   type="text" 
-                  placeholder='@ - name (Press Enter to add)' 
+                  placeholder='@ - name or email' 
                   value={collaboratorDraft}
                   onChange={(e) => setCollaboratorDraft(e.target.value)}
                   onKeyDown={handleCollaboratorKeyDown}
+                  autoComplete="off"
                 />
+                {showDropdown && searchResults.length > 0 && (
+                  <div className="learners-upload-modal__search-dropdown">
+                    {searchResults.map((user) => (
+                      <div 
+                        key={user.id} 
+                        className="learners-upload-modal__search-item"
+                        onClick={() => handleSelectCollaborator(user)}
+                      >
+                        <img src={normalizeAssetUrl(user.avatar) || '/assets/imgs/prof.jpg'} alt={user.name} />
+                        <div>
+                          <strong>{user.name || 'Anonymous'}</strong>
+                          <span>{user.email}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 
             <div className="learners-upload-modal__chips">
               {collaborators.map((item, index) => (
                 <div key={index} className="learners-upload-modal__chip">
-                  <img src="/assets/imgs/prof.jpg" alt={item} />
-                  <span>{item}</span>
+                  <img src={normalizeAssetUrl(item.avatar) || '/assets/imgs/prof.jpg'} alt={item.name || item} />
+                  <span>{item.name || item}</span>
                   <button type="button" onClick={() => removeCollaborator(item)}>
                     <img src="/assets/icons/popup-close.svg" alt="Remove" />
                   </button>
@@ -467,7 +714,7 @@ const Projects = () => {
             {imagesFiles.length > 0 && <span style={{fontSize: '12px', color: 'gray'}}>{imagesFiles.length} file(s) selected</span>}
 
             {/* Singular Deliverable Upload */}
-            <div style={{ marginTop: 16 }}>
+            <div className="learners-upload-modal__field" style={{ marginTop: 16 }}>
               <label>Deliverable file (optional)</label>
               <input type="file" onChange={(e) => setDeliverableFile(e.target.files[0] || null)} />
             </div>

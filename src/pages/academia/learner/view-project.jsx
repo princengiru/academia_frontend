@@ -42,6 +42,21 @@ function galleryItemClass(index) {
   return 'is-half';
 }
 
+function timeAgo(dateString) {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  const now = new Date();
+  const seconds = Math.floor((now - date) / 1000);
+  if (seconds < 60) return 'Just now';
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days === 1) return 'Yesterday';
+  return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
 function LearnersViewProject() {
   const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -56,7 +71,77 @@ function LearnersViewProject() {
   const [thumbnailFile, setThumbnailFile] = useState(null);
   const [collaboratorDraft, setCollaboratorDraft] = useState('');
   const [collaborators, setCollaborators] = useState([]);
+  const [searchResults, setSearchResults] = useState([]);
+  const [showDropdown, setShowDropdown] = useState(false);
+
+  // Debounced search for collaborators by name and/or email
+  useEffect(() => {
+    if (!collaboratorDraft || collaboratorDraft.trim().length < 1) {
+      setSearchResults([]);
+      setShowDropdown(false);
+      return;
+    }
+
+    const query = collaboratorDraft.startsWith('@')
+      ? collaboratorDraft.slice(1).trim()
+      : collaboratorDraft.trim();
+
+    if (!query) {
+      setSearchResults([]);
+      setShowDropdown(false);
+      return;
+    }
+
+    const delayDebounceFn = setTimeout(async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(`${API_BASE_URL}/api/users/search?q=${encodeURIComponent(query)}`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        if (res.ok) {
+          const body = await res.json();
+          if (body?.success && Array.isArray(body?.data)) {
+            setSearchResults(body.data);
+            setShowDropdown(body.data.length > 0);
+          } else {
+            setSearchResults([]);
+            setShowDropdown(false);
+          }
+        } else {
+          setSearchResults([]);
+          setShowDropdown(false);
+        }
+      } catch (err) {
+        console.error('Error searching users:', err);
+        setSearchResults([]);
+        setShowDropdown(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [collaboratorDraft]);
+
+  // Click outside to close dropdown
+  useEffect(() => {
+    const handleOutsideClick = () => {
+      setShowDropdown(false);
+    };
+    document.addEventListener('click', handleOutsideClick);
+    return () => {
+      document.removeEventListener('click', handleOutsideClick);
+    };
+  }, []);
+
   const location = useLocation();
+
+  // Active user states
+  const [likesCount, setLikesCount] = useState(0);
+  const [savesCount, setSavesCount] = useState(0);
+  const [commentsCount, setCommentsCount] = useState(0);
+  const [hasLiked, setHasLiked] = useState(false);
+  const [hasSaved, setHasSaved] = useState(false);
+  const [commentsList, setCommentsList] = useState([]);
+  const [newCommentText, setNewCommentText] = useState('');
 
   const preventDefault = (e) => e.preventDefault();
   const projectFromState = location.state?.project || null;
@@ -85,20 +170,141 @@ function LearnersViewProject() {
     return list;
   };
 
-  useEffect(() => {
-    setLoading(true);
-    setError('');
+  const queryParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
+  const projectId = useMemo(() => queryParams.get('id') || projectFromState?.id, [queryParams, projectFromState]);
 
-    if (projectFromState) {
-      setProject(projectFromState);
+  useEffect(() => {
+    if (!projectId) {
+      setProject(null);
+      setError('empty');
       setLoading(false);
       return;
     }
 
-    setProject(null);
-    setError('empty');
-    setLoading(false);
-  }, [projectFromState]);
+    let cancelled = false;
+    const fetchAllData = async () => {
+      setLoading(true);
+      setError('');
+      try {
+        const token = localStorage.getItem('token');
+        
+        // 1. Fetch project details
+        const projectRes = await fetch(`${API_BASE_URL}/api/projects/${projectId}`);
+        if (!projectRes.ok) throw new Error('Project not found');
+        const projectData = await projectRes.json();
+        const proj = projectData?.data;
+        
+        if (cancelled) return;
+        setProject(proj);
+        setLikesCount(proj?.likes_count || 0);
+        setSavesCount(proj?.saves_count || 0);
+        setCommentsCount(proj?.comments_count || 0);
+
+        // 2. Fetch comments
+        const commentsRes = await fetch(`${API_BASE_URL}/api/projects/${projectId}/comments`);
+        if (commentsRes.ok) {
+          const commentsData = await commentsRes.json();
+          if (!cancelled) setCommentsList(commentsData?.data || []);
+        }
+
+        // 3. Fetch check likes/saves status if token exists
+        if (token) {
+          const headers = { Authorization: `Bearer ${token}` };
+          
+          const [likeCheckRes, saveCheckRes] = await Promise.all([
+            fetch(`${API_BASE_URL}/api/projects/${projectId}/likes/check`, { headers }),
+            fetch(`${API_BASE_URL}/api/projects/${projectId}/saves/check`, { headers })
+          ]);
+
+          if (likeCheckRes.ok) {
+            const likeStatus = await likeCheckRes.json();
+            if (!cancelled) setHasLiked(!!likeStatus?.data?.hasLiked);
+          }
+          if (saveCheckRes.ok) {
+            const saveStatus = await saveCheckRes.json();
+            if (!cancelled) setHasSaved(!!saveStatus?.data?.hasSaved);
+          }
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(err.message || 'Could not load project.');
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    fetchAllData();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [projectId]);
+
+  const handleLikeToggle = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    try {
+      const method = hasLiked ? 'DELETE' : 'POST';
+      const res = await fetch(`${API_BASE_URL}/api/projects/${projectId}/likes`, {
+        method,
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        setHasLiked(!hasLiked);
+        setLikesCount(prev => hasLiked ? Math.max(0, prev - 1) : prev + 1);
+      }
+    } catch (err) {
+      console.error('Like toggle failed', err);
+    }
+  };
+
+  const handleSaveToggle = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    try {
+      const method = hasSaved ? 'DELETE' : 'POST';
+      const res = await fetch(`${API_BASE_URL}/api/projects/${projectId}/saves`, {
+        method,
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        setHasSaved(!hasSaved);
+        setSavesCount(prev => hasSaved ? Math.max(0, prev - 1) : prev + 1);
+      }
+    } catch (err) {
+      console.error('Save toggle failed', err);
+    }
+  };
+
+  const handleCommentSubmit = async (e) => {
+    e.preventDefault();
+    if (!newCommentText.trim()) return;
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/projects/${projectId}/comments`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ content: newCommentText.trim() })
+      });
+      if (res.ok) {
+        setNewCommentText('');
+        // Refresh comments list
+        const commentsRes = await fetch(`${API_BASE_URL}/api/projects/${projectId}/comments`);
+        if (commentsRes.ok) {
+          const commentsData = await commentsRes.json();
+          setCommentsList(commentsData?.data || []);
+          setCommentsCount(prev => prev + 1);
+        }
+      }
+    } catch (err) {
+      console.error('Comment submit failed', err);
+    }
+  };
 
   const activeProject = project || projectFromState || null;
 
@@ -123,8 +329,27 @@ function LearnersViewProject() {
     const value = collaboratorDraft.trim();
     if (!value) return;
 
-    setCollaborators((current) => [...current, value]);
+    if (collaborators.some(c => (c.name || c) === value)) return;
+
+    setCollaborators((current) => [...current, { name: value }]);
     setCollaboratorDraft('');
+    setShowDropdown(false);
+  };
+
+  const handleSelectCollaborator = (user) => {
+    if (collaborators.some(c => c.id === user.id || c.email === user.email)) {
+      setCollaboratorDraft('');
+      setShowDropdown(false);
+      return;
+    }
+    setCollaborators((current) => [...current, {
+      id: user.id,
+      name: user.name || user.email.split('@')[0],
+      email: user.email,
+      avatar: user.avatar
+    }]);
+    setCollaboratorDraft('');
+    setShowDropdown(false);
   };
 
   const removeCollaborator = (item) => {
@@ -198,11 +423,11 @@ function LearnersViewProject() {
 
   const apexProfile = project ? {
     name: project.user_name || 'Unknown',
-    role: project.user_role || '',
+    role: project.user_role || 'Learner',
     email: project.user_email || '',
     avatar: normalizeAssetUrl(project.user_avatar) || profImg,
     status: project.approval_status || 'Active',
-    projects: project.user_projects_count || '0',
+    projects: project.user_projects_count || '1',
   } : { name: 'loading...', role: '', email: '', avatar: profImg, status: 'loading...', projects: '0' };
 
   const zenithProject = project ? {
@@ -212,11 +437,11 @@ function LearnersViewProject() {
     abstract: project.abstract || '',
     team: (project.collaborators && project.collaborators.length) ? `${project.collaborators.length} collaborators` : 'No collaborators',
     engagement: [
-      { label: 'Comments', value: project.comments_count || 0, icon: acCom, active: true },
-      { label: 'Likes', value: project.likes_count || 0, icon: heartIcon, active: false },
-      { label: 'Saves', value: project.saves_count || 0, icon: acSav, active: false },
+      { id: 'comments', label: 'Comments', value: commentsCount, icon: acCom, active: true },
+      { id: 'likes', label: 'Likes', value: likesCount, icon: heartIcon, active: hasLiked },
+      { id: 'saves', label: 'Saves', value: savesCount, icon: acSav, active: hasSaved },
     ],
-    comments: project.comments || [],
+    comments: commentsList,
     tools: project.tools || [],
     gallery: [project.thumbnail_url, ...(project.images || [])]
       .filter(Boolean)
@@ -349,7 +574,11 @@ function LearnersViewProject() {
                     key={idx} 
                     type="button" 
                     className={`learners-view-project-engagement-pill ${husk.active ? 'is-active' : ''}`} 
-                    onClick={preventDefault}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      if (husk.id === 'likes') handleLikeToggle();
+                      if (husk.id === 'saves') handleSaveToggle();
+                    }}
                   >
                     <img src={husk.icon} alt={husk.label} />
                     <span>{husk.value} {husk.label}</span>
@@ -395,6 +624,21 @@ function LearnersViewProject() {
                   </div>
                 )}
               </div>
+
+              {/* Add Comment Form */}
+              <div className="learners-view-project-comment-composer">
+                <form onSubmit={handleCommentSubmit} className="learners-view-project-comment-form">
+                  <textarea 
+                    placeholder="Write a comment..." 
+                    value={newCommentText} 
+                    onChange={(e) => setNewCommentText(e.target.value)}
+                    required
+                  />
+                  <button type="submit" className="learners-projects-primary-btn" disabled={!newCommentText.trim()}>
+                    <span>Post Comment</span>
+                  </button>
+                </form>
+              </div>
             </section>
           </aside>
         </section>
@@ -431,27 +675,45 @@ function LearnersViewProject() {
               <textarea id="learnersProjectAbstract" placeholder="Type something..." value={projectAbstract} onChange={(event) => setProjectAbstract(event.target.value)}></textarea>
             </div>
 
-            <div className="learners-upload-modal__field">
+            <div className="learners-upload-modal__field" onClick={(e) => e.stopPropagation()}>
               <label htmlFor="learnersProjectCollaboration">Add Collaboration</label>
-              <div className="learners-upload-modal__search">
+              <div className="learners-upload-modal__search" style={{ position: 'relative' }}>
                 <img src={acSee} alt="Search" />
                 <input
                   id="learnersProjectCollaboration"
                   type="text"
-                  placeholder="@ - name"
+                  placeholder="@ - name or email"
                   value={collaboratorDraft}
                   onChange={(event) => setCollaboratorDraft(event.target.value)}
                   onKeyDown={handleCollaboratorKeyDown}
+                  autoComplete="off"
                 />
+                {showDropdown && searchResults.length > 0 && (
+                  <div className="learners-upload-modal__search-dropdown">
+                    {searchResults.map((user) => (
+                      <div 
+                        key={user.id} 
+                        className="learners-upload-modal__search-item"
+                        onClick={() => handleSelectCollaborator(user)}
+                      >
+                        <img src={normalizeAssetUrl(user.avatar) || profImg} alt={user.name} />
+                        <div>
+                          <strong>{user.name || 'Anonymous'}</strong>
+                          <span>{user.email}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 
             <div className="learners-upload-modal__chips">
               {collaborators.map((item, index) => (
-                <div key={`${item}-${index}`} className="learners-upload-modal__chip">
-                  <img src={profImg} alt={item} />
-                  <span>{item}</span>
-                  <button type="button" onClick={() => removeCollaborator(item)} aria-label={`Remove ${item}`}>
+                <div key={`${item.name || item}-${index}`} className="learners-upload-modal__chip">
+                  <img src={normalizeAssetUrl(item.avatar) || profImg} alt={item.name || item} />
+                  <span>{item.name || item}</span>
+                  <button type="button" onClick={() => removeCollaborator(item)} aria-label={`Remove ${item.name || item}`}>
                     <img src={popupClose} alt="Remove" />
                   </button>
                 </div>

@@ -40,46 +40,81 @@ function LearnersAvailableTest() {
 
   useEffect(() => {
     let cancelled = false;
-    const tryEndpoints = [
-      `${API_BASE_URL}/api/summative-assessments/public/all?limit=${limit}&offset=${(page - 1) * limit}`,
-      `${API_BASE_URL}/api/courses/public/available?page=1&limit=12`,
-    ];
 
     const load = async () => {
       setLoading(true);
-      for (const url of tryEndpoints) {
-        try {
-          const res = await fetch(url);
-          const body = await res.json();
-          if (!res.ok) throw new Error(body?.message || 'no');
-          const list = extractList(body);
-          if (list && list.length) {
-            if (cancelled) return;
-            // map to test shape
-            const mapped = list.map((it, idx) => ({
-              id: it.id || idx,
-              courseId: it.courseId,
-              title: it.title || it.courseName || 'Untitled Test',
-              level: it.minCourseProgress ? `Req. Progress: ${it.minCourseProgress}%` : 'All Levels',
-              levelTone: 'intermediate',
-              author: it.instructor?.name || 'Academia',
-              summary: it.description || it.courseDescription || '',
-              questions: it.totalQuestions || '0',
-              minutes: it.durationMinutes || '0',
-              attempts: it.attemptLimit || '1',
-              score: it.passingScore ? `${it.passingScore}%` : '0%',
-            }));
-            setTests(mapped);
-            // attempt to extract pagination meta
-            const meta = body?.data?.pagination || body?.pagination || {};
-            const total = meta.total || 0;
-            const totalPages = meta.pages || (total ? Math.ceil(total / limit) : 1);
-            setPageCount(totalPages || 1);
-            break;
-          }
-        } catch (err) {
-          // try next
+      try {
+        const token = localStorage.getItem('token');
+        const summativeUrl = `${API_BASE_URL}/api/summative-assessments/public/all?limit=100&offset=0`;
+        const formativeUrl = `${API_BASE_URL}/api/formative-assessments/public/all?limit=100&offset=0`;
+
+        const promises = [
+          fetch(summativeUrl).then(r => r.ok ? r.json() : null).catch(() => null),
+          fetch(formativeUrl).then(r => r.ok ? r.json() : null).catch(() => null)
+        ];
+
+        if (token) {
+          promises.push(
+            fetch(`${API_BASE_URL}/api/dashboard/student`, {
+              headers: { Authorization: `Bearer ${token}` }
+            }).then(r => r.ok ? r.json() : null).catch(() => null)
+          );
         }
+
+        const results = await Promise.all(promises);
+        const summativeRes = results[0];
+        const formativeRes = results[1];
+        const studentDashboardRes = token ? results[2] : null;
+
+        const summativeList = extractList(summativeRes) || [];
+        const formativeList = extractList(formativeRes) || [];
+
+        let combinedList = [
+          ...summativeList.map(it => ({ ...it, type: 'summative' })),
+          ...formativeList.map(it => ({ ...it, type: 'formative' }))
+        ];
+
+        // Sort by created date descending
+        combinedList.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+
+        if (cancelled) return;
+
+        // If a student is logged in, filter to show only tests from courses they are enrolled in
+        if (token) {
+          let enrolledCourseIds = new Set();
+          if (studentDashboardRes && studentDashboardRes.data && Array.isArray(studentDashboardRes.data.enrolledCourses)) {
+            enrolledCourseIds = new Set(studentDashboardRes.data.enrolledCourses.map(c => c.id));
+          }
+          combinedList = combinedList.filter(it => it.courseId && enrolledCourseIds.has(it.courseId));
+        }
+
+        // map to test shape
+        const mapped = combinedList.map((it, idx) => ({
+          id: it.id || idx,
+          courseId: it.courseId,
+          courseName: it.courseName || '',
+          type: it.type,
+          title: it.title || 'Untitled Test',
+          level: it.minCourseProgress ? `Req. Progress: ${it.minCourseProgress}%` : 'All Levels',
+          levelTone: it.type === 'summative' ? 'intermediate' : 'beginner',
+          author: it.instructor?.name || 'Academia',
+          summary: it.description || '',
+          questions: it.totalQuestions || '0',
+          minutes: it.durationMinutes || '0',
+          attempts: it.attemptLimit || '1',
+          score: it.passingScore ? `${it.passingScore}%` : '0%',
+        }));
+
+        const total = mapped.length;
+        const totalPages = Math.ceil(total / limit) || 1;
+        setPageCount(totalPages);
+
+        const startIndex = (page - 1) * limit;
+        const paginatedMapped = mapped.slice(startIndex, startIndex + limit);
+        setTests(paginatedMapped);
+
+      } catch (err) {
+        console.error("Error combined load:", err);
       }
 
       // syllabus / categories fallback
@@ -135,67 +170,6 @@ function LearnersAvailableTest() {
           </div>
         </section>
 
-        <div className="div-h">
-          <div className="dropdown filter-drop">
-            <button className="dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-              <div>
-                <img src={acFf} alt="Filter" />
-                <span>Certificates</span>
-              </div>
-            </button>
-            <ul className="dropdown-menu">
-              <li className="dropdown-item active">
-                <a href="/" onClick={preventDefault}>Certificates</a>
-              </li>
-              <li className="dropdown-item">
-                <a href="/" onClick={preventDefault}>Diplomas</a>
-              </li>
-              <li className="dropdown-item">
-                <a href="/" onClick={preventDefault}>Degrees</a>
-              </li>
-              <li className="dropdown-item">
-                <a href="/" onClick={preventDefault}>Workshops</a>
-              </li>
-            </ul>
-          </div>
-
-          <div className="div-h-r">
-            <div className="div-h-r-s">
-              <input type="search" placeholder="Search any projects..." aria-label="Search courses" />
-
-              <div className="div-h-r-s-f">
-                <button type="button" className="active" onClick={preventDefault}>Free</button>
-                <button type="button" onClick={preventDefault}>Paid</button>
-
-                <div className="div-h-r-s-f-f">
-                  <div className="dropdown">
-                    <button className="dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                      <div>
-                        <img src={acFi} alt="Filters" />
-                        <span>Filters</span>
-                      </div>
-                    </button>
-                    <ul className="dropdown-menu">
-                      <li className="dropdown-item active">
-                        <a href="/" onClick={preventDefault}>Newest</a>
-                      </li>
-                      <li className="dropdown-item">
-                        <a href="/" onClick={preventDefault}>Top papers</a>
-                      </li>
-                      <li className="dropdown-item">
-                        <a href="/" onClick={preventDefault}>Past Papers</a>
-                      </li>
-                      <li className="dropdown-item">
-                        <a href="/" onClick={preventDefault}>Most Downloaded</a>
-                      </li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
         <section className="learners-available-test-layout">
           <div className="learners-available-test-main">
             <div className="learners-available-test-head">
@@ -234,7 +208,9 @@ function LearnersAvailableTest() {
                       </span>
                     </div>
 
-                    <p className="learners-available-test-author">Prepared by {husk.author}</p>
+                    <p className="learners-available-test-author">
+                      Course: <strong>{husk.courseName}</strong>
+                    </p>
                     <p className="learners-available-test-summary">{husk.summary}</p>
 
                     <div className="learners-available-test-metrics">
@@ -256,9 +232,9 @@ function LearnersAvailableTest() {
                       </div>
                     </div>
 
-                    <button 
-                      type="button" 
-                      className="learners-available-test-cta" 
+                    <button
+                      type="button"
+                      className="learners-available-test-cta"
                       onClick={() => navigate('/academia/learner/course-part', { state: { courseId: husk.courseId } })}
                     >
                       Enroll Test
@@ -292,7 +268,7 @@ function LearnersAvailableTest() {
               <a href="/" onClick={preventDefault}>See All</a>
             </div>
 
-              <div className="learners-available-syllabus-list">
+            <div className="learners-available-syllabus-list">
               {loading ? (
                 Array.from({ length: 3 }).map((_, i) => (
                   <div key={`sy-load-${i}`} className="learners-available-syllabus-item learners-loading-card">

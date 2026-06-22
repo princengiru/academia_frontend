@@ -847,3 +847,42 @@
     align-items: flex-start;
   }
 }
+
+/* Comments Composer and Form */
+.learners-view-project-comment-composer {
+  margin-top: 20px;
+  border-top: 1px solid #ECEFF5;
+  padding-top: 20px;
+}
+
+.learners-view-project-comment-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.learners-view-project-comment-form textarea {
+  width: 100%;
+  min-height: 80px;
+  border: 1px solid #E2E8F0;
+  border-bottom-color: #DDE3EE;
+  border-radius: 8px;
+  padding: 10px 10px 12px;
+  background: #FCFCFC;
+  font-family: Inter, sans-serif;
+  font-weight: 400;
+  font-size: 12px;
+  line-height: 16px;
+  color: #475569;
+  outline: none;
+  resize: vertical;
+}
+
+.learners-view-project-comment-form textarea:focus {
+  border-color: #C79AE7;
+  box-shadow: 0 0 0 3px rgba(82, 10, 128, 0.08);
+}
+
+.learners-view-project-comment-form button {
+  align-self: flex-end;
+}

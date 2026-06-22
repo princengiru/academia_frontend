@@ -26,20 +26,21 @@ function AcademiaReadContents() {
 
   // --- Search Params ---
   const courseId = searchParams.get('courseId');
+  const syllabusId = searchParams.get('syllabusId');
   const topicId = searchParams.get('topicId'); // From Syllabus (Public)
   const chapterId = searchParams.get('chapterId'); // From Curriculum (Private)
 
   // --- State ---
-  const [courseData, setCourseData] = useState(null);
+  const [syllabusData, setSyllabusData] = useState(null);
   const [activeContent, setActiveContent] = useState(null); // Holds either Outline or Chapter
-  const [relatedCourses, setRelatedCourses] = useState([]);
+  const [categoryTree, setCategoryTree] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isDownloading, setIsDownloading] = useState(false);
   
   const [newsletterEmail, setNewsletterEmail] = useState('');
 
   // --- Static Options ---
-  const courseTypes = ['All Courses', 'Certificates', 'Diplomas', 'Degrees', 'Workshops'];
+  const syllabusTypes = ['All Syllabuses', 'Certificates', 'Diplomas', 'Degrees', 'Workshops'];
   const sortOptions = ['Newest', 'Top papers', 'Past Papers', 'Most Downloaded'];
 
   // --- Data Fetching ---
@@ -52,18 +53,53 @@ function AcademiaReadContents() {
         let resolvedCourse = null;
         let fetchedContent = null;
 
-        // 1. Fetch Course Details
+        // Fetch category tree
+        try {
+          const treeRes = await fetch(`${API_BASE_URL}/api/categories/tree`);
+          const treeBody = await treeRes.json().catch(() => ({}));
+          if (mounted) {
+            setCategoryTree(Array.isArray(treeBody?.data) ? treeBody.data : []);
+          }
+        } catch (e) {
+          console.warn("Failed to load category tree:", e);
+        }
+
+        // 1. Fetch Course Details (for fallback compatibility)
         if (courseId) {
           const cRes = await fetch(`${API_BASE_URL}/api/courses/${courseId}`);
           const cBody = await cRes.json().catch(() => ({}));
           resolvedCourse = cBody?.data || cBody;
-          if (mounted) setCourseData(resolvedCourse || null);
+          if (mounted) {
+            setSyllabusData(resolvedCourse ? {
+              id: resolvedCourse.id,
+              title: resolvedCourse.title || 'Syllabus',
+              category: resolvedCourse.category?.name || 'Academia',
+              level: resolvedCourse.education_level || 'Syllabus',
+              instructor_name: resolvedCourse.instructor_name || 'Academia Team',
+              instructor_avatar: resolvedCourse.instructor_avatar || null,
+            } : null);
+          }
         }
 
         // 2. Fetch the specific Content (Syllabus Topic OR Chapter)
-        if (topicId && resolvedCourse?.syllabus_id) {
-          const sylRes = await fetch(`${API_BASE_URL}/api/syllabuses/public/${resolvedCourse.syllabus_id}`);
+        const resolvedSyllabusId = syllabusId || resolvedCourse?.syllabus_id;
+
+        if (topicId && resolvedSyllabusId && resolvedSyllabusId !== 'undefined') {
+          const sylRes = await fetch(`${API_BASE_URL}/api/syllabuses/public/${resolvedSyllabusId}`);
           const sylBody = await sylRes.json().catch(() => ({}));
+          const syllabus = sylBody?.data || sylBody;
+          
+          if (!resolvedCourse && syllabus && mounted) {
+            setSyllabusData({
+              id: syllabus.id || null,
+              title: syllabus.title || 'Syllabus',
+              category: syllabus.category?.name || 'Academia',
+              level: syllabus.education_level || 'Syllabus',
+              instructor_name: syllabus.instructor_name || 'Academia Team',
+              instructor_avatar: syllabus.instructor_avatar || null,
+            });
+          }
+          
           const outlines = sylBody?.data?.outlines || sylBody?.outlines || [];
           fetchedContent = outlines.find(o => String(o.id) === String(topicId)) || outlines[0];
           
@@ -72,34 +108,31 @@ function AcademiaReadContents() {
           const chapBody = await chapRes.json().catch(() => ({}));
           fetchedContent = chapBody?.data || chapBody;
 
-        } else if (resolvedCourse?.syllabus_id) {
-          const sylRes = await fetch(`${API_BASE_URL}/api/syllabuses/public/${resolvedCourse.syllabus_id}`);
+        } else if (resolvedSyllabusId && resolvedSyllabusId !== 'undefined') {
+          const sylRes = await fetch(`${API_BASE_URL}/api/syllabuses/public/${resolvedSyllabusId}`);
           const sylBody = await sylRes.json().catch(() => ({}));
+          const syllabus = sylBody?.data || sylBody;
+          
+          if (!resolvedCourse && syllabus && mounted) {
+            setSyllabusData({
+              id: syllabus.id || null,
+              title: syllabus.title || 'Syllabus',
+              category: syllabus.category?.name || 'Academia',
+              level: syllabus.education_level || 'Syllabus',
+              instructor_name: syllabus.instructor_name || 'Academia Team',
+              instructor_avatar: syllabus.instructor_avatar || null,
+            });
+          }
+          
           fetchedContent = (sylBody?.data?.outlines || sylBody?.outlines || [])[0] || null;
         }
 
         if (mounted) setActiveContent(fetchedContent);
 
-        // 3. Fetch Related Public Courses
-        try {
-          const relRes = await fetch(`${API_BASE_URL}/api/courses/public/available?page=1&limit=6`);
-          const relBody = await relRes.json().catch(() => ({}));
-          const relList = Array.isArray(relBody?.data?.data)
-            ? relBody.data.data
-            : (Array.isArray(relBody?.data)
-              ? relBody.data
-              : (Array.isArray(relBody) ? relBody : []));
-          if (mounted) {
-            setRelatedCourses(relList.filter((item) => String(item.id || item._id) !== String(courseId)));
-          }
-        } catch (e) {
-          if (mounted) setRelatedCourses([]);
-        }
-
       } catch (err) {
         console.error("Failed to load content:", err);
         if (mounted) {
-          setCourseData(null);
+          setSyllabusData(null);
           setActiveContent(null);
         }
       } finally {
@@ -112,7 +145,7 @@ function AcademiaReadContents() {
     return () => {
       mounted = false;
     };
-  }, [courseId, topicId, chapterId]);
+  }, [courseId, syllabusId, topicId, chapterId]);
 
   // --- Handlers ---
   const handleBack = () => {
@@ -120,7 +153,11 @@ function AcademiaReadContents() {
       navigate(-1);
       return;
     }
-    navigate(courseId ? `/academia/course-part?courseId=${courseId}` : '/academia/courses');
+    if (activeContent?.topic_id) {
+      navigate(`/academia/syllabus-part?topicId=${activeContent.topic_id}`);
+    } else {
+      navigate('/academia/syllabuses');
+    }
   };
 
   const handleNewsletterSubmit = (e) => {
@@ -172,7 +209,7 @@ function AcademiaReadContents() {
       const link = document.createElement('a');
       link.href = blobUrl;
       
-      const fileName = activeContent?.file_name || pdfUrl.substring(pdfUrl.lastIndexOf('/') + 1) || 'Course_Material.pdf';
+      const fileName = activeContent?.file_name || pdfUrl.substring(pdfUrl.lastIndexOf('/') + 1) || 'Syllabus_Material.pdf';
       link.setAttribute('download', fileName);
       
       document.body.appendChild(link);
@@ -189,17 +226,58 @@ function AcademiaReadContents() {
   };
 
   // --- Derived Content Mapping ---
-  const contentTitle = activeContent?.title || courseData?.title || 'Loading Content...';
-  const contentAuthor = courseData?.instructor_name || courseData?.author_name || 'Academia Team';
-  const contentAbstract = activeContent?.abstract || activeContent?.subtitle || courseData?.description || 'No summary provided.';
+  const contentTitle = activeContent?.title || syllabusData?.title || 'Loading Content...';
+  const contentAuthor = syllabusData?.instructor_name || syllabusData?.author_name || 'Academia Team';
+  const contentAbstract = activeContent?.abstract || activeContent?.subtitle || syllabusData?.description || 'No summary provided.';
   
   const rawBody = activeContent?.explanation || activeContent?.description || '';
   const contentBodyHTML = (rawBody.trim().startsWith('[') || rawBody.trim().startsWith('{')) ? null : rawBody;
 
-  const contentAuthorAvatar = courseData?.instructor_avatar || courseData?.user_avatar || null;
+  const contentAuthorAvatar = syllabusData?.instructor_avatar || syllabusData?.user_avatar || null;
   const authorAvatarSrc = contentAuthorAvatar
     ? (contentAuthorAvatar.startsWith('http') ? contentAuthorAvatar : `${API_BASE_URL}${contentAuthorAvatar}`)
     : learnersProfileImage;
+
+  // --- Derive Flat Topics List ---
+  const allTopics = useMemo(() => {
+    const list = [];
+    categoryTree.forEach((category) => {
+      if (Array.isArray(category.subcategories)) {
+        category.subcategories.forEach((subcat) => {
+          if (Array.isArray(subcat.topics)) {
+            subcat.topics.forEach((topic) => {
+              list.push({
+                id: topic.id,
+                name: topic.name,
+                description: topic.description || 'Gain advanced knowledge and explore key principles in this academic topic subject.',
+                papers: Array.isArray(topic.papers) ? topic.papers : [],
+                subcategoryId: subcat.id,
+                subcategoryName: subcat.name,
+                categoryId: category.id,
+                categoryName: category.name,
+              });
+            });
+          }
+        });
+      }
+    });
+    return list;
+  }, [categoryTree]);
+
+  const activeTopic = useMemo(() => {
+    if (!activeContent?.topic_id) return null;
+    return allTopics.find(t => String(t.id) === String(activeContent.topic_id));
+  }, [allTopics, activeContent]);
+
+  const relatedTopics = useMemo(() => {
+    if (!activeTopic) {
+      return allTopics.slice(0, 6);
+    }
+    return allTopics.filter(t =>
+      t.id !== activeTopic.id &&
+      (t.subcategoryId === activeTopic.subcategoryId || t.categoryId === activeTopic.categoryId)
+    ).slice(0, 6);
+  }, [allTopics, activeTopic]);
 
   return (
     <div className="academia-read-contents-page">
@@ -211,20 +289,20 @@ function AcademiaReadContents() {
             <button className="dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
               <div>
                 <img src={acFilterIcon} alt="" />
-                <span>All Courses</span>
+                <span>All Syllabuses</span>
               </div>
             </button>
             <ul className="dropdown-menu">
-              {courseTypes.map((item, index) => (
+              {syllabusTypes.map((item, index) => (
                 <li key={item} className={`dropdown-item${index === 0 ? ' active' : ''}`}>
-                  <a href={`/academia/courses?type=${item.toLowerCase().replace(/\s+/g, '-')}`}>{item}</a>
+                  <a href={`/academia/syllabuses?type=${item.toLowerCase().replace(/\s+/g, '-')}`}>{item}</a>
                 </li>
               ))}
             </ul>
           </div>
           <div className="div-h-r">
             <div className="div-h-r-s">
-              <input type="search" placeholder="Search any projects..." />
+              <input type="search" placeholder="Search any syllabuses..." />
               <div className="div-h-r-s-f">
                 <button className="active" type="button">All</button>
                 <button type="button">Free</button>
@@ -240,7 +318,7 @@ function AcademiaReadContents() {
                     <ul className="dropdown-menu">
                       {sortOptions.map((item, index) => (
                         <li key={item} className={`dropdown-item${index === 0 ? ' active' : ''}`}>
-                          <a href={`/academia/courses?sort=${item.toLowerCase().replace(/\s+/g, '-')}`}>{item}</a>
+                           <a href={`/academia/syllabuses?sort=${item.toLowerCase().replace(/\s+/g, '-')}`}>{item}</a>
                         </li>
                       ))}
                     </ul>
@@ -257,9 +335,9 @@ function AcademiaReadContents() {
             <img src={acLeIcon} alt="Back" />
           </button>
           <div>
-            <p>{courseData?.category || 'Academia'}</p>
+            <p>{syllabusData?.category || 'Academia'}</p>
             <span>/</span>
-            <span>{courseData?.title || 'Course'}</span>
+            <span>{syllabusData?.title || 'Syllabus'}</span>
             <span>/</span>
             <span style={{ color: '#0F172A', fontWeight: 500 }}>{contentTitle}</span>
           </div>
@@ -312,10 +390,10 @@ function AcademiaReadContents() {
                 style={{ 
                   color: '#475569', 
                   lineHeight: '1.6',
-                  wordBreak: 'break-word',       // Fixes long lines cutting off
-                  overflowWrap: 'break-word',    // Modern wrapping
-                  whiteSpace: 'pre-wrap',        // Preserves spacing but wraps naturally
-                  maxWidth: '100%'               // Prevents pushing out of boundaries
+                  wordBreak: 'break-word',
+                  overflowWrap: 'break-word',
+                  whiteSpace: 'pre-wrap',
+                  maxWidth: '100%'
                 }} 
               />
             )}
@@ -344,9 +422,9 @@ function AcademiaReadContents() {
                       color: '#334155', 
                       lineHeight: '1.8', 
                       fontSize: '1.05rem',
-                      wordBreak: 'break-word',       // Fixes long lines cutting off
-                      overflowWrap: 'anywhere',      // Aggressive wrapping for continuous strings
-                      whiteSpace: 'pre-wrap',        // Preserves formatting but wraps safely
+                      wordBreak: 'break-word',
+                      overflowWrap: 'anywhere',
+                      whiteSpace: 'pre-wrap',
                       maxWidth: '100%'
                     }} 
                   />
@@ -356,7 +434,7 @@ function AcademiaReadContents() {
 
             {/* Document / PDF Section (Always renders with Empty State if no PDF) */}
             <div className="mcgl-h">
-              <h2>Course Material</h2>
+              <h2>Syllabus Material</h2>
             </div>
             <div style={{ background: '#F8FAFC', borderRadius: '12px', border: '1px solid #E2E8F0', overflow: 'hidden' }}>
               {pdfUrl ? (
@@ -395,19 +473,19 @@ function AcademiaReadContents() {
                   </div>
                   
                   {/* The Iframe Viewer */}
-                  <div style={{ width: '100%', position: 'relative' }}>
+                  <div className="cont-page" style={{ position: 'relative', minHeight: '600px' }}>
                     <iframe 
                       src={`${pdfUrl}#toolbar=0&navpanes=0`} 
                       title="PDF Document Viewer"
                       width="100%" 
                       height="100%" 
-                      style={{ border: 'none' }}
+                      style={{ border: 'none', position: 'absolute', top: 0, left: 0 }}
                       loading="lazy"
                     />
                   </div>
                 </>
               ) : (
-                // --- Dedicated Empty State for Course Material ---
+                // --- Dedicated Empty State for Syllabus Material ---
                 <div style={{ padding: '60px 20px', textAlign: 'center', color: '#64748B', background: '#fff' }}>
                   <div style={{ background: '#F1F5F9', width: '64px', height: '64px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px auto' }}>
                     <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" strokeWidth="1.5">
@@ -418,7 +496,7 @@ function AcademiaReadContents() {
                   </div>
                   <h4 style={{ color: '#0F172A', fontSize: '1.1rem', marginBottom: '8px', fontWeight: 600 }}>No Documents Attached</h4>
                   <p style={{ fontSize: '0.9rem', maxWidth: '400px', margin: '0 auto' }}>
-                    There are no downloadable slides, PDFs, or external materials provided for this specific lesson.
+                    There are no downloadable outlines, PDFs, or external materials provided for this specific topic.
                   </p>
                 </div>
               )}
@@ -426,42 +504,74 @@ function AcademiaReadContents() {
             
           </div>
 
-          {/* Right Column: Related Courses */}
+          {/* Right Column: Related Topics */}
           <div className="main-content-grid-r">
             <div className="mcgr-h">
-              <h2>Related Courses</h2>
+              <h2>Related Topics</h2>
             </div>
             <div className="related-list">
               {loading ? (
                 <div className="fgbl-item fgbl-empty">
                   <div className="fgbl-item-l">
-                    <p style={{ color: '#64748B' }}>Loading related courses...</p>
+                    <p style={{ color: '#64748B' }}>Loading related topics...</p>
                   </div>
                 </div>
-              ) : relatedCourses.length > 0 ? (
-                relatedCourses.map((topic) => (
-                  <div key={topic.id || topic._id} className="fgbl-item" onClick={() => navigate(`/academia/course-part?courseId=${topic.id || topic._id}`)} style={{ cursor: 'pointer' }}>
+              ) : relatedTopics.length > 0 ? (
+                relatedTopics.map((topic) => (
+                  <div 
+                    key={topic.id} 
+                    className="fgbl-item" 
+                    onClick={() => navigate(`/academia/syllabus-part?topicId=${topic.id}`)} 
+                    style={{ 
+                      cursor: 'pointer',
+                      padding: '16px',
+                      border: '1px solid #E2E8F0',
+                      borderRadius: '10px',
+                      background: '#FCFCFC',
+                      marginBottom: '12px',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      transition: 'transform 0.2s, box-shadow 0.2s'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = 'translateY(-2px)';
+                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(69, 4, 104, 0.05)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = 'none';
+                    }}
+                  >
                     <div className="fgbl-item-l">
-                      <h4>{topic.title || topic.name}</h4>
-                      <p>
-                        <span>{topic.total_chapters || topic.chapters_count || 0} Chapters</span>
-                        <span style={{ margin: '0 8px' }}>|</span>
-                        <span>{Number(topic.price) === 0 ? 'Free' : `${topic.price} ${topic.currency || 'USD'}`}</span>
+                      <h4 style={{ fontSize: '13.5px', fontWeight: '600', color: '#0F172A', margin: '0 0 4px 0' }}>{topic.name}</h4>
+                      <p style={{ fontSize: '11px', color: '#64748B', margin: 0 }}>
+                        <span>{topic.papers ? topic.papers.length : 0} Outlines</span>
                       </p>
                     </div>
                     <div className="fgbl-item-r">
-                      <button type="button" onClick={(e) => { e.stopPropagation(); }}>
-                        <span>Follow</span>
-                        <img src={Number(topic.price) === 0 ? acPpIcon : acLockIcon} alt={Number(topic.price) === 0 ? 'Free' : 'Locked'} />
+                      <button 
+                        type="button" 
+                        style={{
+                          background: '#45046812',
+                          color: '#450468',
+                          border: 'none',
+                          padding: '6px 10px',
+                          borderRadius: '4px',
+                          fontSize: '11px',
+                          fontWeight: '600',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        <span>Explore</span>
                       </button>
                     </div>
                   </div>
                 ))
               ) : (
-                <div className="fgbl-item fgbl-empty">
+                <div className="fgbl-item fgbl-empty" style={{ padding: '20px', textAlign: 'center', background: '#F8FAFC', borderRadius: '10px', border: '1px dashed #E2E8F0' }}>
                   <div className="fgbl-item-l">
-                    <h4>No related courses</h4>
-                    <p style={{ color: '#64748B', fontSize: '0.85rem', marginTop: '4px' }}>We couldn’t find more public courses right now.</p>
+                    <h4 style={{ fontSize: '13px', fontWeight: '500', color: '#64748B', margin: 0 }}>No other related topics</h4>
                   </div>
                 </div>
               )}
@@ -474,7 +584,7 @@ function AcademiaReadContents() {
       <section className="newsletter-sec" style={{ marginTop: '40px' }}>
         <div className="newsletter-sec-l">
           <h3>Newsletter - Stay tuned and get the latest update</h3>
-          <p>Join thousands of learners receiving weekly updates on new courses.</p>
+          <p>Join thousands of learners receiving weekly updates on new syllabuses.</p>
         </div>
         <div className="newsletter-sec-r">
           <form onSubmit={handleNewsletterSubmit}>

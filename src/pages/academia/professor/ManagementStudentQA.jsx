@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import ReactQuill from 'react-quill-new';
+import 'react-quill-new/dist/quill.snow.css';
 import ProfessorLayout from '../../../components/layouts/ProfessorLayout/ProfessorLayout';
 import './management-student-qa.css';
 
@@ -85,6 +87,24 @@ const ManagementStudentQA = () => {
   const [replyContent, setReplyContent] = useState('');
   const [replySaving, setReplySaving] = useState(false);
   const [replyFeedback, setReplyFeedback] = useState('');
+  const [replyAttachments, setReplyAttachments] = useState([]);
+  const replyTextareaRef = useRef(null);
+  const fileInputRef = useRef(null);
+
+  const handleFileChange = (e) => {
+    const files = Array.from(e.target.files);
+    setReplyAttachments((prev) => [...prev, ...files]);
+  };
+
+  const removeAttachment = (index) => {
+    setReplyAttachments((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const quillModules = useMemo(() => ({
+    toolbar: {
+      container: '#reply-editor-toolbar'
+    }
+  }), []);
 
   // --- Filter & Pagination State ---
   const [activeFilter, setActiveFilter] = useState('All');
@@ -275,7 +295,7 @@ const ManagementStudentQA = () => {
     event.preventDefault();
     if (!selectedQuestionId) return;
 
-    const content = replyContent.trim();
+    let content = replyContent.trim();
     if (!content) {
       setReplyFeedback('Reply content is required.');
       return;
@@ -289,6 +309,11 @@ const ManagementStudentQA = () => {
 
     setReplySaving(true);
     setReplyFeedback('');
+
+    // Append attachments if any
+    if (replyAttachments.length > 0) {
+      content += '\n\n📎 Attachments:\n' + replyAttachments.map(f => `• ${f.name}`).join('\n');
+    }
 
     try {
       const response = await fetch(`${API_BASE_URL}/api/qa/questions/${selectedQuestionId}/answers`, {
@@ -304,6 +329,7 @@ const ManagementStudentQA = () => {
       if (!response.ok) throw new Error(body?.message || 'Failed to send reply');
 
       setReplyContent('');
+      setReplyAttachments([]);
       setReplyFeedback('Reply sent successfully.');
       
       // Refresh data silently without showing loading spinners
@@ -331,28 +357,54 @@ const ManagementStudentQA = () => {
 
   const replyComposer = (
     <section className="prof-qa-reply-box">
-      <div className="prof-qa-editor-toolbar">
-        <button type="button" onClick={preventDefault} aria-label="Bold"><svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 16 16"><path d="M5 3.5h4a2.5 2.5 0 0 1 0 5H5zm0 5h5a2.5 2.5 0 0 1 0 5H5z" /></svg></button>
-        <button type="button" onClick={preventDefault} aria-label="Italic"><svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 16 16"><path d="M10 3L6 13" /><path d="M8 3h4" /><path d="M4 13h4" /></svg></button>
-        <button type="button" onClick={preventDefault} aria-label="Underline"><svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 16 16"><path d="M4 3v4a4 4 0 0 0 8 0V3" /><path d="M4 13h8" /></svg></button>
-        <button type="button" onClick={preventDefault} aria-label="Bulleted List"><svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 16 16"><circle cx="4" cy="5" r="1.3" /><line x1="7" y1="5" x2="13" y2="5" /><circle cx="4" cy="11" r="1.3" /><line x1="7" y1="11" x2="13" y2="11" /></svg></button>
-        <button type="button" onClick={preventDefault} aria-label="Numbered List"><svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 16 16"><text x="2" y="7" fontSize="5" fill="currentColor">1.</text><line x1="7" y1="6" x2="13" y2="6" /><text x="2" y="13" fontSize="5" fill="currentColor">2.</text><line x1="7" y1="12" x2="13" y2="12" /></svg></button>
-        <button type="button" onClick={preventDefault} aria-label="Align Left"><svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 16 16"><line x1="3" y1="4" x2="13" y2="4" /><line x1="3" y1="8" x2="10" y2="8" /><line x1="3" y1="12" x2="13" y2="12" /></svg></button>
-        <button type="button" onClick={preventDefault} aria-label="Align Center"><svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 16 16"><line x1="4" y1="4" x2="12" y2="4" /><line x1="2" y1="8" x2="14" y2="8" /><line x1="4" y1="12" x2="12" y2="12" /></svg></button>
+      <div id="reply-editor-toolbar" className="prof-qa-editor-toolbar ql-toolbar ql-snow" style={{ border: 'none', borderBottom: '1px solid #E2E8F0', padding: '8px 12px' }}>
+        <button type="button" className="ql-bold" aria-label="Bold"><svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 16 16"><path d="M5 3.5h4a2.5 2.5 0 0 1 0 5H5zm0 5h5a2.5 2.5 0 0 1 0 5H5z" /></svg></button>
+        <button type="button" className="ql-italic" aria-label="Italic"><svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 16 16"><path d="M10 3L6 13" /><path d="M8 3h4" /><path d="M4 13h4" /></svg></button>
+        <button type="button" className="ql-underline" aria-label="Underline"><svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 16 16"><path d="M4 3v4a4 4 0 0 0 8 0V3" /><path d="M4 13h8" /></svg></button>
+        <button type="button" className="ql-list" value="bullet" aria-label="Bulleted List"><svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 16 16"><circle cx="4" cy="5" r="1.3" /><line x1="7" y1="5" x2="13" y2="5" /><circle cx="4" cy="11" r="1.3" /><line x1="7" y1="11" x2="13" y2="11" /></svg></button>
+        <button type="button" className="ql-list" value="ordered" aria-label="Numbered List"><svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 16 16"><text x="2" y="7" fontSize="5" fill="currentColor">1.</text><line x1="7" y1="6" x2="13" y2="6" /><text x="2" y="13" fontSize="5" fill="currentColor">2.</text><line x1="7" y1="12" x2="13" y2="12" /></svg></button>
+        <button type="button" className="ql-align" value="" aria-label="Align Left"><svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 16 16"><line x1="3" y1="4" x2="13" y2="4" /><line x1="3" y1="8" x2="10" y2="8" /><line x1="3" y1="12" x2="13" y2="12" /></svg></button>
+        <button type="button" className="ql-align" value="center" aria-label="Align Center"><svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 16 16"><line x1="4" y1="4" x2="12" y2="4" /><line x1="2" y1="8" x2="14" y2="8" /><line x1="4" y1="12" x2="12" y2="12" /></svg></button>
         
-        <button type="button" className="prof-qa-attach-btn" onClick={preventDefault}>
+        <button type="button" className="prof-qa-attach-btn" onClick={() => fileInputRef.current?.click()} style={{ border: 'none', background: 'transparent' }}>
           <img src="/assets/icons/attach-file.png" alt="" />
           <span>Add an attachment</span>
         </button>
+        <input 
+          type="file" 
+          ref={fileInputRef} 
+          style={{ display: 'none' }} 
+          multiple 
+          onChange={handleFileChange} 
+        />
       </div>
 
-      <textarea
-        className="learners-settings-textarea"
-        rows="6"
+      <ReactQuill
+        ref={replyTextareaRef}
+        theme="snow"
+        modules={quillModules}
         placeholder="Write your reply to the student here..."
         value={replyContent}
-        onChange={(event) => setReplyContent(event.target.value)}
+        onChange={setReplyContent}
+        style={{ background: '#FFFFFF', minHeight: '140px', borderRadius: '0 0 8px 8px' }}
       />
+
+      {replyAttachments.length > 0 && (
+        <div className="prof-qa-reply-attachments" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '10px', marginBottom: '10px' }}>
+          {replyAttachments.map((file, idx) => (
+            <div key={idx} style={{ display: 'inline-flex', alignItems: 'center', background: '#F1F5F9', border: '1px solid #E2E8F0', padding: '4px 10px', borderRadius: '20px', fontSize: '12px', gap: '6px' }}>
+              <span style={{ maxWidth: '160px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: '#4B5675', fontWeight: '500' }}>{file.name}</span>
+              <button
+                type="button"
+                onClick={() => removeAttachment(idx)}
+                style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: '#64748B', fontWeight: 'bold', fontSize: '14px', padding: '0 2px' }}
+              >
+                &times;
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
 
       {replyFeedback && (
         <p style={{ margin: '0.35rem 0 0', color: replyFeedback.includes('success') ? 'var(--success, #00C853)' : 'var(--danger, #D32F2F)', fontSize: '0.92rem' }}>
@@ -646,13 +698,18 @@ const ManagementStudentQA = () => {
                         <div className="prof-qa-item-body">
                           <header className="prof-qa-item-head">
                             <div className="prof-qa-user">
-                              <strong>{answer.author_name || 'Instructor'}</strong>
+                              <strong>
+                                {answer.author_name && answer.author_name.trim() !== '' 
+                                  ? answer.author_name 
+                                  : (answer.author_role === 'student' ? 'Student' : 'Instructor')}
+                              </strong>
                               <span>{formatRelativeTime(answer.created_at)}</span>
                             </div>
                           </header>
-                          <p className="prof-qa-item-content">
-                            {answer.content}
-                          </p>
+                          <p 
+                            className="prof-qa-item-content"
+                            dangerouslySetInnerHTML={{ __html: answer.content }}
+                          />
                         </div>
                       </article>
                     ))

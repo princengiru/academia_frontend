@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import LearnersPageShell from './LearnersPageShell';
 
 // Icons & Images
@@ -28,9 +28,18 @@ function LearnersCourses() {
   };
 
   const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+  const [searchParams, setSearchParams] = useSearchParams();
+  
+  const handleClearCategory = () => {
+    setSelectedCategory('');
+    const newParams = new URLSearchParams(searchParams);
+    newParams.delete('category');
+    setSearchParams(newParams);
+  };
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedFilter, setSelectedFilter] = useState('All');
+  const [selectedCategory, setSelectedCategory] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [syllabusCourses, setSyllabusCourses] = useState([]);
@@ -38,6 +47,22 @@ function LearnersCourses() {
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [sortOrder, setSortOrder] = useState('Newest');
+
+  // Sync URL search parameters with states
+  useEffect(() => {
+    const cat = searchParams.get('category');
+    if (cat !== null) {
+      setSelectedCategory(cat);
+    }
+    const filt = searchParams.get('filter');
+    if (filt !== null) {
+      setSelectedFilter(filt);
+    }
+    const q = searchParams.get('search');
+    if (q !== null) {
+      setSearchTerm(q);
+    }
+  }, [searchParams]);
 
   const resolveAssetUrl = (value) => {
     if (!value) return acOn;
@@ -106,27 +131,28 @@ function LearnersCourses() {
         let list = [];
         let pagination = null;
         const searchQuery = debouncedSearchTerm ? `&search=${encodeURIComponent(debouncedSearchTerm)}` : '';
+        const categoryQuery = selectedCategory ? `&category=${encodeURIComponent(selectedCategory)}` : '';
 
         if (selectedFilter === 'All') {
-          res = await fetch(`${API_BASE_URL}/api/courses/public/available?page=${currentPage}&limit=10${searchQuery}`);
+          res = await fetch(`${API_BASE_URL}/api/courses/public/available?page=${currentPage}&limit=10${searchQuery}${categoryQuery}`);
           body = await res.json();
           if (!res.ok) throw new Error(body.message || 'Failed to load courses');
           list = extractCourseList(body);
           pagination = extractPagination(body);
         } else if (selectedFilter === 'Free') {
-          res = await fetch(`${API_BASE_URL}/api/courses/public/free?page=${currentPage}&limit=10${searchQuery}`);
+          res = await fetch(`${API_BASE_URL}/api/courses/public/free?page=${currentPage}&limit=10${searchQuery}${categoryQuery}`);
           body = await res.json();
           if (!res.ok) throw new Error(body.message || 'Failed to load free courses');
           list = extractCourseList(body);
           pagination = extractPagination(body);
         } else if (selectedFilter === 'Popular') {
-          res = await fetch(`${API_BASE_URL}/api/courses/public/popular?page=${currentPage}&limit=10${searchQuery}`);
+          res = await fetch(`${API_BASE_URL}/api/courses/public/popular?page=${currentPage}&limit=10${searchQuery}${categoryQuery}`);
           body = await res.json();
           if (!res.ok) throw new Error(body.message || 'Failed to load popular courses');
           list = extractCourseList(body);
           pagination = extractPagination(body);
         } else if (selectedFilter === 'Paid') {
-          res = await fetch(`${API_BASE_URL}/api/courses/public/available?page=${currentPage}&limit=10${searchQuery}`);
+          res = await fetch(`${API_BASE_URL}/api/courses/public/available?page=${currentPage}&limit=10${searchQuery}${categoryQuery}`);
           body = await res.json();
           if (!res.ok) throw new Error(body.message || 'Failed to load courses');
           list = extractCourseList(body).filter((course) => {
@@ -144,13 +170,17 @@ function LearnersCourses() {
             body = await res.json();
             if (!res.ok) throw new Error(body.message || 'Failed to load your courses');
             list = Array.isArray(body?.data?.enrolledCourses) ? body.data.enrolledCourses : [];
-            // If there's a search term, filter locally for "My Courses"
+            // If there's a search term or category, filter locally for "My Courses"
             if (debouncedSearchTerm) {
               const lower = debouncedSearchTerm.toLowerCase();
               list = list.filter(c => 
                 (c.title && c.title.toLowerCase().includes(lower)) || 
                 (c.description && c.description.toLowerCase().includes(lower))
               );
+            }
+            if (selectedCategory) {
+              const lowerCat = selectedCategory.toLowerCase();
+              list = list.filter(c => c.category && c.category.toLowerCase() === lowerCat);
             }
             pagination = { pages: 1 };
           }
@@ -174,7 +204,7 @@ function LearnersCourses() {
     return () => {
       cancelled = true;
     };
-  }, [API_BASE_URL, currentPage, selectedFilter, debouncedSearchTerm]);
+  }, [API_BASE_URL, currentPage, selectedFilter, debouncedSearchTerm, selectedCategory]);
 
   // Client-Side Sorting
   const sortedCourses = React.useMemo(() => {
@@ -229,6 +259,13 @@ function LearnersCourses() {
           </div>
         </section>
 
+        {selectedCategory && (
+          <div className="category-filter-badge" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: '#F3E8FF', border: '1px solid #D8B4FE', color: '#6B21A8', padding: '6px 14px', borderRadius: '20px', fontSize: '13px', fontFamily: 'Inter, sans-serif', fontWeight: '500', margin: '0 0 16px 0' }}>
+            <span>Category: <strong>{selectedCategory}</strong></span>
+            <button type="button" onClick={handleClearCategory} style={{ border: 'none', background: 'transparent', color: '#6B21A8', cursor: 'pointer', fontSize: '16px', lineHeight: '1', padding: '0 2px', display: 'flex', alignItems: 'center', fontWeight: '600' }}>×</button>
+          </div>
+        )}
+
       <div className="div-h">
         <div className="dropdown filter-drop">
           <button className="dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -245,6 +282,9 @@ function LearnersCourses() {
                 onClick={() => {
                   setSelectedFilter('All');
                   setCurrentPage(1);
+                  const newParams = new URLSearchParams(searchParams);
+                  newParams.set('filter', 'All');
+                  setSearchParams(newParams);
                 }}
               >
                 All
@@ -257,6 +297,9 @@ function LearnersCourses() {
                 onClick={() => {
                   setSelectedFilter('Free');
                   setCurrentPage(1);
+                  const newParams = new URLSearchParams(searchParams);
+                  newParams.set('filter', 'Free');
+                  setSearchParams(newParams);
                 }}
               >
                 Free
@@ -269,6 +312,9 @@ function LearnersCourses() {
                 onClick={() => {
                   setSelectedFilter('Paid');
                   setCurrentPage(1);
+                  const newParams = new URLSearchParams(searchParams);
+                  newParams.set('filter', 'Paid');
+                  setSearchParams(newParams);
                 }}
               >
                 Paid
@@ -281,6 +327,9 @@ function LearnersCourses() {
                 onClick={() => {
                   setSelectedFilter('My Courses');
                   setCurrentPage(1);
+                  const newParams = new URLSearchParams(searchParams);
+                  newParams.set('filter', 'My Courses');
+                  setSearchParams(newParams);
                 }}
               >
                 My Courses
