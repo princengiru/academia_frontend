@@ -548,7 +548,9 @@
 }
 
 .hoap-projects-page .hoap-project-type {
-    color: #A1A5B7;
+    color: #78829D;
+    font-weight: 400;
+    font-size: 12px;
 }
 
 .hoap-projects-page .hoap-owner-actions {
@@ -565,15 +567,15 @@
 }
 
 .hoap-projects-page .hoap-btn-icon-light {
-    background: #F9F9F9;
-    border: 1px solid #EEF1F6;
-    border-radius: 6px;
+    background: #FAFAFA;
+    border: 1px solid #F1F1F4;
+    border-radius: 50%;
     width: 32px;
     height: 32px;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #A1A5B7;
+    color: #78829D;
 }
 
 .hoap-projects-page .hoap-divider {
