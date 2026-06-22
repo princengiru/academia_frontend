@@ -641,18 +641,14 @@
     margin: 0;
 }
 
-.hoa-online-courses-page .oc-overview-ribbon {
-    background: #450468;
-    color: #FFF;
-    width: 32px;
-    height: 40px;
+.hoa-online-courses-page .oc-overview-ribbon-wrapper {
+    position: relative;
+    width: 36px;
+    height: 52px;
     display: flex;
-    align-items: flex-start;
     justify-content: center;
-    padding-top: 8px;
-    font-size: 12px;
-    font-weight: 700;
-    clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 80%, 0 100%);
+    align-items: center;
+    flex-shrink: 0;
 }
 
 .hoa-online-courses-page .oc-overview-subtitle {

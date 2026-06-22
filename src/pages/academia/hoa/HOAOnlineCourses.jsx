@@ -434,8 +434,9 @@ const HOAOnlineCourses = () => {
                                                 <h2>Cyber Security</h2>
                                                 <p>Prepared by <strong>Emmanuella Jean Marie Vianney</strong></p>
                                             </div>
-                                            <div className="oc-overview-ribbon">
-                                                29
+                                            <div className="oc-overview-ribbon-wrapper">
+                                                <img src={hoarank} alt="" className="oc-ribbon-img" onError={(e) => e.target.style.display = 'none'} />
+                                                <span className="oc-ribbon-number">29</span>
                                             </div>
                                         </div>
 
