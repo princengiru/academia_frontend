@@ -89,6 +89,15 @@ const IconReply = () => (
     </svg>
 );
 
+const IconCommentsTab = () => (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: 6 }}>
+        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+        <line x1="9" y1="9" x2="15" y2="9"></line>
+        <line x1="9" y1="13" x2="15" y2="13"></line>
+        <line x1="9" y1="17" x2="13" y2="17"></line>
+    </svg>
+);
+
 const HOAProjects = () => {
     // Top-level state
     const [activeType, setActiveType] = useState('Projects'); // 'Projects' or 'People'
@@ -373,7 +382,9 @@ const HOAProjects = () => {
                                 </div>
                                 <div className="hoap-toggle-tabs">
                                     <button className={`hoap-pill-tab ${activeTab === 'overview' ? 'active' : ''}`} onClick={() => setActiveTab('overview')}>Overview</button>
-                                    <button className={`hoap-pill-tab ${activeTab === 'comments' ? 'active' : ''}`} onClick={() => setActiveTab('comments')}>Comments</button>
+                                    <button className={`hoap-pill-tab ${activeTab === 'comments' ? 'active' : ''}`} onClick={() => setActiveTab('comments')}>
+                                        <IconCommentsTab /> Comments
+                                    </button>
                                 </div>
                             </div>
 

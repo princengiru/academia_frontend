@@ -643,7 +643,9 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 24px 0;
+    padding-bottom: 16px;
+    margin-top: 24px;
+    border-bottom: 1px solid #EEF1F6;
 }
 
 .hoap-projects-page .hoap-breadcrumbs {
@@ -658,21 +660,26 @@
 
 .hoap-projects-page .hoap-toggle-tabs {
     display: flex;
-    background: #F1F1F4;
-    padding: 4px;
+    background: #F8FAFC;
+    border: 1px solid #EEF1F6;
     border-radius: 8px;
-    gap: 4px;
+    gap: 2px;
+    align-items: center;
 }
 
 .hoap-projects-page .hoap-pill-tab {
     background: transparent;
     border: none;
     padding: 8px 16px;
-    border-radius: 6px;
     font-size: 12px;
     font-weight: 500;
-    color: #A1A5B7;
+    color: #78829D;
     transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    cursor: pointer;
 }
 
 .hoap-projects-page .hoap-pill-tab.active {
