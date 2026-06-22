@@ -88,13 +88,18 @@
 }
 
 /* Top Stats Card (Single continuous card) */
+.hoa-online-courses-page .oc-stats-top-container {
+    padding: 10px 10px;
+    background: #FAFAFA;
+    margin-bottom: 24px;
+}
+
 .hoa-online-courses-page .oc-stats-container {
     background: #FFFFFF;
     border: 1px solid #EEF1F6;
     border-radius: 8px;
     display: flex;
     padding: 24px 0;
-    margin-bottom: 24px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
 }
 

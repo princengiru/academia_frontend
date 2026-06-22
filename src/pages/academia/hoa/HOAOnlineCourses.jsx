@@ -233,6 +233,7 @@ const HOAOnlineCourses = () => {
                 </div>
 
                 {/* Top Stats */}
+            <div className="oc-stats-top-container">
                 <div className="oc-stats-container">
                     <div className="oc-stat-block">
                         <h3>13.3M</h3>
@@ -265,6 +266,7 @@ const HOAOnlineCourses = () => {
                         <p>Course Payments <span className="oc-trend up">↗ +4.1</span></p>
                     </div>
                 </div>
+            </div>
 
                 {/* Sub Header & Actions */}
                 <div className="oc-sub-header">
