@@ -527,7 +527,8 @@
     width: 32px;
     height: 32px;
     border-radius: 50%;
-    background: #F1F1F4;
+    border: 1px solid #F1F1F4;
+    background: #FAFAFA;
     display: flex;
     align-items: center;
     justify-content: center;

@@ -17,6 +17,7 @@ import hoagrayadd from '../../../assets/icons/hoagrayadd.svg';
 import hoawhiteadd from '../../../assets/icons/hoawhiteadd.svg';
 import hoaleftarrow from '../../../assets/icons/hoaleftarrow.svg';
 import hoarightarrow from '../../../assets/icons/hoarightarrow.svg';
+import hoapeople from '../../../assets/icons/hoapeople.svg';
 
 // Custom inline SVGs for specific icons needed in Projects
 const IconDownCaret = ({ width = 12, height = 8, className = "", style = {} }) => (
@@ -321,7 +322,7 @@ const HOAProjects = () => {
                             <div className="hoap-drawer-owner-row">
                                 <div className="hoap-owner-info">
                                     <div className="hoap-owner-avatar-placeholder">
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                                        <img src={hoapeople} alt="" width={16} height={16} />
                                     </div>
                                     <span className="hoap-owner-name">Team Owners <IconDownCaret style={{marginLeft: 4}}/></span>
                                     <span className="hoap-owner-dot">•</span>
