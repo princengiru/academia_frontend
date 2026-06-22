@@ -12,6 +12,7 @@ import HOASyllabus from '../../../pages/academia/hoa/HOASyllabus';
 import HOAOnlineCourses from '../../../pages/academia/hoa/HOAOnlineCourses';
 import HOAProjects from '../../../pages/academia/hoa/HOAProjects';
 import HOACommunity from '../../../pages/academia/hoa/HOACommunity';
+import HOACertificates from '../../../pages/academia/hoa/HOACertificates';
 
 const HOAPlaceholderPage = ({ currentPage, title, description }) => (
   <HOALayout currentPage={currentPage}>
@@ -37,6 +38,7 @@ function AcademiaHOARoutes() {
       <Route path="academia/hoa/online-courses" element={<HOAOnlineCourses />} />
       <Route path="academia/hoa/projects" element={<HOAProjects />} />
       <Route path="academia/hoa/community" element={<HOACommunity />} />
+      <Route path="academia/hoa/certificates" element={<HOACertificates />} />
 
 
       <Route
