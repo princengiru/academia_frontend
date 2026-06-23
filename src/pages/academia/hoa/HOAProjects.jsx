@@ -118,10 +118,10 @@ const HOAProjects = () => {
         { id: 5, title: 'Build your software & engineering dream career', author: 'Team owners', isTeam: true, likes: '11', views: '1.2K', img: 'https://images.unsplash.com/photo-1497215728101-856f4ea42174?q=80&w=600&auto=format&fit=crop' },
         { id: 6, title: 'Build your software & engineering dream career', author: 'Jose Carine', isTeam: false, likes: '11', views: '1.2K', img: 'https://images.unsplash.com/photo-1531482615713-2afd69097998?q=80&w=600&auto=format&fit=crop' },
         { id: 7, title: 'Build your software & engineering dream career', author: 'Jose Carine', isTeam: false, likes: '10.6K', views: '10.6K', img: 'https://images.unsplash.com/photo-1586281380349-632531db7ed4?q=80&w=600&auto=format&fit=crop' },
-        { id: 8, title: 'Build your software & engineering dream career', author: 'Jose Carine', isTeam: false, likes: '11', views: '1.2K', img: 'https://images.unsplash.com/photo-1512758684632-a8ea7306fb71?q=80&w=600&auto=format&fit=crop' },
+        { id: 8, title: 'Build your software & engineering dream career', author: 'Jose Carine', isTeam: false, likes: '11', views: '1.2K', img: 'https://images.unsplash.com/photo-1513364776144-60967b0f800f?q=80&w=600&auto=format&fit=crop' },
         { id: 9, title: 'Build your software & engineering dream career', author: 'Jose Carine', isTeam: false, likes: '10.6K', views: '10.6K', img: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?q=80&w=600&auto=format&fit=crop' },
         { id: 10, title: 'Build your software & engineering dream career', author: 'Team owners', isTeam: true, likes: '11', views: '1.2K', img: 'https://images.unsplash.com/photo-1503387762-592deb58ef4e?q=80&w=600&auto=format&fit=crop' },
-        { id: 11, title: 'Build your software & engineering dream career', author: 'Jose Carine', isTeam: false, likes: '11', views: '1.2K', img: 'https://images.unsplash.com/photo-1541888086925-081335b71946?q=80&w=600&auto=format&fit=crop' },
+        { id: 11, title: 'Build your software & engineering dream career', author: 'Jose Carine', isTeam: false, likes: '11', views: '1.2K', img: 'https://images.unsplash.com/photo-1503387762-592deb58ef4e?q=80&w=600&auto=format&fit=crop' },
         { id: 12, title: 'Build your software & engineering dream career', author: 'Jose Carine', isTeam: false, likes: '11', views: '1.2K', img: 'https://images.unsplash.com/photo-1513364776144-60967b0f800f?q=80&w=600&auto=format&fit=crop' },
     ];
 

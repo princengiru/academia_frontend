@@ -690,7 +690,7 @@
 }
 
 /* Tab Content Areas */
-.hoap-projects-page .hoap-overview-content {
+.hoap-projects-page .hoap-overview-content, .hoap-comments-content {
     margin-top: 20px;
 }
 
@@ -779,7 +779,8 @@
 
 .hoap-projects-page .hoap-comment-header span {
     font-size: 12px;
-    color: #A1A5B7;
+    color: #4B5675;
+    font-weight: 400;
 }
 
 .hoap-projects-page .hoap-comment-text {
