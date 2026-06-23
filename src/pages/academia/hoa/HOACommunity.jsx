@@ -15,6 +15,9 @@ import hoatotalreads from '../../../assets/icons/hoatotalreads.svg';
 import hoacalendar2 from '../../../assets/icons/hoacalendar2.svg';
 import hoafilter2 from '../../../assets/icons/hoafilter2.svg';
 import hoaissues from '../../../assets/icons/hoaissues.svg';
+import hoaadmin from '../../../assets/icons/hoaadmin.svg';
+import hoamessages from '../../../assets/icons/hoamessages.svg';
+import hoacalendar from '../../../assets/icons/hoacalendar.svg';
 
 // Custom inline SVGs for the Community page
 const IconDownCaret = ({ width = 12, height = 8, className = "", style = {} }) => (
@@ -270,13 +273,13 @@ const HOACommunity = () => {
                             <img src={story.img} alt={story.title} className="hoac-card-img" />
                             <div className="hoac-card-body">
                                 <div className="hoac-card-top-meta">
-                                    <span className="hoac-card-author"><IconUser /> {story.author}</span>
-                                    <span className="hoac-card-comments"><IconChat /> {story.comments}</span>
+                                    <span className="hoac-card-author"><img src={hoaadmin} alt="Admin" /> {story.author}</span>
+                                    <span className="hoac-card-comments"><img src={hoamessages} alt="Comments" /> {story.comments}</span>
                                 </div>
                                 <h4 className="hoac-card-title">{story.title}</h4>
                                 <p className="hoac-card-excerpt">{story.excerpt}</p>
                                 <div className="hoac-card-footer">
-                                    <span className="hoac-card-date"><IconCalendar /> {story.date}</span>
+                                    <span className="hoac-card-date"><img src={hoacalendar} alt="Calendar" /> {story.date}</span>
                                     <button className="hoac-icon-btn"><IconMoreVertical /></button>
                                 </div>
                             </div>
