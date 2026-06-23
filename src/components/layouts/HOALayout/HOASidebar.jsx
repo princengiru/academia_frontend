@@ -1,12 +1,23 @@
 import { NavLink } from 'react-router-dom';
 
+const UPLOAD_NAV_ITEMS = [
+  { label: 'Syllabus', to: '/academia/hoa/syllabus', page: 'syllabus' },
+  { label: 'Online Courses', to: '/academia/hoa/online-courses', page: 'online-courses' },
+  { label: 'Projects', to: '/academia/hoa/projects', page: 'projects' },
+  { label: 'Certificates', to: '/academia/hoa/certificates', page: 'certificates' },
+];
+
 const HOASidebar = ({ currentPage }) => {
   const preventDefault = (e) => e.preventDefault();
   const dashboardPages = ['index', 'learners', 'tutors', 'reports', 'settings'];
   const managementPages = ['assignments', 'passed-courses', 'retaken-courses', 'failed-courses'];
+  const uploadPages = ['syllabus', 'online-courses', 'projects', 'certificates'];
+  const uploadsPanelPages = [...uploadPages, 'community'];
 
   const getDashboardIconClassName = () => (dashboardPages.includes(currentPage) ? 'selected' : '');
   const getManagementIconClassName = () => (managementPages.includes(currentPage) ? 'selected' : '');
+  const getUploadIconClassName = () => (uploadPages.includes(currentPage) ? 'selected' : '');
+  const getCommunityIconClassName = () => (currentPage === 'community' ? 'selected' : '');
 
   const getSidebarLinkClassName = ({ isActive, isPending }) => {
     if (isPending) {
@@ -49,16 +60,16 @@ const HOASidebar = ({ currentPage }) => {
                 <img src="/assets/icons/bill2.svg" alt="Management" />
               </button>
             </NavLink>
-            <a href="#" onClick={preventDefault}>
-              <button aria-label="Reports">
-                <img src="/assets/icons/agent2.svg" alt="Reports" />
+            <NavLink to="/academia/hoa/syllabus" className={getUploadIconClassName}>
+              <button aria-label="Uploads">
+                <img src="/assets/icons/agent2.svg" alt="Uploads" />
               </button>
-            </a>
-            <a href="#" onClick={preventDefault}>
-              <button aria-label="Chat">
-                <img src="/assets/icons/tsidebar2-1.svg" alt="Chat" />
+            </NavLink>
+            <NavLink to="/academia/hoa/community" className={getCommunityIconClassName}>
+              <button aria-label="Community">
+                <img src="/assets/icons/tsidebar2-1.svg" alt="Community" />
               </button>
-            </a>
+            </NavLink>
           </div>
 
           <div className="sidebar-footer">
@@ -119,6 +130,17 @@ const HOASidebar = ({ currentPage }) => {
                 <NavLink to="/academia/hoa/failed-courses" className={getSidebarLinkClassName}>
                   <span>Failed Courses</span>
                 </NavLink>
+              </div>
+            )}
+
+            {uploadsPanelPages.includes(currentPage) && (
+              <div className="links-list">
+                <h6>UPLOADS</h6>
+                {UPLOAD_NAV_ITEMS.map(({ label, to }) => (
+                  <NavLink key={to} to={to} className={getSidebarLinkClassName}>
+                    <span>{label}</span>
+                  </NavLink>
+                ))}
               </div>
             )}
           </div>

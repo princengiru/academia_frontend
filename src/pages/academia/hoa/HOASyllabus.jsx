@@ -425,6 +425,7 @@ const HOASyllabus = () => {
                 </div>
 
                 {/* Top Stats - Single Card Wrapper */}
+            <div className="syll-top-stats-container">
                 <div className="syll-stats-container">
                     <div className="syll-stat-block">
                         <h3>13.3M</h3>
@@ -457,6 +458,7 @@ const HOASyllabus = () => {
                         <p>Download Amount <span className="syll-trend up">↗ +4.1</span></p>
                     </div>
                 </div>
+            </div>
 
                 {/* Sub Header & Add Buttons */}
                 <div className="syll-sub-header">
