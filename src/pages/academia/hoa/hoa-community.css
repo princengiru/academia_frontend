@@ -537,11 +537,13 @@
     width: 32px;
     height: 32px;
     border-radius: 50%;
-    background: #F1F1F4;
+    background: #FAFAFA;
+    border: 1px solid #F1F1F4;
     display: flex;
     align-items: center;
     justify-content: center;
     color: #A1A5B7;
+    box-shadow: 0px 4px 12px 0px rgba(0, 0, 0, 0.03);
 }
 
 .hoac-community-page .hoac-owner-name {
@@ -577,9 +579,10 @@
 }
 
 .hoac-community-page .hoac-btn-icon-light {
-    background: #F9F9F9;
-    border: 1px solid #EEF1F6;
-    border-radius: 6px;
+    background: #FAFAFA;
+    border: 1px solid #F1F1F4;
+    box-shadow: 0px 4px 12px 0px rgba(0, 0, 0, 0.03);
+    border-radius: 50%;
     width: 32px;
     height: 32px;
     display: flex;
@@ -607,8 +610,8 @@
 .hoac-community-page .hoac-toggle-tabs {
     display: flex;
     background: #F1F1F4;
-    padding: 4px;
-    border-radius: 8px;
+    border: 1px solid #F1F1F4;
+    border-radius: 4px;
     gap: 4px;
 }
 
@@ -619,7 +622,7 @@
     border-radius: 6px;
     font-size: 13px;
     font-weight: 500;
-    color: #A1A5B7;
+    color: #99A1B7;
     transition: all 0.2s;
     display: flex;
     align-items: center;
@@ -649,7 +652,7 @@
 
 /* Overview Content */
 .hoac-community-page .hoac-article-title {
-    font-size: 22px;
+    font-size: 17px;
     font-weight: 700;
     color: #071437;
     margin: 0 0 12px 0;
@@ -657,33 +660,40 @@
 
 .hoac-community-page .hoac-article-meta {
     font-size: 13px;
-    color: #A1A5B7;
-    margin-bottom: 24px;
+    color: #6A7287;
+    margin-bottom: 14px;
     display: flex;
     align-items: center;
     gap: 12px;
 }
 
 .hoac-community-page .hoac-divider-vert {
-    color: #EEF1F6;
+    color: #6A7287;
 }
 
+.hoac-community-page .hoac-article-hero-container {
+    width: 100%;
+    margin-bottom: 20px;
+    background: #FFFFFF;
+    border: 1px solid #F1F1F4;
+    border-bottom-right-radius: 8px;
+    border-bottom-left-radius: 8px;
+}
 .hoac-community-page .hoac-article-hero {
     width: 100%;
-    height: 400px;
+    height: 455px;
     object-fit: cover;
-    border-radius: 8px;
-    margin-bottom: 32px;
 }
 
 .hoac-community-page .hoac-author-block {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 16px 0;
-    border-top: 1px solid #EEF1F6;
-    border-bottom: 1px solid #EEF1F6;
-    margin-bottom: 32px;
+    padding-left: 24px;
+    padding-right: 24px;
+    padding-top: 16px;
+    padding-bottom: 10px;
+
 }
 
 .hoac-community-page .hoac-author-profile {
@@ -763,17 +773,26 @@
 .hoac-community-page .hoac-article-gallery {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 16px;
+    gap: 10px;
 }
 
 .hoac-community-page .hoac-article-gallery img {
     width: 100%;
-    height: 250px;
+    height: 263px;
     object-fit: cover;
     border-radius: 8px;
 }
 
 /* Comments Tab Content */
+.hoac-community-page .hoac-comments-header-container {
+    background: #FCFCFC;
+    padding-top: 12px;
+    padding-left: 12px;
+    padding-right: 12px;
+    padding-bottom: -20px;
+    margin-bottom: 12px;
+}
+
 .hoac-community-page .hoac-comments-header {
     margin-bottom: 24px;
 }
@@ -796,8 +815,8 @@
 
 .hoac-community-page .hoac-comment-input-box {
     display: flex;
-    align-items: center;
-    gap: 16px;
+    align-items: flex-start;
+    gap: 12px;
     margin-bottom: 32px;
 }
 
@@ -806,66 +825,91 @@
     height: 40px;
     border-radius: 50%;
     object-fit: cover;
+    flex-shrink: 0;
 }
 
+/* Updated Input Wrapper Style */
 .hoac-community-page .hoac-input-wrapper {
     flex: 1;
+    position: relative;
     display: flex;
     align-items: center;
-    border-bottom: 1px solid #EEF1F6;
-    padding-bottom: 8px;
+    border-bottom: 1px solid #DBDFE9;
 }
 
 .hoac-community-page .hoac-input-wrapper input {
-    flex: 1;
-    border: none;
-    outline: none;
-    font-size: 14px;
+    width: 100%;
+    border-radius: 6px;
+    padding: 12px 16px;
+    padding-right: 40px; /* Space for the absolute icon button */
+    font-size: 13px;
     color: #4B5675;
     background: transparent;
+    outline: none;
+    border: none;
+    resize: none;
+    line-height: 1.5;
 }
 
 .hoac-community-page .hoac-input-wrapper input::placeholder {
-    color: #A1A5B7;
+    color: #99A1B7;
 }
 
-.hoac-community-page .hoac-submit-btn {
+.hoac-community-page .hoac-input-wrapper input:focus {
+    outline: none;
+}
+
+.hoac-community-page .hoac-inline-send-btn {
+    position: absolute;
+    right: 12px;
     background: transparent;
     border: none;
-    color: #A1A5B7;
     padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #A1A5B7;
+    transition: color 0.2s;
+}
+
+.hoac-community-page .hoac-inline-send-btn:hover {
+    color: #450468;
 }
 
 .hoac-community-page .hoac-comments-list {
     display: flex;
     flex-direction: column;
-    gap: 24px;
+    gap: 20px;
     margin-bottom: 32px;
 }
 
+/* Updated Comment Item Box */
 .hoac-community-page .hoac-comment-item {
     display: flex;
-    gap: 16px;
-    padding-bottom: 24px;
-    border-bottom: 1px dashed #EEF1F6;
-}
-
-.hoac-community-page .hoac-comment-item:last-child {
-    border-bottom: none;
+    gap: 12px;
+    padding: 16px 20px;
+    background: #FCFCFC;
+    border: 1px solid #F1F1F4;
+    border-radius: 4px;
+    box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.07);
 }
 
 .hoac-community-page .hoac-comment-avatar {
     flex-shrink: 0;
+    position: relative;
 }
 
-.hoac-community-page .hoac-avatar-circle {
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    background: #D81A48; 
-    display: flex;
-    align-items: center;
-    justify-content: center;
+.hoac-community-page .hoac-comment-avatar::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 48px;
+    bottom: -16px;
+    width: 1px;
+    background: #F1F1F4;
+    transform: translateX(-50%);
+    margin-bottom: 5px;
 }
 
 .hoac-community-page .hoac-comment-body {
@@ -909,8 +953,10 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    margin-top: 12px;
 }
 
+/* Updated Reply Button Color */
 .hoac-community-page .hoac-reply-btn {
     background: transparent;
     border: none;
@@ -919,15 +965,111 @@
     align-items: center;
     gap: 6px;
     font-size: 12px;
-    color: #4B5675;
+    color: #6A7287;
     font-weight: 600;
+    cursor: pointer;
+}
+
+.hoac-community-page .hoac-reply-btn:hover {
+    color: #071437;
 }
 
 .hoac-community-page .hoac-posted-date {
     font-size: 11px;
-    color: #A1A5B7;
+    color: #99A1B7;
 }
 
 .hoac-community-page .hoac-posted-date strong {
     color: #071437;
+    font-weight: 600;
+}
+
+/* Reply Section */
+.hoac-community-page .hoac-reply-section {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid #F1F1F4;
+}
+
+.hoac-community-page .hoac-reply-input-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.hoac-community-page .hoac-reply-input-wrapper input {
+    flex: 1;
+    border: 1px solid #F1F1F4;
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 12px;
+    color: #4B5675;
+    background: #FAFAFA;
+    outline: none;
+}
+
+.hoac-community-page .hoac-reply-submit-btn {
+    background: #450468;
+    border: none;
+    color: #FFFFFF;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.hoac-community-page .hoac-replies-list {
+    margin-top: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.hoac-community-page .hoac-reply-item {
+    display: flex;
+    gap: 10px;
+    padding-left: 12px;
+    border-left: 2px solid #F1F1F4;
+}
+
+.hoac-community-page .hoac-reply-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #17C653;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.hoac-community-page .hoac-reply-content {
+    flex: 1;
+}
+
+.hoac-community-page .hoac-reply-meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 4px;
+}
+
+.hoac-community-page .hoac-reply-meta h5 {
+    margin: 0;
+    font-size: 12px;
+    font-weight: 600;
+    color: #071437;
+}
+
+.hoac-community-page .hoac-reply-meta span {
+    font-size: 11px;
+    color: #99A1B7;
+}
+
+.hoac-community-page .hoac-reply-text {
+    font-size: 12px;
+    color: #6A7287;
+    line-height: 1.5;
+    margin: 0;
 }
