@@ -7,6 +7,23 @@ import hoarefresh from '../../../assets/icons/hoarefresh.svg';
 import hoagoto from '../../../assets/icons/hoagoto.svg';
 import hoasearch from '../../../assets/icons/hoasearch.svg';
 import hoawhiteadd from '../../../assets/icons/hoawhiteadd.svg';
+import hoatotalstories from '../../../assets/icons/hoatotalstories.svg';
+import hoatotallikes from '../../../assets/icons/hoatotallikes.svg';
+import hoafeedbacks from '../../../assets/icons/hoafeedbacks.svg';
+import hoatotalshares from '../../../assets/icons/hoatotalshares.svg';
+import hoatotalreads from '../../../assets/icons/hoatotalreads.svg';
+import hoacalendar2 from '../../../assets/icons/hoacalendar2.svg';
+import hoafilter2 from '../../../assets/icons/hoafilter2.svg';
+import hoaissues from '../../../assets/icons/hoaissues.svg';
+import hoaadmin from '../../../assets/icons/hoaadmin.svg';
+import hoamessages from '../../../assets/icons/hoamessages.svg';
+import hoacalendar from '../../../assets/icons/hoacalendar.svg';
+import hoagoback from '../../../assets/icons/hoagoback.svg';
+import hoaadmin2 from '../../../assets/icons/hoaadmin2.svg';
+import hoainstagram from '../../../assets/icons/hoainstagram.svg';
+import hoatiktok from '../../../assets/icons/hoatiktok.svg';
+import hoawhatsapp from '../../../assets/icons/hoawhatsapp.svg';
+import hoafacebook from '../../../assets/icons/hoafacebook.svg';
 
 // Custom inline SVGs for the Community page
 const IconDownCaret = ({ width = 12, height = 8, className = "", style = {} }) => (
@@ -16,73 +33,47 @@ const IconDownCaret = ({ width = 12, height = 8, className = "", style = {} }) =
 );
 
 const IconStories = () => (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-        <circle cx="8.5" cy="8.5" r="1.5"></circle>
-        <polyline points="21 15 16 10 5 21"></polyline>
-    </svg>
+    <img src={hoatotalstories} alt="Total Stories" />
 );
 
 const IconThumbsUp = () => (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path>
-    </svg>
+    <img src={hoatotallikes} alt="Total Likes" />
 );
 
 const IconChat = () => (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
-    </svg>
+    <img src={hoafeedbacks} alt="Total Feedbacks" />
 );
 
 const IconShare = () => (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <polyline points="15 3 21 3 21 9"></polyline>
-        <line x1="10" y1="14" x2="21" y2="3"></line>
-    </svg>
+    <img src={hoatotalshares} alt="Total Shares" />
 );
 
 const IconEye = () => (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-        <circle cx="12" cy="12" r="3"></circle>
-    </svg>
+    <img src={hoatotalreads} alt="Total Reads" />
 );
 
 const IconCalendar = () => (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-        <line x1="16" y1="2" x2="16" y2="6"></line>
-        <line x1="8" y1="2" x2="8" y2="6"></line>
-        <line x1="3" y1="10" x2="21" y2="10"></line>
-    </svg>
+    <img src={hoacalendar2} alt="Calendar" />
 );
 
 const IconMoreVertical = () => (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="5" cy="12" r="1"></circle>
         <circle cx="12" cy="12" r="1"></circle>
-        <circle cx="12" cy="5" r="1"></circle>
-        <circle cx="12" cy="19" r="1"></circle>
+        <circle cx="19" cy="12" r="1"></circle>
     </svg>
 );
 
 const IconUser = () => (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-        <circle cx="12" cy="7" r="4"></circle>
-    </svg>
+    <img src={hoaadmin2} alt="User" />
 );
 
 const IconCloseDrawer = () => (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <line x1="19" y1="12" x2="5" y2="12"></line>
-        <polyline points="12 19 19 12 12 5"></polyline>
-        <line x1="5" y1="5" x2="5" y2="19"></line>
-    </svg>
+    <img src={hoagoback} alt="Close" />
 );
 
 const IconReply = () => (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <polyline points="9 17 4 12 9 7"></polyline><path d="M20 18v-2a4 4 0 0 0-4-4H4"></path>
     </svg>
 );
@@ -91,10 +82,18 @@ const HOACommunity = () => {
     // Top-level state
     const [isCategoryOpen, setIsCategoryOpen] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState('All Categories');
+    const [isDateOpen, setIsDateOpen] = useState(false);
+    const [selectedDateFilter, setSelectedDateFilter] = useState('All Time');
     
     // Modal state
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [activeTab, setActiveTab] = useState('overview'); // 'overview' or 'comments'
+    
+    // Comments state
+    const [newComment, setNewComment] = useState('');
+    const [replyingTo, setReplyingTo] = useState(null);
+    const [replyText, setReplyText] = useState({});
+    const [replies, setReplies] = useState({});
 
     // Dummy data for stories grid
     const storiesData = Array(12).fill({
@@ -104,7 +103,6 @@ const HOACommunity = () => {
         comments: 3,
         date: 'Oct 19, 2025 07:50 AM',
     }).map((story, idx) => {
-        // Alternate images to match design
         const images = [
             'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=600&auto=format&fit=crop',
             'https://images.unsplash.com/photo-1522071820081-009f0129c71c?q=80&w=600&auto=format&fit=crop',
@@ -114,9 +112,9 @@ const HOACommunity = () => {
         return { ...story, id: idx + 1, img: images[idx % images.length] };
     });
 
-    // Dummy data for Comments tab
+    // Updated dummy data for Comments tab to include an actual avatar image
     const commentsData = Array(6).fill({
-        avatar: '/assets/imgs/default-profile.png',
+        avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?q=80&w=100&auto=format&fit=crop',
         name: 'Mrs. Anderson',
         timeAgo: '1 Day ago',
         text: 'What is Statistics is the branch of mathematics that deals with the collection, analysis, interpretation, presentation, and organization of data. It provides methodologies for making inferences abo...',
@@ -127,13 +125,12 @@ const HOACommunity = () => {
     return (
         <HOALayout currentPage="community">
             <div className="hoac-community-page">
-                
-                {/* Page Header */}
+                {/* Keep existing page header, stats, filters, grid markup unchanged */}
                 <div className="hoac-page-header">
                     <h1>Community</h1>
                     <div className="hoac-header-actions">
                         <button className="hoac-btn-outline hoac-btn-report">
-                            <IconChat /> Having Issues? Report
+                            <img src={hoaissues} alt="Issues" /> Having Issues? Report
                         </button>
                         <button className="hoac-btn-primary">
                             Go to website <img src={hoagoto} alt="Go" />
@@ -141,38 +138,37 @@ const HOACommunity = () => {
                     </div>
                 </div>
 
-                {/* Top Stats */}
                 <div className="hoac-stats-container">
                     <div className="hoac-stat-block">
-                        <div className="hoac-stat-icon"><IconStories /></div>
+                        <div className="hoac-stat-icon "><IconStories /></div>
                         <div className="hoac-stat-text">
                             <h3>21</h3>
                             <p>Total Stories</p>
                         </div>
                     </div>
                     <div className="hoac-stat-block">
-                        <div className="hoac-stat-icon"><IconThumbsUp /></div>
+                        <div className="hoac-stat-icon "><IconThumbsUp /></div>
                         <div className="hoac-stat-text">
                             <h3>21</h3>
                             <p>Total Likes</p>
                         </div>
                     </div>
                     <div className="hoac-stat-block">
-                        <div className="hoac-stat-icon"><IconChat /></div>
+                        <div className="hoac-stat-icon "><IconChat /></div>
                         <div className="hoac-stat-text">
                             <h3>+ 2.8K</h3>
                             <p>Total Feedbacks</p>
                         </div>
                     </div>
                     <div className="hoac-stat-block">
-                        <div className="hoac-stat-icon"><IconShare /></div>
+                        <div className="hoac-stat-icon "><IconShare /></div>
                         <div className="hoac-stat-text">
                             <h3>157</h3>
                             <p>Total Shares</p>
                         </div>
                     </div>
                     <div className="hoac-stat-block">
-                        <div className="hoac-stat-icon"><IconEye /></div>
+                        <div className="hoac-stat-icon "><IconEye /></div>
                         <div className="hoac-stat-text">
                             <h3>1.8K</h3>
                             <p>Total Reads</p>
@@ -180,7 +176,6 @@ const HOACommunity = () => {
                     </div>
                 </div>
 
-                {/* Sub Header & Actions */}
                 <div className="hoac-sub-header">
                     <div className="hoac-sub-title">
                         <h2>Community Stories</h2>
@@ -191,14 +186,11 @@ const HOACommunity = () => {
                     </div>
                 </div>
 
-                {/* Filter & Search Bar */}
                 <div className="hoac-filters-row">
                     <div className="hoac-filter-container">
-                        <div className="hoac-dropdown-trigger" onClick={() => setIsCategoryOpen(!isCategoryOpen)}>
-                            <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.5 }}><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
-                                {selectedCategory}
-                            </span>
+                        <div className="hoac-category-trigger" onClick={() => setIsCategoryOpen(!isCategoryOpen)}>
+                            <img src={hoafilter2} alt="Filter" style={{ width: 16 }} />
+                            {selectedCategory}
                             <IconDownCaret width={14} height={8} style={{ transform: isCategoryOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', color: '#6B7280' }} />
                         </div>
                         {isCategoryOpen && (
@@ -220,32 +212,73 @@ const HOACommunity = () => {
                     </div>
 
                     <div className="hoac-search-bar-wrapper">
-                        <img src={hoasearch} alt="Search" style={{ opacity: 0.5, width: 14 }} />
-                        <input type="text" placeholder="Search any Stories..." />
-                    </div>
-
-                    <div className="hoac-date-filter">
-                        <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <IconCalendar /> Today
-                        </span>
-                        <IconDownCaret width={12} height={8} style={{ color: '#6B7280' }} />
+                        <div className="hoac-search-input">
+                            <img src={hoasearch} alt="Search" style={{ opacity: 0.5, width: 14 }} />
+                            <input type="text" placeholder="Search any Stories..." />
+                        </div>
+                        <div className="hoac-v-divider" />
+                        <div className="hoac-filter-container hoac-date-filter-container">
+                            <div
+                                className="hoac-date-filter"
+                                onClick={() => setIsDateOpen(!isDateOpen)}
+                                role="button"
+                                tabIndex={0}
+                                aria-haspopup="listbox"
+                                aria-expanded={isDateOpen}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                        e.preventDefault();
+                                        setIsDateOpen(!isDateOpen);
+                                    }
+                                }}
+                            >
+                                <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                    <img src={hoacalendar2} alt="calendar" /> {selectedDateFilter}
+                                </span>
+                                <IconDownCaret
+                                    width={12}
+                                    height={8}
+                                    style={{
+                                        color: '#6B7280',
+                                        transform: isDateOpen ? 'rotate(180deg)' : 'none',
+                                        transition: 'transform 0.2s',
+                                    }}
+                                />
+                            </div>
+                            {isDateOpen && (
+                                <div className="hoac-dropdown-menu hoac-date-dropdown-menu">
+                                    {['Today', 'This Week', 'This Month', 'All Time'].map((opt) => (
+                                        <button
+                                            key={opt}
+                                            type="button"
+                                            className={`hoac-dropdown-item${selectedDateFilter === opt ? ' active' : ''}`}
+                                            onClick={() => {
+                                                setSelectedDateFilter(opt);
+                                                setIsDateOpen(false);
+                                            }}
+                                        >
+                                            {opt}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
 
-                {/* Stories Grid */}
                 <div className="hoac-grid">
                     {storiesData.map(story => (
                         <div key={story.id} className="hoac-card" onClick={() => setIsModalOpen(true)}>
                             <img src={story.img} alt={story.title} className="hoac-card-img" />
                             <div className="hoac-card-body">
                                 <div className="hoac-card-top-meta">
-                                    <span className="hoac-card-author"><IconUser /> {story.author}</span>
-                                    <span className="hoac-card-comments"><IconChat /> {story.comments}</span>
+                                    <span><img src={hoaadmin} alt="Admin" /> {story.author}</span>
+                                    <span className="hoac-card-comments"><img src={hoamessages} alt="Comments" /> {story.comments}</span>
                                 </div>
                                 <h4 className="hoac-card-title">{story.title}</h4>
                                 <p className="hoac-card-excerpt">{story.excerpt}</p>
                                 <div className="hoac-card-footer">
-                                    <span className="hoac-card-date"><IconCalendar /> {story.date}</span>
+                                    <span className="hoac-card-date"><img src={hoacalendar} alt="Calendar" /> {story.date}</span>
                                     <button className="hoac-icon-btn"><IconMoreVertical /></button>
                                 </div>
                             </div>
@@ -253,7 +286,6 @@ const HOACommunity = () => {
                     ))}
                 </div>
 
-                {/* Pagination */}
                 <div className="hoac-pagination-container">
                     <button className="hoac-page-nav" style={{ color: '#D8D8E5' }}>
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
@@ -269,11 +301,9 @@ const HOACommunity = () => {
                     </button>
                 </div>
 
-                {/* STORY PREVIEW MODAL OVERLAY */}
+                {/* MODAL OVERLAY */}
                 <div className={`hoac-modal-overlay ${isModalOpen ? 'open' : ''}`} onClick={() => setIsModalOpen(false)}>
                     <div className="hoac-modal-drawer" onClick={e => e.stopPropagation()}>
-
-                        {/* Modal Header */}
                         <div className="hoac-modal-top-header">
                             <button className="hoac-modal-close-btn" onClick={() => setIsModalOpen(false)}>
                                 <IconCloseDrawer />
@@ -286,10 +316,7 @@ const HOACommunity = () => {
                             </span>
                         </div>
 
-                        {/* Modal Content Scroll Area */}
                         <div className="hoac-modal-content-area">
-                            
-                            {/* Drawer Sub Header */}
                             <div className="hoac-drawer-header-row">
                                 <div className="hoac-drawer-title-info">
                                     <div className="hoac-avatar-placeholder"><IconUser /></div>
@@ -305,7 +332,6 @@ const HOACommunity = () => {
 
                             <hr className="hoac-divider" />
 
-                            {/* Tabs & Stats row */}
                             <div className="hoac-drawer-tabs-row">
                                 <div className="hoac-toggle-tabs">
                                     <button className={`hoac-pill-tab ${activeTab === 'overview' ? 'active' : ''}`} onClick={() => setActiveTab('overview')}>
@@ -322,38 +348,35 @@ const HOACommunity = () => {
                                 </div>
                             </div>
 
-                            {/* Tab Content */}
                             <div className="hoac-tab-content-container">
-                                
-                                {/* ==== OVERVIEW TAB ==== */}
+                                {/* OVERVIEW TAB */}
                                 {activeTab === 'overview' && (
                                     <div className="hoac-overview-content">
                                         <h2 className="hoac-article-title">Build your dream software & engineering career</h2>
                                         <div className="hoac-article-meta">
-                                            <span>5 mins read</span>
+                                            <strong>5 mins read</strong>
                                             <span className="hoac-divider-vert">|</span>
                                             <span>Oct 21, 2025 07:51 AM</span>
                                         </div>
-
-                                        <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=1000&auto=format&fit=crop" alt="Hero" className="hoac-article-hero" />
-
-                                        {/* Author Block */}
-                                        <div className="hoac-author-block">
-                                            <div className="hoac-author-profile">
-                                                <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=100&auto=format&fit=crop" alt="Author" className="hoac-author-avatar" />
-                                                <div className="hoac-author-details">
-                                                    <h4>Esther Howard</h4>
-                                                    <p>Admin</p>
+                                        <div className="hoac-article-hero-container">
+                                            <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=1000&auto=format&fit=crop" alt="Hero" className="hoac-article-hero" />
+                                            <div className="hoac-author-block">
+                                                <div className="hoac-author-profile">
+                                                    <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=100&auto=format&fit=crop" alt="Author" className="hoac-author-avatar" />
+                                                    <div className="hoac-author-details">
+                                                        <h4>Esther Howard</h4>
+                                                        <p>Admin</p>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                            <div className="hoac-author-actions">
-                                                <div className="hoac-social-icons">
-                                                    <button><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5"></path></svg></button>
-                                                    <button><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg></button>
-                                                    <button><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path></svg></button>
-                                                    <button><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg></button>
+                                                <div className="hoac-author-actions">
+                                                    <div className="hoac-social-icons">
+                                                        <button><img src={hoatiktok} alt="Tiktok" /></button>
+                                                        <button><img src={hoawhatsapp} alt="Whatsapp" /></button>
+                                                        <button><img src={hoafacebook} alt="Facebook" /></button>
+                                                        <button><img src={hoainstagram} alt="Instagram" /></button>
+                                                    </div>
+                                                    <button className="hoac-btn-share"><IconShare /> Share</button>
                                                 </div>
-                                                <button className="hoac-btn-share"><IconShare /> Share</button>
                                             </div>
                                         </div>
 
@@ -369,32 +392,46 @@ const HOACommunity = () => {
                                     </div>
                                 )}
 
-                                {/* ==== COMMENTS TAB ==== */}
+                                {/* COMMENTS TAB (UPDATED SECTION) */}
                                 {activeTab === 'comments' && (
                                     <div className="hoac-comments-content">
+                                     <div className='hoac-comments-header-container'>
                                         <div className="hoac-comments-header">
                                             <h3>Comments <span>231</span></h3>
                                         </div>
 
-                                        {/* Input Box */}
+                                        {/* Input Box Redesign */}
                                         <div className="hoac-comment-input-box">
                                             <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=100&auto=format&fit=crop" alt="Current User" className="hoac-current-avatar" />
                                             <div className="hoac-input-wrapper">
-                                                <input type="text" placeholder="Your comment.." />
-                                                <button className="hoac-submit-btn">
-                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                                                <input 
+                                                    type="text" 
+                                                    placeholder="| Your comment.." 
+                                                    value={newComment}
+                                                    onChange={(e) => setNewComment(e.target.value)}
+                                                />
+                                                <button 
+                                                    className="hoac-inline-send-btn"
+                                                    onClick={() => {
+                                                        if (newComment.trim()) {
+                                                            setNewComment('');
+                                                        }
+                                                    }}
+                                                >
+                                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                        <polyline points="9 18 15 12 9 6"></polyline>
+                                                    </svg>
                                                 </button>
                                             </div>
                                         </div>
+                                       </div>    
 
-                                        {/* Comment List */}
+                                        {/* Comment List Redesign */}
                                         <div className="hoac-comments-list">
                                             {commentsData.map((comment) => (
                                                 <div key={comment.id} className="hoac-comment-item">
                                                     <div className="hoac-comment-avatar">
-                                                        <div className="hoac-avatar-circle">
-                                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-                                                        </div>
+                                                        <img src={comment.avatar} alt={comment.name} style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover' }} />
                                                     </div>
                                                     <div className="hoac-comment-body">
                                                         <div className="hoac-comment-meta">
@@ -405,15 +442,75 @@ const HOACommunity = () => {
                                                             {comment.text} <span className="hoac-read-more">Read more</span>
                                                         </p>
                                                         <div className="hoac-comment-actions">
-                                                            <button className="hoac-reply-btn"><IconReply /> {comment.replies} View Replies</button>
+                                                            <button 
+                                                                className="hoac-reply-btn"
+                                                                onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)}
+                                                            >
+                                                                <IconReply /> {comment.replies + (replies[comment.id]?.length || 0)} View Replies
+                                                            </button>
                                                             <span className="hoac-posted-date">Sent on <strong>{comment.date}</strong></span>
                                                         </div>
+                                                        
+                                                        {/* Reply Section */}
+                                                        {replyingTo === comment.id && (
+                                                            <div className="hoac-reply-section">
+                                                                <div className="hoac-reply-input-wrapper">
+                                                                    <input 
+                                                                        type="text" 
+                                                                        placeholder="Write a reply..." 
+                                                                        value={replyText[comment.id] || ''}
+                                                                        onChange={(e) => setReplyText({...replyText, [comment.id]: e.target.value})}
+                                                                    />
+                                                                    <button 
+                                                                        className="hoac-reply-submit-btn"
+                                                                        onClick={() => {
+                                                                            if (replyText[comment.id]?.trim()) {
+                                                                                setReplies({
+                                                                                    ...replies,
+                                                                                    [comment.id]: [
+                                                                                        ...(replies[comment.id] || []),
+                                                                                        {
+                                                                                            id: Date.now(),
+                                                                                            name: 'You',
+                                                                                            timeAgo: 'Just now',
+                                                                                            text: replyText[comment.id]
+                                                                                        }
+                                                                                    ]
+                                                                                });
+                                                                                setReplyText({...replyText, [comment.id]: ''});
+                                                                            }
+                                                                        }}
+                                                                    >
+                                                                        Reply
+                                                                    </button>
+                                                                </div>
+                                                                
+                                                                {/* Replies List */}
+                                                                {(replies[comment.id] || []).length > 0 && (
+                                                                    <div className="hoac-replies-list">
+                                                                        {replies[comment.id].map((reply) => (
+                                                                            <div key={reply.id} className="hoac-reply-item">
+                                                                                <div className="hoac-reply-avatar">
+                                                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                                                                                </div>
+                                                                                <div className="hoac-reply-content">
+                                                                                    <div className="hoac-reply-meta">
+                                                                                        <h5>{reply.name}</h5>
+                                                                                        <span>{reply.timeAgo}</span>
+                                                                                    </div>
+                                                                                    <p className="hoac-reply-text">{reply.text}</p>
+                                                                                </div>
+                                                                            </div>
+                                                                        ))}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 </div>
                                             ))}
                                         </div>
 
-                                        {/* Comments Pagination */}
                                         <div className="hoac-pagination-container">
                                             <button className="hoac-page-nav" style={{ color: '#D8D8E5' }}>
                                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
@@ -431,7 +528,6 @@ const HOACommunity = () => {
                                     </div>
                                 )}
                             </div>
-
                         </div>
                     </div>
                 </div>
