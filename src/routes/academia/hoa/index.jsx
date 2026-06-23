@@ -14,6 +14,7 @@ import HOAProjects from '../../../pages/academia/hoa/HOAProjects';
 import HOACommunity from '../../../pages/academia/hoa/HOACommunity';
 import HOACertificates from '../../../pages/academia/hoa/HOACertificates';
 import HOAEventsPlanning from '../../../pages/academia/hoa/HOAEventsPlanning';
+import HOAETravel from '../../../pages/academia/hoa/HOAEtravel';
 
 const HOAPlaceholderPage = ({ currentPage, title, description, breadcrumb }) => (
   <HOALayout currentPage={currentPage} breadcrumb={breadcrumb}>
@@ -41,17 +42,7 @@ function AcademiaHOARoutes() {
       <Route path="academia/hoa/community" element={<HOACommunity />} />
       <Route path="academia/hoa/certificates" element={<HOACertificates />} />
       <Route path="academia/hoa/events-planning" element={<HOAEventsPlanning />} />
-      <Route
-        path="academia/hoa/e-travel"
-        element={(
-          <HOAPlaceholderPage
-            currentPage="e-travel"
-            title="E-Travel"
-            description="E-Travel is not wired yet."
-            breadcrumb={{ section: 'Plannings', page: 'E-Travel' }}
-          />
-        )}
-      />
+      <Route path="academia/hoa/e-travel" element={<HOAETravel />} />
       <Route
         path="academia/hoa/terms-conditions"
         element={(
