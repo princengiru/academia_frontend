@@ -14,6 +14,7 @@ import hoatotalshares from '../../../assets/icons/hoatotalshares.svg';
 import hoatotalreads from '../../../assets/icons/hoatotalreads.svg';
 import hoacalendar2 from '../../../assets/icons/hoacalendar2.svg';
 import hoafilter2 from '../../../assets/icons/hoafilter2.svg';
+import hoaissues from '../../../assets/icons/hoaissues.svg';
 
 // Custom inline SVGs for the Community page
 const IconDownCaret = ({ width = 12, height = 8, className = "", style = {} }) => (
@@ -123,7 +124,7 @@ const HOACommunity = () => {
                     <h1>Community</h1>
                     <div className="hoac-header-actions">
                         <button className="hoac-btn-outline hoac-btn-report">
-                            <IconChat /> Having Issues? Report
+                            <img src={hoaissues} alt="Issues" /> Having Issues? Report
                         </button>
                         <button className="hoac-btn-primary">
                             Go to website <img src={hoagoto} alt="Go" />
