@@ -286,102 +286,74 @@
 
 /* Certificate Graphic */
 .hoace-certificates-page .hoace-cert-graphic {
-    height: 180px;
-    background: linear-gradient(145deg, #0A1B44 0%, #0F2356 40%, #450468 100%);
+    height: 160px;
+    background-size: 100% 100%;
+    background-position: center;
+    background-repeat: no-repeat;
     position: relative;
     overflow: hidden;
     padding: 24px;
     display: flex;
     flex-direction: column;
-    justify-content: center;
-}
-
-.hoace-certificates-page .hoace-cert-pattern {
-    position: absolute;
-    left: 20px;
-    top: 20px;
-    bottom: 20px;
-    width: 40px;
-    background-image: repeating-linear-gradient(45deg, rgba(255,255,255,0.03) 0px, rgba(255,255,255,0.03) 2px, transparent 2px, transparent 4px);
-    opacity: 0.5;
-}
-
-.hoace-certificates-page .hoace-cert-curve {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 40px;
-    background: #FFFFFF;
-    border-radius: 50% 50% 0 0 / 100% 100% 0 0;
-    transform: scaleX(1.5) translateY(50%);
-    box-shadow: 0 -8px 0 0 rgba(220, 163, 255, 0.4), 0 -16px 0 0 rgba(220, 163, 255, 0.2);
+    justify-content: flex-start;
 }
 
 .hoace-certificates-page .hoace-cert-content {
     position: relative;
     z-index: 2;
-    padding-left: 60px; /* Space for the pattern */
+    padding-left: 32px; /* Space for the pattern */
+    padding-right: 40px; /* Avoid overlapping the ribbon badge */
+    margin-top: 8px;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .hoace-certificates-page .hoace-cert-content p {
     color: #A3ADC2;
-    font-size: 11px;
-    margin: 0 0 6px 0;
+    font-size: 10px;
+    margin: 0 0 4px 0;
+    font-weight: 500;
 }
 
 .hoace-certificates-page .hoace-cert-content h4 {
     color: #FFFFFF;
-    font-size: 16px;
+    font-size: 13px;
     font-weight: 600;
     margin: 0;
+    line-height: 1.3;
+    white-space: nowrap;
 }
 
-.hoace-certificates-page .hoace-cert-badge {
+.hoace-certificates-page .hoace-cert-ribbon-wrapper {
     position: absolute;
-    top: 20px;
-    right: 20px;
-    width: 44px;
-    height: 44px;
-    background: #6D0C9E;
-    color: #FFFFFF;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 10px;
-    font-weight: 700;
+    top: 0;
+    right: 24px;
+    width: 34px;
+    height: 50px;
     z-index: 3;
-    border-radius: 8px; /* Simulating rosette with a stylized box */
-    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-    transform: rotate(15deg);
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
-.hoace-certificates-page .hoace-cert-badge::before {
-    content: '';
+.hoace-certificates-page .hoace-ribbon-img {
     position: absolute;
+    top: 0;
+    left: 0;
     width: 100%;
     height: 100%;
-    background: #6D0C9E;
-    border-radius: 8px;
-    transform: rotate(30deg);
-    z-index: -1;
+    object-fit: contain;
 }
 
-.hoace-certificates-page .hoace-cert-badge::after {
-    content: '';
+.hoace-certificates-page .hoace-ribbon-number {
     position: absolute;
-    width: 100%;
-    height: 100%;
-    background: #6D0C9E;
-    border-radius: 8px;
-    transform: rotate(60deg);
-    z-index: -1;
-}
-
-.hoace-certificates-page .hoace-cert-badge span {
-    transform: rotate(-15deg);
-    position: relative;
     z-index: 2;
+    color: #FFF;
+    font-size: 7px;
+    font-weight: 700;
+    bottom: 10px;
+    width: 100%;
+    text-align: center;
 }
 
 /* Card Body */

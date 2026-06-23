@@ -9,6 +9,8 @@ import rwanda from '../../../assets/icons/rwanda.svg';
 import hoadowncaret from '../../../assets/icons/hoadowncaret.svg';
 import hoasearch from '../../../assets/icons/hoasearch.svg';
 import hoawhiteadd from '../../../assets/icons/hoawhiteadd.svg';
+import certificateimage from '../../../assets/imgs/certificateimage.jpeg';
+import hoarank from '../../../assets/icons/hoarank.png';
 
 // Custom inline SVGs for the Certificates page
 const IconDownCaret = ({ width = 12, height = 8, className = "", style = {} }) => (
@@ -172,17 +174,15 @@ const HOACertificates = () => {
                         <div key={cert.id} className="hoace-card">
                             
                             {/* Certificate Graphic Representation */}
-                            <div className="hoace-cert-graphic">
-                                <div className="hoace-cert-badge">
-                                    <span>{cert.score}</span>
+                            <div className="hoace-cert-graphic" style={{ backgroundImage: `url(${certificateimage})` }}>
+                                <div className="hoace-cert-ribbon-wrapper">
+                                    <img src={hoarank} alt="" className="hoace-ribbon-img" onError={(e) => e.target.style.display = 'none'} />
+                                    <span className="hoace-ribbon-number">{cert.score}</span>
                                 </div>
                                 <div className="hoace-cert-content">
                                     <p>Proudly presented to</p>
                                     <h4>Dear, {cert.name}</h4>
                                 </div>
-                                {/* Decorative elements simulating the certificate design */}
-                                <div className="hoace-cert-pattern"></div>
-                                <div className="hoace-cert-curve"></div>
                             </div>
 
                             {/* Card Details */}
