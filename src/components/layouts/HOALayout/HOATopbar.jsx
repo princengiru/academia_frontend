@@ -15,6 +15,7 @@ const languageOptions = [
   { label: 'FR', flag: '/assets/icons/france.svg' },
 ];
 
+const HOATopbar = ({ breadcrumb = { section: 'Dashboard', page: 'Overview' } }) => {
 const HOATopbar = () => {
   const location = useLocation();
   const dropdownRef = useRef(null);
@@ -100,6 +101,7 @@ const HOATopbar = () => {
     <header className="hoa-topbar">
       {/* Left: Dynamic Breadcrumbs */}
       <div className="hoa-topbar-left">
+        <h2>{breadcrumb.section} <span>/ {breadcrumb.page}</span></h2>
         <h2 style={{ textTransform: 'capitalize' }}>
           Dashboard <span>/ {getPageName()}</span>
         </h2>

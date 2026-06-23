@@ -1,6 +1,21 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 
+const UPLOAD_NAV_ITEMS = [
+  { label: 'Syllabus', to: '/academia/hoa/syllabus', page: 'syllabus' },
+  { label: 'Online Courses', to: '/academia/hoa/online-courses', page: 'online-courses' },
+  { label: 'Projects', to: '/academia/hoa/projects', page: 'projects' },
+  { label: 'Certificates', to: '/academia/hoa/certificates', page: 'certificates' },
+];
+
+const PLANNING_NAV_ITEMS = [
+  { label: 'Events & Planning', to: '/academia/hoa/events-planning', page: 'events-planning' },
+  { label: 'E-Travel', to: '/academia/hoa/e-travel', page: 'e-travel' },
+  { label: 'Terms & Conditions', to: '/academia/hoa/terms-conditions', page: 'terms-conditions' },
+  { label: 'Community', to: '/academia/hoa/community', page: 'community' },
+];
+
+const HOASidebar = ({ currentPage }) => {
 const HOASidebar = ({ currentPage, onLogout }) => {
   const navigate = useNavigate();
   const preventDefault = (e) => e.preventDefault();
@@ -8,9 +23,14 @@ const HOASidebar = ({ currentPage, onLogout }) => {
   // Categorization for the dual-column layout
   const dashboardPages = ['index', 'learners', 'tutors', 'reports', 'settings'];
   const managementPages = ['assignments', 'passed-courses', 'retaken-courses', 'failed-courses'];
+  const uploadPages = ['syllabus', 'online-courses', 'projects', 'certificates'];
+  const uploadsPanelPages = [...uploadPages];
+  const planningPages = PLANNING_NAV_ITEMS.map((item) => item.page);
 
   const getDashboardIconClassName = () => (dashboardPages.includes(currentPage) ? 'selected' : '');
   const getManagementIconClassName = () => (managementPages.includes(currentPage) ? 'selected' : '');
+  const getUploadIconClassName = () => (uploadPages.includes(currentPage) ? 'selected' : '');
+  const getPlanningIconClassName = () => (planningPages.includes(currentPage) ? 'selected' : '');
 
   const getSidebarLinkClassName = ({ isActive }) => (isActive ? 'active' : '');
 
@@ -57,6 +77,14 @@ const HOASidebar = ({ currentPage, onLogout }) => {
                 <img src="/assets/icons/bill2.svg" alt="Management" />
               </button>
             </NavLink>
+            <NavLink to="/academia/hoa/syllabus" className={getUploadIconClassName}>
+              <button aria-label="Uploads">
+                <img src="/assets/icons/agent2.svg" alt="Uploads" />
+              </button>
+            </NavLink>
+            <NavLink to="/academia/hoa/events-planning" className={getPlanningIconClassName}>
+              <button aria-label="Plannings">
+                <img src="/assets/icons/briefcase2.svg" alt="Plannings" />
             <a href="#reports" onClick={preventDefault}>
               <button type="button" aria-label="Reports">
                 <img src="/assets/icons/agent2.svg" alt="Reports" />
@@ -66,7 +94,7 @@ const HOASidebar = ({ currentPage, onLogout }) => {
               <button type="button" aria-label="Chat">
                 <img src="/assets/icons/tsidebar2-1.svg" alt="Chat" />
               </button>
-            </a>
+            </NavLink>
           </div>
 
           <div className="sidebar-footer">
@@ -134,6 +162,28 @@ const HOASidebar = ({ currentPage, onLogout }) => {
                 <NavLink to="/academia/hoa/failed-courses" className={getSidebarLinkClassName}>
                   <span>Failed Courses</span>
                 </NavLink>
+              </div>
+            )}
+
+            {uploadsPanelPages.includes(currentPage) && (
+              <div className="links-list">
+                <h6>UPLOADS</h6>
+                {UPLOAD_NAV_ITEMS.map(({ label, to }) => (
+                  <NavLink key={to} to={to} className={getSidebarLinkClassName}>
+                    <span>{label}</span>
+                  </NavLink>
+                ))}
+              </div>
+            )}
+
+            {planningPages.includes(currentPage) && (
+              <div className="links-list">
+                <h6>PLANNINGS</h6>
+                {PLANNING_NAV_ITEMS.map(({ label, to }) => (
+                  <NavLink key={to} to={to} className={getSidebarLinkClassName}>
+                    <span>{label}</span>
+                  </NavLink>
+                ))}
               </div>
             )}
           </div>
