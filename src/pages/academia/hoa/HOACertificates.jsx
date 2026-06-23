@@ -46,21 +46,62 @@ const IconFilterLines = () => (
     </svg>
 );
 
+const DATE_FILTER_OPTIONS = ['Today', 'This Week', 'This Month', 'All Time'];
+
+const formatCertDate = (date) =>
+    date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+const isWithinDateFilter = (date, filter) => {
+    if (filter === 'All Time') return true;
+
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    if (filter === 'Today') {
+        return date >= startOfToday;
+    }
+
+    if (filter === 'This Week') {
+        const startOfWeek = new Date(startOfToday);
+        startOfWeek.setDate(startOfToday.getDate() - startOfToday.getDay());
+        return date >= startOfWeek;
+    }
+
+    if (filter === 'This Month') {
+        return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
+    }
+
+    return true;
+};
+
 const HOACertificates = () => {
     // Top-level state
     const [isCategoryOpen, setIsCategoryOpen] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState('All Categories');
+    const [isDateOpen, setIsDateOpen] = useState(false);
+    const [selectedDateFilter, setSelectedDateFilter] = useState('All Time');
 
     // Dummy data for certificates grid
-    const certificatesData = Array(9).fill(null).map((_, idx) => ({
-        id: idx + 1,
-        name: idx % 2 === 0 ? 'Alexis Aime Ndambayaje jr' : 'John Doe',
-        score: '98.1%',
-        chapters: 20,
-        courseName: 'Web Development',
-        status: 'Passed',
-        date: 'Jan 20, 2026'
-    }));
+    const certificatesData = Array(9).fill(null).map((_, idx) => {
+        const completedAt = new Date();
+        if (idx % 3 === 1) completedAt.setDate(completedAt.getDate() - 3);
+        else if (idx % 3 === 2) completedAt.setDate(completedAt.getDate() - 35);
+
+        return {
+            id: idx + 1,
+            name: idx % 2 === 0 ? 'Alexis Aime Ndambayaje jr' : 'John Doe',
+            score: '98.1%',
+            chapters: 20,
+            courseName: 'Web Development',
+            status: 'Passed',
+            completedAt,
+            date: formatCertDate(completedAt),
+        };
+    });
+
+    const filteredCertificates = certificatesData.filter((cert) =>
+        isWithinDateFilter(cert.completedAt, selectedDateFilter)
+    );
 
     return (
         <HOALayout currentPage="certificates">
@@ -162,17 +203,57 @@ const HOACertificates = () => {
                         <input type="text" placeholder="Search any Certificates..." />
                     </div>
 
-                    <div className="hoace-date-filter">
-                        <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <IconCalendar /> Today
-                        </span>
-                        <IconDownCaret width={12} height={8} style={{ color: '#6B7280' }} />
+                    <div className="hoace-filter-container">
+                        <div
+                            className="hoace-date-filter"
+                            onClick={() => setIsDateOpen(!isDateOpen)}
+                            role="button"
+                            tabIndex={0}
+                            aria-haspopup="listbox"
+                            aria-expanded={isDateOpen}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                    e.preventDefault();
+                                    setIsDateOpen(!isDateOpen);
+                                }
+                            }}
+                        >
+                            <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <IconCalendar /> {selectedDateFilter}
+                            </span>
+                            <IconDownCaret
+                                width={12}
+                                height={8}
+                                style={{
+                                    color: '#6B7280',
+                                    transform: isDateOpen ? 'rotate(180deg)' : 'none',
+                                    transition: 'transform 0.2s',
+                                }}
+                            />
+                        </div>
+                        {isDateOpen && (
+                            <div className="hoace-dropdown-menu hoace-date-dropdown-menu">
+                                {DATE_FILTER_OPTIONS.map((opt) => (
+                                    <button
+                                        key={opt}
+                                        type="button"
+                                        className={`hoace-dropdown-item${selectedDateFilter === opt ? ' active' : ''}`}
+                                        onClick={() => {
+                                            setSelectedDateFilter(opt);
+                                            setIsDateOpen(false);
+                                        }}
+                                    >
+                                        {opt}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 </div>
 
                 {/* Certificates Grid */}
                 <div className="hoace-grid">
-                    {certificatesData.map(cert => (
+                    {filteredCertificates.map(cert => (
                         <div key={cert.id} className="hoace-card">
                             
                             {/* Certificate Graphic Representation */}

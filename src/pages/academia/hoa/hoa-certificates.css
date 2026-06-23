@@ -226,6 +226,18 @@
     color: #450468;
 }
 
+.hoace-certificates-page .hoace-dropdown-item.active {
+    background: #F8F9FA;
+    color: #450468;
+    font-weight: 600;
+}
+
+.hoace-certificates-page .hoace-date-dropdown-menu {
+    left: auto;
+    right: 0;
+    min-width: 140px;
+}
+
 .hoace-certificates-page .hoace-search-bar-wrapper {
     display: flex;
     align-items: center;
