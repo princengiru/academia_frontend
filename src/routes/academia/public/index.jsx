@@ -2,8 +2,8 @@ import React from 'react';
 import { Route } from 'react-router-dom';
 import AcademiaIndex from '../../../pages/academia/public';
 import AcademiaJournals from '../../../pages/academia/public/journals';
-import AcademiasCourses from '../../../pages/academia/public/courses';
-import AcademiaCoursePart from '../../../pages/academia/public/course-part';
+import AcademiaSyllabuses from '../../../pages/academia/public/syllabuses';
+import AcademiaSyllabusPart from '../../../pages/academia/public/syllabus-part';
 import AcademiaReadContents from '../../../pages/academia/public/read-contents';
 import AcademiaReadJournal from '../../../pages/academia/public/read-journal';
 import AcademiaReadStory from '../../../pages/academia/public/read-story';
@@ -17,8 +17,8 @@ export default function AcademiaPublicRoutes() {
       <Route index element={<AcademiaIndex />} />
       <Route path="index" element={<AcademiaIndex />} />
       <Route path="journals" element={<AcademiaJournals />} />
-      <Route path="courses" element={<AcademiasCourses />} />
-      <Route path="course-part" element={<AcademiaCoursePart />} />
+      <Route path="syllabuses" element={<AcademiaSyllabuses />} />
+      <Route path="syllabus-part" element={<AcademiaSyllabusPart />} />
       <Route path="read-contents" element={<AcademiaReadContents />} />
       <Route path="read-journal" element={<AcademiaReadJournal />} />
       <Route path="read-story" element={<AcademiaReadStory />} />

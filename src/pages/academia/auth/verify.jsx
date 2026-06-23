@@ -85,7 +85,7 @@ function AcademiaVerify() {
       const data = await response.json();
 
       if (!response.ok) {
-        setVortexError(data.message || 'OTP verification failed');
+        setVortexError(data.error?.message || data.message || 'OTP verification failed');
         setTitanLoading(false);
         return;
       }

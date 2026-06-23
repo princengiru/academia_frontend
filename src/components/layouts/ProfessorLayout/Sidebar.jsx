@@ -1,7 +1,8 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 const Sidebar = ({ currentPage, profileLoading, profileSummary, profileCompletion, profileError, onLogout }) => {
+  const navigate = useNavigate();
   const checkActive = (slug) => (currentPage === slug ? 'active-menu' : '');
   const preventDefault = (e) => e.preventDefault();
 
@@ -27,10 +28,7 @@ const Sidebar = ({ currentPage, profileLoading, profileSummary, profileCompletio
           <img src="/assets/icons/home-2.svg" alt="Home" />
           <span>Home</span>
         </Link>
-        <Link to="/academia/professor/prepare-course" className={checkActive('prepare-course')}>
-          <img src="/assets/icons/lea3.svg" alt="Prepare Course" />
-          <span>Prepare Course</span>
-        </Link>
+
         <Link to="/academia/professor/assignments" className={checkActive('assignments')}>
           <img src="/assets/icons/lea3.svg" alt="Assessments" />
           <span>Assessments</span>
@@ -61,12 +59,12 @@ const Sidebar = ({ currentPage, profileLoading, profileSummary, profileCompletio
         </Link>
       </div>
 
-      <div className="sidebar-events prof-sidebar-events">
+      {/* <div className="sidebar-events prof-sidebar-events">
         <button type="button" className="prof-sidebar-events-link" onClick={preventDefault}>
           <p>2 Events Pending</p>
           <p>&gt;</p>
         </button>
-      </div>
+      </div> */}
 
       <div className="prof-sidebar-progress">
         <div className="prof-sidebar-progress-head">
@@ -90,7 +88,15 @@ const Sidebar = ({ currentPage, profileLoading, profileSummary, profileCompletio
       </div>
 
       <div className="prof-sidebar-profile">
-        <div className="prof-sidebar-profile-left">
+        <div 
+          className="prof-sidebar-profile-left"
+          onClick={() => navigate('/academia/professor/account')}
+          style={{ cursor: 'pointer' }}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => { if (e.key === 'Enter') navigate('/academia/professor/account'); }}
+          aria-label="Go to account settings"
+        >
           <div className="prof-sidebar-profile-img">
             <img src={profileSummary?.avatar || '/assets/imgs/default-profile.png'} alt="Profile" />
           </div>

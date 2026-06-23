@@ -512,3 +512,72 @@ body[data-role="hoa"] .hoa-footer-links a:hover {
 body[data-role="hoa"] .hoa-footer-links .sep {
   color: #DBDFE9;
 }
+
+/* Logout and Suspension Modal Styles */
+body[data-role="hoa"] .modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 99999;
+}
+
+body[data-role="hoa"] .logout-modal {
+  background: #ffffff;
+  border-radius: 10px;
+  padding: 24px;
+  width: 380px;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.12);
+  text-align: left;
+}
+
+body[data-role="hoa"] .logout-modal h4 {
+  margin: 0 0 12px;
+  font-size: 18px;
+  font-weight: 700;
+  color: #071437;
+}
+
+body[data-role="hoa"] .logout-modal p {
+  margin: 0 0 20px;
+  color: #4B5675;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+body[data-role="hoa"] .logout-modal-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+body[data-role="hoa"] .logout-cancel,
+body[data-role="hoa"] .logout-confirm {
+  padding: 10px 16px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+body[data-role="hoa"] .logout-cancel {
+  background: #F1F1F4;
+  color: #4B5675;
+}
+
+body[data-role="hoa"] .logout-cancel:hover {
+  background: #E4E6EF;
+}
+
+body[data-role="hoa"] .logout-confirm {
+  background: #450468;
+  color: #ffffff;
+}
+
+body[data-role="hoa"] .logout-confirm:hover {
+  background: #390356;
+}

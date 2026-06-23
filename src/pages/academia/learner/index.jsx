@@ -40,8 +40,8 @@ function LearnersIndex() {
   const [enrolledCourses, setEnrolledCourses] = useState([]);
   const [recommendedCourses, setRecommendedCourses] = useState([]);
   const [courseFilter, setCourseFilter] = useState('in_progress');
-  const handleCourseClick = () => {
-    navigate('/academia/learner/course-part');
+  const handleCourseClick = (id) => {
+    navigate('/academia/learner/course-part', { state: { courseId: id } });
   };
 
   useEffect(() => {
@@ -353,14 +353,14 @@ function LearnersIndex() {
                   key={course.id}
                   className="learners-course-card"
                   style={{ backgroundImage: `url(${course.image})` }}
-                  onClick={handleCourseClick}
+                  onClick={() => handleCourseClick(course.id)}
                 >
                   <div className="learners-course-overlay">
                     <div className="learners-course-badge" style={{ '--pct': course.pct }}>
                       {course.pct}%
                     </div>
                     <div className="learners-course-actions">
-                      <button type="button" aria-label="Open" onClick={(e) => { e.stopPropagation(); handleCourseClick(); }}>
+                      <button type="button" aria-label="Open" onClick={(e) => { e.stopPropagation(); handleCourseClick(course.id); }}>
                         <img src={leAr} alt="Open" />
                       </button>
                     </div>
@@ -418,7 +418,7 @@ function LearnersIndex() {
               </div>
             ) : mappedRecommended.length > 0 ? (
               mappedRecommended.map((course) => (
-                <a className="learners-reco-item" href="#" key={course.id} onClick={(event) => { event.preventDefault(); handleCourseClick(); }}>
+                <a className="learners-reco-item" href="#" key={course.id} onClick={(event) => { event.preventDefault(); handleCourseClick(course.id); }}>
                   <div className="learners-reco-thumb">
                     <img src={course.image} alt="Course" />
                   </div>

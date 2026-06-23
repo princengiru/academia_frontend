@@ -34,7 +34,7 @@ function AcademiaForgotPassword() {
       const data = await response.json();
 
       if (!response.ok) {
-        setVortexError(data.message || 'Request failed');
+        setVortexError(data.error?.message || data.message || 'Request failed');
         setTitanLoading(false);
         return;
       }

@@ -58,7 +58,7 @@ function AcademiaResetPassword() {
       const data = await response.json();
 
       if (!response.ok) {
-        setVortexError(data.message || 'Password reset failed');
+        setVortexError(data.error?.message || data.message || 'Password reset failed');
         setTitanLoading(false);
         return;
       }
