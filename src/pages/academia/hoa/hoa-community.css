@@ -64,57 +64,70 @@
 
 /* Top Stats Card */
 .hoac-community-page .hoac-stats-container {
-    background: #FFFFFF;
-    border: 1px solid #EEF1F6;
-    border-radius: 8px;
-    display: flex;
-    padding: 20px 0;
-    margin-bottom: 24px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 16px;
+    margin-bottom: 30px;
+    background: #FAFAFA;
+    padding: 12px;
+    border-radius: 2px;
 }
 
 .hoac-community-page .hoac-stat-block {
-    flex: 1;
-    position: relative;
+    background: #FFFFFF;
+    border-radius: 8px;
+    padding: 10px 12px;
     display: flex;
     align-items: center;
-    justify-content: center;
-    gap: 16px;
-}
-
-.hoac-community-page .hoac-stat-block:not(:last-child)::after {
-    content: '';
-    position: absolute;
-    right: 0;
-    top: 15%;
-    height: 70%;
-    width: 1px;
-    background: #EEF1F6;
+    gap: 12px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
 }
 
 .hoac-community-page .hoac-stat-icon {
-    width: 36px;
-    height: 36px;
-    border-radius: 8px;
-    background: #F9F9F9;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
+    flex-shrink: 0;
+    background: #FFFFFF;
+    box-shadow: 4px 4px 12px rgba(0, 0, 0, 0.07);
     color: #A1A5B7;
+}
+
+.hoac-community-page .hoac-icon-gray {
+    background: #F3F4F8;
+}
+
+.hoac-community-page .hoac-icon-green {
+    background: #E8FFF3;
+    color: #17C653;
+}
+
+.hoac-community-page .hoac-icon-orange {
+    background: #FFF4E6;
+    color: #F6C000;
+}
+
+.hoac-community-page .hoac-icon-red {
+    background: #FFF0F4;
+    color: #F8285A;
 }
 
 .hoac-community-page .hoac-stat-text h3 {
     margin: 0 0 4px 0;
-    font-size: 15px;
-    color: #071437;
+    font-size: 14px;
     font-weight: 700;
+    color: #000000;
 }
 
 .hoac-community-page .hoac-stat-text p {
     margin: 0;
     font-size: 11px;
-    color: #A1A5B7;
-    font-weight: 500;
+    color: #64748B;
+    font-weight: 400;
+    white-space: nowrap;
 }
 
 /* Sub-header */
