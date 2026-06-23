@@ -18,6 +18,7 @@ import hoawhiteadd from '../../../assets/icons/hoawhiteadd.svg';
 import hoaleftarrow from '../../../assets/icons/hoaleftarrow.svg';
 import hoarightarrow from '../../../assets/icons/hoarightarrow.svg';
 import hoapeople from '../../../assets/icons/hoapeople.svg';
+import hoagoback from '../../../assets/icons/hoagoback.svg';
 
 // Custom inline SVGs for specific icons needed in Projects
 const IconDownCaret = ({ width = 12, height = 8, className = "", style = {} }) => (
@@ -314,7 +315,7 @@ const HOAProjects = () => {
                         {/* Modal Header */}
                         <div className="hoap-modal-top-header">
                             <button className="hoap-modal-close-btn" onClick={closeModal}>
-                                <IconCloseDrawer />
+                                <img src={hoagoback} alt="Back" />          
                             </button>
                             <h2>Project Preview</h2>
                             <span className="hoap-update-status" style={{ border: '1px solid #EEF1F6' }}>

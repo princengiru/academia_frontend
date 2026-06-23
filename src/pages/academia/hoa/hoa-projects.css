@@ -65,11 +65,12 @@
 }
 
 /* Top Stats Card */
-.hoap-projects-page .hoap-stats-top-container{
+.hoap-projects-page .hoap-stats-top-container {
     padding: 10px 10px;
     background: #FAFAFA;
     margin-bottom: 24px;
 }
+
 .hoap-projects-page .hoap-stats-container {
     background: #FFFFFF;
     border: 1px solid #EEF1F6;
@@ -281,7 +282,7 @@
 }
 
 .hoap-projects-page .hoap-type-btn {
-    background:#FFFFFF;
+    background: #FFFFFF;
     border: none;
     padding: 8px 20px;
     font-size: 12px;
@@ -340,7 +341,7 @@
 
 .hoap-projects-page .hoap-card:hover {
     transform: translateY(-1px);
-    box-shadow: 0 8px 24px rgba(0,0,0,0.04);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.04);
 }
 
 .hoap-projects-page .hoap-card-img {
@@ -685,13 +686,14 @@
 .hoap-projects-page .hoap-pill-tab.active {
     background: #FFFFFF;
     color: #450468;
-    box-shadow: 0px 2px 4px rgba(0,0,0,0.05);
+    box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 /* Tab Content Areas */
-.hoap-projects-page .hoap-overview-content{
+.hoap-projects-page .hoap-overview-content {
     margin-top: 20px;
 }
+
 .hoap-projects-page .hoap-section-title {
     font-size: 18px;
     font-weight: 700;
@@ -752,7 +754,8 @@
     width: 32px;
     height: 32px;
     border-radius: 50%;
-    background: #D81A48; /* Reddish tone based on images */
+    background: #D81A48;
+    /* Reddish tone based on images */
     display: flex;
     align-items: center;
     justify-content: center;
@@ -783,7 +786,8 @@
 
 .hoap-projects-page .hoap-comment-text {
     font-size: 13px;
-    color: #450468; /* Distinct purple text seen in comments image */
+    color: #450468;
+    /* Distinct purple text seen in comments image */
     line-height: 1.6;
     margin: 0 0 12px 0;
 }
