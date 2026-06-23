@@ -28,17 +28,14 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 const resolveAuthorImage = (value, fallback = learnersProfileImage) => {
   if (!value) return fallback;
-
   if (value.startsWith('http://') || value.startsWith('https://') || value.startsWith('data:') || value.startsWith('blob:')) {
     return value;
   }
-
   return `${API_BASE_URL}${value}`;
 };
 
 const normalizeProject = (project) => {
   if (!project) return null;
-
   return {
     ...project,
     id: project.id || project._id || project.project_id,
@@ -57,10 +54,8 @@ const normalizeProject = (project) => {
 
 const formatMemberSince = (createdAt) => {
   if (!createdAt) return 'January 24, 2021';
-
   const parsedDate = new Date(createdAt);
   if (Number.isNaN(parsedDate.getTime())) return 'January 24, 2021';
-
   return parsedDate.toLocaleDateString(undefined, {
     month: 'long',
     day: 'numeric',
@@ -72,17 +67,37 @@ function AcademiaAuthor() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const moreFromSwiperRef = useRef(null);
+  
+  // --- State Management ---
   const [authorProfile, setAuthorProfile] = useState(null);
   const [authorProjects, setAuthorProjects] = useState([]);
+  const [followerStats, setFollowerStats] = useState({ followers: 0, following: 0 });
+  const [isFollowing, setIsFollowing] = useState(false);
+  
+  // --- Loading States ---
   const [loading, setLoading] = useState(true);
   const [projectsLoading, setProjectsLoading] = useState(true);
-  const [isFollowing, setIsFollowing] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
-  const [followerStats, setFollowerStats] = useState({ followers: 0, following: 0 });
+  
+  // --- Newsletter State ---
+  const [newsletterEmail, setNewsletterEmail] = useState('');
 
+  // --- Handlers ---
+  const preventDefault = (e) => e.preventDefault();
+
+  const handleNewsletterSubmit = (e) => {
+    e.preventDefault();
+    if (!newsletterEmail.trim()) return;
+    // TODO: Connect to backend newsletter endpoint
+    console.log("Subscribing email:", newsletterEmail);
+    setNewsletterEmail('');
+    alert("Subscribed successfully!"); // Replace with custom pushFeedback if you have it implemented globally
+  };
+
+  // --- Swiper Initialization ---
   useEffect(() => {
     const swiperContainer = moreFromSwiperRef.current;
-    if (!swiperContainer) return undefined;
+    if (!swiperContainer || projectsLoading) return undefined;
 
     const swiper = new Swiper(swiperContainer, {
       modules: [Navigation],
@@ -102,13 +117,16 @@ function AcademiaAuthor() {
           spaceBetween: 20,
         },
       },
+      observer: true, // Updates Swiper if DOM changes
+      observeParents: true,
     });
 
     return () => {
-      swiper.destroy(true, true);
+      if (swiper) swiper.destroy(true, true);
     };
-  }, []);
+  }, [authorProjects, projectsLoading]); // Added dependencies to re-init when projects load
 
+  // --- Data Fetching ---
   useEffect(() => {
     let mounted = true;
 
@@ -156,41 +174,49 @@ function AcademiaAuthor() {
 
         const primaryProject = fetchedProjects[0] || seedProject || null;
         setAuthorProjects(fetchedProjects);
-        setAuthorProfile(primaryProject ? {
-          id: primaryProject.user_id || resolvedAuthorId || null,
-          name: primaryProject.user_name || 'Xavera KABARANGA',
-          role: primaryProject.user_role || 'UI/UX Designer',
-          avatar: primaryProject.user_avatar || null,
-          location: primaryProject.location || 'Kigali, Rwanda',
-          about: primaryProject.abstract || primaryProject.description || '',
-          memberSince: formatMemberSince(primaryProject.created_at),
-          availability: primaryProject.availability || 'Available Now',
-          experience: primaryProject.experience || '6 yrs experience',
-        } : null);
-
-        const totalFollowers = resolvedAuthorId
-          ? await fetch(`${API_BASE_URL}/api/followers/stats?userId=${resolvedAuthorId}`).then((response) => response.json().catch(() => ({}))).catch(() => null)
-          : null;
-
-        if (totalFollowers?.data && mounted) {
-          setFollowerStats({
-            followers: Number(totalFollowers.data.followers) || 0,
-            following: Number(totalFollowers.data.following) || 0,
+        
+        if (primaryProject) {
+          setAuthorProfile({
+            id: primaryProject.user_id || resolvedAuthorId || null,
+            name: primaryProject.user_name || 'Xavera KABARANGA',
+            role: primaryProject.user_role || 'UI/UX Designer',
+            avatar: primaryProject.user_avatar || null,
+            location: primaryProject.location || 'Kigali, Rwanda',
+            about: primaryProject.abstract || primaryProject.description || '',
+            memberSince: formatMemberSince(primaryProject.created_at),
+            availability: primaryProject.availability || 'Available Now',
+            experience: primaryProject.experience || '6 yrs experience',
           });
-        } else if (mounted) {
-          setFollowerStats({ followers: 0, following: 0 });
         }
 
+        // Fetch Follower Stats safely
+        if (resolvedAuthorId) {
+          try {
+            const statsRes = await fetch(`${API_BASE_URL}/api/followers/stats?userId=${resolvedAuthorId}`);
+            if (statsRes.ok) {
+              const totalFollowers = await statsRes.json();
+              if (mounted && totalFollowers?.data) {
+                setFollowerStats({
+                  followers: Number(totalFollowers.data.followers) || 0,
+                  following: Number(totalFollowers.data.following) || 0,
+                });
+              }
+            }
+          } catch (e) { console.warn("Failed to fetch follower stats"); }
+        }
+
+        // Check if current user is following this author
         const token = localStorage.getItem('token');
         if (token && resolvedAuthorId) {
-          const followCheckRes = await fetch(`${API_BASE_URL}/api/followers/check?followingId=${resolvedAuthorId}`, {
-            headers: { Authorization: `Bearer ${token}` },
-          }).catch(() => null);
-
-          if (followCheckRes?.ok) {
-            const followCheckBody = await followCheckRes.json().catch(() => ({}));
-            if (mounted) setIsFollowing(Boolean(followCheckBody?.data?.is_following));
-          }
+          try {
+            const followCheckRes = await fetch(`${API_BASE_URL}/api/followers/check?followingId=${resolvedAuthorId}`, {
+              headers: { Authorization: `Bearer ${token}` },
+            });
+            if (followCheckRes.ok) {
+              const followCheckBody = await followCheckRes.json();
+              if (mounted) setIsFollowing(Boolean(followCheckBody?.data?.is_following));
+            }
+          } catch (e) { console.warn("Failed to check follow status"); }
         }
       } catch (error) {
         if (mounted) {
@@ -213,6 +239,7 @@ function AcademiaAuthor() {
     };
   }, [searchParams]);
 
+  // --- Derived Variables ---
   const authorName = authorProfile?.name || 'Xavera KABARANGA';
   const authorRole = authorProfile?.role || 'UI/UX Designer';
   const authorAvatar = resolveAuthorImage(authorProfile?.avatar, learnersProfileImage);
@@ -230,6 +257,7 @@ function AcademiaAuthor() {
     return accumulator;
   }, { views: 0, likes: 0, feedbacks: 0 });
 
+  // --- Action Handlers ---
   const handleOpenProject = (projectId) => {
     if (!projectId) return;
     navigate(`/academia/read-journal?id=${projectId}`);
@@ -276,7 +304,6 @@ function AcademiaAuthor() {
       navigate(`/academia/read-journal?id=${primaryProject.id}`);
       return;
     }
-
     navigate('/academia/journals');
   };
 
@@ -284,33 +311,49 @@ function AcademiaAuthor() {
     handleGetInTouch();
   };
 
+  // --- Render ---
   return (
     <div className="academia-author-page">
+      
+      {/* Hero Section */}
       <section className="hero-sec">
         <div
           className="hero-sec-inner"
           style={{
             backgroundImage: `linear-gradient(270deg, rgba(69, 4, 104, 0.6) 0%, rgba(0, 0, 0, 0.6) 100%), url(${primaryProject?.thumbnail_url ? resolveAuthorImage(primaryProject.thumbnail_url, acHrImage) : acHrImage})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center'
           }}
         >
-          <div className="hsi-img">
-            <img src={authorAvatar} alt={authorName} />
-          </div>
-          <div className="hsi-text">
-            <div>
-              <h6>{authorName}</h6>
-              <p>|</p>
-              <p>{authorRole}</p>
+          {loading ? (
+            <div className="hsi-text" style={{ padding: '2rem', textAlign: 'center', width: '100%' }}>
+              <p style={{ color: '#fff', fontSize: '1.2rem' }}>Loading author profile...</p>
             </div>
-            <div>
-              <p>Member Since: {memberSince}</p>
-            </div>
-          </div>
+          ) : (
+            <>
+              <div className="hsi-img">
+                <img src={authorAvatar} alt={authorName} />
+              </div>
+              <div className="hsi-text">
+                <div>
+                  <h6>{authorName}</h6>
+                  <p>|</p>
+                  <p>{authorRole}</p>
+                </div>
+                <div>
+                  <p>Member Since: {memberSince}</p>
+                </div>
+              </div>
+            </>
+          )}
         </div>
       </section>
 
+      {/* Main Content */}
       <section className="main-content">
         <div className="main-content-grid">
+          
+          {/* Left Column: Author Stats & Info */}
           <div className="main-content-grid-l">
             <div className="mcgl-t">
               <div className="mcgl-t-1">
@@ -336,7 +379,7 @@ function AcademiaAuthor() {
             <div className="mcgl-actions">
               <button type="button" onClick={handleToggleFollow} disabled={actionLoading}>
                 <img src={acPpIcon} alt="Follow" />
-                <span>{isFollowing ? 'Following' : 'Follow'}</span>
+                <span>{actionLoading ? 'Updating...' : isFollowing ? 'Following' : 'Follow'}</span>
               </button>
               <button type="button" onClick={handleGetInTouch}>
                 <span>Get In Touch</span>
@@ -349,7 +392,9 @@ function AcademiaAuthor() {
               {authorBio ? (
                 <p>
                   {authorBio}
-                  <a href={primaryProject?.id ? `/academia/read-journal?id=${primaryProject.id}` : '/academia/journals'}>Read more</a>
+                  {primaryProject?.id && (
+                    <a href={`/academia/read-journal?id=${primaryProject.id}`} style={{ marginLeft: '8px' }}>Read more</a>
+                  )}
                 </p>
               ) : (
                 <div className="mcgl-empty-state">
@@ -388,6 +433,7 @@ function AcademiaAuthor() {
             </div>
           </div>
 
+          {/* Right Column: Author's Projects */}
           <div className="main-content-grid-r">
             {projectsLoading ? (
               <div className="journal author-empty-card">
@@ -397,36 +443,38 @@ function AcademiaAuthor() {
                   </div>
                 </div>
               </div>
-            ) : authorProjects.length > 0 ? authorProjects.map((project) => (
-              <div key={project.id} className="journal" onClick={() => handleOpenProject(project.id)} style={{ cursor: 'pointer' }}>
-                <div className="journal-img">
-                  <img src={resolveAuthorImage(project.thumbnail_url, journalImage)} alt={project.title} />
-                </div>
-                <div className="journal-info">
-                  <div className="journal-info-h">
-                    <div>
-                      <span>By</span>
-                      <p>{project.user_name || authorName}</p>
-                    </div>
-                    <div>
+            ) : authorProjects.length > 0 ? (
+              authorProjects.map((project) => (
+                <div key={project.id} className="journal" onClick={() => handleOpenProject(project.id)} style={{ cursor: 'pointer' }}>
+                  <div className="journal-img">
+                    <img src={resolveAuthorImage(project.thumbnail_url, journalImage)} alt={project.title} />
+                  </div>
+                  <div className="journal-info">
+                    <div className="journal-info-h">
                       <div>
-                        <button type="button">
-                          <img src={acHer2Icon} alt="Likes" />
-                          <span>{project.likes_count}</span>
-                        </button>
-                        <button type="button">
-                          <img src={acEyeIcon} alt="Views" />
-                          <span>{project.views_count}</span>
-                        </button>
+                        <span>By</span>
+                        <p>{project.user_name || authorName}</p>
+                      </div>
+                      <div>
+                        <div>
+                          <button type="button" onClick={preventDefault}>
+                            <img src={acHer2Icon} alt="Likes" />
+                            <span>{project.likes_count}</span>
+                          </button>
+                          <button type="button" onClick={preventDefault}>
+                            <img src={acEyeIcon} alt="Views" />
+                            <span>{project.views_count}</span>
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <div className="journal-info-b">
-                    <p>{project.title}</p>
+                    <div className="journal-info-b">
+                      <p>{project.title}</p>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )) : (
+              ))
+            ) : (
               <div className="author-empty-panel">
                 <h4>No published projects</h4>
                 <p>This author has not published any public projects yet.</p>
@@ -436,6 +484,7 @@ function AcademiaAuthor() {
         </div>
       </section>
 
+      {/* More From Swiper */}
       <section className="main-content">
         <div className="more-from">
           <div>
@@ -447,7 +496,7 @@ function AcademiaAuthor() {
               <div className="more-from-text">
                 <h6>{authorName}</h6>
                 <button type="button" onClick={handleToggleFollow} disabled={actionLoading}>
-                  {isFollowing ? 'Following' : 'Follow All'}
+                  {actionLoading ? 'Updating...' : isFollowing ? 'Following' : 'Follow All'}
                 </button>
               </div>
             </div>
@@ -462,38 +511,46 @@ function AcademiaAuthor() {
 
         <div className="swiper more-from-grid" ref={moreFromSwiperRef}>
           <div className="swiper-wrapper">
-            {authorProjects.length > 0 ? authorProjects.map((project) => (
-              <div key={project.id} className="swiper-slide">
-                <div className="journal" onClick={() => handleOpenProject(project.id)} style={{ cursor: 'pointer' }}>
-                  <div className="journal-img">
-                    <img src={resolveAuthorImage(project.thumbnail_url, journalImage)} alt={project.title} />
-                  </div>
-                  <div className="journal-info">
-                    <div className="journal-info-h">
-                      <div>
-                        <span>By</span>
-                        <p>{project.user_name || authorName}</p>
-                      </div>
-                      <div>
+            {projectsLoading ? (
+              <div className="swiper-slide">
+                <div className="author-empty-swiper">
+                  <p>Loading...</p>
+                </div>
+              </div>
+            ) : authorProjects.length > 0 ? (
+              authorProjects.map((project) => (
+                <div key={project.id} className="swiper-slide">
+                  <div className="journal" onClick={() => handleOpenProject(project.id)} style={{ cursor: 'pointer' }}>
+                    <div className="journal-img">
+                      <img src={resolveAuthorImage(project.thumbnail_url, journalImage)} alt={project.title} />
+                    </div>
+                    <div className="journal-info">
+                      <div className="journal-info-h">
                         <div>
-                          <button type="button">
-                            <img src={acHer2Icon} alt="Likes" />
-                            <span>{project.likes_count}</span>
-                          </button>
-                          <button type="button">
-                            <img src={acEyeIcon} alt="Views" />
-                            <span>{project.views_count}</span>
-                          </button>
+                          <span>By</span>
+                          <p>{project.user_name || authorName}</p>
+                        </div>
+                        <div>
+                          <div>
+                            <button type="button" onClick={preventDefault}>
+                              <img src={acHer2Icon} alt="Likes" />
+                              <span>{project.likes_count}</span>
+                            </button>
+                            <button type="button" onClick={preventDefault}>
+                              <img src={acEyeIcon} alt="Views" />
+                              <span>{project.views_count}</span>
+                            </button>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                    <div className="journal-info-b">
-                      <p>{project.title}</p>
+                      <div className="journal-info-b">
+                        <p>{project.title}</p>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            )) : (
+              ))
+            ) : (
               <div className="swiper-slide">
                 <div className="author-empty-swiper">
                   <h4>No projects yet</h4>
@@ -507,17 +564,24 @@ function AcademiaAuthor() {
         </div>
       </section>
 
+      {/* Newsletter Section */}
       <section className="newsletter-sec">
         <div className="newsletter-sec-l">
-          <h3>Newsletter - Stay tune and get the latest update</h3>
-          <p>Far far away, behind the word mountains</p>
+          <h3>Newsletter - Stay tuned and get the latest updates</h3>
+          <p>Subscribe to our newsletter to receive the latest projects directly in your inbox.</p>
         </div>
         <div className="newsletter-sec-r">
-          <form>
+          <form onSubmit={handleNewsletterSubmit}>
             <img src={acSmsIcon} alt="Message" className="ac-sms" />
-            <input type="email" placeholder="Enter email address" />
+            <input 
+              type="email" 
+              placeholder="Enter email address" 
+              value={newsletterEmail}
+              onChange={(e) => setNewsletterEmail(e.target.value)}
+              required
+            />
             <button type="submit">
-              <img src={acSendIcon} alt="Next" />
+              <img src={acSendIcon} alt="Subscribe" />
             </button>
           </form>
         </div>
@@ -527,4 +591,3 @@ function AcademiaAuthor() {
 }
 
 export default AcademiaAuthor;
-

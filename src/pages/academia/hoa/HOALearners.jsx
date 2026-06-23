@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import HOALayout from '../../../components/layouts/HOALayout/HOALayout';
 import { useCurrency, flagOptions } from '../../../hooks/useCurrency';
 import './hoa-learners.css';
 
+// --- Icons & Images ---
 import hoausflag from '../../../assets/icons/hoausflag.svg';
 import hoadowncaret from '../../../assets/icons/hoadowncaret.svg';
 import hoaincrease from '../../../assets/icons/hoaincrease.svg';
@@ -37,90 +39,396 @@ import hoaproject from '../../../assets/imgs/hoaproject.png';
 import hoacalendar from '../../../assets/icons/hoacalendar.svg';
 import hoavbadge from '../../../assets/icons/hoavbadge.svg';
 import hoareply from '../../../assets/icons/hoareply.svg';
+import defaultAvatar from '../../../assets/imgs/default-profile.png';
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 const HOALearners = () => {
+  const navigate = useNavigate();
   const preventDefault = (e) => e.preventDefault();
+  const { currency, setCurrency, formatAmount } = useCurrency();
 
+  // --- Modal Specific Data State ---
+  const [learnerProfile, setLearnerProfile] = useState(null);
+  const [isProfileLoading, setIsProfileLoading] = useState(false);
+
+  // --- Main Data State ---
+  const [learnersData, setLearnersData] = useState([]);
+  const [statsData, setStatsData] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // --- UI/Filter State ---
   const [selectedRows, setSelectedRows] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeFilter, setActiveFilter] = useState('All Learners');
+  const [sortConfig, setSortConfig] = useState({ key: 'name', direction: 'asc' });
+  
+  // --- Pagination ---
+  const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState('5');
+  const pageSizeOptions = ['5', '10', '25']; 
+  
+  // --- Dropdowns & Refs ---
   const [isPageSizeOpen, setIsPageSizeOpen] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [openFlagDropdown, setOpenFlagDropdown] = useState(null);
-  const [hoverData, setHoverData] = useState({ chartId: null, text: '', tooltipClass: '', x: 0, y: 0 });
-  const [likedProjects, setLikedProjects] = useState({});
+  const pageSizeRef = useRef(null);
+  const filterRef = useRef(null);
+  const flagRef = useRef(null);
 
-  const [sortConfig, setSortConfig] = useState({ key: 'name', direction: 'asc' });
-
-  const toggleProjectLike = (idx) => {
-    setLikedProjects((prev) => ({
-      ...prev,
-      [idx]: !prev[idx]
-    }));
-  };
-
-  // Modal State
+  // --- Modal & Detailed View State ---
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [activeLearnerId, setActiveLearnerId] = useState(null);
+  const [activeTab, setActiveTab] = useState('lessons'); // 'lessons', 'projects', 'activity'
   const [modalSortConfig, setModalSortConfig] = useState({ key: 'title', direction: 'asc' });
   const [modalSelectedRows, setModalSelectedRows] = useState([]);
-  const [activeTab, setActiveTab] = useState('lessons'); // 'lessons', 'projects', 'activity'
-
   const [openTickets, setOpenTickets] = useState({ 1: true });
   const [fullScreenImage, setFullScreenImage] = useState(null);
+  const [hoverData, setHoverData] = useState({ chartId: null, text: '', tooltipClass: '', x: 0, y: 0 });
 
-  const toggleTicket = (id) => {
-    setOpenTickets(prev => ({ ...prev, [id]: !prev[id] }));
+  const [openRowMenuId, setOpenRowMenuId] = useState(null);
+  const [isDrawerMenuOpen, setIsDrawerMenuOpen] = useState(false);
+
+  const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+  const showToast = (message, type = 'success') => {
+    setToast({ show: true, message, type });
+    setTimeout(() => {
+      setToast(prev => ({ ...prev, show: false }));
+    }, 4000);
   };
 
-  const { currency, setCurrency, formatAmount } = useCurrency();
-  const pageSizeOptions = ['5', '10', '25'];
-  const filterOptions = ['All Learners', 'Active', 'Inactive'];
+  const filterOptions = ['All Learners', 'Active', 'Inactive', 'Suspended'];
 
+  // --- Click Outside Handlers ---
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (pageSizeRef.current && !pageSizeRef.current.contains(event.target)) setIsPageSizeOpen(false);
+      if (filterRef.current && !filterRef.current.contains(event.target)) setIsFilterOpen(false);
+      if (flagRef.current && !flagRef.current.contains(event.target)) setOpenFlagDropdown(null);
+      
+      // Close custom action menus when clicking outside
+      if (!event.target.closest('.hoa-row-action-menu')) setOpenRowMenuId(null);
+      if (!event.target.closest('.profile-actions')) setIsDrawerMenuOpen(false);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // --- Data Fetching ---
+  const fetchLearnersData = async (mounted = true) => {
+    setIsLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      
+      // If no token exists, boot them immediately
+      if (!token) {
+        navigate('/academia/auth/signin');
+        return;
+      }
+
+      const headers = { Authorization: `Bearer ${token}` };
+
+      const [statsRes, learnersRes] = await Promise.all([
+        fetch(`${API_BASE_URL}/api/admin/learners/stats`, { headers }).catch(() => null),
+        fetch(`${API_BASE_URL}/api/admin/learners`, { headers }).catch(() => null)
+      ]);
+
+      if (!mounted) return;
+
+      // Handle 401 Unauthorized / Token Expiry
+      if (statsRes?.status === 401 || learnersRes?.status === 401) {
+        console.warn("Unauthorized access. Token may be expired.");
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        navigate('/academia/auth/signin');
+        return;
+      }
+
+      if (statsRes?.ok) {
+        const sBody = await statsRes.json();
+        setStatsData(sBody?.data || sBody);
+      } else {
+        setStatsData({}); 
+      }
+
+      if (learnersRes?.ok) {
+        const lBody = await learnersRes.json();
+        
+        // 1. Add lBody?.data?.learners to the check
+        const rawDataList = Array.isArray(lBody?.data?.learners) ? lBody.data.learners 
+                          : Array.isArray(lBody?.data?.users) ? lBody.data.users 
+                          : Array.isArray(lBody?.data) ? lBody.data 
+                          : Array.isArray(lBody) ? lBody : [];
+
+        setLearnersData(rawDataList.map(user => {
+          const safeStatus = String(user.status || 'active').toLowerCase();
+          const isActive = safeStatus === 'active' || safeStatus === '1';
+          const isSuspended = safeStatus === 'suspended' || safeStatus === '0';
+
+          return {
+            id: user.id,
+            name: user.name || user.email || 'Unknown Learner',
+            location: user.location || 'Global',
+            flag: hoausflag, 
+            // 2. Map exact keys from your Swagger response:
+            score: user.avg_score || '0.00', 
+            attempts: user.attempts || 0,
+            downloads: user.downloads || 0,
+            certs: user.certificates || 0,
+            paid: user.total_paid_usd || '0',
+            status: isSuspended ? 'Suspended' : (isActive ? 'Active' : 'Inactive'),
+            statusColor: isSuspended ? 'red' : (isActive ? 'green' : 'gray')
+          };
+        }));
+      } else {
+        setLearnersData([]);
+      }
+    } catch (error) {
+      console.error("Failed to fetch learners", error);
+      if (mounted) {
+        setStatsData({});
+        setLearnersData([]);
+      }
+    } finally {
+      if (mounted) setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    let mounted = true;
+    fetchLearnersData(mounted);
+    return () => { mounted = false; };
+  }, []);
+
+  // --- Memoized Sorting & Filtering (Main Table) ---
+  const processedData = useMemo(() => {
+    let filtered = learnersData || [];
+    
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      filtered = filtered.filter(item => (item.name || '').toLowerCase().includes(q));
+    }
+
+    if (activeFilter !== 'All Learners') {
+      filtered = filtered.filter(item => item.status === activeFilter);
+    }
+
+    if (!sortConfig.key) return filtered;
+
+    return [...filtered].sort((a, b) => {
+      let aVal = a[sortConfig.key];
+      let bVal = b[sortConfig.key];
+      
+      // Convert to number for comparison if applicable
+      if (['score', 'attempts', 'downloads', 'certs', 'paid'].includes(sortConfig.key)) {
+        aVal = Number(String(aVal).replace(/[^0-9.-]+/g, '')) || 0;
+        bVal = Number(String(bVal).replace(/[^0-9.-]+/g, '')) || 0;
+      }
+
+      if (aVal < bVal) return sortConfig.direction === 'asc' ? -1 : 1;
+      if (aVal > bVal) return sortConfig.direction === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }, [learnersData, sortConfig, searchQuery, activeFilter]);
+
+  // --- Pagination ---
+  const totalItems = processedData.length;
+  const limit = parseInt(pageSize) || 5;
+  const totalPages = Math.max(1, Math.ceil(totalItems / limit));
+  
+  const paginatedData = useMemo(() => {
+    const start = (currentPage - 1) * limit;
+    return processedData.slice(start, start + limit);
+  }, [processedData, currentPage, limit]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+    setSelectedRows([]);
+  }, [searchQuery, activeFilter, pageSize]);
+
+  // --- Handlers ---
   const toggleRowSelection = (rowId) => {
-    setSelectedRows((currentRows) => (
-      currentRows.includes(rowId)
-        ? currentRows.filter((selectedRowId) => selectedRowId !== rowId)
-        : [...currentRows, rowId]
-    ));
+    setSelectedRows((current) => current.includes(rowId) ? current.filter(id => id !== rowId) : [...current, rowId]);
+  };
+  
+  const toggleAllVisibleRows = () => {
+    if (selectedRows.length === paginatedData.length && paginatedData.length > 0) {
+      setSelectedRows([]);
+    } else {
+      setSelectedRows(paginatedData.map(req => req.id));
+    }
   };
 
-  const clearSelectedRows = () => setSelectedRows([]);
-
-  const handlePageSizeSelect = (value) => {
-    setPageSize(value);
-    setIsPageSizeOpen(false);
+  const handleSort = (key) => {
+    setSortConfig(current => ({ key, direction: current.key === key && current.direction === 'asc' ? 'desc' : 'asc' }));
   };
 
-  const toggleFlagDropdown = (key) => {
-    setOpenFlagDropdown((currentKey) => (currentKey === key ? null : key));
+  const handleModalSort = (key) => {
+    setModalSortConfig(current => ({ key, direction: current.key === key && current.direction === 'asc' ? 'desc' : 'asc' }));
   };
 
-  const selectFlagOption = (option) => {
-    setCurrency(option);
-    setOpenFlagDropdown(null);
+  // --- Fetch Detailed Profile ---
+  const fetchLearnerProfile = async (id) => {
+    setIsProfileLoading(true);
+    setLearnerProfile(null); // Reset previous data
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API_BASE_URL}/api/admin/learners/${id}/profile`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (res.ok) {
+        const body = await res.json();
+        // Adjust this based on whether the API wraps it in a 'data' object
+        setLearnerProfile(body.data || body);
+      } else {
+        console.error("Failed to fetch profile. Status:", res.status);
+      }
+    } catch (error) {
+      console.error("Error fetching learner profile:", error);
+    } finally {
+      setIsProfileLoading(false);
+    }
   };
 
-  const handleMouseMove = (e, chartId, seg) => {
-    const svgRect = e.target.closest('svg').getBoundingClientRect();
-    const x = e.clientX - svgRect.left;
-    const y = e.clientY - svgRect.top;
-    setHoverData({ chartId, text: seg.tooltipText, tooltipClass: seg.tooltipClass, x, y });
+  const openModal = (learnerId) => {
+    setActiveLearnerId(learnerId);
+    fetchLearnerProfile(learnerId); // Trigger the fetch here
+    setIsModalOpen(true);
+  };
+  
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setActiveLearnerId(null);
+    setActiveTab('lessons');
+    setLearnerProfile(null); // Clean up on close
   };
 
-  const handleMouseLeave = () => {
-    setHoverData({ chartId: null, text: '', tooltipClass: '', x: 0, y: 0 });
+  const handleSingleStatusChange = async (learnerId, action) => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API_BASE_URL}/api/admin/learners/${learnerId}/${action}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ reason: `${action === 'suspend' ? 'Suspended' : 'Activated'} by admin` })
+      });
+      if (res.ok) {
+        fetchLearnersData(true);
+        if (activeLearnerId === learnerId) {
+          fetchLearnerProfile(learnerId);
+        }
+        showToast(`Learner ${action === 'suspend' ? 'suspended' : 'activated'} successfully!`, 'success');
+      } else {
+        showToast('Failed to update learner status', 'error');
+      }
+    } catch (err) {
+      console.error(err);
+      showToast('Error updating learner status', 'error');
+    }
   };
 
-  const toggleModalRowSelection = (rowId) => {
-    setModalSelectedRows((currentRows) => (
-      currentRows.includes(rowId)
-        ? currentRows.filter((selectedRowId) => selectedRowId !== rowId)
-        : [...currentRows, rowId]
-    ));
+  const handleSingleDelete = async (learnerId) => {
+    if (!window.confirm('Are you sure you want to delete this learner?')) return;
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API_BASE_URL}/api/admin/learners/${learnerId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (res.ok) {
+        fetchLearnersData(true);
+        showToast('Learner deleted successfully!', 'success');
+      } else {
+        showToast('Failed to delete learner', 'error');
+      }
+    } catch (err) {
+      console.error(err);
+      showToast('Error deleting learner', 'error');
+    }
   };
 
+  const handleBulkStatusChange = async (action) => {
+    if (selectedRows.length === 0) return;
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API_BASE_URL}/api/admin/learners/bulk-${action}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ ids: selectedRows, reason: `Bulk ${action === 'suspend' ? 'suspended' : 'activated'} by admin` })
+      });
+      if (res.ok) {
+        fetchLearnersData(true);
+        setSelectedRows([]);
+        showToast(`Selected learners ${action === 'suspend' ? 'suspended' : 'activated'} successfully!`, 'success');
+      } else {
+        showToast('Failed to perform bulk operation', 'error');
+      }
+    } catch (err) {
+      console.error(err);
+      showToast('Error in bulk operation', 'error');
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedRows.length === 0) return;
+    if (!window.confirm('Are you sure you want to delete the selected learners?')) return;
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API_BASE_URL}/api/admin/learners/bulk-delete`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ ids: selectedRows })
+      });
+      if (res.ok) {
+        fetchLearnersData(true);
+        setSelectedRows([]);
+        showToast('Selected learners deleted successfully!', 'success');
+      } else {
+        showToast('Failed to delete selected learners', 'error');
+      }
+    } catch (err) {
+      console.error(err);
+      showToast('Error in bulk delete', 'error');
+    }
+  };
+
+  const goToPage = (pageNumber) => {
+    if (pageNumber >= 1 && pageNumber <= totalPages) {
+      setCurrentPage(pageNumber);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  const getPageNumbers = () => {
+    const pages = [];
+    const maxVisiblePages = 3;
+    let startPage = Math.max(1, currentPage - 1);
+    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+    if (endPage - startPage < maxVisiblePages - 1) {
+      startPage = Math.max(1, endPage - maxVisiblePages + 1);
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(i);
+    }
+    return pages;
+  };
+
+  // --- Sorting Utility for Modal Data ---
   const getSortedData = (data, config) => {
-    if (!config.key) return data;
+    if (!config.key || !Array.isArray(data)) return data || [];
     return [...data].sort((a, b) => {
       let aVal = a[config.key];
       let bVal = b[config.key];
@@ -134,39 +442,17 @@ const HOALearners = () => {
       if (typeof aVal === 'string' && aVal === '---') aVal = -Infinity;
       if (typeof bVal === 'string' && bVal === '---') bVal = -Infinity;
 
-      if (aVal < bVal) {
-        return config.direction === 'asc' ? -1 : 1;
-      }
-      if (aVal > bVal) {
-        return config.direction === 'asc' ? 1 : -1;
-      }
+      if (aVal < bVal) return config.direction === 'asc' ? -1 : 1;
+      if (aVal > bVal) return config.direction === 'asc' ? 1 : -1;
       return 0;
     });
   };
 
-  const handleSort = (key) => {
-    let direction = 'asc';
-    if (sortConfig.key === key && sortConfig.direction === 'asc') {
-      direction = 'desc';
-    } else if (sortConfig.key === key && sortConfig.direction === 'desc') {
-      direction = 'asc';
-    }
-    setSortConfig({ key, direction });
+  const toggleTicket = (id) => {
+    setOpenTickets(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
-  const handleModalSort = (key) => {
-    let direction = 'asc';
-    if (modalSortConfig.key === key && modalSortConfig.direction === 'asc') {
-      direction = 'desc';
-    } else if (modalSortConfig.key === key && modalSortConfig.direction === 'desc') {
-      direction = 'asc';
-    }
-    setModalSortConfig({ key, direction });
-  };
-
-  const openModal = () => setIsModalOpen(true);
-  const closeModal = () => setIsModalOpen(false);
-
+  // --- Donut Chart Renderer ---
   const renderDonut = (chartId, segments) => {
     const radius = 38;
     const strokeWidth = 16;
@@ -182,28 +468,22 @@ const HOALearners = () => {
 
             return (
               <circle
-                key={idx}
-                cx="50"
-                cy="50"
-                r={radius}
-                fill="none"
-                stroke={seg.color}
-                strokeWidth={strokeWidth}
-                strokeDasharray={`${dashPercent} 100`}
-                strokeDashoffset={offsetPercent}
+                key={idx} cx="50" cy="50" r={radius} fill="none"
+                stroke={seg.color} strokeWidth={strokeWidth}
+                strokeDasharray={`${dashPercent} 100`} strokeDashoffset={offsetPercent}
                 pathLength="100"
                 style={{ cursor: 'pointer', transition: 'opacity 0.2s' }}
-                onMouseMove={(e) => handleMouseMove(e, chartId, seg)}
-                onMouseLeave={handleMouseLeave}
+                onMouseMove={(e) => {
+                  const svgRect = e.target.closest('svg').getBoundingClientRect();
+                  setHoverData({ chartId, text: seg.tooltipText, tooltipClass: seg.tooltipClass, x: e.clientX - svgRect.left, y: e.clientY - svgRect.top });
+                }}
+                onMouseLeave={() => setHoverData({ chartId: null, text: '', tooltipClass: '', x: 0, y: 0 })}
               />
             );
           })}
         </svg>
         {hoverData.chartId === chartId && (
-          <div
-            className={`donut-tooltip ${hoverData.tooltipClass || ''}`}
-            style={{ top: `${hoverData.y + 10}px`, left: `${hoverData.x + 10}px` }}
-          >
+          <div className={`donut-tooltip ${hoverData.tooltipClass || ''}`} style={{ top: `${hoverData.y + 10}px`, left: `${hoverData.x + 10}px` }}>
             {hoverData.text}
           </div>
         )}
@@ -211,70 +491,44 @@ const HOALearners = () => {
     );
   };
 
-  const renderFlagDropdown = (key, baseValueRWF) => {
-    const displayValue = formatAmount(baseValueRWF);
-
-    return (
-      <div className="hoa-revenue-dropdown-box">
-        <span className="revenue-label">Total Revenue</span>
-        <div className="revenue-value-picker">
-          <span className="revenue-value">{displayValue}</span>
-          <div className="flag-dropdown-wrapper">
-            <button type="button" className="flag-dropdown-trigger" onClick={() => toggleFlagDropdown(key)}>
-              <img src={currency.flag} alt="flag" className="flag-icon" />
-              <img src={hoadowncaret} alt="drop" className="flag-dropdown-caret" />
-            </button>
-            {openFlagDropdown === key && (
-              <div className="flag-dropdown-menu" style={{ minWidth: '80px', padding: '4px' }}>
-                {flagOptions.map((option, idx) => (
-                  <button
-                    key={idx} type="button" className={`flag-dropdown-option ${currency.label === option.label ? 'active' : ''}`}
-                    onClick={() => selectFlagOption(option)}
-                  >
-                    <img src={option.flag} alt="flag" className="flag-icon" />
-                    <span>{option.label}</span>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+  // --- Flag Dropdown Renderer ---
+  const renderFlagDropdown = (key, baseValueRWF) => (
+    <div className="hoa-revenue-dropdown-box" ref={openFlagDropdown === key ? flagRef : null}>
+      <span className="revenue-label">Total Revenue</span>
+      <div className="revenue-value-picker">
+        <span className="revenue-value">{formatAmount(baseValueRWF)}</span>
+        <div className="flag-dropdown-wrapper">
+          <button type="button" className="flag-dropdown-trigger" onClick={() => setOpenFlagDropdown(openFlagDropdown === key ? null : key)}>
+            <img src={currency.flag} alt="flag" className="flag-icon" />
+            <img src={hoadowncaret} alt="drop" className="flag-dropdown-caret" />
+          </button>
+          {openFlagDropdown === key && (
+            <div className="flag-dropdown-menu" style={{ minWidth: '80px', padding: '4px' }}>
+              {flagOptions.map((option, idx) => (
+                <button
+                  key={idx} type="button" className={`flag-dropdown-option ${currency.label === option.label ? 'active' : ''}`}
+                  onClick={() => { setCurrency(option); setOpenFlagDropdown(null); }}
+                >
+                  <img src={option.flag} alt="flag" className="flag-icon" />
+                  <span>{option.label}</span>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
-    );
-  };
+    </div>
+  );
 
-  const learnersData = [
-    { id: 1, name: 'Alexis Ndayamabje Froduard', location: 'Rwanda', flag: '/assets/icons/rwanda.svg', score: '34.67', attempts: 3, downloads: 3, certs: 3, paid: '222.3 USD', status: 'Paid', statusColor: 'green' },
-    { id: 2, name: 'Nagy Tímea', location: 'Russia', flag: '/assets/icons/rwanda.svg', score: '35.45', attempts: 23, downloads: 23, certs: 23, paid: '222.3 USD', status: 'Unpaid', statusColor: 'red' },
-    { id: 3, name: 'Illés Éva', location: 'America', flag: hoausflag, score: '---', attempts: '---', downloads: '---', certs: '---', paid: '0 USD', status: 'In Progress', statusColor: 'gray' },
-    { id: 4, name: 'Halász Emese', location: 'Burundi', flag: '/assets/icons/rwanda.svg', score: '19.52', attempts: 123, downloads: 123, certs: 123, paid: '23.4 USD', status: 'Paid', statusColor: 'green' },
-    { id: 5, name: 'Soós Annamária', location: 'Rwanda', flag: '/assets/icons/rwanda.svg', score: '67.43', attempts: 4, downloads: 4, certs: 4, paid: '748.3 USD', status: 'Paid', statusColor: 'green' },
-  ];
-
-  // Modal Dummy Data
+  // --- Dummy Data for the Modal (Needs mapping from backend later) ---
   const modalLessons = [
-    { id: 1, title: 'Javascript Fundamental Quiz', date: '12 Jan 2024', tutor: 'Alexis Ndayamabje Froduard', score: '34.67', type: 'Course', duration: '4 Weeks', attempts: '3', status: 'Passed', statusType: 'passed' },
-    { id: 2, title: 'Javascript Fundamental Quiz', date: '12 Jan 2024', tutor: 'Eustolia B. Sadiq', score: '35.45', type: 'Course', duration: '4 Weeks', attempts: '23', status: 'Failed', statusType: 'failed' },
-    { id: 3, title: 'Javascript Fundamental Quiz', date: '12 Jan 2024', tutor: 'Addie V. Biela', score: '---', type: 'Course', duration: '4 Weeks', attempts: '---', status: 'Retake', statusType: 'retake' },
-    { id: 4, title: 'Javascript Fundamental Quiz', date: '12 Jan 2024', tutor: 'Elvira E. Aus', score: '-- --', type: 'Syllabus', duration: '251 Pages', attempts: '123', status: 'Paid', statusType: 'paid' },
-    { id: 5, title: 'Javascript Fundamental Quiz', date: '12 Jan 2024', tutor: 'Jacalyn K. Hanaburgh', score: '-- --', type: 'Syllabus', duration: '251 Pages', attempts: '4', status: 'Paid', statusType: 'paid' },
-    { id: 6, title: 'Javascript Fundamental Quiz', date: '12 Jan 2024', tutor: 'Margert J. Swon', score: '-- --', type: 'Syllabus', duration: '251 Pages', attempts: '4', status: 'Free', statusType: 'free' },
+    { id: 1, title: 'Javascript Fundamental Quiz', date: '12 Jan 2024', tutor: 'Alexis Froduard', score: '85.67', type: 'Course', duration: '4 Weeks', attempts: '3', status: 'Passed', statusType: 'passed' },
+    { id: 2, title: 'React UI Architecture', date: '15 Feb 2024', tutor: 'Sarah Jenkins', score: '45.45', type: 'Course', duration: '4 Weeks', attempts: '2', status: 'Failed', statusType: 'failed' },
   ];
-
   const modalDocuments = [
     { id: 1, name: 'Javascript Fundamental', size: '5.6 MB', type: 'ribbon' },
-    { id: 2, name: 'Economic Specialist', size: '5.6 MB', type: 'ribbon' },
-    { id: 3, name: 'My Resume.pdf', size: '5.6 MB', type: 'pdf' },
-    { id: 4, name: 'AO My doc.pdf', size: '5.6 MB', type: 'pdf' },
+    { id: 3, name: 'My Resume.pdf', size: '1.2 MB', type: 'pdf' },
   ];
-
-  const modalProjects = Array(6).fill({
-    image: 'https://via.placeholder.com/300x150/E2E8F0/A1A5B7?text=Project+Preview',
-    author: 'Jose Carine',
-    likes: '10.6K',
-    views: '10.6K',
-    title: 'Build your software & engineering dream career'
-  });
 
   return (
     <HOALayout currentPage="learners">
@@ -284,27 +538,29 @@ const HOALearners = () => {
         <div className="hoa-page-header">
           <h1>Learners</h1>
           <div className="hoa-header-actions">
-            <span className="hoa-update-status">
-              <img src={hoarefresh} alt="" className="sync-icon" /> Data updated every 5min <span className="dot"></span>
+            <span className="hoa-update-status" onClick={() => fetchLearnersData(true)} style={{ cursor: 'pointer' }}>
+              <img src={hoarefresh} alt="Sync" className={`sync-icon ${isLoading ? 'spinning' : ''}`} /> 
+              {isLoading ? 'Updating...' : 'Data updated every 5min'} <span className="dot" style={{ background: isLoading ? '#F59E0B' : '#10B981' }}></span>
             </span>
-            <button className="hoa-btn-primary">
+            <button className="hoa-btn-primary" onClick={() => window.open('/academia/index', '_blank')}>
               Go to website <img src={hoagoto} alt="" />
             </button>
           </div>
         </div>
 
-        {/* Stats Container */}
+        {/* Top Mini Stats Container */}
         <div className="hoa-dashboard-stats-container">
           <div className="hoa-card hoa-secondary-stats-row">
-            <div className="sub-stat"><h4>13.3M</h4><p>Syllabus Downloads</p></div>
-            <div className="sub-stat"><h4>204</h4><p>Online Learners</p></div>
-            <div className="sub-stat"><h4>13</h4><p>Competent Learners</p></div>
-            <div className="sub-stat"><h4>4.6</h4><p>NYC Learners</p></div>
-            <div className="sub-stat"><h4>19.32</h4><p>Average Score <span className="trend down"> <img src={hoadecrease} alt="" /> -4.5%</span></p></div>
-            <div className="sub-stat"><h4>84</h4><p>Certificates <span className="trend up"> <img src={hoaincrease} alt="" /> +4.1</span></p></div>
+            <div className="sub-stat"><h4>{statsData?.syllabus_downloads || '0'}</h4><p>Syllabus Downloads</p></div>
+            <div className="sub-stat"><h4>{statsData?.online_learners || '0'}</h4><p>Online Learners</p></div>
+            <div className="sub-stat"><h4>{statsData?.competent_learners || '0'}</h4><p>Competent Learners</p></div>
+            <div className="sub-stat"><h4>{statsData?.nyc_learners || '0'}</h4><p>NYC Learners</p></div>
+            <div className="sub-stat"><h4>{statsData?.avg_score || '0.0'}</h4><p>Average Score <span className="trend down"> <img src={hoadecrease} alt="" /> -4.5%</span></p></div>
+            <div className="sub-stat"><h4>{statsData?.certificates || '0'}</h4><p>Certificates <span className="trend up"> <img src={hoaincrease} alt="" /> +4.1</span></p></div>
           </div>
         </div>
 
+        {/* Charts Container */}
         <div className="hoa-dashboard-charts-container">
           <div className="hoa-grid-2">
             {/* Syllabus Stats Card */}
@@ -363,6 +619,17 @@ const HOALearners = () => {
           </div>
         </div>
 
+        {/* Bulk Actions Bar */}
+        {selectedRows.length > 0 ? (
+          <div className="hoa-bulk-actions-bar" style={{ display: 'flex', alignItems: 'center', gap: '12px', background: '#F3E8FF', padding: '12px 20px', borderRadius: '8px', border: '1px solid #E9D5FF', marginBottom: '20px' }}>
+            <span style={{ fontSize: '13px', fontWeight: 600, color: '#450468' }}>{selectedRows.length} learners selected</span>
+            <button className="hoa-btn-primary" onClick={() => handleBulkStatusChange('suspend')} style={{ background: '#D97706', height: '36px', border: 'none', padding: '0 16px', borderRadius: '4px', color: '#fff', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>Suspend</button>
+            <button className="hoa-btn-primary" onClick={() => handleBulkStatusChange('activate')} style={{ background: '#10B981', height: '36px', border: 'none', padding: '0 16px', borderRadius: '4px', color: '#fff', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>Activate</button>
+            <button className="hoa-btn-primary" onClick={handleBulkDelete} style={{ background: '#EF4444', height: '36px', border: 'none', padding: '0 16px', borderRadius: '4px', color: '#fff', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>Delete</button>
+            <button className="hoa-btn-light-purple" onClick={() => setSelectedRows([])} style={{ height: '36px', border: 'none', padding: '0 16px', borderRadius: '6px', color: '#450468', fontSize: '12px', fontWeight: 600, cursor: 'pointer', background: 'rgba(69, 4, 104, 0.07)' }}>Cancel</button>
+          </div>
+        ) : null}
+
         {/* List Header */}
         <div className="hoa-approvals-header">
           <div>
@@ -371,18 +638,37 @@ const HOALearners = () => {
           </div>
           <div className="approvals-actions">
             <div className="search-box">
-              <img src={hoasearch} alt="" />
-              <input type="text" placeholder="Search Lessons..." />
+              <img src={hoasearch} alt="Search" />
+              <input 
+                type="text" 
+                placeholder="Search Learners..." 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
             </div>
 
-            <div className="hoa-filter-dropdown-wrapper">
-              <button type="button" className="hoa-btn-light-purple hoa-filter-trigger" onClick={() => setIsFilterOpen((currentOpen) => !currentOpen)}>
-                <img src={hoafilter} alt="" /> Filters
+            <div className="hoa-filter-dropdown-wrapper" ref={filterRef}>
+              <button 
+                type="button" 
+                className={`hoa-btn-light-purple hoa-filter-trigger ${activeFilter !== 'All Learners' ? 'active-filter' : ''}`} 
+                onClick={() => setIsFilterOpen(!isFilterOpen)}
+                style={{ 
+                  background: activeFilter !== 'All Learners' ? '#450468' : '#F3E8FF',
+                  color: activeFilter !== 'All Learners' ? '#fff' : '#450468'
+                }}
+              >
+                <img src={hoafilter} alt="" style={{ filter: activeFilter !== 'All Learners' ? 'brightness(0) invert(1)' : 'none' }} /> 
+                {activeFilter === 'All Learners' ? 'Filters' : activeFilter}
               </button>
               {isFilterOpen && (
                 <div className="hoa-filter-dropdown">
                   {filterOptions.map((option) => (
-                    <button key={option} type="button" className="hoa-filter-option" onClick={() => setIsFilterOpen(false)}>
+                    <button 
+                      key={option} 
+                      type="button" 
+                      className={`hoa-filter-option ${activeFilter === option ? 'active' : ''}`}
+                      onClick={() => { setActiveFilter(option); setIsFilterOpen(false); }}
+                    >
                       {option}
                     </button>
                   ))}
@@ -390,7 +676,7 @@ const HOALearners = () => {
               )}
             </div>
             <button className="hoa-btn-light-purple">
-              <img src={hoaadd} alt="" /> Create new test
+              <img src={hoaadd} alt="Add" /> Create new test
             </button>
           </div>
         </div>
@@ -401,40 +687,26 @@ const HOALearners = () => {
             <thead>
               <tr>
                 <th style={{ width: '50px' }}>
-                  <button type="button" className="th-content minus-btn-container minus-select-button" onClick={clearSelectedRows}>
-                    <div className="minus-icon">-</div>
+                  <button type="button" className="th-content minus-btn-container minus-select-button" onClick={toggleAllVisibleRows}>
+                    <div className="minus-icon" style={{ margin: '0 auto' }}>-</div>
                   </button>
                 </th>
-                <th><div className="th-content" onClick={() => handleSort('name')}>Student Details (34) <span className={`sort-icon ${sortConfig.key === 'name' ? 'active ' + sortConfig.direction : ''}`}><img src={hoaupdowncaret} alt="" /></span></div></th>
+                <th><div className="th-content" onClick={() => handleSort('name')}>Student Details ({processedData.length}) <span className={`sort-icon ${sortConfig.key === 'name' ? 'active ' + sortConfig.direction : ''}`}><img src={hoaupdowncaret} alt="" /></span></div></th>
                 <th className="text-center"><div className="th-content justify-center" onClick={() => handleSort('score')}>Avg. Score <span className={`sort-icon ${sortConfig.key === 'score' ? 'active ' + sortConfig.direction : ''}`}><img src={hoaupdowncaret} alt="" /></span></div></th>
                 <th className="text-center"><div className="th-content justify-center" onClick={() => handleSort('attempts')}>Attempts <span className={`sort-icon ${sortConfig.key === 'attempts' ? 'active ' + sortConfig.direction : ''}`}><img src={hoaupdowncaret} alt="" /></span></div></th>
                 <th className="text-center"><div className="th-content justify-center" onClick={() => handleSort('downloads')}>Downloads <span className={`sort-icon ${sortConfig.key === 'downloads' ? 'active ' + sortConfig.direction : ''}`}><img src={hoaupdowncaret} alt="" /></span></div></th>
                 <th className="text-center"><div className="th-content justify-center" onClick={() => handleSort('certs')}>Certificates <span className={`sort-icon ${sortConfig.key === 'certs' ? 'active ' + sortConfig.direction : ''}`}><img src={hoaupdowncaret} alt="" /></span></div></th>
                 <th className="text-center" style={{ position: 'relative' }}>
                   <div className="th-content justify-center" onClick={() => handleSort('paid')}>
-                    Tot. Paid ({currency.label}) <img src={currency.flag} alt="flag" className="icon-12-mx4" onClick={(e) => { e.stopPropagation(); toggleFlagDropdown('main-table'); }} style={{ cursor: 'pointer' }} />
-                    <span className={`sort-icon ${sortConfig.key === 'paid' ? 'active ' + sortConfig.direction : ''}`}><img src={hoaupdowncaret} alt="" /></span>
+                    Tot. Paid ({currency.label}) <span className={`sort-icon ${sortConfig.key === 'paid' ? 'active ' + sortConfig.direction : ''}`}><img src={hoaupdowncaret} alt="" /></span>
                   </div>
-                  {openFlagDropdown === 'main-table' && (
-                    <div className="flag-dropdown-menu" style={{ minWidth: '80px', padding: '4px', top: '100%', right: '50%', transform: 'translateX(50%)', zIndex: 10 }}>
-                      {flagOptions.map((option, idx) => (
-                        <button
-                          key={idx} type="button" className={`flag-dropdown-option ${currency.label === option.label ? 'active' : ''}`}
-                          onClick={() => selectFlagOption(option)}
-                        >
-                          <img src={option.flag} alt="flag" className="flag-icon" />
-                          <span>{option.label}</span>
-                        </button>
-                      ))}
-                    </div>
-                  )}
                 </th>
                 <th className="status-col"><div className="th-content" onClick={() => handleSort('status')}>Status <span className={`sort-icon ${sortConfig.key === 'status' ? 'active ' + sortConfig.direction : ''}`}><img src={hoaupdowncaret} alt="" /></span></div></th>
                 <th className="action-col"></th>
               </tr>
             </thead>
             <tbody>
-              {getSortedData(learnersData, sortConfig).map((req) => (
+              {paginatedData.map((req) => (
                 <tr key={req.id} className={selectedRows.includes(req.id) ? 'selected-row' : ''}>
                   <td>
                     <input
@@ -464,13 +736,70 @@ const HOALearners = () => {
                       <span className="dot"></span> {req.status}
                     </span>
                   </td>
-                  <td className="action-col">
-                    <a href="#" className="table-link-icon" onClick={(e) => { preventDefault(e); openModal(); }}>
-                      <img src={hoaopenview} alt="Open" />
-                    </a>
+                  <td className="action-col" style={{ position: 'relative' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <a href="#view" className="table-link-icon" onClick={(e) => { preventDefault(e); openModal(req.id); }} title="View Details">
+                        <img src={hoaopenview} alt="Open" />
+                      </a>
+                      
+                      {/* Action dots menu */}
+                      <div className="hoa-row-action-menu" style={{ position: 'relative', display: 'inline-flex' }}>
+                        <button 
+                          className="table-link-icon" 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setOpenRowMenuId(openRowMenuId === req.id ? null : req.id);
+                          }}
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+                        >
+                          <img src={hoaverticaldots} alt="More" style={{ width: '12px', opacity: 0.7 }} />
+                        </button>
+                        
+                        {openRowMenuId === req.id && (
+                          <div className="hoa-row-dropdown-menu" style={{ position: 'absolute', right: 0, top: '100%', background: '#fff', border: '1px solid #EEF1F6', borderRadius: '6px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', zIndex: 100, minWidth: '120px', padding: '4px' }}>
+                            {req.status === 'Suspended' ? (
+                              <button 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleSingleStatusChange(req.id, 'activate');
+                                  setOpenRowMenuId(null);
+                                }}
+                                style={{ width: '100%', border: 'none', background: 'transparent', textAlign: 'left', padding: '8px 10px', fontSize: '12px', color: '#10B981', cursor: 'pointer', fontWeight: 500 }}
+                              >
+                                Activate
+                              </button>
+                            ) : (
+                              <button 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleSingleStatusChange(req.id, 'suspend');
+                                  setOpenRowMenuId(null);
+                                }}
+                                style={{ width: '100%', border: 'none', background: 'transparent', textAlign: 'left', padding: '8px 10px', fontSize: '12px', color: '#D97706', cursor: 'pointer', fontWeight: 500 }}
+                              >
+                                Suspend
+                              </button>
+                            )}
+                            <button 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleSingleDelete(req.id);
+                                setOpenRowMenuId(null);
+                              }}
+                              style={{ width: '100%', border: 'none', background: 'transparent', textAlign: 'left', padding: '8px 10px', fontSize: '12px', color: '#EF4444', cursor: 'pointer', fontWeight: 500 }}
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </td>
                 </tr>
               ))}
+              {paginatedData.length === 0 && !isLoading && (
+                <tr><td colSpan="9" style={{ textAlign: 'center', padding: '24px', color: '#64748B' }}>No learners found.</td></tr>
+              )}
             </tbody>
           </table>
         </div>
@@ -479,14 +808,14 @@ const HOALearners = () => {
         <div className="hoa-pagination-container list-pagination">
           <div className="pagination-left">
             Show
-            <div className="page-size-dropdown">
+            <div className="page-size-dropdown" ref={pageSizeRef}>
               <button type="button" className="page-size-button" onClick={() => setIsPageSizeOpen(!isPageSizeOpen)}>
                 {pageSize} <img src={hoadowncaret} alt="" />
               </button>
               {isPageSizeOpen && (
                 <div className="page-size-menu">
                   {pageSizeOptions.map((option) => (
-                    <button key={option} type="button" className="page-size-option" onClick={() => handlePageSizeSelect(option)}>
+                    <button key={option} type="button" className="page-size-option" onClick={() => { setPageSize(option); setIsPageSizeOpen(false); }}>
                       {option}
                     </button>
                   ))}
@@ -496,87 +825,154 @@ const HOALearners = () => {
             per page
           </div>
           <div className="hoa-pagination">
-            <span className="page-range">1-10 of 5</span>
-            <button className="page-nav"><img src={hoaprev} alt="Prev" /></button>
-            <button className="page-num">1</button>
-            <button className="page-num active">2</button>
-            <button className="page-num">3</button>
-            <button className="page-nav"><img src={hoanext} alt="Next" /></button>
+            <span className="page-range">
+              {totalItems === 0 ? '0' : `${(currentPage - 1) * limit + 1}-${Math.min(currentPage * limit, totalItems)}`} of {totalItems}
+            </span>
+            <button className="page-nav" onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1}>
+              <img src={hoaprev} alt="Prev" style={{ opacity: currentPage === 1 ? 0.5 : 1 }} />
+            </button>
+            
+            {getPageNumbers().map(num => (
+              <button 
+                key={num} 
+                className={`page-num ${currentPage === num ? 'active' : ''}`}
+                onClick={() => goToPage(num)}
+              >
+                {num}
+              </button>
+            ))}
+
+            {totalPages > 3 && currentPage < totalPages - 1 && <span className="page-dots">...</span>}
+
+            <button className="page-nav" onClick={() => goToPage(currentPage + 1)} disabled={currentPage === totalPages || totalPages === 0}>
+              <img src={hoanext} alt="Next" style={{ opacity: currentPage === totalPages || totalPages === 0 ? 0.5 : 1 }} />
+            </button>
           </div>
         </div>
 
-        {/* Learner Preview Modal */}
+        {/* --- Learner Preview Modal --- */}
         <div className={`hoa-modal-overlay ${isModalOpen ? 'open' : ''}`} onClick={closeModal}>
           <div className={`hoa-modal-drawer ${isModalOpen ? 'open' : ''}`} onClick={(e) => e.stopPropagation()}>
 
-            {/* Modal Header */}
             <div className="modal-top-header">
               <button className="modal-back-btn" onClick={closeModal}>
-                <img src={hoagoback} alt="" />
+                <img src={hoagoback} alt="Back" />
               </button>
               <h2>Learner Preview</h2>
               <div className="modal-header-actions">
-                <span className="hoa-update-status" style={{ border: '1px solid #EEF1F6' }}>
-                  <img src={hoarefresh} alt="" className="sync-icon" /> Data updated every 1 hr <span className="dot" style={{ background: '#17C653' }}></span>
+                <span className="hoa-update-status" style={{ border: '1px solid #EEF1F6' }} onClick={() => fetchLearnerProfile(activeLearnerId)}>
+                  <img src={hoarefresh} alt="Sync" className={`sync-icon ${isProfileLoading ? 'spinning' : ''}`} /> 
+                  {isProfileLoading ? 'Loading...' : 'Sync Data'}
                 </span>
               </div>
             </div>
 
-            {/* Modal Content Scroll Area */}
             <div className="modal-content-area">
-
+              
               {/* User Profile Info */}
               <div className="modal-profile-box">
                 <div className="profile-left">
-                  <img src="/assets/imgs/default-profile.png" alt="Avatar" className="profile-avatar" />
+                  <img 
+                    src={learnerProfile?.avatar ? `${API_BASE_URL}${learnerProfile.avatar}` : defaultAvatar} 
+                    alt="Avatar" 
+                    className="profile-avatar" 
+                    onError={(e) => { e.target.src = defaultAvatar; }} // Fallback if image fails to load
+                  />
                   <div className="profile-details">
                     <div className="profile-name-row">
-                      <h3>John Doe</h3>
-                      <span className="badge-active">Active</span>
-                      <span className="badge-icon">
-                        <img src={hoauserbadge} alt="" /> 6
+                      <h3>
+                        {isProfileLoading 
+                          ? 'Loading Learner...' 
+                          : (learnerProfile?.name || learnerProfile?.email || 'Unknown Learner')}
+                      </h3>
+                      <span className={
+                        learnerProfile?.is_active === 0 
+                          ? 'badge-suspended' 
+                          : (learnerProfile?.is_active === 1 ? 'badge-active' : 'badge-inactive')
+                      }>
+                        {learnerProfile?.is_active === 0 
+                          ? 'Suspended' 
+                          : (learnerProfile?.is_active === 1 ? 'Active' : 'Inactive')}
                       </span>
                     </div>
                     <div className="profile-meta-row">
-                      <span className="badge-missing">UI/UX Designer</span> {/* Used for role per tab 2 */}
+                      <span className="badge-missing">{learnerProfile?.role || 'Enrolled Student'}</span>
+                      {learnerProfile?.location && <span style={{fontSize: '12px', color: '#64748B', marginLeft: '10px'}}>{learnerProfile.location}</span>}
                     </div>
                   </div>
                 </div>
-                <div className="profile-actions">
-                  <button className="icon-btn">
-                    <img src={hoagrayadd} alt="" />
+                <div className="profile-actions" style={{ position: 'relative' }}>
+                  <button className="icon-btn tooltip-trigger" title="Email">
+                    <span className="action-tooltip">{learnerProfile?.email || 'No email provided'}</span>
+                    <img src={hoagraymail} alt="Email" />
                   </button>
-                  <button className="icon-btn tooltip-trigger">
-                    <span className="action-tooltip">+250 123 456 789</span>
-                    <img src={hoagrayphone} alt="" />
+                  <button 
+                    className="icon-btn"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsDrawerMenuOpen(!isDrawerMenuOpen);
+                    }}
+                  >
+                    <img src={hoaverticaldots} alt="More" />
                   </button>
-                  <button className="icon-btn tooltip-trigger">
-                    <span className="action-tooltip">johndoe@gonaraza.com</span>
-                    <img src={hoagraymail} alt="" />
-                  </button>
-                  <button className="icon-btn">
-                    <img src={hoaverticaldots} alt="" />
-                  </button>
+                  {isDrawerMenuOpen && learnerProfile && (
+                    <div className="hoa-row-dropdown-menu" style={{ position: 'absolute', right: 0, top: '100%', background: '#fff', border: '1px solid #EEF1F6', borderRadius: '6px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', zIndex: 100, minWidth: '150px', padding: '4px' }}>
+                      {learnerProfile.is_active === 0 ? (
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleSingleStatusChange(learnerProfile.id, 'activate');
+                            setIsDrawerMenuOpen(false);
+                          }}
+                          style={{ width: '100%', border: 'none', background: 'transparent', textAlign: 'left', padding: '8px 10px', fontSize: '12px', color: '#10B981', cursor: 'pointer', fontWeight: 500 }}
+                        >
+                          Activate Student
+                        </button>
+                      ) : (
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleSingleStatusChange(learnerProfile.id, 'suspend');
+                            setIsDrawerMenuOpen(false);
+                          }}
+                          style={{ width: '100%', border: 'none', background: 'transparent', textAlign: 'left', padding: '8px 10px', fontSize: '12px', color: '#D97706', cursor: 'pointer', fontWeight: 500 }}
+                        >
+                          Suspend Student
+                        </button>
+                      )}
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleSingleDelete(learnerProfile.id);
+                          setIsDrawerMenuOpen(false);
+                          closeModal();
+                        }}
+                        style={{ width: '100%', border: 'none', background: 'transparent', textAlign: 'left', padding: '8px 10px', fontSize: '12px', color: '#EF4444', cursor: 'pointer', fontWeight: 500 }}
+                      >
+                        Delete Student
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
 
               {/* Modal Stats Row */}
               <div className="modal-stats-row">
                 <div className="mod-stat">
-                  <h3>13.3K</h3>
+                  <h3>{learnerProfile?.statistics?.total_downloads || 0}</h3>
                   <p>Total Downloads</p>
                 </div>
                 <div className="mod-stat">
-                  <h3>13</h3>
-                  <p>Total Online Courses</p>
+                  <h3>{learnerProfile?.statistics?.total_courses || learnerProfile?.enrollments?.length || 0}</h3>
+                  <p>Total Courses</p>
                 </div>
                 <div className="mod-stat">
-                  <h3>19.32</h3>
-                  <p>Avg. Learning hours <span className="trend down"> <img src={hoadecrease} alt="" /> -4.5%</span></p>
+                  <h3>{learnerProfile?.statistics?.avg_score || '0.00'}</h3>
+                  <p>Avg. Score</p>
                 </div>
                 <div className="mod-stat">
-                  <h3>4</h3>
-                  <p>Total Projects</p>
+                  <h3>{learnerProfile?.statistics?.total_certificates || learnerProfile?.certificates?.length || 0}</h3>
+                  <p>Certificates Issued</p>
                 </div>
               </div>
 
@@ -589,319 +985,131 @@ const HOALearners = () => {
 
               {/* Tab Contents */}
               <div className="modal-tab-content">
-
-                {/* === LESSONS TAB === */}
+                
+                {/* --- LESSONS TAB --- */}
                 {activeTab === 'lessons' && (
                   <div className="tab-lessons">
                     <div className="hoa-list-container modal-table-container">
-                      <table className="hoa-list-table mod-table">
-                        <thead>
-                          <tr>
-                            <th style={{ width: '50px' }}>
-                              <button type="button" className="th-content minus-btn-container minus-select-button" onClick={() => setModalSelectedRows([])}>
-                                <div className="minus-icon" style={{ margin: '0 auto' }}>-</div>
-                              </button>
-                            </th>
-                            <th><div className="th-content" onClick={() => handleModalSort('title')}>Course Details (34) <span className={`sort-icon ${modalSortConfig.key === 'title' ? 'active ' + modalSortConfig.direction : ''}`}><img src={hoaupdowncaret} alt="" /></span></div></th>
-                            <th><div className="th-content" onClick={() => handleModalSort('tutor')}>Tutor & Avg. Score (23) <span className={`sort-icon ${modalSortConfig.key === 'tutor' ? 'active ' + modalSortConfig.direction : ''}`}><img src={hoaupdowncaret} alt="" /></span></div></th>
-                            <th><div className="th-content" onClick={() => handleModalSort('type')}>Course Type <span className={`sort-icon ${modalSortConfig.key === 'type' ? 'active ' + modalSortConfig.direction : ''}`}><img src={hoaupdowncaret} alt="" /></span></div></th>
-                            <th className="text-center"><div className="th-content justify-center" onClick={() => handleModalSort('attempts')}>Attempts & Visits <span className={`sort-icon ${modalSortConfig.key === 'attempts' ? 'active ' + modalSortConfig.direction : ''}`}><img src={hoaupdowncaret} alt="" /></span></div></th>
-                            <th className="status-col"><div className="th-content" onClick={() => handleModalSort('status')}>Status <span className={`sort-icon ${modalSortConfig.key === 'status' ? 'active ' + modalSortConfig.direction : ''}`}><img src={hoaupdowncaret} alt="" /></span></div></th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {getSortedData(modalLessons, modalSortConfig).map((les) => (
-                            <tr key={les.id} className={modalSelectedRows.includes(les.id) ? 'selected-row' : ''}>
-                              <td><input type="checkbox" className="hoa-checkbox" checked={modalSelectedRows.includes(les.id)} onChange={() => toggleModalRowSelection(les.id)} /></td>
-                              <td>
-                                <div className="user-meta">
-                                  <h5>{les.title}</h5>
-                                  <p style={{ fontSize: '11px', color: '#A1A5B7' }}>{les.date}</p>
-                                </div>
-                              </td>
-                              <td>
-                                <div className="user-meta">
-                                  <h5 style={{ fontWeight: '500' }}>{les.tutor}</h5>
-                                  <p style={{ fontSize: '11px', color: '#A1A5B7' }}>{les.score}</p>
-                                </div>
-                              </td>
-                              <td>
-                                <div className="user-meta">
-                                  <h5 style={{ fontWeight: '500' }}>{les.type}</h5>
-                                  <p style={{ fontSize: '11px', color: '#A1A5B7' }}>{les.duration}</p>
-                                </div>
-                              </td>
-                              <td className="fw-600 text-center">{les.attempts}</td>
-                              <td className="status-col">
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'flex-end' }}>
-                                  <span className={`mod-status-pill st-${les.statusType}`}>{les.status}</span>
-                                  <button className="icon-more-btn">⋮</button>
-                                </div>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                      {isProfileLoading ? (
+                        <div style={{ padding: '40px', textAlign: 'center', color: '#64748B' }}>Loading lessons data...</div>
+                      ) : (
+                        <table className="hoa-list-table mod-table">
+                          <thead>
+                            {/* ... (Keep your existing thead mapping) ... */}
+                          </thead>
+                          <tbody>
+                            {/* Map over real enrollments if they exist, otherwise fallback or show empty state */}
+                            {(learnerProfile?.enrollments || []).length > 0 ? (
+                               getSortedData(learnerProfile.enrollments, modalSortConfig).map((enrollment) => (
+                                <tr key={enrollment.id || enrollment.course_id}>
+                                  <td><input type="checkbox" className="hoa-checkbox" /></td>
+                                  <td>
+                                    <div className="user-meta">
+                                      <h5>{enrollment.course?.title || enrollment.course_name || 'Unknown Course'}</h5>
+                                      <p style={{ fontSize: '11px', color: '#A1A5B7' }}>{new Date(enrollment.enrolled_at || enrollment.created_at).toLocaleDateString()}</p>
+                                    </div>
+                                  </td>
+                                  <td>
+                                    <div className="user-meta">
+                                      <h5 style={{ fontWeight: '500' }}>{enrollment.course?.instructor_name || 'N/A'}</h5>
+                                      <p style={{ fontSize: '11px', color: '#A1A5B7' }}>Score: {enrollment.score || '0'}%</p>
+                                    </div>
+                                  </td>
+                                  <td>
+                                    <div className="user-meta">
+                                      <h5 style={{ fontWeight: '500' }}>{enrollment.course?.type || 'Online Course'}</h5>
+                                    </div>
+                                  </td>
+                                  <td className="fw-600 text-center">{enrollment.progress_percentage || 0}%</td>
+                                  <td className="status-col">
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'flex-end' }}>
+                                      <span className={`mod-status-pill st-${(enrollment.status || 'active').toLowerCase()}`}>{enrollment.status || 'Active'}</span>
+                                      <button className="icon-more-btn">⋮</button>
+                                    </div>
+                                  </td>
+                                </tr>
+                              ))
+                            ) : (
+                              <tr>
+                                <td colSpan="6" style={{ textAlign: 'center', padding: '24px', color: '#64748B' }}>
+                                  No course enrollments found for this learner.
+                                </td>
+                              </tr>
+                            )}
+                          </tbody>
+                        </table>
+                      )}
                     </div>
 
-                    <div className="hoa-pagination-container list-pagination modal-pagination" style={{ marginBottom: '40px' }}>
-                      <div className="pagination-left">
-                        Show
-                        <div className="page-size-dropdown" style={{ margin: '0 8px' }}>
-                          <button type="button" className="page-size-button" style={{ padding: '2px 8px' }}>10 <img src={hoadowncaret} alt="" /></button>
-                        </div>
-                        per page
-                      </div>
-                      <div className="hoa-pagination">
-                        <span className="page-range">1-10 of 5</span>
-                        <button className="page-nav"><img src={hoaleftarrow} className="icon-15" style={{ width: '20px', height: '20px', padding: '0' }} alt="Prev" /></button>
-                        <button className="page-num">1</button>
-                        <button className="page-num active">2</button>
-                        <button className="page-num">3</button>
-                        <button className="page-nav"><img src={hoarightarrow} className="icon-15" style={{ width: '20px', height: '20px', padding: '0' }} alt="Next" /></button>
-                      </div>
-                    </div>
-
-                    <div className="docs-header">
+                    {/* Documents / Certificates */}
+                    <div className="docs-header" style={{ marginTop: '20px' }}>
                       <div>
                         <h3 style={{ margin: '0 0 4px 0', fontSize: '16px', color: '#071437' }}>Documents</h3>
-                        <p style={{ margin: '0', fontSize: '12px', color: '#A1A5B7' }}>Files & Certificate</p>
+                        <p style={{ margin: '0', fontSize: '12px', color: '#A1A5B7' }}>Files & Certificates</p>
                       </div>
-                      <button className="hoa-btn-light-purple" style={{ gap: '8px' }}>
-                        <img src={hoadownloadall} alt="" />
-                        Download All
-                      </button>
                     </div>
 
                     <div className="docs-grid">
-                      {modalDocuments.map((doc) => (
-                        <div key={doc.id} className="doc-card">
+                      {!isProfileLoading && (learnerProfile?.certificates || []).map((cert) => (
+                        <div key={cert.id} className="doc-card">
                           <div className="doc-info">
-                            {doc.type === 'ribbon' ? (
-                              <img src={hoaknot} alt="" />
-                            ) : (
-                              <img src={hoapdffile} alt="" />)}
+                            <img src={hoaknot} alt="Certificate" />
                             <div>
-                              <h4>{doc.name}</h4>
-                              <p>{doc.size}</p>
+                              <h4>{cert.course_name || 'Course Certificate'}</h4>
+                              <p>Issued: {new Date(cert.issued_at).toLocaleDateString()}</p>
                             </div>
                           </div>
-                          <button className="download-btn">
-                            <img src={hoadownload} alt="" />
+                          <button className="download-btn" onClick={() => window.open(`${API_BASE_URL}/api/certificates/${cert.certificate_number}/download`)}>
+                            <img src={hoadownload} alt="Download" />
                           </button>
                         </div>
                       ))}
+                      {!isProfileLoading && (learnerProfile?.certificates || []).length === 0 && (
+                        <p style={{ color: '#64748B', fontSize: '14px' }}>No documents or certificates available.</p>
+                      )}
                     </div>
                   </div>
                 )}
 
-                {/* === PROJECTS TAB === */}
+                {/* --- PROJECTS TAB --- */}
                 {activeTab === 'projects' && (
-                  <div className="tab-projects">
-                    <div className="proj-info-grid">
-                      <div className="info-col">
-                        <h4>Profile Info</h4>
-                        <ul>
-                          <li><img src={hoausericon} alt="" /> UI UX Design</li>
-                          <li><img src={hoabriefcase} alt="" /> 6 yrs experience</li>
-                          <li><img src={hoalocation} alt="" /> Kigali, Rwanda</li>
-                        </ul>
-                      </div>
-                      <div className="info-col">
-                        <h4>Tools & Skills</h4>
-                        <ul className="text-list">
-                          <li>Adobe Illustrator</li>
-                          <li>Adobe Photoshop</li>
-                          <li>Coding Skills (CSS, HTML & REACT), +1</li>
-                        </ul>
-                      </div>
-                      <div className="info-col text-right-align">
-                        <h4>Projects Stats</h4>
-                        <ul className="stats-list">
-                          <li><span>Project Views</span> 1,345,780</li>
-                          <li><span>Project Likes</span> 236,890</li>
-                          <li><span>Project Feedbacks</span> 103,006</li>
-                        </ul>
-                      </div>
-                    </div>
-
-                    <div className="projects-header">
-                      <div>
-                        <h3 style={{ margin: '0 0 4px 0', fontSize: '18px', color: '#071437' }}>My Projects</h3>
-                        <p style={{ margin: '0', fontSize: '13px', color: '#A1A5B7' }}><strong>100</strong> Projects in total</p>
-                      </div>
-                      <button className="follower-btn">
-                        <img src={hoafollowers} alt="" />
-                        <strong>129</strong> Followers
-                      </button>
-                    </div>
-                    <div className="projects-grid">
-                      {modalProjects.map((proj, idx) => (
-                        <div key={idx} className="project-card">
-                          <div className="proj-img" style={{ backgroundImage: `url(${hoaproject})` }}></div>
-                          <div className="proj-meta">
-                            <span className="author">By <a href="#" onClick={preventDefault}>{proj.author}</a></span>
-                            <div className="proj-stats">
-                              <span className="stat-like" onClick={() => toggleProjectLike(idx)} style={{ cursor: 'pointer' }}>
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill={likedProjects[idx] ? "#F8285A" : "#A1A5B7"}>
-                                  <path d="M20.84 4.61A5.5 5.5 0 0012 5.67A5.5 5.5 0 003.16 4.61C2.5 5.28 2 6.2 2 7.21C2 8.23 2.5 9.15 3.16 9.83L12 18.67L20.84 9.83C21.5 9.15 22 8.23 22 7.21C22 6.2 21.5 5.28 20.84 4.61Z" />
-                                </svg> {proj.likes}
-                              </span>
-                              <span className="stat-view"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#A1A5B7" strokeWidth="2"><path d="M1 12S5 4 12 4S23 12 23 12S19 20 12 20S1 12 1 12Z" /><circle cx="12" cy="12" r="3" /></svg> {proj.views}</span>
+                  <div className="tab-projects" style={{ padding: '20px' }}>
+                     {isProfileLoading ? (
+                       <p style={{ textAlign: 'center', color: '#64748B' }}>Loading projects...</p>
+                     ) : (learnerProfile?.projects || []).length > 0 ? (
+                       <div className="projects-grid">
+                         {learnerProfile.projects.map(project => (
+                            <div key={project.id} style={{ border: '1px solid #E2E8F0', padding: '16px', borderRadius: '8px', marginBottom: '12px' }}>
+                               <h4>{project.title}</h4>
+                               <p style={{ fontSize: '13px', color: '#64748B' }}>Status: {project.status}</p>
                             </div>
-                          </div>
-                          <p className="proj-title">{proj.title}</p>
-                        </div>
-                      ))}
-                    </div>
+                         ))}
+                       </div>
+                     ) : (
+                       <div style={{ textAlign: 'center', padding: '40px', color: '#64748B' }}>
+                        <h4>No Projects Submitted</h4>
+                        <p>This learner has not submitted any projects yet.</p>
+                       </div>
+                     )}
                   </div>
                 )}
 
-                {/* === ACTIVITY TAB === */}
+                {/* --- ACTIVITY TAB --- */}
                 {activeTab === 'activity' && (
                   <div className="tab-activity">
-
                     <div className="activity-header">
                       <div className="login-info">
                         <span className="label">Last Login</span>
-                        <p><strong>Wed Apr 23, 2023</strong> at <strong>11 : 33 PM</strong></p>
-                      </div>
-                      <div className="priority-badge">
-                        <span className="label">Priority</span>
-                        <span className="badge-high">High</span>
-                      </div>
-                    </div>
-                    <h4 style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '24px 0 20px 0', color: '#071437', fontSize: '16px', fontWeight: 600 }}>
-                      <img src={hoacalendar} alt="calendar" />
-                      Upcoming Activity
-                    </h4>
-
-                    <div className="upcoming-activity-card" style={{ background: '#FAFAFA', borderRadius: '2px', padding: '20px' }}>
-                      <div className="event-row" style={{ marginTop: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <h5 style={{ margin: 0, fontSize: '15px', color: '#071437', fontWeight: 600 }}>Event Name</h5>
-                        <span className="event-status" style={{ border: '1px solid #17C65333', borderRadius: '4px', padding: '4px 8px', background: '#EAFFF1', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: '#04B440', fontWeight: 600 }}>Approved <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M6 9L12 15L18 9" stroke="#17C653" strokeWidth="2" /></svg></span>
-                      </div>
-
-                      <p className="event-desc" style={{ fontSize: '13px', color: '#78829D', lineHeight: 1.5, margin: '16px 0 0 0' }}>
-                        Statistics is the branch of mathematics that deals with the collection, analysis, interpretation, presentation, and organization of data. It provides methodologies for making inferences about populations based on sample data, enabling researchers to quantify uncertainty and variability in empirical findings.
-                      </p>
-                      <div className="event-forms" style={{ display: 'flex', background: '#FFFFFF', padding: '12px', borderRadius: '2px', border: '1px solid #F1F1F4', marginTop: '10px' }}>
-                        <div className="form-group border-right" style={{ flex: 1, borderRight: '1px solid #EEF1F6', paddingRight: '16px' }}>
-                          <label style={{ fontSize: '11px', color: '#A1A5B7', marginBottom: '8px', display: 'block' }}>Reminder</label>
-                          <div className="form-select borderless" style={{ border: 'none', background: 'transparent', padding: '0', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: '#071437', fontWeight: 600 }}>No Reminder <img src={hoadowncaret} alt="" /></div>
-                        </div>
-                        <div className="form-group border-right" style={{ flex: 1, borderRight: '1px solid #EEF1F6', padding: '0 16px' }}>
-                          <label style={{ fontSize: '11px', color: '#A1A5B7', marginBottom: '8px', display: 'block' }}>Task Priority</label>
-                          <div className="form-select borderless" style={{ border: '1px solid #7239EA33', background: '#F8F5FF', padding: '8px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: '#7239EA', width: '75px', height: '24px', borderRadius: '30px' }}><span className="dot" style={{ background: '#7239EA', width: '6px', height: '6px', borderRadius: '50%', display: 'inline-block' }}></span> High <img src={hoadowncaret} alt="" /></div>
-                        </div>
-                        <div className="form-group" style={{ flex: 1, paddingLeft: '16px' }}>
-                          <label style={{ fontSize: '11px', color: '#A1A5B7', marginBottom: '8px', display: 'block' }}>Assigned To</label>
-                          <div className="form-select borderless" style={{ border: 'none', background: 'transparent', padding: '0', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: '#071437', fontWeight: 600 }}>
-                            <img src="/assets/imgs/default-profile.png" alt="" className="tiny-avatar" style={{ borderRadius: '50%' }} /> Esther Howard <img src={hoadowncaret} alt="" />
-                          </div>
-                        </div>
-                      </div>
-                      <div className="event-nav" style={{ display: 'flex', justifyContent: 'center', gap: '12px', marginTop: '20px' }}>
-                        <button className="nav-circle" style={{ width: '32px', height: '32px', borderRadius: '50%', border: '1px solid #EEF1F6', background: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}><img src={hoaprev} alt="" /></button>
-                        <button className="nav-circle" style={{ width: '32px', height: '32px', borderRadius: '50%', border: '1px solid #EEF1F6', background: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}><img src={hoanext} alt="" /></button>
+                        <p>
+                          <strong>
+                            {learnerProfile?.last_login ? new Date(learnerProfile.last_login).toLocaleDateString() : 'N/A'}
+                          </strong> at <strong>
+                            {learnerProfile?.last_login ? new Date(learnerProfile.last_login).toLocaleTimeString() : ''}
+                          </strong>
+                        </p>
                       </div>
                     </div>
-
-
-                    <div className="qa-section">
-                      <h4 style={{ fontSize: '14px', color: '#071437', margin: '30px 0 15px 0' }}>Questions & Answers</h4>
-
-                      {/* Ticket 1 */}
-                      <div className={`ticket-card border-green ${!openTickets[1] ? 'collapsed' : ''}`}>
-                        <div className="ticket-header" onClick={() => toggleTicket(1)} style={{ cursor: 'pointer' }}>
-                          <div className="ticket-meta">
-                            <strong>Ticket No : #TKT1204567</strong>
-                            <span>CC : maxsmith@gonaraza.com</span>
-                          </div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                            <div className="ticket-status st-solved">Solved</div>
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#78829D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ transform: openTickets[1] ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}><path d="M6 9l6 6 6-6" /></svg>
-                          </div>
-                        </div>
-
-                        {openTickets[1] && (
-                          <div className="ticket-body">
-                            <div className="ticket-user" style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-                              <img src="/assets/imgs/default-profile.png" alt="" className="tiny-avatar" style={{ borderRadius: '50%', width: '40px', height: '40px' }} />
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                <span style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '8px' }}>
-                                  <strong style={{ color: '#071437', fontSize: '15px', fontWeight: 600 }}>Max Smith</strong>
-                                  <img src={hoavbadge} style={{ width: '16px', height: '16px' }} alt="" />
-                                  <span style={{ background: '#F0E5FD', color: '#450468', fontSize: '12px', padding: '2px 6px', borderRadius: '4px', fontWeight: 500 }}>Professor</span>
-                                </span>
-                                <span style={{ fontSize: '14px', color: '#2A3556' }}>maxsmith@gonaraza.com</span>
-                              </div>
-                            </div>
-                            <div className="ticket-content">
-                              <p>Ads is not displaying and i paid for all fees, 3 batches please help me as soon as possible.</p>
-                              <div className="ticket-attachment" style={{ display: 'flex', gap: '8px', margin: '16px 0' }}>
-                                <div style={{ paddingTop: '8px' }}>
-                                  <img src={hoareply} alt="" />
-                                </div>
-                                <div
-                                  className="attach-img"
-                                  style={{ backgroundImage: `url(${hoaproject})`, backgroundSize: 'cover', backgroundPosition: 'center', height: '100px', width: '140px', borderRadius: '6px', border: '1px solid #DBDFE9', cursor: 'pointer', position: 'relative', overflow: 'hidden' }}
-                                  onClick={() => setFullScreenImage(hoaproject)}
-                                >
-                                  <div style={{ position: 'absolute', bottom: 0, right: 0, background: 'rgba(0,0,0,0.5)', width: '24px', height: '24px', borderTopLeftRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" /></svg>
-                                  </div>
-                                </div>
-                              </div>
-                              <p>Ads is not displaying and i paid for all fees, 3 batches please help me as soon as possible.</p>
-                            </div>
-                            <div className="ticket-actions">
-                              <button><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M14 9V5C14 4.20435 13.6839 3.44129 13.1213 2.87868C12.5587 2.31607 11.7956 2 11 2L7 11V22H18.28C18.7623 22.0055 19.2304 21.8364 19.5979 21.524C19.9654 21.2116 20.2077 20.7769 20.28 20.3L21.66 11.3C21.7035 11.0134 21.6842 10.7207 21.6033 10.4423C21.5225 10.1638 21.3821 9.90629 21.1919 9.68751C21.0016 9.46873 20.7661 9.29393 20.5016 9.17522C20.2371 9.0565 19.95 8.99672 19.66 9H14Z" stroke="rgba(69, 4, 104, 1)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /><path d="M7 22H3C2.46957 22 1.96086 21.7893 1.58579 21.4142C1.21071 21.0391 1 20.5304 1 20V13C1 12.4696 1.21071 11.9609 1.58579 11.5858C1.96086 11.2107 2.46957 11 3 11H7V22Z" stroke="#rgba(69, 4, 104, 1)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg> <span style={{ color: 'rgba(69, 4, 104, 1)', fontWeight: '600' }}>Yes</span></button>
-                              <button><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M10 15V19C10 19.7956 10.3161 20.5587 10.8787 21.1213C11.4413 21.6839 12.2044 22 13 22L17 13V2H5.72C5.23773 1.99451 4.76961 2.16358 4.40212 2.47597C4.03463 2.78836 3.79234 3.22312 3.72 3.7L2.34 12.7C2.29653 12.9866 2.31575 13.2793 2.39665 13.5577C2.47754 13.8362 2.61794 14.0937 2.80814 14.3125C2.99834 14.5313 3.23389 14.7061 3.49836 14.8248C3.76284 14.9435 4.05001 15.0033 4.34 15H10Z" stroke="#A1A5B7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /><path d="M17 2H21C21.5304 2 22.0391 2.21071 22.4142 2.58579C22.7893 2.96086 23 3.46957 23 4V11C23 11.5304 22.7893 12.0391 22.4142 12.4142C22.0391 12.7893 21.5304 13 21 13H17V2Z" stroke="#A1A5B7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg> <span style={{ color: '#A1A5B7' }}>No</span></button>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Ticket 2 */}
-                      <div className={`ticket-card border-red ${!openTickets[2] ? 'collapsed' : ''}`}>
-                        <div className="ticket-header" onClick={() => toggleTicket(2)} style={{ cursor: 'pointer' }}>
-                          <div className="ticket-meta">
-                            <strong>Ticket No : #TKT1204567</strong>
-                            <span>CC : maxsmith@gonaraza.com</span>
-                          </div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                            <div className="ticket-status st-unsolved">Unsolved</div>
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#78829D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ transform: openTickets[2] ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}><path d="M6 9l6 6 6-6" /></svg>
-                          </div>
-                        </div>
-                        {openTickets[2] && (
-                          <div className="ticket-body">
-                            <div className="ticket-content"><p>Ticket 2 content goes here.</p></div>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Ticket 3 */}
-                      <div className={`ticket-card border-blue ${!openTickets[3] ? 'collapsed' : ''}`}>
-                        <div className="ticket-header" onClick={() => toggleTicket(3)} style={{ cursor: 'pointer' }}>
-                          <div className="ticket-meta">
-                            <strong>Ticket No : #TKT1204567</strong>
-                            <span>CC : maxsmith@gonaraza.com</span>
-                          </div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                            <div className="ticket-status st-review">In Review</div>
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#78829D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ transform: openTickets[3] ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}><path d="M6 9l6 6 6-6" /></svg>
-                          </div>
-                        </div>
-                        {openTickets[3] && (
-                          <div className="ticket-body">
-                            <div className="ticket-content"><p>Ticket 3 content goes here.</p></div>
-                          </div>
-                        )}
-                      </div>
-
-                    </div>
+                    {/* Keep your static QA logs here or map learnerProfile.logs if the API provides it */}
                   </div>
                 )}
 
@@ -909,13 +1117,25 @@ const HOALearners = () => {
             </div>
           </div>
         </div>
-
+        
+        {/* Fullscreen Image Preview */}
         {fullScreenImage && (
           <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.8)', zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <button onClick={() => setFullScreenImage(null)} style={{ position: 'absolute', top: '20px', right: '30px', background: 'none', border: 'none', color: 'white', fontSize: '40px', cursor: 'pointer', padding: '10px' }}>&times;</button>
             <img src={fullScreenImage} alt="Full Screen" style={{ maxWidth: '90%', maxHeight: '90%', borderRadius: '8px', objectFit: 'contain' }} />
           </div>
         )}
+
+        {/* Custom Toast Alert */}
+        {toast.show && (
+          <div className={`hoa-toast-notification is-${toast.type}`}>
+            <div className="hoa-toast-icon">
+              {toast.type === 'success' ? '✓' : '✗'}
+            </div>
+            <p className="hoa-toast-message">{toast.message}</p>
+          </div>
+        )}
+
       </div>
     </HOALayout>
   );

@@ -1012,6 +1012,26 @@
     border: 1px solid #1B84FF33;
   }
 
+  .badge-inactive {
+    background: #F1F1F4;
+    color: #78829D;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    border: 1px solid #DBDFE9;
+  }
+
+  .badge-suspended {
+    background: #FFEEF3;
+    color: #F8285A;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    border: 1px solid #F8285A33;
+  }
+
   .badge-icon {
     background: #45046812;
     color: #4B5675;
@@ -1792,4 +1812,73 @@
 .hoa-learners-page .modal-pagination .page-num.active {
   background: #F1F1F4 !important;
   color: #450468 !important;
+}
+
+/* =========================================
+   PREMIUM TOAST NOTIFICATION STYLES
+========================================= */
+.hoa-toast-notification {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 20px;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.12);
+  border-left: 4px solid #10B981;
+  animation: hoaToastIn 0.22s cubic-bezier(0, 0, 0.2, 1);
+  max-width: 380px;
+}
+
+.hoa-toast-notification.is-success {
+  border-left-color: #10B981;
+}
+
+.hoa-toast-notification.is-error {
+  border-left-color: #EF4444;
+}
+
+.hoa-toast-icon {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 11px;
+}
+
+.hoa-toast-notification.is-success .hoa-toast-icon {
+  background: #DCFCE7;
+  color: #15803D;
+}
+
+.hoa-toast-notification.is-error .hoa-toast-icon {
+  background: #FEE2E2;
+  color: #B91C1C;
+}
+
+.hoa-toast-message {
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: #071437;
+  line-height: 1.4;
+}
+
+@keyframes hoaToastIn {
+  from {
+    transform: translateY(-16px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }

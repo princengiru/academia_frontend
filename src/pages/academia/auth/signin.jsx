@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 // Assets (Update paths to match your React project structure)
 import googleIcon from '../../../assets/icons/google.svg';
@@ -10,19 +10,20 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 function AcademiaSignIn() {
   const navigate = useNavigate();
+  const location = useLocation();
   
-  // Using rare variable names for state logic
-  const [apexEmail, setApexEmail] = useState('');
-  const [nexusPassword, setNexusPassword] = useState('');
-  const [zenithShowPwd, setZenithShowPwd] = useState(false);
-  const [slateRemember, setSlateRemember] = useState(false);
-  const [titanLoading, setTitanLoading] = useState(false);
-  const [vortexError, setVortexError] = useState('');
+  // --- Standardized State ---
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(location.state?.error || new URLSearchParams(location.search).get('error') || '');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setVortexError('');
-    setTitanLoading(true);
+    setError('');
+    setIsLoading(true);
 
     try {
       const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
@@ -31,51 +32,57 @@ function AcademiaSignIn() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          email: apexEmail,
-          password: nexusPassword,
+          email,
+          password,
         }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        setVortexError(data.message || 'Login failed');
-        setTitanLoading(false);
+        setError(data.error?.message || data.message || 'Invalid email or password.');
+        setIsLoading(false);
         return;
       }
 
+      // Handle 2FA / OTP Verification Flow
       if (data?.data?.requiresOTPVerification) {
         localStorage.removeItem('token');
-        localStorage.setItem('user', JSON.stringify({ email: data?.data?.email || apexEmail }));
+        localStorage.setItem('user', JSON.stringify({ email: data?.data?.email || email }));
         setTimeout(() => {
           navigate('/academia/auth/verify', { replace: true });
         }, 300);
         return;
       }
 
-      // Store token and user data
+      // --- Successful Login ---
       localStorage.setItem('token', data.data.token);
       localStorage.setItem('user', JSON.stringify(data.data.user));
 
-      if (slateRemember) {
+      if (rememberMe) {
         localStorage.setItem('rememberMe', 'true');
       }
 
-      // Redirect based on role: instructors -> professor dashboard
-      const role = (data.data.user?.role || '').toString().toLowerCase();
-      const isInstructor = role.includes('instructor') || role.includes('prof') || role.includes('teacher');
+      // Route based on exact role matching
+      const userRole = (data.data.user?.role || '').toLowerCase().trim();
 
       setTimeout(() => {
-        if (isInstructor) {
+        if (userRole === 'instructor') {
           navigate('/academia/professor', { replace: true });
+        } else if (userRole === 'student') {
+          navigate('/academia/learner/', { replace: true });
+        } else if (userRole === 'admin') {
+          navigate('/academia/hoa', { replace: true });
         } else {
-          navigate('/academia/learner/courses', { replace: true });
+          // Fallback if role is undefined or not standard
+          navigate('/academia/index', { replace: true });
         }
       }, 500);
-    } catch (error) {
-      console.error('Login error:', error);
-      setVortexError(error.message || 'An error occurred during login');
-      setTitanLoading(false);
+
+    } catch (err) {
+      console.error('Login error:', err);
+      setError('A network error occurred. Please check your connection and try again.');
+      setIsLoading(false);
     }
   };
 
@@ -94,6 +101,7 @@ function AcademiaSignIn() {
           --primary-hover: #46066d;
         }
 
+        /* Scoped specifically to this wrapper to prevent CSS leakage */
         .signin-page-wrapper {
           display: grid;
           grid-template-columns: minmax(0, 1fr) auto;
@@ -104,7 +112,7 @@ function AcademiaSignIn() {
           background: var(--page-bg);
         }
 
-        .left-col {
+        .signin-page-wrapper .left-col {
           background: var(--page-bg);
           min-height: 100vh;
           display: flex;
@@ -113,7 +121,7 @@ function AcademiaSignIn() {
           padding: 24px;
         }
 
-        .signin-card {
+        .signin-page-wrapper .signin-card {
           width: 100%;
           max-width: 420px;
           background: white;
@@ -124,175 +132,156 @@ function AcademiaSignIn() {
           box-sizing: border-box;
         }
 
-        .signin-title {
-          font-family: Inter;
+        .signin-page-wrapper .signin-title {
           font-weight: 500;
-          font-size: 18px;
-          line-height: 18px;
-          letter-spacing: -1%;
+          font-size: 20px;
           text-align: center;
           margin: 0;
           color: black;
         }
 
-        .signin-subtitle {
-          margin-top: 7px;
+        .signin-page-wrapper .signin-subtitle {
+          margin-top: 8px;
           margin-bottom: 0;
-          font-family: Inter;
           font-weight: 400;
-          font-size: 13px;
-          line-height: 14px;
+          font-size: 14px;
           text-align: center;
           color: var(--text-muted);
         }
 
-        .signin-subtitle a {
+        .signin-page-wrapper .signin-subtitle a {
           color: var(--primary);
           text-decoration: none;
           margin-left: 6px;
           font-weight: 500;
         }
 
-        .signin-social {
-          margin-top: 20px;
+        .signin-page-wrapper .signin-social {
+          margin-top: 24px;
           display: grid;
           grid-template-columns: 1fr 1fr;
-          gap: 10px;
-          padding: 0 20px;
+          gap: 12px;
+          padding: 0 10px;
         }
 
-        .social-btn {
-          min-height: 32px;
+        .signin-page-wrapper .social-btn {
+          min-height: 38px;
           border: 1px solid var(--field-border);
           border-radius: 8px;
-          background: #f8f9fc;
+          background: #fff;
           display: inline-flex;
           align-items: center;
           justify-content: center;
           gap: 8px;
-          font-family: Inter;
           font-weight: 500;
-          font-size: 12px;
-          line-height: 12px;
+          font-size: 13px;
           cursor: pointer;
           color: var(--text-main);
           padding: 0;
+          transition: background 0.2s ease;
         }
 
-        .social-btn .btn-icon {
+        .signin-page-wrapper .social-btn:hover {
+          background: #f8f9fc;
+        }
+
+        .signin-page-wrapper .social-btn .btn-icon {
           width: 16px;
           height: 16px;
-          display: inline-block;
-          flex: 0 0 auto;
+          display: flex;
+          align-items: center;
+          justify-content: center;
         }
 
-        .social-btn.google .btn-icon {
-          font-style: normal;
-          font-weight: 700;
-          font-size: 16px;
-          line-height: 16px;
-        }
-
-        .social-btn.apple .btn-icon svg {
+        .signin-page-wrapper .social-btn.apple .btn-icon svg {
           width: 16px;
           height: 16px;
-          display: block;
           fill: #000000;
         }
 
-        .signin-divider {
-          margin: 20px 0;
+        .signin-page-wrapper .signin-divider {
+          margin: 24px 0;
           display: flex;
           align-items: center;
-          gap: 8px;
-          font-family: Inter;
+          gap: 12px;
           font-weight: 400;
-          font-size: 11px;
-          line-height: 12px;
-          text-align: center;
+          font-size: 12px;
           color: #78829D;
         }
 
-        .signin-divider::before,
-        .signin-divider::after {
+        .signin-page-wrapper .signin-divider::before,
+        .signin-page-wrapper .signin-divider::after {
           content: "";
           flex: 1;
           height: 1px;
           background: #d7dce6;
         }
 
-        .field-group {
+        .signin-page-wrapper .field-group {
           display: flex;
           flex-direction: column;
-          gap: 10px;
-          margin-top: 20px;
+          gap: 8px;
+          margin-top: 18px;
         }
 
-        .field-label-row {
+        .signin-page-wrapper .field-group > label {
+          font-weight: 500;
+          font-size: 13px;
+          color: #071437;
+        }
+
+        .signin-page-wrapper .field-label-row {
           display: flex;
           align-items: center;
           justify-content: space-between;
-          font-family: Inter;
           font-weight: 400;
           font-size: 13px;
-          line-height: 14px;
           color: #071437;
         }
 
-        .field-group > label {
-          font-family: Inter;
-          font-weight: 400;
-          font-size: 13px;
-          line-height: 14px;
-          color: #071437;
-        }
-
-        .field-label-row a {
+        .signin-page-wrapper .field-label-row a {
           text-decoration: none;
           color: var(--primary);
+          font-weight: 500;
         }
 
-        .input-wrap {
+        .signin-page-wrapper .input-wrap {
           position: relative;
         }
 
-        .input-wrap input {
+        .signin-page-wrapper .input-wrap input {
           width: 100%;
-          height: 40px;
-          border-radius: 6px;
+          height: 42px;
+          border-radius: 8px;
           border: 1px solid var(--field-border);
           background: transparent;
-          padding: 0 12px;
+          padding: 0 14px;
           color: #2e3a54;
           outline: none;
-          font-family: Inter;
-          font-weight: 400;
-          font-size: 13px;
-          line-height: 14px;
-          box-sizing: border-box;
+          font-size: 14px;
+          transition: border-color 0.2s;
         }
 
-        .input-wrap input::placeholder {
-          color: #8a94a9;
+        .signin-page-wrapper .input-wrap input::placeholder {
+          color: #a1a5b7;
         }
 
-        .input-wrap input:focus {
-          border-color: #b6bfd1;
-          box-shadow: 0 0 0 3px rgba(84, 11, 128, 0.08);
+        .signin-page-wrapper .input-wrap input:focus {
+          border-color: var(--primary);
         }
 
-        .input-wrap.password input {
+        .signin-page-wrapper .input-wrap.password input {
           padding-right: 40px;
         }
 
-        .input-eye {
+        .signin-page-wrapper .input-eye {
           position: absolute;
           right: 12px;
           top: 50%;
           transform: translateY(-50%);
-          width: 18px;
-          height: 18px;
-          display: inline-flex;
+          width: 20px;
+          height: 20px;
+          display: flex;
           align-items: center;
           justify-content: center;
           color: #97a1b5;
@@ -302,23 +291,18 @@ function AcademiaSignIn() {
           padding: 0;
         }
 
-        .input-eye img {
-          width: 18px;
-          height: 18px;
-        }
-
-        .remember-row {
-          margin-top: 16px;
+        .signin-page-wrapper .remember-row {
+          margin-top: 20px;
           display: flex;
           align-items: center;
-          gap: 8px;
-          color: var(--primary);
-          font-size: 14px;
-          font-weight: 500;
+          gap: 10px;
+          color: #4B5675;
+          font-size: 13px;
+          font-weight: 400;
           cursor: pointer;
         }
 
-        .remember-row input {
+        .signin-page-wrapper .remember-row input {
           width: 18px;
           height: 18px;
           appearance: none;
@@ -326,50 +310,46 @@ function AcademiaSignIn() {
           border: 1px solid #c8cfdb;
           border-radius: 4px;
           background: #f5f7fb;
-          accent-color: var(--primary);
           cursor: pointer;
           position: relative;
         }
 
-        .remember-row input:checked {
+        .signin-page-wrapper .remember-row input:checked {
           background: var(--primary);
           border-color: var(--primary);
         }
 
-        .remember-row input:checked::after {
+        .signin-page-wrapper .remember-row input:checked::after {
           content: "";
           position: absolute;
           left: 5px;
-          top: 1px;
-          width: 4px;
-          height: 9px;
+          top: 2px;
+          width: 5px;
+          height: 10px;
           border: solid #ffffff;
           border-width: 0 2px 2px 0;
           transform: rotate(45deg);
         }
 
-        .submit-btn {
-          margin-top: 18px;
+        .signin-page-wrapper .submit-btn {
+          margin-top: 24px;
           width: 100%;
-          height: 40px;
+          height: 44px;
           border: none;
           border-radius: 8px;
           background: var(--primary);
           color: #ffffff;
-          font-family: Inter;
-          font-weight: 500;
-          font-size: 13px;
-          line-height: 14px;
-          letter-spacing: -1%;
+          font-weight: 600;
+          font-size: 14px;
           cursor: pointer;
           transition: background 0.2s ease;
         }
 
-        .submit-btn:hover {
+        .signin-page-wrapper .submit-btn:hover:not(:disabled) {
           background: var(--primary-hover);
         }
 
-        .right-col {
+        .signin-page-wrapper .right-col {
           height: 100vh;
           background: #f5f7fb;
           display: flex;
@@ -377,14 +357,12 @@ function AcademiaSignIn() {
           justify-content: center;
         }
 
-        .right-col img {
+        .signin-page-wrapper .right-col img {
           display: block;
           height: 100vh;
           width: auto;
           max-width: none;
-          -webkit-user-drag: none;
-          user-select: none;
-          pointer-events: none;
+          object-fit: cover;
         }
 
         @media (max-width: 900px) {
@@ -394,57 +372,12 @@ function AcademiaSignIn() {
             min-height: 100vh;
             overflow: auto;
           }
-
-          .right-col {
-            height: auto;
-            min-height: 50vh;
-          }
-
-          .right-col img {
-            height: auto;
-            width: 100%;
-            max-height: 50vh;
-            object-fit: contain;
-          }
-
-          .signin-card {
-            max-width: 560px;
-          }
-        }
-
-        @media (max-width: 560px) {
-          .left-col {
-            padding: 14px;
-          }
-
-          .signin-card {
-            padding: 20px 16px;
-          }
-
-          .signin-title {
-            font-size: 18px;
-            line-height: 18px;
-          }
-
-          .signin-subtitle {
-            font-size: 13px;
-            line-height: 14px;
-          }
-
-          .field-group > label {
-            font-size: 14px;
-          }
-
-          .signin-social {
-            grid-template-columns: 1fr;
-          }
-
-          .submit-btn {
-            font-size: 17px;
+          .signin-page-wrapper .right-col {
+            display: none;
           }
         }
       `}</style>
-      
+
       <main className="signin-page-wrapper">
         <section className="left-col">
           <form className="signin-card" onSubmit={handleSubmit}>
@@ -453,24 +386,24 @@ function AcademiaSignIn() {
               Need an account? <a href="/academia/auth/signup">Sign up</a>
             </p>
 
-            {vortexError && (
+            {error && (
               <div style={{
-                marginTop: '12px',
+                marginTop: '16px',
                 padding: '12px',
-                backgroundColor: '#fee',
-                border: '1px solid #fcc',
-                borderRadius: '6px',
-                color: '#c33',
+                backgroundColor: '#FEF2F2',
+                border: '1px solid #FCA5A5',
+                borderRadius: '8px',
+                color: '#DC2626',
                 fontSize: '13px',
-                fontFamily: 'Inter',
+                fontWeight: '500'
               }}>
-                {vortexError}
+                {error}
               </div>
             )}
 
             <div className="signin-social">
               <button type="button" className="social-btn google">
-                <img className="btn-icon" src={googleIcon} alt="Google" />
+                <span className="btn-icon"><img src={googleIcon} alt="Google" style={{ width: '16px' }} /></span>
                 Use Google
               </button>
               
@@ -492,9 +425,9 @@ function AcademiaSignIn() {
                 <input 
                   id="signinEmail" 
                   type="email" 
-                  placeholder="email@email.com" 
-                  value={apexEmail}
-                  onChange={(e) => setApexEmail(e.target.value)}
+                  placeholder="name@example.com" 
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   required
                 />
               </div>
@@ -508,17 +441,17 @@ function AcademiaSignIn() {
               <div className="input-wrap password">
                 <input 
                   id="signinPassword" 
-                  type={zenithShowPwd ? "text" : "password"} 
+                  type={showPassword ? "text" : "password"} 
                   placeholder="Enter Password" 
-                  value={nexusPassword}
-                  onChange={(e) => setNexusPassword(e.target.value)}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   required
                 />
                 <button 
                   type="button" 
                   className="input-eye" 
-                  onClick={() => setZenithShowPwd(!zenithShowPwd)}
-                  aria-label={zenithShowPwd ? "Hide password" : "Show password"}
+                  onClick={() => setShowPassword(!showPassword)}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
                 >
                   <img src={eyeIcon} alt="Toggle Password Visibility" />
                 </button>
@@ -529,23 +462,23 @@ function AcademiaSignIn() {
               <input 
                 id="signinRemember" 
                 type="checkbox" 
-                checked={slateRemember}
-                onChange={(e) => setSlateRemember(e.target.checked)}
-                disabled={titanLoading}
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                disabled={isLoading}
               />
-              <span>Remember me</span>
+              <span>Remember me for 30 days</span>
             </label>
 
             <button 
               type="submit" 
               className="submit-btn"
-              disabled={titanLoading}
+              disabled={isLoading}
               style={{
-                opacity: titanLoading ? 0.7 : 1,
-                cursor: titanLoading ? 'not-allowed' : 'pointer',
+                opacity: isLoading ? 0.7 : 1,
+                cursor: isLoading ? 'wait' : 'pointer',
               }}
             >
-              {titanLoading ? 'Signing in...' : 'Sign In'}
+              {isLoading ? 'Signing in...' : 'Sign In'}
             </button>
           </form>
         </section>

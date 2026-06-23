@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import LearnersPageShell from './LearnersPageShell';
 
 // Icons & Images
@@ -28,12 +28,41 @@ function LearnersCourses() {
   };
 
   const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+  const [searchParams, setSearchParams] = useSearchParams();
+  
+  const handleClearCategory = () => {
+    setSelectedCategory('');
+    const newParams = new URLSearchParams(searchParams);
+    newParams.delete('category');
+    setSearchParams(newParams);
+  };
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedFilter, setSelectedFilter] = useState('All');
+  const [selectedCategory, setSelectedCategory] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [syllabusCourses, setSyllabusCourses] = useState([]);
+  
+  const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+  const [sortOrder, setSortOrder] = useState('Newest');
+
+  // Sync URL search parameters with states
+  useEffect(() => {
+    const cat = searchParams.get('category');
+    if (cat !== null) {
+      setSelectedCategory(cat);
+    }
+    const filt = searchParams.get('filter');
+    if (filt !== null) {
+      setSelectedFilter(filt);
+    }
+    const q = searchParams.get('search');
+    if (q !== null) {
+      setSearchTerm(q);
+    }
+  }, [searchParams]);
 
   const resolveAssetUrl = (value) => {
     if (!value) return acOn;
@@ -66,6 +95,16 @@ function LearnersCourses() {
     level: course.level || '',
   });
 
+  // Search Debouncing
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+      setCurrentPage(1);
+    }, 400);
+    return () => clearTimeout(handler);
+  }, [searchTerm]);
+
+  // Load Courses
   useEffect(() => {
     // Load a small syllabus list independent of the current filter so sidebar stays populated
     (async () => {
@@ -91,27 +130,29 @@ function LearnersCourses() {
         let body;
         let list = [];
         let pagination = null;
+        const searchQuery = debouncedSearchTerm ? `&search=${encodeURIComponent(debouncedSearchTerm)}` : '';
+        const categoryQuery = selectedCategory ? `&category=${encodeURIComponent(selectedCategory)}` : '';
 
         if (selectedFilter === 'All') {
-          res = await fetch(`${API_BASE_URL}/api/courses/public/available?page=${currentPage}&limit=10`);
+          res = await fetch(`${API_BASE_URL}/api/courses/public/available?page=${currentPage}&limit=10${searchQuery}${categoryQuery}`);
           body = await res.json();
           if (!res.ok) throw new Error(body.message || 'Failed to load courses');
           list = extractCourseList(body);
           pagination = extractPagination(body);
         } else if (selectedFilter === 'Free') {
-          res = await fetch(`${API_BASE_URL}/api/courses/public/free?page=${currentPage}&limit=10`);
+          res = await fetch(`${API_BASE_URL}/api/courses/public/free?page=${currentPage}&limit=10${searchQuery}${categoryQuery}`);
           body = await res.json();
           if (!res.ok) throw new Error(body.message || 'Failed to load free courses');
           list = extractCourseList(body);
           pagination = extractPagination(body);
         } else if (selectedFilter === 'Popular') {
-          res = await fetch(`${API_BASE_URL}/api/courses/public/popular?page=${currentPage}&limit=10`);
+          res = await fetch(`${API_BASE_URL}/api/courses/public/popular?page=${currentPage}&limit=10${searchQuery}${categoryQuery}`);
           body = await res.json();
           if (!res.ok) throw new Error(body.message || 'Failed to load popular courses');
           list = extractCourseList(body);
           pagination = extractPagination(body);
         } else if (selectedFilter === 'Paid') {
-          res = await fetch(`${API_BASE_URL}/api/courses/public/available?page=${currentPage}&limit=10`);
+          res = await fetch(`${API_BASE_URL}/api/courses/public/available?page=${currentPage}&limit=10${searchQuery}${categoryQuery}`);
           body = await res.json();
           if (!res.ok) throw new Error(body.message || 'Failed to load courses');
           list = extractCourseList(body).filter((course) => {
@@ -129,6 +170,18 @@ function LearnersCourses() {
             body = await res.json();
             if (!res.ok) throw new Error(body.message || 'Failed to load your courses');
             list = Array.isArray(body?.data?.enrolledCourses) ? body.data.enrolledCourses : [];
+            // If there's a search term or category, filter locally for "My Courses"
+            if (debouncedSearchTerm) {
+              const lower = debouncedSearchTerm.toLowerCase();
+              list = list.filter(c => 
+                (c.title && c.title.toLowerCase().includes(lower)) || 
+                (c.description && c.description.toLowerCase().includes(lower))
+              );
+            }
+            if (selectedCategory) {
+              const lowerCat = selectedCategory.toLowerCase();
+              list = list.filter(c => c.category && c.category.toLowerCase() === lowerCat);
+            }
             pagination = { pages: 1 };
           }
         }
@@ -151,7 +204,30 @@ function LearnersCourses() {
     return () => {
       cancelled = true;
     };
-  }, [API_BASE_URL, currentPage, selectedFilter]);
+  }, [API_BASE_URL, currentPage, selectedFilter, debouncedSearchTerm, selectedCategory]);
+
+  // Client-Side Sorting
+  const sortedCourses = React.useMemo(() => {
+    const list = [...courses];
+    if (sortOrder === 'A-Z') {
+      return list.sort((a, b) => a.title.localeCompare(b.title));
+    } else if (sortOrder === 'Z-A') {
+      return list.sort((a, b) => b.title.localeCompare(a.title));
+    } else if (sortOrder === 'Highest Price') {
+      return list.sort((a, b) => {
+        const pA = a.priceLabel === 'Free' ? 0 : parseFloat(a.priceLabel.replace('$', ''));
+        const pB = b.priceLabel === 'Free' ? 0 : parseFloat(b.priceLabel.replace('$', ''));
+        return pB - pA;
+      });
+    } else if (sortOrder === 'Lowest Price') {
+      return list.sort((a, b) => {
+        const pA = a.priceLabel === 'Free' ? 0 : parseFloat(a.priceLabel.replace('$', ''));
+        const pB = b.priceLabel === 'Free' ? 0 : parseFloat(b.priceLabel.replace('$', ''));
+        return pA - pB;
+      });
+    }
+    return list; // Newest (Default from DB)
+  }, [courses, sortOrder]);
 
   const syllabusItems = syllabusCourses.slice(0, 6).map((course) => ({
     id: course.id,
@@ -183,8 +259,15 @@ function LearnersCourses() {
           </div>
         </section>
 
+        {selectedCategory && (
+          <div className="category-filter-badge" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: '#F3E8FF', border: '1px solid #D8B4FE', color: '#6B21A8', padding: '6px 14px', borderRadius: '20px', fontSize: '13px', fontFamily: 'Inter, sans-serif', fontWeight: '500', margin: '0 0 16px 0' }}>
+            <span>Category: <strong>{selectedCategory}</strong></span>
+            <button type="button" onClick={handleClearCategory} style={{ border: 'none', background: 'transparent', color: '#6B21A8', cursor: 'pointer', fontSize: '16px', lineHeight: '1', padding: '0 2px', display: 'flex', alignItems: 'center', fontWeight: '600' }}>×</button>
+          </div>
+        )}
+
       <div className="div-h">
-          <div className="dropdown filter-drop">
+        <div className="dropdown filter-drop">
           <button className="dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
             <div>
               <img src={acFf} alt="Filter" />
@@ -199,6 +282,9 @@ function LearnersCourses() {
                 onClick={() => {
                   setSelectedFilter('All');
                   setCurrentPage(1);
+                  const newParams = new URLSearchParams(searchParams);
+                  newParams.set('filter', 'All');
+                  setSearchParams(newParams);
                 }}
               >
                 All
@@ -211,6 +297,9 @@ function LearnersCourses() {
                 onClick={() => {
                   setSelectedFilter('Free');
                   setCurrentPage(1);
+                  const newParams = new URLSearchParams(searchParams);
+                  newParams.set('filter', 'Free');
+                  setSearchParams(newParams);
                 }}
               >
                 Free
@@ -223,6 +312,9 @@ function LearnersCourses() {
                 onClick={() => {
                   setSelectedFilter('Paid');
                   setCurrentPage(1);
+                  const newParams = new URLSearchParams(searchParams);
+                  newParams.set('filter', 'Paid');
+                  setSearchParams(newParams);
                 }}
               >
                 Paid
@@ -235,6 +327,9 @@ function LearnersCourses() {
                 onClick={() => {
                   setSelectedFilter('My Courses');
                   setCurrentPage(1);
+                  const newParams = new URLSearchParams(searchParams);
+                  newParams.set('filter', 'My Courses');
+                  setSearchParams(newParams);
                 }}
               >
                 My Courses
@@ -244,30 +339,86 @@ function LearnersCourses() {
         </div>
         <div className="div-h-r">
           <div className="div-h-r-s">
-            <input type="search" placeholder="Search any projects..." />
+            <input
+              type="search"
+              placeholder="Search courses..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
             <div className="div-h-r-s-f">
-              <button className="active" type="button">Free</button>
-              <button type="button">Paid</button>
+              <button
+                className={selectedFilter === 'Free' ? 'active' : ''}
+                type="button"
+                onClick={() => {
+                  setSelectedFilter(selectedFilter === 'Free' ? 'All' : 'Free');
+                  setCurrentPage(1);
+                }}
+              >
+                Free
+              </button>
+              <button
+                className={selectedFilter === 'Paid' ? 'active' : ''}
+                type="button"
+                onClick={() => {
+                  setSelectedFilter(selectedFilter === 'Paid' ? 'All' : 'Paid');
+                  setCurrentPage(1);
+                }}
+              >
+                Paid
+              </button>
               <div className="div-h-r-s-f-f">
                 <div className="dropdown">
                   <button className="dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                     <div>
                       <img src={acFi} alt="Filters" />
-                      <span>Filters</span>
+                      <span>{sortOrder}</span>
                     </div>
                   </button>
                   <ul className="dropdown-menu">
-                    <li className="dropdown-item active">
-                      <a href="/" onClick={preventDefault}>Newest</a>
+                    <li>
+                      <button
+                        className={`dropdown-item ${sortOrder === 'Newest' ? 'active' : ''}`}
+                        type="button"
+                        onClick={() => setSortOrder('Newest')}
+                      >
+                        Newest
+                      </button>
                     </li>
-                    <li className="dropdown-item">
-                      <a href="/" onClick={preventDefault}>Top papers</a>
+                    <li>
+                      <button
+                        className={`dropdown-item ${sortOrder === 'A-Z' ? 'active' : ''}`}
+                        type="button"
+                        onClick={() => setSortOrder('A-Z')}
+                      >
+                        A-Z (Title)
+                      </button>
                     </li>
-                    <li className="dropdown-item">
-                      <a href="/" onClick={preventDefault}>Past Papers</a>
+                    <li>
+                      <button
+                        className={`dropdown-item ${sortOrder === 'Z-A' ? 'active' : ''}`}
+                        type="button"
+                        onClick={() => setSortOrder('Z-A')}
+                      >
+                        Z-A (Title)
+                      </button>
                     </li>
-                    <li className="dropdown-item">
-                      <a href="/" onClick={preventDefault}>Most Downloaded</a>
+                    <li>
+                      <button
+                        className={`dropdown-item ${sortOrder === 'Highest Price' ? 'active' : ''}`}
+                        type="button"
+                        onClick={() => setSortOrder('Highest Price')}
+                      >
+                        Highest Price
+                      </button>
+                    </li>
+                    <li>
+                      <button
+                        className={`dropdown-item ${sortOrder === 'Lowest Price' ? 'active' : ''}`}
+                        type="button"
+                        onClick={() => setSortOrder('Lowest Price')}
+                      >
+                        Lowest Price
+                      </button>
                     </li>
                   </ul>
                 </div>
@@ -283,13 +434,12 @@ function LearnersCourses() {
             <div className="learners-courses-section-head">
               <div>
                 <h2>Online courses</h2>
-                <p>100 Courses Available to learn</p>
+                <p>Courses Available to learn</p>
               </div>
             </div>
 
             <div className="learners-online-sec-contents">
-              {/* Courses loaded from API when "All" filter is active. */}
-              {courses && courses.length > 0 ? courses.map((course) => (
+              {sortedCourses && sortedCourses.length > 0 ? sortedCourses.map((course) => (
                 <div key={course.id} className="osc-item" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleCourseClick(course.id); }} style={{ cursor: 'pointer' }}>
                   <div className="osc-item-img">
                     <img src={course.image || acOn} alt={course.title || 'Online Course'} />
@@ -299,7 +449,7 @@ function LearnersCourses() {
                       <p>{course.priceLabel}</p>
                     </div>
                     <div>
-                      <h6><a href="/course-part" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleCourseClick(course.id); }}>{course.title}</a></h6>
+                      <h6><a href="/academia/learner/course-part" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleCourseClick(course.id); }}>{course.title}</a></h6>
                       <small>{course.author}</small>
                     </div>
                     <div>
@@ -307,7 +457,7 @@ function LearnersCourses() {
                     </div>
                     <div>
                       <small>{course.startsOn || ''}</small>
-                      <a className="learners-course-open" href="/course-part" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleCourseClick(course.id); }}>
+                      <a className="learners-course-open" href="/academia/learner/course-part" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleCourseClick(course.id); }}>
                         <img src={acEn} alt="Enroll" />
                       </a>
                     </div>
@@ -321,7 +471,7 @@ function LearnersCourses() {
               ))}
             </div>
 
-            {courses && courses.length > 0 && (
+            {sortedCourses && sortedCourses.length > 0 && (
               <div className="learners-courses-pagination">
                 <button
                   type="button"

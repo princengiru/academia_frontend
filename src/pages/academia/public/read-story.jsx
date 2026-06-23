@@ -1,7 +1,11 @@
-import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useState, useRef } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import Swiper from 'swiper';
 import { Navigation } from 'swiper/modules';
+import 'swiper/css';
+import 'swiper/css/navigation';
+
+// --- Icons & Images ---
 import acLeftIcon from '../../../assets/icons/ac-le.svg';
 import acComIcon from '../../../assets/icons/ac-com.svg';
 import acSide3Icon from '../../../assets/icons/ac-sd3.svg';
@@ -21,29 +25,20 @@ import con6Icon from '../../../assets/icons/con6.svg';
 import sha2Icon from '../../../assets/icons/sha2.svg';
 import pictureIcon from '../../../assets/icons/picture.svg';
 import learnersProfileImage from '../../../assets/imgs/default-profile.png';
-import itemImage from '../../../assets/imgs/item.jpg';
-import trustedImage from '../../../assets/imgs/trusted.jpg';
-import acHrImage from '../../../assets/imgs/ac-hr.jpg';
-import acJrImage from '../../../assets/imgs/ac-jr.jpg';
-import glImage from '../../../assets/imgs/gl.jpg';
-import journalImage from '../../../assets/imgs/journal.jpg';
 import './read-story.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 const resolveStoryImage = (value) => {
   if (!value) return null;
-
   if (value.startsWith('http://') || value.startsWith('https://') || value.startsWith('data:') || value.startsWith('blob:')) {
     return value;
   }
-
   return `${API_BASE_URL}${value}`;
 };
 
 const normalizeStory = (story) => {
   if (!story) return null;
-
   return {
     ...story,
     id: story.id || story._id || story.story_id,
@@ -53,7 +48,7 @@ const normalizeStory = (story) => {
     thumbnail: story.thumbnail || story.thumbnail_url || story.image || null,
     author_name: story.author_name || story.uploaded_by_name || story.user_name || 'Author',
     author_avatar: story.author_avatar || story.uploaded_by_avatar || story.user_avatar || null,
-    author_role: story.author_role || story.role || 'Journalist',
+    author_role: story.author_role || story.role || 'Contributor',
     read_time: story.read_time || story.readTime || null,
     published_at: story.published_at || story.created_at || null,
   };
@@ -61,7 +56,6 @@ const normalizeStory = (story) => {
 
 const normalizeComment = (comment) => {
   if (!comment) return null;
-
   return {
     id: comment.id || comment.comment_id,
     author: comment.user_name || comment.author || 'Author',
@@ -73,63 +67,33 @@ const normalizeComment = (comment) => {
 
 function AcademiaReadStory() {
   const navigate = useNavigate();
-  const [stories, setStories] = useState([]);
+  const [searchParams] = useSearchParams();
+  const storyId = searchParams.get('id');
+
+  const swiperRef = useRef(null);
+  const commentInputRef = useRef(null);
+
+  // --- State ---
   const [storyData, setStoryData] = useState(null);
   const [comments, setComments] = useState([]);
-  const [loading, setLoading] = useState(false);
   const [relatedStories, setRelatedStories] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [newsletterEmail, setNewsletterEmail] = useState('');
 
-  useEffect(() => {
-    const textarea = document.querySelector('.academia-read-story-page .new-comment-text textarea');
-    const autoResize = () => {
-      if (!textarea) return;
-      textarea.style.height = 'auto';
-      textarea.style.height = `${textarea.scrollHeight}px`;
-    };
-
-    const storySwiperContainer = document.querySelector('.ss-swiper');
-    const storySwiper = storySwiperContainer ? new Swiper(storySwiperContainer, {
-      modules: [Navigation],
-      spaceBetween: 20,
-      loop: false,
-      grabCursor: true,
-      navigation: {
-        nextEl: '.ss-swiper .swiper-button-next',
-        prevEl: '.ss-swiper .swiper-button-prev',
-      },
-      breakpoints: {
-        0: {
-          slidesPerView: 1,
-        },
-        769: {
-          slidesPerView: 4,
-        },
-      },
-    }) : null;
-
-    if (textarea) {
-      textarea.addEventListener('input', autoResize);
-      autoResize();
-    }
-
-    return () => {
-      if (textarea) {
-        textarea.removeEventListener('input', autoResize);
-      }
-      storySwiper?.destroy();
-    };
-  }, []);
-
+  // --- Data Fetching ---
+  // Depend on storyId so clicking a related story re-fetches the page seamlessly
   useEffect(() => {
     let mounted = true;
-    const params = new URLSearchParams(window.location.search);
-    const id = params.get('id');
 
-    const load = async () => {
+    const loadContent = async () => {
       setLoading(true);
+      
+      // Scroll to top automatically when a new story loads
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+
       try {
         const [storyRes, storiesRes] = await Promise.all([
-          id ? fetch(`${API_BASE_URL}/api/community-stories/${id}`) : Promise.resolve(null),
+          storyId ? fetch(`${API_BASE_URL}/api/community-stories/${storyId}`) : Promise.resolve(null),
           fetch(`${API_BASE_URL}/api/community-stories?page=1&limit=8`),
         ]);
 
@@ -139,18 +103,23 @@ function AcademiaReadStory() {
         if (!mounted) return;
 
         const selectedStory = normalizeStory(storyBody?.data || storyBody || null);
-        const publishedStories = Array.isArray(storiesBody?.data)
-          ? storiesBody.data
-          : Array.isArray(storiesBody)
-            ? storiesBody
-            : [];
+        const publishedStories = Array.isArray(storiesBody?.data) ? storiesBody.data : (Array.isArray(storiesBody) ? storiesBody : []);
 
-        setStoryData(selectedStory || normalizeStory(publishedStories[0]) || null);
-        setRelatedStories(publishedStories.map((story) => normalizeStory(story)).filter(Boolean).filter((story) => String(story.id) !== String(selectedStory?.id)));
+        const activeStory = selectedStory || normalizeStory(publishedStories[0]) || null;
+        setStoryData(activeStory);
+        
+        // Filter out the current story from the related list
+        setRelatedStories(
+          publishedStories
+            .map((story) => normalizeStory(story))
+            .filter(Boolean)
+            .filter((story) => String(story.id) !== String(activeStory?.id))
+        );
 
-        const commentSource = selectedStory?.comments || selectedStory?.feedbacks || selectedStory?.remarks || [];
+        const commentSource = activeStory?.comments || activeStory?.feedbacks || activeStory?.remarks || [];
         setComments(Array.isArray(commentSource) ? commentSource.map((comment) => normalizeComment(comment)).filter(Boolean) : []);
       } catch (e) {
+        console.error("Failed to load story:", e);
         if (mounted) {
           setStoryData(null);
           setRelatedStories([]);
@@ -161,31 +130,83 @@ function AcademiaReadStory() {
       }
     };
 
-    load();
+    loadContent();
     return () => { mounted = false; };
-  }, []);
+  }, [storyId]);
 
-  const currentStoryTitle = storyData?.title || storyData?.heading || 'Story';
-  const currentStoryAuthor = storyData?.author_name || 'Esther Howard';
-  const currentStoryRole = storyData?.author_role || 'Journalist';
-  const currentStoryImage = resolveStoryImage(storyData?.thumbnail);
-  const currentStoryContent = storyData?.contentHtml || storyData?.content || '';
-  const currentStoryReadTime = storyData?.read_time ? `${storyData.read_time} mins read` : '—';
-  const currentStoryDate = storyData ? new Date(storyData.published_at || Date.now()).toLocaleString() : '';
+  // --- Swiper Initialization ---
+  useEffect(() => {
+    // Only initialize Swiper when we have data and are done loading
+    if (loading || relatedStories.length === 0) return;
+
+    const swiperContainer = document.querySelector('.ss-swiper');
+    if (!swiperContainer) return;
+
+    swiperRef.current = new Swiper(swiperContainer, {
+      modules: [Navigation],
+      spaceBetween: 20,
+      loop: false,
+      grabCursor: true,
+      observer: true,
+      observeParents: true,
+      navigation: {
+        nextEl: '.ss-swiper .swiper-button-next',
+        prevEl: '.ss-swiper .swiper-button-prev',
+      },
+      breakpoints: {
+        0: { slidesPerView: 1 },
+        769: { slidesPerView: 4 },
+      },
+    });
+
+    return () => {
+      if (swiperRef.current) swiperRef.current.destroy(true, true);
+    };
+  }, [loading, relatedStories]);
+
+  // --- Handlers ---
+  const handleTextareaInput = () => {
+    if (!commentInputRef.current) return;
+    commentInputRef.current.style.height = 'auto';
+    commentInputRef.current.style.height = `${commentInputRef.current.scrollHeight}px`;
+  };
+
   const handleBack = () => {
     if (window.history.length > 1) {
       navigate(-1);
       return;
     }
-
     navigate('/academia/watch');
   };
+
+  const handleRelatedStoryClick = (id) => {
+    navigate(`/academia/read-story?id=${id}`);
+  };
+
+  const handleNewsletterSubmit = (e) => {
+    e.preventDefault();
+    if (!newsletterEmail.trim()) return;
+    console.log("Subscribing:", newsletterEmail);
+    setNewsletterEmail('');
+    alert("Subscribed to the newsletter successfully!");
+  };
+
+  // --- Derived Variables ---
+  const currentStoryTitle = storyData?.title || storyData?.heading || 'Loading Story...';
+  const currentStoryAuthor = storyData?.author_name || 'Academia Team';
+  const currentStoryRole = storyData?.author_role || 'Contributor';
+  const currentStoryImage = resolveStoryImage(storyData?.thumbnail);
+  const currentStoryContent = storyData?.contentHtml || storyData?.content || '';
+  const currentStoryReadTime = storyData?.read_time ? `${storyData.read_time} mins read` : '—';
+  const currentStoryDate = storyData ? new Date(storyData.published_at || Date.now()).toLocaleDateString() : '';
 
   return (
     <div className="academia-read-story-page">
       <section className="main-content">
+        
+        {/* --- Breadcrumb --- */}
         <div className="filters-grid-b-h">
-          <button type="button" onClick={handleBack}>
+          <button type="button" onClick={handleBack} style={{ cursor: 'pointer' }}>
             <img src={acLeftIcon} alt="Back" />
           </button>
           <div>
@@ -196,6 +217,7 @@ function AcademiaReadStory() {
           </div>
         </div>
 
+        {/* --- Main Story Wrapper --- */}
         <div className="main-content-inner">
           <div className="main-content-inner-h">
             <h3>{loading ? 'Loading…' : currentStoryTitle}</h3>
@@ -207,13 +229,16 @@ function AcademiaReadStory() {
           </div>
 
           <div className="main-content-inner-b">
-            {currentStoryImage ? <img src={currentStoryImage} alt={currentStoryTitle} /> : null}
+            {currentStoryImage ? (
+              <img src={currentStoryImage} alt={currentStoryTitle} style={{ width: '100%', borderRadius: '12px', objectFit: 'cover', maxHeight: '500px' }} />
+            ) : null}
           </div>
 
+          {/* --- Author & Social Footer --- */}
           <div className="story-footer">
             <div className="story-author">
               <div className="story-author-img">
-                <img src={resolveStoryImage(storyData?.author_avatar, learnersProfileImage)} alt={currentStoryAuthor} />
+                <img src={resolveStoryImage(storyData?.author_avatar) || learnersProfileImage} alt={currentStoryAuthor} />
               </div>
               <div
                 className="story-author-name"
@@ -222,9 +247,7 @@ function AcademiaReadStory() {
                 role="button"
                 tabIndex={0}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    navigate('/academia/author');
-                  }
+                  if (e.key === 'Enter' || e.key === ' ') navigate('/academia/author');
                 }}
               >
                 <h6>{currentStoryAuthor}</h6>
@@ -233,10 +256,10 @@ function AcademiaReadStory() {
             </div>
 
             <div className="story-footer-r">
-              <a href="#" aria-label="Social 1"><img src={con5Icon} alt="Social" /></a>
-              <a href="#" aria-label="Social 2"><img src={con6Icon} alt="Social" /></a>
-              <a href="#" aria-label="Social 3"><img src={con4Icon} alt="Social" /></a>
-              <a href="#" aria-label="Social 4"><img src={con3Icon} alt="Social" /></a>
+              <a href="#/" aria-label="Social 1"><img src={con5Icon} alt="Social" /></a>
+              <a href="#/" aria-label="Social 2"><img src={con6Icon} alt="Social" /></a>
+              <a href="#/" aria-label="Social 3"><img src={con4Icon} alt="Social" /></a>
+              <a href="#/" aria-label="Social 4"><img src={con3Icon} alt="Social" /></a>
               <div>
                 <button type="button">
                   <img src={sha2Icon} alt="Share" />
@@ -246,11 +269,25 @@ function AcademiaReadStory() {
             </div>
           </div>
 
+          {/* --- The Story Content (Rich Text) --- */}
           <div className="full-story">
             {currentStoryContent ? (
-              <div dangerouslySetInnerHTML={{ __html: storyData?.contentHtml || (`<p>${String(currentStoryContent).replace(/\n/g, '</p><p>')}</p>`) }} />
+              <div 
+                dangerouslySetInnerHTML={{ 
+                  __html: storyData?.contentHtml || (`<p>${String(currentStoryContent).replace(/\n/g, '</p><p>')}</p>`) 
+                }} 
+                style={{
+                  color: '#334155',
+                  lineHeight: '1.8',
+                  fontSize: '1.05rem',
+                  wordBreak: 'break-word',       // PRO FIX: Prevents long unbroken text/links from overflowing
+                  overflowWrap: 'anywhere',
+                  whiteSpace: 'pre-wrap',
+                  maxWidth: '100%'
+                }}
+              />
             ) : (
-              <div className="story-empty">
+              <div className="story-empty" style={{ textAlign: 'center', padding: '40px', background: '#F8FAFC', borderRadius: '12px', color: '#64748B' }}>
                 <h4>No story content yet</h4>
                 <p>This published story does not include full body content yet.</p>
               </div>
@@ -259,8 +296,11 @@ function AcademiaReadStory() {
         </div>
       </section>
 
-      <section className="main-content">
+      {/* --- Comments & Related Projects Grid --- */}
+      <section className="main-content" style={{ marginTop: '32px' }}>
         <div className="main-content-new-grid">
+          
+          {/* Left: Comments */}
           <div className="mcnd-l">
             <div className="mcnd-l-h">
               <h2>Comments</h2>
@@ -269,7 +309,12 @@ function AcademiaReadStory() {
                   <img src={learnersProfileImage} alt="Current user" />
                 </div>
                 <div className="new-comment-text">
-                  <textarea rows={1} placeholder="your comment.."></textarea>
+                  <textarea 
+                    ref={commentInputRef}
+                    rows={1} 
+                    placeholder="Write a comment..."
+                    onInput={handleTextareaInput}
+                  />
                   <button type="button">
                     <img src={pictureIcon} alt="Attach" />
                   </button>
@@ -297,7 +342,7 @@ function AcademiaReadStory() {
                 {comments.length > 0 ? comments.map((comment) => (
                   <div key={comment.id} className="comment">
                     <div className="comment-img">
-                      <img src={resolveStoryImage(comment.avatar, learnersProfileImage)} alt="Comment author" />
+                      <img src={resolveStoryImage(comment.avatar) || learnersProfileImage} alt="Comment author" />
                     </div>
                     <div className="comment-text">
                       <div>
@@ -308,10 +353,10 @@ function AcademiaReadStory() {
                     </div>
                   </div>
                 )) : (
-                  <div className="comment comment-empty">
-                    <div className="comment-text">
-                      <h6>No comments yet</h6>
-                      <p>Be the first to share a thought on this story.</p>
+                  <div className="comment comment-empty" style={{ background: '#F8FAFC', border: '1px dashed #CBD5E1' }}>
+                    <div className="comment-text" style={{ textAlign: 'center', width: '100%', padding: '16px' }}>
+                      <h6 style={{ color: '#0F172A', marginBottom: '4px' }}>No comments yet</h6>
+                      <p style={{ color: '#64748B' }}>Be the first to share a thought on this story.</p>
                     </div>
                   </div>
                 )}
@@ -319,13 +364,14 @@ function AcademiaReadStory() {
             </div>
           </div>
 
+          {/* Right: Related Projects (Side list) */}
           <div className="mcnd-r">
             <div className="mcnd-r-h">
-              <h3>Related Projects</h3>
+              <h3>Related Stories</h3>
             </div>
             <div className="mcnd-r-b">
-              {relatedStories.length > 0 ? relatedStories.map((item) => (
-                <div key={item.id} className="related-item">
+              {relatedStories.length > 0 ? relatedStories.slice(0, 3).map((item) => (
+                <div key={item.id} className="related-item" onClick={() => handleRelatedStoryClick(item.id)} style={{ cursor: 'pointer' }}>
                   <div className="related-item-img">
                     {resolveStoryImage(item.thumbnail) ? <img src={resolveStoryImage(item.thumbnail)} alt={item.title} /> : null}
                   </div>
@@ -352,31 +398,34 @@ function AcademiaReadStory() {
                   </div>
                 </div>
               )) : (
-                <div className="related-item related-item-empty">
+                <div className="related-item related-item-empty" style={{ background: '#F8FAFC', border: '1px dashed #CBD5E1', justifyContent: 'center' }}>
                   <div className="related-item-l">
-                    <div className="related-item-l-b">
+                    <div className="related-item-l-b" style={{ textAlign: 'center', color: '#64748B' }}>
                       <p>No related stories available.</p>
                     </div>
                   </div>
                 </div>
               )}
             </div>
-            <div className="mcnd-r-CTA">
-              <button type="button">See more</button>
-            </div>
+            {relatedStories.length > 3 && (
+              <div className="mcnd-r-CTA">
+                <button type="button" onClick={() => navigate('/academia/watch')}>See more</button>
+              </div>
+            )}
           </div>
         </div>
       </section>
 
+      {/* --- More Stories Swiper (Bottom) --- */}
       <section className="main-content">
         <div className="stories-sec-contents">
           <div className="swiper ss-swiper">
             <div className="swiper-wrapper">
-              {relatedStories.slice(0, 4).length > 0 ? relatedStories.slice(0, 4).map((item) => (
+              {relatedStories.length > 0 ? relatedStories.slice(0, 8).map((item) => (
                 <div key={item.id} className="swiper-slide">
-                  <div className="ss-item">
+                  <div className="ss-item" onClick={() => handleRelatedStoryClick(item.id)} style={{ cursor: 'pointer' }}>
                     <div className="ss-item-img">
-                      {resolveStoryImage(item.thumbnail) ? <img src={resolveStoryImage(item.thumbnail)} alt={item.title} /> : null}
+                      {resolveStoryImage(item.thumbnail) ? <img src={resolveStoryImage(item.thumbnail)} alt={item.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : null}
                     </div>
                     <div className="ss-item-text">
                       <div className="ss-item-text-h">
@@ -386,19 +435,19 @@ function AcademiaReadStory() {
                         </div>
                         <div>
                           <img src={acMessIcon} alt="Messages" />
-                          <span>{comments.length || 0}</span>
+                          <span>{item.feedback_count || 0}</span>
                         </div>
                       </div>
                       <h4>{item.title}</h4>
                       <p>
-                        {item.description || item.content || 'A community story from the public archive.'}
+                        {item.abstract || item.content || 'A community story from the public archive.'}
                       </p>
                       <div className="ss-item-text-f">
                         <div>
                           <img src={acCalIcon} alt="Calendar" />
                           <span>{item.published_at ? new Date(item.published_at).toLocaleDateString() : ''}</span>
                         </div>
-                        <button type="button">
+                        <button type="button" onClick={(e) => { e.stopPropagation(); }}>
                           <img src={acShareIcon} alt="Share" />
                         </button>
                       </div>
@@ -406,8 +455,8 @@ function AcademiaReadStory() {
                   </div>
                 </div>
               )) : (
-                <div className="swiper-slide">
-                  <div className="story-empty story-empty-swiper">
+                <div className="swiper-slide" style={{ width: '100%' }}>
+                  <div className="story-empty story-empty-swiper" style={{ textAlign: 'center', padding: '40px', background: '#F8FAFC', borderRadius: '12px', border: '1px dashed #CBD5E1', color: '#64748B' }}>
                     <h4>No more stories yet</h4>
                     <p>Published stories will appear here once the archive grows.</p>
                   </div>
@@ -420,22 +469,29 @@ function AcademiaReadStory() {
         </div>
 
         <div className="sec-CTA">
-          <button type="button">
-            <span>View More</span>
+          <button type="button" onClick={() => navigate('/academia/watch')}>
+            <span>View All Stories</span>
             <img src={acNextIcon} alt="Next" />
           </button>
         </div>
       </section>
 
+      {/* --- Newsletter Section --- */}
       <section className="newsletter-sec">
         <div className="newsletter-sec-l">
-          <h3>Newsletter - Stay tune and get the latest update</h3>
-          <p>Far far away, behind the word mountains</p>
+          <h3>Newsletter - Stay tuned and get the latest update</h3>
+          <p>Join thousands of learners receiving weekly updates.</p>
         </div>
         <div className="newsletter-sec-r">
-          <form>
+          <form onSubmit={handleNewsletterSubmit}>
             <img src={acSmsIcon} alt="Message" className="ac-sms" />
-            <input type="email" placeholder="Enter email address" />
+            <input 
+              type="email" 
+              placeholder="Enter email address" 
+              value={newsletterEmail}
+              onChange={(e) => setNewsletterEmail(e.target.value)}
+              required
+            />
             <button type="submit">
               <img src={acSendIcon} alt="Next" />
             </button>
@@ -447,4 +503,3 @@ function AcademiaReadStory() {
 }
 
 export default AcademiaReadStory;
-
