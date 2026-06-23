@@ -78,6 +78,7 @@ const HOACertificates = () => {
                 </div>
 
                 {/* Top Stats */}
+            <div className="hoace-stats-top-container">
                 <div className="hoace-stats-container">
                     <div className="hoace-stat-block">
                         <h3>13.3M</h3>
@@ -110,6 +111,7 @@ const HOACertificates = () => {
                         <p>Course Payments <span className="hoace-trend up">↗ +4.1</span></p>
                     </div>
                 </div>
+            </div>
 
                 {/* Sub Header & Actions */}
                 <div className="hoace-sub-header">
