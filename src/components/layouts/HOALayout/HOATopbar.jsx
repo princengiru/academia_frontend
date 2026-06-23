@@ -10,7 +10,7 @@ const languageOptions = [
   { label: 'FR', flag: '/assets/icons/france.svg' },
 ];
 
-const HOATopbar = () => {
+const HOATopbar = ({ breadcrumb = { section: 'Dashboard', page: 'Overview' } }) => {
   const [isLanguageOpen, setIsLanguageOpen] = useState(false);
   const [activeLanguage, setActiveLanguage] = useState(languageOptions[0]);
 
@@ -22,7 +22,7 @@ const HOATopbar = () => {
   return (
     <header className="hoa-topbar">
       <div className="hoa-topbar-left">
-        <h2>Dashboard <span>/ Overview</span></h2>
+        <h2>{breadcrumb.section} <span>/ {breadcrumb.page}</span></h2>
       </div>
 
       <div className="hoa-topbar-center">

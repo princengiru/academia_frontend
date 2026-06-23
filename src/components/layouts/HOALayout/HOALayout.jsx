@@ -4,7 +4,7 @@ import HOATopbar from './HOATopbar';
 import HOAFooter from './HOAFooter';
 import './hoa-layout.css';
 
-const HOALayout = ({ children, currentPage }) => {
+const HOALayout = ({ children, currentPage, breadcrumb }) => {
   useEffect(() => {
     document.body.setAttribute('data-role', 'hoa');
     return () => {
@@ -16,7 +16,7 @@ const HOALayout = ({ children, currentPage }) => {
     <div className="hoa-dashboard-wrapper">
       <HOASidebar currentPage={currentPage} />
       <div className="hoa-main-container">
-        <HOATopbar />
+        <HOATopbar breadcrumb={breadcrumb} />
         <main className="hoa-content-area">
           {children}
         </main>

@@ -7,17 +7,25 @@ const UPLOAD_NAV_ITEMS = [
   { label: 'Certificates', to: '/academia/hoa/certificates', page: 'certificates' },
 ];
 
+const PLANNING_NAV_ITEMS = [
+  { label: 'Events & Planning', to: '/academia/hoa/events-planning', page: 'events-planning' },
+  { label: 'E-Travel', to: '/academia/hoa/e-travel', page: 'e-travel' },
+  { label: 'Terms & Conditions', to: '/academia/hoa/terms-conditions', page: 'terms-conditions' },
+  { label: 'Community', to: '/academia/hoa/community', page: 'community' },
+];
+
 const HOASidebar = ({ currentPage }) => {
   const preventDefault = (e) => e.preventDefault();
   const dashboardPages = ['index', 'learners', 'tutors', 'reports', 'settings'];
   const managementPages = ['assignments', 'passed-courses', 'retaken-courses', 'failed-courses'];
   const uploadPages = ['syllabus', 'online-courses', 'projects', 'certificates'];
-  const uploadsPanelPages = [...uploadPages, 'community'];
+  const uploadsPanelPages = [...uploadPages];
+  const planningPages = PLANNING_NAV_ITEMS.map((item) => item.page);
 
   const getDashboardIconClassName = () => (dashboardPages.includes(currentPage) ? 'selected' : '');
   const getManagementIconClassName = () => (managementPages.includes(currentPage) ? 'selected' : '');
   const getUploadIconClassName = () => (uploadPages.includes(currentPage) ? 'selected' : '');
-  const getCommunityIconClassName = () => (currentPage === 'community' ? 'selected' : '');
+  const getPlanningIconClassName = () => (planningPages.includes(currentPage) ? 'selected' : '');
 
   const getSidebarLinkClassName = ({ isActive, isPending }) => {
     if (isPending) {
@@ -65,9 +73,9 @@ const HOASidebar = ({ currentPage }) => {
                 <img src="/assets/icons/agent2.svg" alt="Uploads" />
               </button>
             </NavLink>
-            <NavLink to="/academia/hoa/community" className={getCommunityIconClassName}>
-              <button aria-label="Community">
-                <img src="/assets/icons/tsidebar2-1.svg" alt="Community" />
+            <NavLink to="/academia/hoa/events-planning" className={getPlanningIconClassName}>
+              <button aria-label="Plannings">
+                <img src="/assets/icons/briefcase2.svg" alt="Plannings" />
               </button>
             </NavLink>
           </div>
@@ -137,6 +145,17 @@ const HOASidebar = ({ currentPage }) => {
               <div className="links-list">
                 <h6>UPLOADS</h6>
                 {UPLOAD_NAV_ITEMS.map(({ label, to }) => (
+                  <NavLink key={to} to={to} className={getSidebarLinkClassName}>
+                    <span>{label}</span>
+                  </NavLink>
+                ))}
+              </div>
+            )}
+
+            {planningPages.includes(currentPage) && (
+              <div className="links-list">
+                <h6>PLANNINGS</h6>
+                {PLANNING_NAV_ITEMS.map(({ label, to }) => (
                   <NavLink key={to} to={to} className={getSidebarLinkClassName}>
                     <span>{label}</span>
                   </NavLink>
