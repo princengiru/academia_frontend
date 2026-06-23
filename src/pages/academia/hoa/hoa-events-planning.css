@@ -69,23 +69,25 @@
     display: flex;
     justify-content: center;
     margin-bottom: 28px;
-    border-bottom: 1px solid #EEF1F6;
 }
 
 .hoae-tabs-row {
     display: inline-flex;
     gap: 8px;
+    background: #F5F5F7;
+    padding: 4px;
+    border-radius: 12px;
 }
 
 .hoae-tab-btn {
     background: transparent;
     border: none;
-    border-bottom: 2px solid transparent;
-    padding: 12px 24px;
+    padding: 10px 24px;
     font-size: 13px;
     font-weight: 600;
     color: #A1A5B7;
     transition: all 0.2s;
+    border-radius: 8px;
 }
 
 .hoae-tab-btn:hover {
@@ -93,8 +95,9 @@
 }
 
 .hoae-tab-btn.active {
+    background: #FFFFFF;
     color: #450468;
-    border-bottom-color: #450468;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .fade-in {
