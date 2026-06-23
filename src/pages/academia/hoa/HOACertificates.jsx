@@ -11,6 +11,8 @@ import hoasearch from '../../../assets/icons/hoasearch.svg';
 import hoawhiteadd from '../../../assets/icons/hoawhiteadd.svg';
 import certificateimage from '../../../assets/imgs/certificateimage.jpeg';
 import hoarank from '../../../assets/icons/hoarank.png';
+import hoadownloadall from '../../../assets/icons/hoadownloadall.svg';
+import hoafilter2 from '../../../assets/icons/hoafilter2.svg';
 
 // Custom inline SVGs for the Certificates page
 const IconDownCaret = ({ width = 12, height = 8, className = "", style = {} }) => (
@@ -133,7 +135,7 @@ const HOACertificates = () => {
                     <div className="hoace-filter-container">
                         <div className="hoace-dropdown-trigger" onClick={() => setIsCategoryOpen(!isCategoryOpen)}>
                             <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                <IconFilterLines style={{ opacity: 0.5 }} /> {selectedCategory}
+                                <img src={hoafilter2} style={{ width: 16, opacity: 0.5 }} alt="" /> {selectedCategory}
                             </span>
                             <IconDownCaret width={14} height={8} style={{ transform: isCategoryOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', color: '#6B7280' }} />
                         </div>
@@ -189,14 +191,14 @@ const HOACertificates = () => {
                             <div className="hoace-card-body">
                                 <div className="hoace-card-row">
                                     <span className="hoace-text-meta"><strong>{cert.chapters}</strong> of {cert.chapters} Chapter</span>
-                                    <button className="hoace-download-btn"><IconDownload /> Download</button>
+                                    <button className="hoace-download-btn"><img src={hoadownloadall} alt="" /> Download</button>
                                 </div>
                                 <div className="hoace-card-row hoace-mt-12">
                                     <h3 className="hoace-course-title">{cert.courseName}</h3>
                                     <span className="hoace-status-passed">{cert.status}</span>
                                 </div>
                                 <div className="hoace-card-row hoace-mt-8">
-                                    <span className="hoace-text-date">Completed On <strong style={{ color: '#071437' }}>{cert.date}</strong></span>
+                                    <span className="hoace-text-date">Completed On <strong >{cert.date}</strong></span>
                                 </div>
                             </div>
                         </div>

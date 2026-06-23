@@ -271,17 +271,19 @@
 .hoace-certificates-page .hoace-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 24px;
+    gap: 10px;
     margin-bottom: 40px;
 }
 
 .hoace-certificates-page .hoace-card {
-    border: 1px solid #EEF1F6;
+    border: 8px solid #FBFBFB;
     border-radius: 8px;
     overflow: hidden;
     background: #FFFFFF;
     display: flex;
     flex-direction: column;
+    width: 300px;
+    height: 270px;
 }
 
 /* Certificate Graphic */
@@ -301,8 +303,8 @@
 .hoace-certificates-page .hoace-cert-content {
     position: relative;
     z-index: 2;
-    padding-left: 32px; /* Space for the pattern */
-    padding-right: 40px; /* Avoid overlapping the ribbon badge */
+    padding-left: 27px; 
+    padding-right: 40px; 
     margin-top: 8px;
     width: 100%;
     box-sizing: border-box;
@@ -372,20 +374,21 @@
 
 .hoace-certificates-page .hoace-text-meta {
     font-size: 12px;
-    color: #78829D;
+    color: #999999;
+    font-weight: 400;
 }
 
 .hoace-certificates-page .hoace-text-meta strong {
     color: #071437;
-    font-weight: 700;
+    font-weight: 600;
 }
 
 .hoace-certificates-page .hoace-download-btn {
     background: transparent;
     border: none;
     color: #450468;
-    font-size: 12px;
-    font-weight: 600;
+    font-size: 10px;
+    font-weight: 500;
     display: flex;
     align-items: center;
     gap: 6px;
@@ -393,21 +396,22 @@
 }
 
 .hoace-certificates-page .hoace-course-title {
-    font-size: 15px;
+    font-size: 13px;
     font-weight: 600;
-    color: #071437;
+    color: #020817C4;
     margin: 0;
 }
 
 .hoace-certificates-page .hoace-status-passed {
-    font-size: 11px;
-    font-weight: 600;
+    font-size: 10px;
+    font-weight: 500;
     color: #17C653;
 }
 
 .hoace-certificates-page .hoace-text-date {
     font-size: 12px;
-    color: #A1A5B7;
+    color: #64748B;
+    margin-bottom: -8px;
 }
 
 /* Pagination */
