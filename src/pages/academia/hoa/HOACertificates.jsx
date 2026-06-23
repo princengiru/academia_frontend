@@ -13,6 +13,7 @@ import certificateimage from '../../../assets/imgs/certificateimage.jpeg';
 import hoarank from '../../../assets/icons/hoarank.png';
 import hoadownloadall from '../../../assets/icons/hoadownloadall.svg';
 import hoafilter2 from '../../../assets/icons/hoafilter2.svg';
+import hoacalendar2 from '../../../assets/icons/hoacalendar2.svg';
 
 // Custom inline SVGs for the Certificates page
 const IconDownCaret = ({ width = 12, height = 8, className = "", style = {} }) => (
@@ -174,7 +175,7 @@ const HOACertificates = () => {
                 {/* Filter & Search Bar */}
                 <div className="hoace-filters-row">
                     <div className="hoace-filter-container">
-                        <div className="hoace-dropdown-trigger" onClick={() => setIsCategoryOpen(!isCategoryOpen)}>
+                        <div className="hoace-category-trigger" onClick={() => setIsCategoryOpen(!isCategoryOpen)}>
                             <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                                 <img src={hoafilter2} style={{ width: 16, opacity: 0.5 }} alt="" /> {selectedCategory}
                             </span>
@@ -199,55 +200,57 @@ const HOACertificates = () => {
                     </div>
 
                     <div className="hoace-search-bar-wrapper">
-                        <img src={hoasearch} alt="Search" style={{ opacity: 0.5, width: 14 }} />
-                        <input type="text" placeholder="Search any Certificates..." />
-                    </div>
-
-                    <div className="hoace-filter-container">
-                        <div
-                            className="hoace-date-filter"
-                            onClick={() => setIsDateOpen(!isDateOpen)}
-                            role="button"
-                            tabIndex={0}
-                            aria-haspopup="listbox"
-                            aria-expanded={isDateOpen}
-                            onKeyDown={(e) => {
-                                if (e.key === 'Enter' || e.key === ' ') {
-                                    e.preventDefault();
-                                    setIsDateOpen(!isDateOpen);
-                                }
-                            }}
-                        >
-                            <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                <IconCalendar /> {selectedDateFilter}
-                            </span>
-                            <IconDownCaret
-                                width={12}
-                                height={8}
-                                style={{
-                                    color: '#6B7280',
-                                    transform: isDateOpen ? 'rotate(180deg)' : 'none',
-                                    transition: 'transform 0.2s',
-                                }}
-                            />
+                        <div className="hoace-search-input">
+                            <img src={hoasearch} alt="Search" style={{ opacity: 0.5, width: 14 }} />
+                            <input type="text" placeholder="Search any Certificates..." />
                         </div>
-                        {isDateOpen && (
-                            <div className="hoace-dropdown-menu hoace-date-dropdown-menu">
-                                {DATE_FILTER_OPTIONS.map((opt) => (
-                                    <button
-                                        key={opt}
-                                        type="button"
-                                        className={`hoace-dropdown-item${selectedDateFilter === opt ? ' active' : ''}`}
-                                        onClick={() => {
-                                            setSelectedDateFilter(opt);
-                                            setIsDateOpen(false);
-                                        }}
-                                    >
-                                        {opt}
-                                    </button>
-                                ))}
+                        <div className="hoace-v-divider" />
+                        <div className="hoace-filter-container hoace-date-filter-container">
+                            <div
+                                className="hoace-date-filter"
+                                onClick={() => setIsDateOpen(!isDateOpen)}
+                                role="button"
+                                tabIndex={0}
+                                aria-haspopup="listbox"
+                                aria-expanded={isDateOpen}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                        e.preventDefault();
+                                        setIsDateOpen(!isDateOpen);
+                                    }
+                                }}
+                            >
+                                <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                    <img src={hoacalendar2} alt="calendar" /> {selectedDateFilter}
+                                </span>
+                                <IconDownCaret
+                                    width={12}
+                                    height={8}
+                                    style={{
+                                        color: '#6B7280',
+                                        transform: isDateOpen ? 'rotate(180deg)' : 'none',
+                                        transition: 'transform 0.2s',
+                                    }}
+                                />
                             </div>
-                        )}
+                            {isDateOpen && (
+                                <div className="hoace-dropdown-menu hoace-date-dropdown-menu">
+                                    {DATE_FILTER_OPTIONS.map((opt) => (
+                                        <button
+                                            key={opt}
+                                            type="button"
+                                            className={`hoace-dropdown-item${selectedDateFilter === opt ? ' active' : ''}`}
+                                            onClick={() => {
+                                                setSelectedDateFilter(opt);
+                                                setIsDateOpen(false);
+                                            }}
+                                        >
+                                            {opt}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
 

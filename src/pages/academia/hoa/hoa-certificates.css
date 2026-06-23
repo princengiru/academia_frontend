@@ -172,7 +172,7 @@
 .hoace-certificates-page .hoace-filters-row {
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: 24px;
     margin-bottom: 24px;
 }
 
@@ -180,19 +180,19 @@
     position: relative;
 }
 
-.hoace-certificates-page .hoace-dropdown-trigger {
+.hoace-certificates-page .hoace-category-trigger {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 10px 16px;
-    background: #FCFCFC;
-    border: 1.3px solid #EEF1F6;
-    border-radius: 6px;
+    gap: 12px;
+    padding: 10px 0;
+    background: transparent;
+    border: none;
     font-size: 13px;
     color: #071437;
     font-weight: 600;
     cursor: pointer;
-    min-width: 200px;
+    min-width: 160px;
     height: 44px;
 }
 
@@ -201,6 +201,7 @@
     top: calc(100% + 4px);
     left: 0;
     width: 100%;
+    min-width: 200px;
     background: #FFFFFF;
     border: 1px solid #EEF1F6;
     border-radius: 6px;
@@ -232,25 +233,27 @@
     font-weight: 600;
 }
 
-.hoace-certificates-page .hoace-date-dropdown-menu {
-    left: auto;
-    right: 0;
-    min-width: 140px;
+.hoace-certificates-page .hoace-search-bar-wrapper {
+    display: flex;
+    align-items: center;
+    flex: 1;
+    gap: 16px;
+    background: #FCFCFC;
+    border: none;
+    border-bottom: 1.3px solid #DBDFE9;
+    padding: 6px 6px 6px 16px;
+    height: 44px;
 }
 
-.hoace-certificates-page .hoace-search-bar-wrapper {
+.hoace-certificates-page .hoace-search-input {
     display: flex;
     align-items: center;
     gap: 8px;
     flex: 1;
-    background: #FCFCFC;
-    border: 1px solid #EEF1F6;
-    border-radius: 6px;
-    padding: 0 16px;
-    height: 44px;
+    min-width: 0;
 }
 
-.hoace-certificates-page .hoace-search-bar-wrapper input {
+.hoace-certificates-page .hoace-search-input input {
     border: none;
     outline: none;
     font-size: 13px;
@@ -259,24 +262,43 @@
     background: transparent;
 }
 
-.hoace-certificates-page .hoace-search-bar-wrapper input::placeholder {
+.hoace-certificates-page .hoace-search-input input::placeholder {
     color: #99A1B7;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.hoace-certificates-page .hoace-v-divider {
+    width: 1px;
+    height: 24px;
+    background: #EEF1F6;
+    flex-shrink: 0;
+}
+
+.hoace-certificates-page .hoace-date-filter-container {
+    flex-shrink: 0;
 }
 
 .hoace-certificates-page .hoace-date-filter {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 10px 16px;
+    gap: 8px;
+    padding: 6px 12px;
     background: #FFFFFF;
-    border: 1px solid #EEF1F6;
-    border-radius: 6px;
-    font-size: 13px;
-    color: #78829D;
+    border: 1px solid #DBDFE9;
+    border-radius: 20px;
+    font-size: 12px;
+    color: #99A1B7;
     font-weight: 500;
     cursor: pointer;
+    white-space: nowrap;
+}
+
+.hoace-certificates-page .hoace-date-dropdown-menu {
+    left: auto;
+    right: 0;
     min-width: 140px;
-    height: 44px;
 }
 
 /* Grid & Cards */
