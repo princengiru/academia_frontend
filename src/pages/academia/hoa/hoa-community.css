@@ -155,7 +155,7 @@
 .hoac-community-page .hoac-filters-row {
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: 24px;
     margin-bottom: 24px;
 }
 
@@ -163,19 +163,19 @@
     position: relative;
 }
 
-.hoac-community-page .hoac-dropdown-trigger {
+.hoac-community-page .hoac-category-trigger {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 10px 16px;
-    background: #FCFCFC;
-    border: 1px solid #EEF1F6;
-    border-radius: 6px;
+    gap: 12px;
+    padding: 10px 0;
+    background: transparent;
+    border: none;
     font-size: 13px;
     color: #071437;
     font-weight: 600;
     cursor: pointer;
-    min-width: 200px;
+    min-width: 160px;
     height: 44px;
 }
 
@@ -184,6 +184,7 @@
     top: calc(100% + 4px);
     left: 0;
     width: 100%;
+    min-width: 200px;
     background: #FFFFFF;
     border: 1px solid #EEF1F6;
     border-radius: 6px;
@@ -209,19 +210,33 @@
     color: #450468;
 }
 
+.hoac-community-page .hoac-dropdown-item.active {
+    background: #F8F9FA;
+    color: #450468;
+    font-weight: 600;
+}
+
 .hoac-community-page .hoac-search-bar-wrapper {
+    display: flex;
+    align-items: center;
+    flex: 1;
+    gap: 16px;
+    background: #FCFCFC;
+    border: none;
+    border-bottom: 1.3px solid #DBDFE9;
+    padding: 6px 6px 6px 16px;
+    height: 44px;
+}
+
+.hoac-community-page .hoac-search-input {
     display: flex;
     align-items: center;
     gap: 8px;
     flex: 1;
-    background: #FCFCFC;
-    border: 1px solid #EEF1F6;
-    border-radius: 6px;
-    padding: 0 16px;
-    height: 44px;
+    min-width: 0;
 }
 
-.hoac-community-page .hoac-search-bar-wrapper input {
+.hoac-community-page .hoac-search-input input {
     border: none;
     outline: none;
     font-size: 13px;
@@ -230,24 +245,43 @@
     background: transparent;
 }
 
-.hoac-community-page .hoac-search-bar-wrapper input::placeholder {
+.hoac-community-page .hoac-search-input input::placeholder {
     color: #99A1B7;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.hoac-community-page .hoac-v-divider {
+    width: 1px;
+    height: 24px;
+    background: #EEF1F6;
+    flex-shrink: 0;
+}
+
+.hoac-community-page .hoac-date-filter-container {
+    flex-shrink: 0;
 }
 
 .hoac-community-page .hoac-date-filter {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 10px 16px;
+    gap: 8px;
+    padding: 6px 12px;
     background: #FFFFFF;
-    border: 1px solid #EEF1F6;
-    border-radius: 6px;
-    font-size: 13px;
-    color: #78829D;
+    border: 1px solid #DBDFE9;
+    border-radius: 20px;
+    font-size: 12px;
+    color: #99A1B7;
     font-weight: 500;
     cursor: pointer;
+    white-space: nowrap;
+}
+
+.hoac-community-page .hoac-date-dropdown-menu {
+    left: auto;
+    right: 0;
     min-width: 140px;
-    height: 44px;
 }
 
 /* Grid & Cards */

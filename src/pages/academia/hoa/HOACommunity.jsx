@@ -13,6 +13,7 @@ import hoafeedbacks from '../../../assets/icons/hoafeedbacks.svg';
 import hoatotalshares from '../../../assets/icons/hoatotalshares.svg';
 import hoatotalreads from '../../../assets/icons/hoatotalreads.svg';
 import hoacalendar2 from '../../../assets/icons/hoacalendar2.svg';
+import hoafilter2 from '../../../assets/icons/hoafilter2.svg';
 
 // Custom inline SVGs for the Community page
 const IconDownCaret = ({ width = 12, height = 8, className = "", style = {} }) => (
@@ -78,6 +79,8 @@ const HOACommunity = () => {
     // Top-level state
     const [isCategoryOpen, setIsCategoryOpen] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState('All Categories');
+    const [isDateOpen, setIsDateOpen] = useState(false);
+    const [selectedDateFilter, setSelectedDateFilter] = useState('All Time');
     
     // Modal state
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -181,11 +184,9 @@ const HOACommunity = () => {
                 {/* Filter & Search Bar */}
                 <div className="hoac-filters-row">
                     <div className="hoac-filter-container">
-                        <div className="hoac-dropdown-trigger" onClick={() => setIsCategoryOpen(!isCategoryOpen)}>
-                            <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.5 }}><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
-                                {selectedCategory}
-                            </span>
+                        <div className="hoac-category-trigger" onClick={() => setIsCategoryOpen(!isCategoryOpen)}>
+                            <img src={hoafilter2} alt="Filter" style={{ width: 16 }} />
+                            {selectedCategory}
                             <IconDownCaret width={14} height={8} style={{ transform: isCategoryOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', color: '#6B7280' }} />
                         </div>
                         {isCategoryOpen && (
@@ -207,15 +208,57 @@ const HOACommunity = () => {
                     </div>
 
                     <div className="hoac-search-bar-wrapper">
-                        <img src={hoasearch} alt="Search" style={{ opacity: 0.5, width: 14 }} />
-                        <input type="text" placeholder="Search any Stories..." />
-                    </div>
-
-                    <div className="hoac-date-filter">
-                        <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <IconCalendar /> Today
-                        </span>
-                        <IconDownCaret width={12} height={8} style={{ color: '#6B7280' }} />
+                        <div className="hoac-search-input">
+                            <img src={hoasearch} alt="Search" style={{ opacity: 0.5, width: 14 }} />
+                            <input type="text" placeholder="Search any Stories..." />
+                        </div>
+                        <div className="hoac-v-divider" />
+                        <div className="hoac-filter-container hoac-date-filter-container">
+                            <div
+                                className="hoac-date-filter"
+                                onClick={() => setIsDateOpen(!isDateOpen)}
+                                role="button"
+                                tabIndex={0}
+                                aria-haspopup="listbox"
+                                aria-expanded={isDateOpen}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                        e.preventDefault();
+                                        setIsDateOpen(!isDateOpen);
+                                    }
+                                }}
+                            >
+                                <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                    <img src={hoacalendar2} alt="calendar" /> {selectedDateFilter}
+                                </span>
+                                <IconDownCaret
+                                    width={12}
+                                    height={8}
+                                    style={{
+                                        color: '#6B7280',
+                                        transform: isDateOpen ? 'rotate(180deg)' : 'none',
+                                        transition: 'transform 0.2s',
+                                    }}
+                                />
+                            </div>
+                            {isDateOpen && (
+                                <div className="hoac-dropdown-menu hoac-date-dropdown-menu">
+                                    {['Today', 'This Week', 'This Month', 'All Time'].map((opt) => (
+                                        <button
+                                            key={opt}
+                                            type="button"
+                                            className={`hoac-dropdown-item${selectedDateFilter === opt ? ' active' : ''}`}
+                                            onClick={() => {
+                                                setSelectedDateFilter(opt);
+                                                setIsDateOpen(false);
+                                            }}
+                                        >
+                                            {opt}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
 
