@@ -711,27 +711,25 @@
 .hoap-projects-page .hoap-preview-gallery {
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 8px;
 }
 
 .hoap-projects-page .hoap-gallery-main {
     width: 100%;
-    height: 350px;
+    height: 363px;
     object-fit: cover;
-    border-radius: 8px;
 }
 
 .hoap-projects-page .hoap-gallery-sub {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 16px;
+    gap: 8px;
 }
 
 .hoap-projects-page .hoap-gallery-sub img {
     width: 100%;
-    height: 200px;
+    height: 363px;
     object-fit: cover;
-    border-radius: 8px;
 }
 
 /* Comments Tab */
