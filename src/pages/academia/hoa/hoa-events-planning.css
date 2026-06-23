@@ -75,8 +75,7 @@
     display: inline-flex;
     gap: 8px;
     background: #F5F5F7;
-    padding: 4px;
-    border-radius: 12px;
+    border-radius: 4px;
 }
 
 .hoae-tab-btn {
@@ -87,7 +86,7 @@
     font-weight: 600;
     color: #A1A5B7;
     transition: all 0.2s;
-    border-radius: 8px;
+    border-radius: 4px;
 }
 
 .hoae-tab-btn:hover {
