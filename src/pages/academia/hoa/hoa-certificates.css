@@ -1,0 +1,490 @@
+.hoace-certificates-page {
+    font-family: 'Inter', sans-serif;
+    color: #071437;
+}
+
+/* Base Buttons */
+.hoace-certificates-page button {
+    cursor: pointer;
+    font-family: inherit;
+}
+
+/* Utilities */
+.hoace-mt-12 { margin-top: 12px; }
+.hoace-mt-8 { margin-top: 8px; }
+
+/* Page Header */
+.hoace-certificates-page .hoace-page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+}
+
+.hoace-certificates-page .hoace-page-header h1 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 700;
+    color: #000000;
+}
+
+.hoace-certificates-page .hoace-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.hoace-certificates-page .hoace-update-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    color: #64748B;
+    border: 1px solid #DBDFE9;
+    padding: 6px 14px;
+    border-radius: 4px;
+    background: #FCFCFC;
+    height: 40px;
+}
+
+.hoace-certificates-page .hoace-update-status .hoace-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #17C653;
+}
+
+.hoace-certificates-page .hoace-btn-primary {
+    background: #450468;
+    color: #FFFFFF;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    height: 40px;
+}
+
+/* Top Stats Card */
+.hoace-certificates-page .hoace-stats-top-container {
+    padding: 10px 10px;
+    background: #FAFAFA;
+    margin-bottom: 24px;
+}
+.hoace-certificates-page .hoace-stats-container {
+    background: #FFFFFF;
+    border: 1px solid #EEF1F6;
+    border-radius: 8px;
+    display: flex;
+    padding: 24px 0;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+}
+
+.hoace-certificates-page .hoace-stat-block {
+    flex: 1;
+    position: relative;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.hoace-certificates-page .hoace-stat-block:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 10%;
+    height: 80%;
+    width: 1px;
+    background: #EEF1F6;
+}
+
+.hoace-certificates-page .hoace-stat-block h3 {
+    margin: 0 0 6px 0;
+    font-size: 16px;
+    color: #071437;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.hoace-certificates-page .hoace-stat-block p {
+    margin: 0;
+    font-size: 11px;
+    color: #A1A5B7;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.hoace-certificates-page .hoace-currency-dropdown {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    color: #78829D;
+    padding: 2px 6px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.hoace-certificates-page .hoace-trend {
+    font-size: 9px;
+    font-weight: 600;
+}
+
+.hoace-certificates-page .hoace-trend.down {
+    color: #F8285A;
+}
+
+.hoace-certificates-page .hoace-trend.up {
+    color: #17C653;
+}
+
+/* Sub-header */
+.hoace-certificates-page .hoace-sub-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 20px;
+}
+
+.hoace-certificates-page .hoace-sub-title h2 {
+    margin: 0 0 4px 0;
+    font-size: 18px;
+    color: #071437;
+}
+
+.hoace-certificates-page .hoace-sub-title p {
+    margin: 0;
+    font-size: 12px;
+    color: #A1A5B7;
+    font-weight: 500;
+}
+
+/* Filters Row */
+.hoace-certificates-page .hoace-filters-row {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    margin-bottom: 24px;
+}
+
+.hoace-certificates-page .hoace-filter-container {
+    position: relative;
+}
+
+.hoace-certificates-page .hoace-category-trigger {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 0;
+    background: transparent;
+    border: none;
+    font-size: 13px;
+    color: #071437;
+    font-weight: 600;
+    cursor: pointer;
+    min-width: 160px;
+    height: 44px;
+}
+
+.hoace-certificates-page .hoace-dropdown-menu {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    width: 100%;
+    min-width: 200px;
+    background: #FFFFFF;
+    border: 1px solid #EEF1F6;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    z-index: 100;
+    overflow: hidden;
+}
+
+.hoace-certificates-page .hoace-dropdown-item {
+    width: 100%;
+    text-align: left;
+    padding: 10px 16px;
+    background: transparent;
+    border: none;
+    font-size: 13px;
+    color: #4B5675;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.hoace-certificates-page .hoace-dropdown-item:hover {
+    background: #F8F9FA;
+    color: #450468;
+}
+
+.hoace-certificates-page .hoace-dropdown-item.active {
+    background: #F8F9FA;
+    color: #450468;
+    font-weight: 600;
+}
+
+.hoace-certificates-page .hoace-search-bar-wrapper {
+    display: flex;
+    align-items: center;
+    flex: 1;
+    gap: 16px;
+    background: #FCFCFC;
+    border: none;
+    border-bottom: 1.3px solid #DBDFE9;
+    padding: 6px 6px 6px 16px;
+    height: 44px;
+}
+
+.hoace-certificates-page .hoace-search-input {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    min-width: 0;
+}
+
+.hoace-certificates-page .hoace-search-input input {
+    border: none;
+    outline: none;
+    font-size: 13px;
+    color: #4B5675;
+    width: 100%;
+    background: transparent;
+}
+
+.hoace-certificates-page .hoace-search-input input::placeholder {
+    color: #99A1B7;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.hoace-certificates-page .hoace-v-divider {
+    width: 1px;
+    height: 24px;
+    background: #EEF1F6;
+    flex-shrink: 0;
+}
+
+.hoace-certificates-page .hoace-date-filter-container {
+    flex-shrink: 0;
+}
+
+.hoace-certificates-page .hoace-date-filter {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 6px 12px;
+    background: #FFFFFF;
+    border: 1px solid #DBDFE9;
+    border-radius: 20px;
+    font-size: 12px;
+    color: #99A1B7;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.hoace-certificates-page .hoace-date-dropdown-menu {
+    left: auto;
+    right: 0;
+    min-width: 140px;
+}
+
+/* Grid & Cards */
+.hoace-certificates-page .hoace-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 40px;
+}
+
+.hoace-certificates-page .hoace-card {
+    border: 8px solid #FBFBFB;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #FFFFFF;
+    display: flex;
+    flex-direction: column;
+    width: 300px;
+    height: 270px;
+}
+
+/* Certificate Graphic */
+.hoace-certificates-page .hoace-cert-graphic {
+    height: 160px;
+    background-size: 100% 100%;
+    background-position: center;
+    background-repeat: no-repeat;
+    position: relative;
+    overflow: hidden;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+}
+
+.hoace-certificates-page .hoace-cert-content {
+    position: relative;
+    z-index: 2;
+    padding-left: 27px; 
+    padding-right: 40px; 
+    margin-top: 8px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.hoace-certificates-page .hoace-cert-content p {
+    color: #A3ADC2;
+    font-size: 10px;
+    margin: 0 0 4px 0;
+    font-weight: 500;
+}
+
+.hoace-certificates-page .hoace-cert-content h4 {
+    color: #FFFFFF;
+    font-size: 13px;
+    font-weight: 600;
+    margin: 0;
+    line-height: 1.3;
+    white-space: nowrap;
+}
+
+.hoace-certificates-page .hoace-cert-ribbon-wrapper {
+    position: absolute;
+    top: 0;
+    right: 24px;
+    width: 34px;
+    height: 50px;
+    z-index: 3;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.hoace-certificates-page .hoace-ribbon-img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.hoace-certificates-page .hoace-ribbon-number {
+    position: absolute;
+    z-index: 2;
+    color: #FFF;
+    font-size: 7px;
+    font-weight: 700;
+    bottom: 10px;
+    width: 100%;
+    text-align: center;
+}
+
+/* Card Body */
+.hoace-certificates-page .hoace-card-body {
+    padding: 20px;
+    background: #FFFFFF;
+    position: relative;
+    z-index: 3;
+}
+
+.hoace-certificates-page .hoace-card-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.hoace-certificates-page .hoace-text-meta {
+    font-size: 12px;
+    color: #999999;
+    font-weight: 400;
+}
+
+.hoace-certificates-page .hoace-text-meta strong {
+    color: #071437;
+    font-weight: 600;
+}
+
+.hoace-certificates-page .hoace-download-btn {
+    background: transparent;
+    border: none;
+    color: #450468;
+    font-size: 10px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0;
+}
+
+.hoace-certificates-page .hoace-course-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #020817C4;
+    margin: 0;
+}
+
+.hoace-certificates-page .hoace-status-passed {
+    font-size: 10px;
+    font-weight: 500;
+    color: #17C653;
+}
+
+.hoace-certificates-page .hoace-text-date {
+    font-size: 12px;
+    color: #64748B;
+    margin-bottom: -8px;
+}
+
+/* Pagination */
+.hoace-certificates-page .hoace-pagination-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 40px;
+}
+
+.hoace-certificates-page .hoace-page-nav {
+    background: #FFF;
+    border: 1px solid #DBDFE9;
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.hoace-certificates-page .hoace-page-num {
+    background: transparent;
+    border: none;
+    color: #4B5675;
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.hoace-certificates-page .hoace-page-num.active {
+    background: #450468;
+    color: #FFF;
+}

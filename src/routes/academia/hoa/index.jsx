@@ -9,8 +9,15 @@ import HOAPassedCourses from '../../../pages/academia/hoa/HOAPassedCourses';
 import HOARetakenCourses from '../../../pages/academia/hoa/HOARetakenCourses';
 import HOAFailedCourses from '../../../pages/academia/hoa/HOAFailedCourses';
 import HOASyllabus from '../../../pages/academia/hoa/HOASyllabus';
-const HOAPlaceholderPage = ({ currentPage, title, description }) => (
-  <HOALayout currentPage={currentPage}>
+import HOAOnlineCourses from '../../../pages/academia/hoa/HOAOnlineCourses';
+import HOAProjects from '../../../pages/academia/hoa/HOAProjects';
+import HOACommunity from '../../../pages/academia/hoa/HOACommunity';
+import HOACertificates from '../../../pages/academia/hoa/HOACertificates';
+import HOAEventsPlanning from '../../../pages/academia/hoa/HOAEventsPlanning';
+import HOAETravel from '../../../pages/academia/hoa/HOAEtravel';
+
+const HOAPlaceholderPage = ({ currentPage, title, description, breadcrumb }) => (
+  <HOALayout currentPage={currentPage} breadcrumb={breadcrumb}>
     <div style={{ padding: '12px 0 32px' }}>
       <h1 style={{ margin: '0 0 8px', fontSize: '20px', fontWeight: 700, color: '#071437' }}>{title}</h1>
       <p style={{ margin: 0, color: '#78829D', fontSize: '13px' }}>{description}</p>
@@ -30,10 +37,28 @@ function AcademiaHOARoutes() {
       <Route path="academia/hoa/retaken-courses" element={<HOARetakenCourses />} />
       <Route path="academia/hoa/failed-courses" element={<HOAFailedCourses />} />
       <Route path="academia/hoa/syllabus" element={<HOASyllabus />} />
+      <Route path="academia/hoa/online-courses" element={<HOAOnlineCourses />} />
+      <Route path="academia/hoa/projects" element={<HOAProjects />} />
+      <Route path="academia/hoa/community" element={<HOACommunity />} />
+      <Route path="academia/hoa/certificates" element={<HOACertificates />} />
+      <Route path="academia/hoa/events-planning" element={<HOAEventsPlanning />} />
+      <Route path="academia/hoa/e-travel" element={<HOAETravel />} />
+      <Route
+        path="academia/hoa/terms-conditions"
+        element={(
+          <HOAPlaceholderPage
+            currentPage="terms-conditions"
+            title="Terms & Conditions"
+            description="Terms & Conditions are not wired yet."
+            breadcrumb={{ section: 'Plannings', page: 'Terms & Conditions' }}
+          />
+        )}
+      />
+
 
       <Route
         path="academia/hoa/settings"
-        element={(
+        element={( 
           <HOAPlaceholderPage
             currentPage="settings"
             title="Settings"

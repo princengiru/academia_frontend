@@ -1,0 +1,162 @@
+.hoat-page-wrapper {
+    font-family: 'Inter', sans-serif;
+    color: #071437;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Base Buttons */
+.hoat-page-wrapper button {
+    cursor: pointer;
+    font-family: inherit;
+}
+
+/* Page Header */
+.hoat-page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+}
+
+.hoat-page-header h1 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 700;
+    color: #000000;
+}
+
+.hoat-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.hoat-btn-outline {
+    background: #FCFCFC;
+    border: 1px solid #DBDFE9;
+    color: #64748B;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    height: 40px;
+}
+
+.hoat-btn-primary {
+    background: #450468;
+    color: #FFFFFF;
+    border: none;
+    padding: 0 18px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    height: 40px;
+}
+
+/* Table Container */
+.hoat-table-container {
+    background: #FFFFFF;
+    border: 1px solid #EEF1F6;
+    border-radius: 8px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    min-height: 600px; /* Ensures the empty state area is tall enough */
+}
+
+/* Table Header Styles */
+.hoat-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+.hoat-table th {
+    background: #FAFAFA;
+    padding: 16px 20px;
+    font-size: 13px;
+    color: #64748B;
+    font-weight: 500;
+    border-bottom: 1px solid #EEF1F6;
+    white-space: nowrap;
+}
+
+.hoat-table th:last-child {
+    text-align: right;
+}
+
+.hoat-w-40 {
+    width: 40px;
+    text-align: center;
+    padding-left: 24px !important;
+}
+
+.hoat-checkbox {
+    width: 16px;
+    height: 16px;
+    border: 1px solid #DBDFE9;
+    border-radius: 4px;
+    accent-color: #450468;
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+/* Empty State Area */
+.hoat-empty-state {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px;
+    background: #FAFAFA; /* Matches the inner empty area background */
+}
+
+.hoat-empty-illustration {
+    max-width: 400px;
+    width: 100%;
+    height: auto;
+    margin-bottom: 32px;
+    /* This adds a dashed border for development until you add the real image */
+    border: 1px dashed #DBDFE9;
+    border-radius: 8px;
+    min-height: 150px; 
+    object-fit: contain;
+    background: #FFFFFF;
+}
+
+.hoat-empty-text {
+    font-size: 14px;
+    font-weight: 600;
+    color: #071437;
+    margin: 0 0 24px 0;
+}
+
+.hoat-btn-outline-light {
+    background: #FFFFFF;
+    border: 1px solid #EEF1F6;
+    color: #64748B;
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    transition: all 0.2s ease;
+}
+
+.hoat-btn-outline-light:hover {
+    background: #F8FAFC;
+    color: #450468;
+    border-color: #DBDFE9;
+}

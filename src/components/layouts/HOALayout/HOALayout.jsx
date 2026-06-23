@@ -5,6 +5,7 @@ import HOATopbar from './HOATopbar';
 import HOAFooter from './HOAFooter';
 import './hoa-layout.css';
 
+const HOALayout = ({ children, currentPage, breadcrumb }) => {
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 const HOALayout = ({ children, currentPage: propCurrentPage }) => {
@@ -118,6 +119,7 @@ const HOALayout = ({ children, currentPage: propCurrentPage }) => {
       
       {/* Main Content Area */}
       <div className="hoa-main-container">
+        <HOATopbar breadcrumb={breadcrumb} />
         <HOATopbar />
         
         {/* Render explicitly passed children OR dynamically load via React Router Outlet */}
