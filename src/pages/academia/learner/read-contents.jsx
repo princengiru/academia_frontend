@@ -288,11 +288,28 @@ function LearnersReadContents() {
     return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
   };
 
-  const startAssessmentTimer = (durationMinutes) => {
+  const startAssessmentTimer = (durationMinutes, startTime) => {
     if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
     if (durationMinutes && durationMinutes > 0) {
-      setTimeRemainingSeconds(durationMinutes * 60);
-      setAssessmentTimerActive(true);
+      let initialSeconds = durationMinutes * 60;
+      if (startTime) {
+        // Calculate remaining seconds based on the attempt's start time
+        const startTimeObj = new Date(startTime);
+        const nowObj = new Date();
+        const elapsedSeconds = Math.floor((nowObj.getTime() - startTimeObj.getTime()) / 1000);
+        const actualElapsed = elapsedSeconds > 0 ? elapsedSeconds : 0;
+        initialSeconds = Math.max(0, (durationMinutes * 60) - actualElapsed);
+      }
+
+      setTimeRemainingSeconds(initialSeconds);
+      
+      if (initialSeconds > 0) {
+        setAssessmentTimerActive(true);
+      } else {
+        setAssessmentTimerActive(false);
+        // If time already expired, immediately auto-submit
+        handleTimerExpiry();
+      }
     } else {
       // No time limit
       setTimeRemainingSeconds(0);
@@ -410,6 +427,28 @@ function LearnersReadContents() {
 
   // Text answer state for short_answer / essay questions
   const [assessmentTextAnswer, setAssessmentTextAnswer] = useState('');
+
+  // Debounced auto-save for short_answer and essay questions
+  useEffect(() => {
+    const currentQ = assessmentQuestions[currentAssessmentIndex];
+    if (!currentQ) return;
+    const isTextQ = currentQ.type === 'short_answer' || currentQ.type === 'essay';
+    if (!isTextQ) return;
+
+    const savedVal = assessmentAnswers[currentQ.id];
+    const trimmedVal = assessmentTextAnswer;
+    
+    if (savedVal === undefined && trimmedVal === '') return;
+    if (savedVal === trimmedVal) return;
+
+    const handler = setTimeout(() => {
+      updateLocalAnswer(currentQ.id, trimmedVal, trimmedVal);
+    }, 1000);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [assessmentTextAnswer, currentAssessmentIndex, assessmentQuestions]);
 
   // Enrollment State
   const [isEnrolled, setIsEnrolled] = useState(false);
@@ -627,7 +666,7 @@ function LearnersReadContents() {
                   }
                 } else {
                   // Active taking flow: Start countdown timer if status is in_progress
-                  startAssessmentTimer(Number(fullAssessment.duration_minutes || fullAssessment.durationMinutes || 0));
+                  startAssessmentTimer(Number(fullAssessment.duration_minutes || fullAssessment.durationMinutes || 0), attemptData?.start_time);
                 }
               }
             }
@@ -826,7 +865,7 @@ function LearnersReadContents() {
                   }
                 } else {
                   // Active taking flow: Start countdown timer if status is in_progress
-                  startAssessmentTimer(Number(fullAssessment.duration_minutes || fullAssessment.durationMinutes || 0));
+                  startAssessmentTimer(Number(fullAssessment.duration_minutes || fullAssessment.durationMinutes || 0), attemptData?.start_time);
                 }
               }
             }
