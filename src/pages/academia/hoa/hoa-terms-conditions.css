@@ -89,7 +89,7 @@
 .hoatc-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 24px;
+    gap: 15px;
     margin-bottom: 40px;
 }
 
@@ -116,13 +116,7 @@
 }
 
 .hoatc-card-icon-wrapper {
-    width: 44px;
-    height: 44px;
-    border-radius: 8px;
-    background: #F8F5FF;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+
 }
 
 .hoatc-card-actions {
@@ -136,9 +130,9 @@
     align-items: center;
     gap: 6px;
     padding: 4px 10px;
-    border-radius: 20px;
+    border-radius: 30px;
     font-size: 10px;
-    font-weight: 600;
+    font-weight: 400;
     border: 1px solid transparent;
 }
 
@@ -148,10 +142,10 @@
     border-radius: 50%;
 }
 
-.hoatc-status-notapproved { background: #FFEEF3; color: #F8285A; border-color: #F8285A33; }
+.hoatc-status-notapproved { background: #FFEEF3; color: #D81A48; border-color: #F8285A33; }
 .hoatc-status-notapproved .hoatc-dot { background: #F8285A; }
 
-.hoatc-status-active { background: #EAFFF1; color: #17C653; border-color: #17C65333; }
+.hoatc-status-active { background: #EAFFF1; color: #04B440; border-color: #17C65333; }
 .hoatc-status-active .hoatc-dot { background: #17C653; }
 
 .hoatc-status-inreview { background: #F9F9F9; color: #78829D; border-color: #DBDFE9; }
@@ -160,7 +154,6 @@
 .hoatc-icon-btn {
     background: transparent;
     border: none;
-    color: #A1A5B7;
     padding: 0;
     display: flex;
     align-items: center;
@@ -206,10 +199,10 @@
 
 .hoatc-btn-continue {
     width: 100%;
-    background: #F8F5FF;
-    border: none;
+    background: #4504680D;
+    border: 1px solid #4504681A;
     color: #450468;
-    padding: 12px;
+    padding: 8px;
     border-radius: 6px;
     font-size: 13px;
     font-weight: 600;
@@ -221,7 +214,9 @@
 }
 
 .hoatc-btn-continue:hover {
-    background: #F0EAFF;
+    background: #450468;
+    color: #F5F5F7;
+    transition: background 0.2s ease-in-out;
 }
 
 /* =========================================
