@@ -82,7 +82,7 @@ const generateCalendarDays = (year, month, selectedDate) => {
       cellDate = new Date(year, month, dayNumber);
     }
 
-    const isSelected = 
+    const isSelected =
       cellDate.getFullYear() === selectedDate.getFullYear() &&
       cellDate.getMonth() === selectedDate.getMonth() &&
       cellDate.getDate() === selectedDate.getDate();
@@ -109,12 +109,20 @@ const ManagementSchedule = () => {
 
   // --- UI Alerts & Modals ---
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+  const toastTimerRef = useRef(null);
   const showToast = (message, type = 'success') => {
     setToast({ show: true, message, type });
-    setTimeout(() => {
-      setToast(prev => ({ ...prev, show: false }));
-    }, 4000);
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    toastTimerRef.current = setTimeout(() => {
+      setToast({ show: false, message: '', type: 'success' });
+    }, type === 'error' ? 8000 : 5000);
   };
+
+  useEffect(() => {
+    return () => {
+      if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    };
+  }, []);
 
   const [confirmModal, setConfirmModal] = useState({
     isOpen: false,
@@ -132,13 +140,13 @@ const ManagementSchedule = () => {
     const token = localStorage.getItem('token');
     setEventsLoading(true);
     setEventsError('');
-    
+
     try {
       const response = await fetch(`${API_BASE_URL}/api/events/created/my?limit=100&offset=0`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
         signal: signal
       });
-      
+
       const data = await response.json();
       if (!response.ok) throw new Error(data?.message || 'Failed to load schedule events');
 
@@ -200,7 +208,51 @@ const ManagementSchedule = () => {
     });
   }, [weekStartDate]);
 
-  const scheduleHours = ['6:00', '7:00', '8:00', '9:00', '10:00', '11:00', '12:00'];
+  // Dynamic schedule hours calculation to auto-expand calendar display window when necessary
+  const calendarHoursInfo = useMemo(() => {
+    const DEFAULT_START_HOUR = 8; // 8:00 AM
+    const DEFAULT_END_HOUR = 18;  // 6:00 PM
+
+    const weekStart = startOfWeek(weekStartDate);
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekEnd.getDate() + 7);
+
+    let minHour = DEFAULT_START_HOUR;
+    let maxHour = DEFAULT_END_HOUR;
+
+    events.forEach(event => {
+      const startsAt = new Date(event.event_datetime);
+      if (startsAt >= weekStart && startsAt < weekEnd) {
+        const durMins = Number(event.duration_minutes || 60);
+        const endsAt = event.end_datetime ? new Date(event.end_datetime) : new Date(startsAt.getTime() + durMins * 60000);
+
+        const startHour = startsAt.getHours();
+        const endHour = Math.ceil((endsAt.getHours() * 60 + endsAt.getMinutes()) / 60);
+
+        if (startHour < minHour) minHour = startHour;
+        if (endHour > maxHour) maxHour = endHour;
+      }
+    });
+
+    minHour = Math.max(0, minHour);
+    maxHour = Math.min(24, maxHour);
+
+    const hours = [];
+    for (let h = minHour; h < maxHour; h++) {
+      const meridiem = h >= 12 ? 'PM' : 'AM';
+      let hour12 = h % 12;
+      if (hour12 === 0) hour12 = 12;
+      hours.push(`${String(hour12).padStart(2, '0')}:00 ${meridiem}`);
+    }
+
+    return {
+      scheduleHours: hours,
+      startHour: minHour,
+      endHour: maxHour
+    };
+  }, [events, weekStartDate]);
+
+  const scheduleHours = calendarHoursInfo.scheduleHours;
 
   // --- Add/Edit/Duplicate Event Modal State & DB fields ---
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -259,10 +311,10 @@ const ManagementSchedule = () => {
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [existingAttachmentName, setExistingAttachmentName] = useState('');
   const [isDragOver, setIsDragOver] = useState(false);
-  const [collaborators, setCollaborators] = useState([
-    { id: 1, name: 'Sheilah MUGABEKAZI', avatar: '/assets/imgs/default-profile.png' },
-    { id: 2, name: 'Landry Perly', avatar: '/assets/imgs/default-profile.png' },
-  ]);
+  const [collaborators, setCollaborators] = useState([]);
+  const [collaboratorDraft, setCollaboratorDraft] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [showSearchDropdown, setShowSearchDropdown] = useState(false);
 
   // Lock body scroll when modal is open
   useEffect(() => {
@@ -285,6 +337,66 @@ const ManagementSchedule = () => {
     document.addEventListener('keydown', handleGlobalEvents);
     return () => document.removeEventListener('keydown', handleGlobalEvents);
   }, []);
+
+  // Debounced search for student users
+  useEffect(() => {
+    if (!collaboratorDraft.trim()) {
+      setSearchResults([]);
+      setShowSearchDropdown(false);
+      return;
+    }
+    const delayDebounce = setTimeout(async () => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/users/search?q=${encodeURIComponent(collaboratorDraft)}`);
+        const result = await res.json();
+        if (res.ok && result.success && Array.isArray(result.data)) {
+          setSearchResults(result.data);
+          setShowSearchDropdown(true);
+        }
+      } catch (err) {
+        console.error('Error searching students in schedule:', err);
+      }
+    }, 300);
+    return () => clearTimeout(delayDebounce);
+  }, [collaboratorDraft]);
+
+  // Click outside to close search dropdown
+  useEffect(() => {
+    const handleDocClick = (e) => {
+      if (!e.target.closest('.prof-schedule-modal-search')) {
+        setShowSearchDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleDocClick);
+    return () => document.removeEventListener('mousedown', handleDocClick);
+  }, []);
+
+  // Automatically fetch enrolled students when courseId changes
+  useEffect(() => {
+    if (!courseId) return;
+    const fetchCourseStudents = async () => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/courses/${courseId}/enrollments`);
+        const result = await res.json();
+        if (res.ok && result.success && Array.isArray(result.data)) {
+          const courseStudents = result.data.map(en => ({
+            id: en.id, // user_id
+            name: en.student_name,
+            email: en.student_email,
+            avatar: en.avatar ? (en.avatar.startsWith('http') ? en.avatar : `${API_BASE_URL}${en.avatar}`) : '/assets/imgs/default-profile.png'
+          }));
+          setCollaborators(prev => {
+            const map = new Map(prev.map(c => [c.id, c]));
+            courseStudents.forEach(s => map.set(s.id, s));
+            return Array.from(map.values());
+          });
+        }
+      } catch (err) {
+        console.error('Failed to load course students for schedule:', err);
+      }
+    };
+    fetchCourseStudents();
+  }, [courseId]);
 
   // --- Time Picker Logic ---
   const adjustTime = (mode) => {
@@ -339,6 +451,10 @@ const ManagementSchedule = () => {
     const d = new Date();
     d.setHours(12, 0, 0, 0);
     setSelectedDate(d);
+    setCollaborators([]);
+    setCollaboratorDraft('');
+    setSearchResults([]);
+    setShowSearchDropdown(false);
   };
 
   // --- Edit & Duplicate Open Trigger Actions ---
@@ -354,7 +470,7 @@ const ManagementSchedule = () => {
     setDurationMinutes(originalEvent.duration_minutes || 60);
     setExistingAttachmentName(originalEvent.attachment_name || '');
     setUploadedFiles([]); // clear staging
-    
+
     // Bind database state columns
     setCourseId(originalEvent.course_id || '');
     setIsVirtual(originalEvent.is_virtual === 1 || originalEvent.is_virtual === true);
@@ -362,7 +478,7 @@ const ManagementSchedule = () => {
     setLocation(originalEvent.location || '');
     setRegistrationRequired(originalEvent.registration_required === 1 || originalEvent.registration_required === true);
     setMaxParticipants(originalEvent.max_participants || '');
-    
+
     const statusMap = {
       'in_review': 'In-Review',
       'in-review': 'In-Review',
@@ -376,6 +492,30 @@ const ManagementSchedule = () => {
       const dateObj = new Date(originalEvent.event_datetime);
       setSelectedDate(dateObj);
       setCalendarMonth(new Date(dateObj.getFullYear(), dateObj.getMonth(), 1));
+    }
+
+    if (originalEvent.specific_participants && Array.isArray(originalEvent.specific_participants) && originalEvent.specific_participants.length > 0) {
+      Promise.all(originalEvent.specific_participants.map(async (id) => {
+        try {
+          const res = await fetch(`${API_BASE_URL}/api/users/${id}`);
+          const data = await res.json();
+          if (res.ok && data?.success && data?.data) {
+            return {
+              id: data.data.id,
+              name: data.data.name,
+              email: data.data.email,
+              avatar: data.data.avatar ? (data.data.avatar.startsWith('http') ? data.data.avatar : `${API_BASE_URL}${data.data.avatar}`) : '/assets/imgs/default-profile.png'
+            };
+          }
+        } catch (e) {
+          console.error('Error loading participant details:', e);
+        }
+        return { id, name: `Student #${id}`, email: '', avatar: '/assets/imgs/default-profile.png' };
+      })).then(resolved => {
+        setCollaborators(resolved.filter(Boolean));
+      });
+    } else {
+      setCollaborators([]);
     }
 
     setIsModalOpen(true);
@@ -402,7 +542,7 @@ const ManagementSchedule = () => {
     setLocation(originalEvent.location || '');
     setRegistrationRequired(originalEvent.registration_required === 1 || originalEvent.registration_required === true);
     setMaxParticipants(originalEvent.max_participants || '');
-    
+
     const statusMap = {
       'in_review': 'In-Review',
       'in-review': 'In-Review',
@@ -418,6 +558,30 @@ const ManagementSchedule = () => {
       setCalendarMonth(new Date(dateObj.getFullYear(), dateObj.getMonth(), 1));
     }
 
+    if (originalEvent.specific_participants && Array.isArray(originalEvent.specific_participants) && originalEvent.specific_participants.length > 0) {
+      Promise.all(originalEvent.specific_participants.map(async (id) => {
+        try {
+          const res = await fetch(`${API_BASE_URL}/api/users/${id}`);
+          const data = await res.json();
+          if (res.ok && data?.success && data?.data) {
+            return {
+              id: data.data.id,
+              name: data.data.name,
+              email: data.data.email,
+              avatar: data.data.avatar ? (data.data.avatar.startsWith('http') ? data.data.avatar : `${API_BASE_URL}${data.data.avatar}`) : '/assets/imgs/default-profile.png'
+            };
+          }
+        } catch (e) {
+          console.error('Error loading participant details:', e);
+        }
+        return { id, name: `Student #${id}`, email: '', avatar: '/assets/imgs/default-profile.png' };
+      })).then(resolved => {
+        setCollaborators(resolved.filter(Boolean));
+      });
+    } else {
+      setCollaborators([]);
+    }
+
     setIsModalOpen(true);
     setOpenEventMenuId(null);
   };
@@ -426,6 +590,23 @@ const ManagementSchedule = () => {
   const handleCreateEvent = async () => {
     if (!eventName || !selectedDate) {
       showToast('Please provide an event name and time.', 'error');
+      return;
+    }
+
+    // Check for overlap with existing events
+    const newStart = selectedDate.getTime();
+    const newEnd = newStart + Number(durationMinutes) * 60000;
+
+    const hasOverlap = events.some(event => {
+      if (event.status === 'cancelled' || event.status === 'failed') return false;
+      const eventStart = new Date(event.event_datetime).getTime();
+      const eventDur = Number(event.duration_minutes || 60);
+      const eventEnd = eventStart + eventDur * 60000;
+      return newStart < eventEnd && newEnd > eventStart;
+    });
+
+    if (hasOverlap) {
+      showToast('This time slot is already taken by another event in your schedule.', 'error');
       return;
     }
 
@@ -458,6 +639,12 @@ const ManagementSchedule = () => {
       formData.append('attachment', uploadedFiles[0]);
     }
 
+    const isSpecific = collaborators.length > 0;
+    formData.append('audience_type', isSpecific ? 'specific' : 'all');
+    if (isSpecific) {
+      formData.append('specific_participants', JSON.stringify(collaborators.map(c => String(c.id))));
+    }
+
     try {
       const res = await fetch(`${API_BASE_URL}/api/events`, {
         method: 'POST',
@@ -466,7 +653,7 @@ const ManagementSchedule = () => {
         },
         body: formData,
       });
-      
+
       const data = await res.json();
       if (!res.ok) throw new Error(data?.message || 'Failed to create event');
 
@@ -482,6 +669,24 @@ const ManagementSchedule = () => {
   const handleSaveEvent = async () => {
     if (!eventName || !selectedDate) {
       showToast('Please provide an event name and time.', 'error');
+      return;
+    }
+
+    // Check for overlap with existing events (excluding the current event)
+    const newStart = selectedDate.getTime();
+    const newEnd = newStart + Number(durationMinutes) * 60000;
+
+    const hasOverlap = events.some(event => {
+      if (event.id === editingEventId) return false;
+      if (event.status === 'cancelled' || event.status === 'failed') return false;
+      const eventStart = new Date(event.event_datetime).getTime();
+      const eventDur = Number(event.duration_minutes || 60);
+      const eventEnd = eventStart + eventDur * 60000;
+      return newStart < eventEnd && newEnd > eventStart;
+    });
+
+    if (hasOverlap) {
+      showToast('This time slot is already taken by another event in your schedule.', 'error');
       return;
     }
 
@@ -504,6 +709,12 @@ const ManagementSchedule = () => {
 
     if (uploadedFiles.length > 0) {
       formData.append('attachment', uploadedFiles[0]);
+    }
+
+    const isSpecific = collaborators.length > 0;
+    formData.append('audience_type', isSpecific ? 'specific' : 'all');
+    if (isSpecific) {
+      formData.append('specific_participants', JSON.stringify(collaborators.map(c => String(c.id))));
     }
 
     try {
@@ -560,21 +771,37 @@ const ManagementSchedule = () => {
     const weekEnd = new Date(weekStart);
     weekEnd.setDate(weekEnd.getDate() + 7);
 
-    return events
-      .map((event) => {
+    // 1. Filter events belonging to this week and calculate their basic positioning info
+    const weekEvents = events
+      .filter(event => {
+        const startsAt = new Date(event.event_datetime);
+        return startsAt >= weekStart && startsAt < weekEnd;
+      })
+      .map(event => {
         const startsAt = new Date(event.event_datetime);
         const durMins = Number(event.duration_minutes || 60);
         const endsAt = event.end_datetime ? new Date(event.end_datetime) : new Date(startsAt.getTime() + durMins * 60000);
-        
+
         const dayOffset = diffInDays(startsAt, weekStart);
-        const hour = startsAt.getHours();
-        const minutes = startsAt.getMinutes();
-        
-        const dayColumn = clamp(dayOffset + 2, 2, 8);
-        const hourIndex = clamp(hour - 6, 0, scheduleHours.length - 1);
-        const rowStart = hourIndex + 2;
-        const rowSpan = Math.max(1, Math.ceil(Math.max(30, (endsAt - startsAt) / 60000) / 60));
-        
+        const dayIndex = clamp(dayOffset, 0, 6);
+        const dayColumn = dayIndex + 2;
+
+        // Calculate minutes since midnight for sorting/overlap detection
+        const startMins = startsAt.getHours() * 60 + startsAt.getMinutes();
+        const endMins = endsAt.getHours() * 60 + endsAt.getMinutes();
+
+        // Calculate positioning percentages relative to dynamic calendar hours
+        const { startHour, endHour } = calendarHoursInfo;
+        const calendarStartMins = startHour * 60;
+        const totalCalendarMins = (endHour - startHour) * 60;
+
+        const relativeStart = Math.max(0, startMins - calendarStartMins);
+        const relativeEnd = Math.min(totalCalendarMins, endMins - calendarStartMins);
+        const duration = Math.max(10, relativeEnd - relativeStart); // Enforce min 10 minutes duration visually
+
+        const top = (relativeStart / totalCalendarMins) * 100;
+        const height = (duration / totalCalendarMins) * 100;
+
         const tone = event.status === 'confirmed' || event.status === 'scheduled'
           ? 'mint'
           : event.status === 'draft'
@@ -592,16 +819,83 @@ const ManagementSchedule = () => {
           statusTone: event.status === 'draft' ? 'draft' : (event.status === 'completed' ? 'confirmed' : 'review'),
           attendees: Number(event.total_registrations || 0),
           tone,
-          colStart: dayColumn,
-          colSpan: 1,
-          rowStart,
-          rowSpan,
-          minutes,
-          originalStart: startsAt
+          dayIndex,
+          dayColumn,
+          startMins,
+          endMins,
+          top,
+          height,
+          duration,
+          originalStart: startsAt,
+          specificParticipants: Array.isArray(event.specific_participants) ? event.specific_participants : []
         };
-      })
-      .filter(event => event.originalStart >= weekStart && event.originalStart < weekEnd);
-  }, [events, weekStartDate, scheduleHours.length]);
+      });
+
+    // 2. Perform layout planning per day to handle overlaps
+    const finalizedEvents = [];
+
+    for (let d = 0; d < 7; d++) {
+      const dayEvents = weekEvents.filter(e => e.dayIndex === d);
+
+      // Sort day events: earlier start time first; if equal, longer duration first
+      dayEvents.sort((a, b) => {
+        if (a.startMins !== b.startMins) return a.startMins - b.startMins;
+        return (b.endMins - b.startMins) - (a.endMins - a.startMins);
+      });
+
+      // Group overlapping events into clusters
+      const clusters = [];
+      dayEvents.forEach(event => {
+        let added = false;
+        for (let cluster of clusters) {
+          const overlaps = cluster.some(cEvent => {
+            return event.startMins < cEvent.endMins && cEvent.startMins < event.endMins;
+          });
+          if (overlaps) {
+            cluster.push(event);
+            added = true;
+            break;
+          }
+        }
+        if (!added) {
+          clusters.push([event]);
+        }
+      });
+
+      // Assign column index and maxColumns for overlap resolution
+      clusters.forEach(cluster => {
+        const columns = [];
+        cluster.forEach(event => {
+          let colIndex = 0;
+          while (true) {
+            if (!columns[colIndex]) {
+              columns[colIndex] = [event];
+              event.column = colIndex;
+              break;
+            }
+            const overlapsInCol = columns[colIndex].some(cEvent => {
+              return event.startMins < cEvent.endMins && cEvent.startMins < event.endMins;
+            });
+            if (!overlapsInCol) {
+              columns[colIndex].push(event);
+              event.column = colIndex;
+              break;
+            }
+            colIndex++;
+          }
+        });
+
+        const maxColumns = columns.length;
+        cluster.forEach(event => {
+          event.maxColumns = maxColumns;
+        });
+      });
+
+      finalizedEvents.push(...dayEvents);
+    }
+
+    return finalizedEvents;
+  }, [events, weekStartDate]);
 
   return (
     <ProfessorLayout currentPage="management">
@@ -609,7 +903,7 @@ const ManagementSchedule = () => {
         if (isWeekMenuOpen) setIsWeekMenuOpen(false);
         if (openEventMenuId) setOpenEventMenuId(null);
       }}>
-        
+
         {/* Floating Toast Notification */}
         {toast.show && (
           <div className={`prof-toast-container toast-${toast.type}`}>
@@ -640,9 +934,9 @@ const ManagementSchedule = () => {
         {/* Navigation Tabs */}
         <nav className="prof-management-tabs" aria-label="Management sections">
           {managementTabs.map((tab) => (
-            <Link 
+            <Link
               key={tab.id}
-              to={`/academia/professor/${tab.id}`} 
+              to={`/academia/professor/${tab.id}`}
               className={`prof-management-tab ${activeTab === tab.id ? 'is-active' : ''}`}
             >
               {tab.label}
@@ -666,15 +960,15 @@ const ManagementSchedule = () => {
             </div>
 
             <div className="prof-schedule-actions">
-              <button 
-                type="button" 
-                className="prof-schedule-btn" 
+              <button
+                type="button"
+                className="prof-schedule-btn"
                 onClick={(e) => { e.stopPropagation(); setIsWeekMenuOpen(!isWeekMenuOpen); }}
               >
                 <span>This Week</span>
                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginLeft: '4px' }}><polyline points="6 9 12 15 18 9"></polyline></svg>
               </button>
-              
+
               {isWeekMenuOpen && (
                 <div className="prof-schedule-week-menu" onClick={e => e.stopPropagation()}>
                   <button type="button" onClick={() => handleWeekPreset('this')}>This Week</button>
@@ -693,7 +987,7 @@ const ManagementSchedule = () => {
           <section className="prof-schedule-board" aria-label="Weekly calendar">
             {eventsLoading && <div className="prof-schedule-board-state">Loading schedule...</div>}
             {!eventsLoading && eventsError && <div className="prof-schedule-board-state is-error">Error: {eventsError}</div>}
-            
+
             {!eventsLoading && !eventsError && scheduleEvents.length === 0 && (
               <div className="prof-management-empty-state" style={{ margin: '18px 0' }}>
                 <div className="prof-management-empty-state-card">
@@ -706,7 +1000,12 @@ const ManagementSchedule = () => {
               </div>
             )}
 
-            <div className="prof-schedule-grid">
+            <div
+              className="prof-schedule-grid"
+              style={{
+                gridTemplateRows: `42px repeat(${scheduleHours.length}, minmax(78px, auto))`
+              }}
+            >
               <div className="prof-schedule-corner">Hour</div>
 
               {scheduleDays.map((day, idx) => (
@@ -730,54 +1029,109 @@ const ManagementSchedule = () => {
                 );
               })}
 
-              {scheduleEvents.map((event) => (
-                <article
-                  key={event.id}
-                  className={`prof-schedule-event tone-${event.tone}`}
-                  style={{ 
-                    gridColumn: `${event.colStart} / span ${event.colSpan}`, 
-                    gridRow: `${event.rowStart} / span ${event.rowSpan}` 
-                  }}
-                >
-                  <div className="prof-schedule-event-head">
-                    <div><h4>{event.title}</h4></div>
-                    <button 
-                      type="button" 
-                      className="prof-schedule-event-menu" 
-                      onClick={(e) => { e.stopPropagation(); setOpenEventMenuId(openEventMenuId === event.id ? null : event.id); }} 
-                      aria-label="Event options"
-                    >
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle></svg>
-                    </button>
+              {/* Day column container wrappers for overlap-resilient layout */}
+              {scheduleDays.map((_, dayIndex) => {
+                const dayColumn = dayIndex + 2;
+                const dayEvents = scheduleEvents.filter(e => e.dayIndex === dayIndex);
 
-                    {openEventMenuId === event.id && (
-                      <div className="prof-schedule-event-actions" onClick={e => e.stopPropagation()}>
-                        <button type="button" onClick={() => handleEditEventClick(event.id)}>Edit</button>
-                        <button type="button" onClick={() => handleDuplicateEventClick(event.id)}>Duplicate</button>
-                        <button type="button" onClick={() => handleDeleteEventClick(event.id, event.title)} style={{ color: '#EF4444' }}>Delete</button>
-                      </div>
-                    )}
+                return (
+                  <div
+                    key={`day-col-${dayIndex}`}
+                    className="prof-schedule-day-column"
+                    style={{
+                      gridColumn: dayColumn,
+                      gridRow: `2 / span ${scheduleHours.length}`,
+                      position: 'relative',
+                      pointerEvents: 'none'
+                    }}
+                  >
+                    {dayEvents.map((event) => {
+                      const isCompact = event.duration < 35;
+                      const isMidCompact = event.duration >= 35 && event.duration < 60;
+
+                      return (
+                        <article
+                          key={event.id}
+                          className={`prof-schedule-event tone-${event.tone} ${isCompact ? 'is-compact' : ''} ${isMidCompact ? 'is-mid-compact' : ''}`}
+                          style={{
+                            position: 'absolute',
+                            top: `${event.top}%`,
+                            height: `${event.height}%`,
+                            left: `calc(${(event.column / event.maxColumns) * 100}% + 2px)`,
+                            width: `calc(${(1 / event.maxColumns) * 100}% - 4px)`,
+                            pointerEvents: 'auto',
+                            minHeight: isCompact ? '38px' : (isMidCompact ? '54px' : '78px'),
+                          }}
+                        >
+                          <div className="prof-schedule-event-head">
+                            <div>
+                              <h4>{event.title}</h4>
+                            </div>
+                            <button
+                              type="button"
+                              className="prof-schedule-event-menu"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setOpenEventMenuId(openEventMenuId === event.id ? null : event.id);
+                              }}
+                              aria-label="Event options"
+                            >
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <circle cx="12" cy="12" r="1"></circle>
+                                <circle cx="5" cy="12" r="1"></circle>
+                                <circle cx="19" cy="12" r="1"></circle>
+                              </svg>
+                            </button>
+
+                            {openEventMenuId === event.id && (
+                              <div className="prof-schedule-event-actions" onClick={e => e.stopPropagation()}>
+                                <button type="button" onClick={() => handleEditEventClick(event.id)}>Edit</button>
+                                <button type="button" onClick={() => handleDuplicateEventClick(event.id)}>Duplicate</button>
+                                <button type="button" onClick={() => handleDeleteEventClick(event.id, event.title)} style={{ color: '#EF4444' }}>Delete</button>
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="prof-schedule-event-time">
+                            <span>{event.startTime}</span>
+                            <i>-</i>
+                            <span>{event.endTime}</span>
+                          </div>
+
+                          {!isCompact && (
+                            <div className="prof-schedule-event-meta">
+                              {!isMidCompact && event.specificParticipants && event.specificParticipants.length > 0 && (
+                                <div className="prof-schedule-event-attendees" aria-label="Attendees">
+                                  {Array.from({ length: Math.min(3, event.specificParticipants.length) }).map((_, aIdx) => (
+                                    <img
+                                      key={aIdx}
+                                      className="prof-schedule-event-avatar"
+                                      src="/assets/imgs/default-profile.png"
+                                      alt=""
+                                      style={{ zIndex: 4 - aIdx }}
+                                    />
+                                  ))}
+                                  {event.specificParticipants.length > 3 && (
+                                    <span className="prof-schedule-event-avatar-count">+{event.specificParticipants.length - 3}</span>
+                                  )}
+                                  {event.specificParticipants.length <= 3 && (
+                                    <span className="prof-schedule-event-avatar-count">{event.specificParticipants.length}</span>
+                                  )}
+                                </div>
+                              )}
+
+                              <strong className={`is-${event.statusTone}`}>
+                                <i></i>
+                                <span>{event.status}</span>
+                              </strong>
+                            </div>
+                          )}
+                        </article>
+                      );
+                    })}
                   </div>
-
-                  <div className="prof-schedule-event-time">
-                    <span>{event.startTime}</span><i>-</i><span>{event.endTime}</span>
-                  </div>
-
-                  <div className="prof-schedule-event-meta">
-                    <div className="prof-schedule-event-attendees" aria-label="Attendees">
-                      <img className="prof-schedule-event-avatar" src="/assets/imgs/default-profile.png" alt="" />
-                      <img className="prof-schedule-event-avatar" src="/assets/imgs/default-profile.png" alt="" />
-                      <img className="prof-schedule-event-avatar" src="/assets/imgs/default-profile.png" alt="" />
-                      <span className="prof-schedule-event-avatar-count">{event.attendees}+</span>
-                    </div>
-
-                    <strong className={`is-${event.statusTone}`}>
-                      <i></i>
-                      <span>{event.status}</span>
-                    </strong>
-                  </div>
-                </article>
-              ))}
+                );
+              })}
             </div>
           </section>
         </section>
@@ -787,7 +1141,7 @@ const ManagementSchedule = () => {
       {isModalOpen && (
         <div className="prof-management-modal is-open" aria-hidden={!isModalOpen}>
           <div className="prof-management-modal-backdrop" onClick={handleCloseModal}></div>
-          
+
           <div className="prof-management-modal-dialog event-form-dialog" role="dialog" aria-modal="true" aria-labelledby="scheduleEventModalTitle">
             <div className="prof-management-modal-header">
               <h3 id="scheduleEventModalTitle">{isEditMode ? 'Edit Event' : (editingEventId === null && eventName.includes('(Copy)') ? 'Duplicate Event' : 'Add Event')}</h3>
@@ -803,7 +1157,7 @@ const ManagementSchedule = () => {
             }}>
               <div className="prof-schedule-modal-grid">
                 <div className="prof-schedule-modal-fields">
-                  
+
                   {/* Row 1 (Title) */}
                   <label className="prof-schedule-modal-field prof-schedule-modal-field--full">
                     <span>Event Name</span>
@@ -819,9 +1173,9 @@ const ManagementSchedule = () => {
 
                     <div className="prof-schedule-modal-field" style={{ position: 'relative' }}>
                       <span>Associated Course</span>
-                      <button 
-                        type="button" 
-                        className="prof-schedule-modal-select" 
+                      <button
+                        type="button"
+                        className="prof-schedule-modal-select"
                         onClick={(e) => { e.stopPropagation(); setIsCourseMenuOpen(!isCourseMenuOpen); setIsStatusMenuOpen(false); setIsTimePickerOpen(false); }}
                       >
                         <span>{instructorCourses.find(c => String(c.id) === String(courseId))?.title || '-- None (General Event) --'}</span>
@@ -831,9 +1185,9 @@ const ManagementSchedule = () => {
                         <div className="prof-schedule-modal-status-menu" style={{ maxHeight: '200px', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
                           <button type="button" onClick={() => { setCourseId(''); setIsCourseMenuOpen(false); }}>-- None (General Event) --</button>
                           {instructorCourses.map(course => (
-                            <button 
-                              key={course.id} 
-                              type="button" 
+                            <button
+                              key={course.id}
+                              type="button"
                               onClick={() => { setCourseId(String(course.id)); setIsCourseMenuOpen(false); }}
                             >
                               {course.title}
@@ -848,18 +1202,18 @@ const ManagementSchedule = () => {
                   <div className="prof-schedule-modal-row prof-schedule-modal-row--3">
                     <div className="prof-schedule-modal-field prof-schedule-modal-field--time">
                       <span>Event Time</span>
-                      <div 
+                      <div
                         className={`prof-schedule-modal-time-input ${isTimePickerOpen ? 'is-active' : ''}`}
                         onClick={(e) => { e.stopPropagation(); setIsTimePickerOpen(!isTimePickerOpen); setIsStatusMenuOpen(false); }}
                       >
-                        <input 
-                          type="text" 
-                          value={`${formatInputDateTime(selectedDate)} - ${formatTime12h(new Date(selectedDate.getTime() + Number(durationMinutes) * 60000))}`} 
-                          readOnly 
+                        <input
+                          type="text"
+                          value={`${formatInputDateTime(selectedDate)} - ${formatTime12h(new Date(selectedDate.getTime() + Number(durationMinutes) * 60000))}`}
+                          readOnly
                         />
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.7 }}><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
                       </div>
-                      
+
                       {/* Time & Date Picker Panel */}
                       {isTimePickerOpen && (
                         <div className="prof-schedule-modal-picker" onClick={e => e.stopPropagation()}>
@@ -877,9 +1231,9 @@ const ManagementSchedule = () => {
                             <div className="prof-schedule-modal-calendar-grid">
                               <span className="prof-schedule-modal-dow">Su</span><span className="prof-schedule-modal-dow">Mo</span><span className="prof-schedule-modal-dow">Tu</span><span className="prof-schedule-modal-dow">We</span><span className="prof-schedule-modal-dow">Th</span><span className="prof-schedule-modal-dow">Fr</span><span className="prof-schedule-modal-dow">Sa</span>
                               {generateCalendarDays(calendarMonth.getFullYear(), calendarMonth.getMonth(), selectedDate).map((day, idx) => (
-                                <button 
-                                  key={idx} 
-                                  type="button" 
+                                <button
+                                  key={idx}
+                                  type="button"
                                   className={`${day.isMuted ? 'is-muted' : ''} ${day.isSelected ? 'is-selected' : ''}`}
                                   onClick={() => selectDay(day.dateObj)}
                                 >
@@ -919,21 +1273,21 @@ const ManagementSchedule = () => {
 
                     <label className="prof-schedule-modal-field">
                       <span>Duration (Minutes)</span>
-                      <input 
-                        type="number" 
-                        min="15" 
+                      <input
+                        type="number"
+                        min="15"
                         step="15"
-                        value={durationMinutes} 
-                        onChange={(e) => setDurationMinutes(e.target.value)} 
+                        value={durationMinutes}
+                        onChange={(e) => setDurationMinutes(e.target.value)}
                         title="Duration in minutes"
                       />
                     </label>
 
                     <label className="prof-schedule-modal-field">
                       <span>Status</span>
-                      <button 
-                        type="button" 
-                        className="prof-schedule-modal-select" 
+                      <button
+                        type="button"
+                        className="prof-schedule-modal-select"
                         onClick={(e) => { e.stopPropagation(); setIsStatusMenuOpen(!isStatusMenuOpen); setIsTimePickerOpen(false); }}
                       >
                         <span className="prof-schedule-modal-status-dot"></span>
@@ -954,16 +1308,16 @@ const ManagementSchedule = () => {
                   <div className="prof-schedule-modal-field prof-schedule-modal-field--full">
                     <span>Event Format</span>
                     <div className="prof-schedule-format-segments">
-                      <button 
-                        type="button" 
+                      <button
+                        type="button"
                         className={`format-segment-btn ${isVirtual ? 'is-active' : ''}`}
                         onClick={() => setIsVirtual(true)}
                       >
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '6px' }}><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>
                         Virtual Event
                       </button>
-                      <button 
-                        type="button" 
+                      <button
+                        type="button"
                         className={`format-segment-btn ${!isVirtual ? 'is-active' : ''}`}
                         onClick={() => setIsVirtual(false)}
                       >
@@ -977,21 +1331,21 @@ const ManagementSchedule = () => {
                   {isVirtual ? (
                     <label className="prof-schedule-modal-field prof-schedule-modal-field--full">
                       <span>Meeting Link (Zoom, Meet, Teams...)</span>
-                      <input 
-                        type="url" 
-                        value={meetingLink} 
-                        onChange={(e) => setMeetingLink(e.target.value)} 
-                        placeholder="https://zoom.us/j/..." 
+                      <input
+                        type="url"
+                        value={meetingLink}
+                        onChange={(e) => setMeetingLink(e.target.value)}
+                        placeholder="https://zoom.us/j/..."
                       />
                     </label>
                   ) : (
                     <label className="prof-schedule-modal-field prof-schedule-modal-field--full">
                       <span>Physical Location / Venue Address</span>
-                      <input 
-                        type="text" 
-                        value={location} 
-                        onChange={(e) => setLocation(e.target.value)} 
-                        placeholder="Room 102, Science Hall or Building Address" 
+                      <input
+                        type="text"
+                        value={location}
+                        onChange={(e) => setLocation(e.target.value)}
+                        placeholder="Room 102, Science Hall or Building Address"
                       />
                     </label>
                   )}
@@ -1001,10 +1355,10 @@ const ManagementSchedule = () => {
                     <div className="prof-schedule-modal-field">
                       <span>Registration Requirements</span>
                       <label className="prof-schedule-toggle-wrap">
-                        <input 
-                          type="checkbox" 
-                          checked={registrationRequired} 
-                          onChange={(e) => setRegistrationRequired(e.target.checked)} 
+                        <input
+                          type="checkbox"
+                          checked={registrationRequired}
+                          onChange={(e) => setRegistrationRequired(e.target.checked)}
                         />
                         <span className="prof-schedule-toggle-slider"></span>
                         <span className="prof-schedule-toggle-label">Registration Required</span>
@@ -1013,39 +1367,78 @@ const ManagementSchedule = () => {
 
                     <label className={`prof-schedule-modal-field ${!registrationRequired ? 'is-hidden-capacity' : ''}`}>
                       <span>Max Attendees / Capacity</span>
-                      <input 
-                        type="number" 
-                        min="1" 
-                        value={maxParticipants} 
-                        onChange={(e) => setMaxParticipants(e.target.value)} 
-                        placeholder="Unlimited" 
+                      <input
+                        type="number"
+                        min="1"
+                        value={maxParticipants}
+                        onChange={(e) => setMaxParticipants(e.target.value)}
+                        placeholder="Unlimited"
                         disabled={!registrationRequired}
                       />
                     </label>
                   </div>
 
                   {/* Row 7 (Audience Collaboration) */}
-                  <div className="prof-schedule-modal-field prof-schedule-modal-field--full">
-                    <span>Add Collaboration</span>
+                  <div className="prof-schedule-modal-field prof-schedule-modal-field--full" style={{ position: 'relative' }}>
+                    <span>Invite Students</span>
                     <div className="prof-schedule-modal-search">
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.7 }}><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
                       <span>@</span>
-                      <input type="text" defaultValue="All Student" />
+                      <input
+                        type="text"
+                        value={collaboratorDraft}
+                        onChange={(e) => setCollaboratorDraft(e.target.value)}
+                        placeholder="Search student by name or email..."
+                      />
                     </div>
 
-                    <div className="prof-schedule-modal-chips">
+                    {showSearchDropdown && searchResults.length > 0 && (
+                      <div className="prof-schedule-modal-status-menu" style={{ position: 'absolute', top: '70px', left: 0, right: 0, zIndex: 1200, maxHeight: '200px', overflowY: 'auto' }}>
+                        {searchResults.map(student => (
+                          <button
+                            key={student.id}
+                            type="button"
+                            style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', padding: '8px 12px', gap: '2px', textAlign: 'left', width: '100%', border: 'none', background: 'transparent', cursor: 'pointer' }}
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                              if (!collaborators.some(c => c.id === student.id)) {
+                                setCollaborators(prev => [...prev, {
+                                  id: student.id,
+                                  name: student.name,
+                                  email: student.email,
+                                  avatar: student.avatar ? (student.avatar.startsWith('http') ? student.avatar : `${API_BASE_URL}${student.avatar}`) : '/assets/imgs/default-profile.png'
+                                }]);
+                              }
+                              setCollaboratorDraft('');
+                              setSearchResults([]);
+                              setShowSearchDropdown(false);
+                            }}
+                          >
+                            <strong style={{ fontSize: '13px', color: '#450468' }}>{student.name}</strong>
+                            <span style={{ fontSize: '11px', color: '#78829D' }}>{student.email}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
+                    <div className="prof-schedule-modal-chips" style={{ marginTop: '8px' }}>
                       {collaborators.map(collab => (
                         <span key={collab.id} className="prof-schedule-modal-chip">
-                          <img src={collab.avatar} alt="" />
-                          <span>{collab.name}</span>
+                          <img src={collab.avatar || '/assets/imgs/default-profile.png'} alt="" onError={(e) => { e.target.src = '/assets/imgs/default-profile.png'; }} />
+                          <span>{collab.name} {collab.email ? `(${collab.email})` : ''}</span>
                           <button type="button" onClick={() => setCollaborators(collaborators.filter(c => c.id !== collab.id))} aria-label="Remove collaborator">×</button>
                         </span>
                       ))}
+                      {collaborators.length === 0 && (
+                        <span style={{ fontSize: '12px', color: '#78829D', padding: '4px' }}>
+                          No students invited yet. Search above or select an Associated Course.
+                        </span>
+                      )}
                     </div>
                   </div>
 
                   {/* Row 8 (Upload Files) */}
-                  <label 
+                  <label
                     className={`prof-schedule-modal-upload ${isDragOver ? 'is-dragover' : ''}`}
                     onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
                     onDragLeave={() => setIsDragOver(false)}
@@ -1057,24 +1450,24 @@ const ManagementSchedule = () => {
                     </span>
                     <span className="prof-schedule-modal-upload-copy">
                       <strong>
-                        {uploadedFiles.length > 0 
-                          ? `${uploadedFiles[0].name}` 
-                          : (existingAttachmentName 
-                              ? `Existing: ${existingAttachmentName}` 
-                              : 'Drop a file here or click to upload.')
+                        {uploadedFiles.length > 0
+                          ? `${uploadedFiles[0].name}`
+                          : (existingAttachmentName
+                            ? `Existing: ${existingAttachmentName}`
+                            : 'Drop a file here or click to upload.')
                         }
                       </strong>
                       <small>
-                        {uploadedFiles.length > 0 
-                          ? 'Ready to upload' 
-                          : (existingAttachmentName 
-                              ? 'Click to replace attachment' 
-                              : 'Upload event case files, if any.')
+                        {uploadedFiles.length > 0
+                          ? 'Ready to upload'
+                          : (existingAttachmentName
+                            ? 'Click to replace attachment'
+                            : 'Upload event case files, if any.')
                         }
                       </small>
                     </span>
                   </label>
-                  
+
                   {/* Row 9 (Description) */}
                   <label className="prof-schedule-modal-field prof-schedule-modal-field--full">
                     <span>Event Description</span>
@@ -1109,16 +1502,16 @@ const ManagementSchedule = () => {
               <p>{confirmModal.message}</p>
             </div>
             <div className="confirmation-actions">
-              <button 
-                type="button" 
-                className="confirm-btn-cancel" 
+              <button
+                type="button"
+                className="confirm-btn-cancel"
                 onClick={() => setConfirmModal({ ...confirmModal, isOpen: false })}
               >
                 Cancel
               </button>
-              <button 
-                type="button" 
-                className="confirm-btn-danger" 
+              <button
+                type="button"
+                className="confirm-btn-danger"
                 onClick={() => {
                   if (confirmModal.onConfirm) confirmModal.onConfirm();
                   setConfirmModal({ ...confirmModal, isOpen: false });

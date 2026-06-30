@@ -64,7 +64,7 @@ const PrepareSyllabus = () => {
     if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current);
     feedbackTimerRef.current = setTimeout(() => {
       setFeedback({ message: '', tone: 'success', visible: false });
-    }, 3500);
+    }, tone === 'error' ? 8000 : 5000);
   };
 
   useEffect(() => {
@@ -282,8 +282,7 @@ const PrepareSyllabus = () => {
         throw new Error(pubErr.message || 'Failed to publish syllabus.');
       }
 
-      pushFeedback('Syllabus successfully published!', 'success');
-      navigate('/academia/professor');
+      navigate('/academia/professor', { state: { toastMessage: 'Syllabus successfully published!', toastTone: 'success' } });
     } catch (err) {
       pushFeedback(err.message, 'error');
     } finally {

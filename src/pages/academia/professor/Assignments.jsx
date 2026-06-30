@@ -104,12 +104,20 @@ const Assignments = () => {
   const [openRowMenuId, setOpenRowMenuId] = useState(null);
   const filterRef = useRef(null);
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+  const toastTimerRef = useRef(null);
   const showToast = (message, type = 'success') => {
     setToast({ show: true, message, type });
-    setTimeout(() => {
-      setToast(prev => ({ ...prev, show: false }));
-    }, 4000);
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    toastTimerRef.current = setTimeout(() => {
+      setToast({ show: false, message: '', type: 'success' });
+    }, type === 'error' ? 8000 : 5000);
   };
+
+  useEffect(() => {
+    return () => {
+      if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    };
+  }, []);
 
   const [openDropdownId, setOpenDropdownId] = useState(null); // 'type', 'course', 'week', 'qtype' or null
   const [confirmModal, setConfirmModal] = useState({

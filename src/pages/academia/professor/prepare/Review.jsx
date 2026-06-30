@@ -50,8 +50,7 @@ const Review = ({ courseId, setActiveStep, pushFeedback }) => {
       });
       if (!res.ok) throw new Error('Failed to publish course.');
       
-      pushFeedback('Course successfully published!', 'success');
-      navigate('/academia/professor');
+      navigate('/academia/professor', { state: { toastMessage: 'Course successfully published!', toastTone: 'success' } });
     } catch (error) { 
       pushFeedback(error.message, 'error'); 
       setIsPublishing(false);

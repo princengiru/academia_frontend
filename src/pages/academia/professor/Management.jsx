@@ -59,12 +59,27 @@ const Management = () => {
 
   // --- UI Toast Message ---
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+  const toastTimerRef = useRef(null);
   const showToast = (message, type = 'success') => {
     setToast({ show: true, message, type });
-    setTimeout(() => {
-      setToast(prev => ({ ...prev, show: false }));
-    }, 4000);
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    toastTimerRef.current = setTimeout(() => {
+      setToast({ show: false, message: '', type: 'success' });
+    }, type === 'error' ? 8000 : 5000);
   };
+
+  useEffect(() => {
+    if (location.state?.toastMessage) {
+      showToast(location.state.toastMessage, location.state.toastTone || 'success');
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
+
+  useEffect(() => {
+    return () => {
+      if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    };
+  }, []);
 
   const filterOptions = ['All Status', 'Published', 'Draft', 'Pending Approval', 'Rejected'];
 

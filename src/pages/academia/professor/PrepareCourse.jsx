@@ -25,7 +25,7 @@ const PrepareCourse = () => {
     if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current);
     feedbackTimerRef.current = setTimeout(() => {
       setFeedback({ message: '', tone: 'success', visible: false });
-    }, 3500);
+    }, tone === 'error' ? 8000 : 5000);
   };
 
   useEffect(() => {
