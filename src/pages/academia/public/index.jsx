@@ -455,7 +455,7 @@ function AcademiaIndex() {
 
           {!dataLoading && popularData && popularData.length > 0 && (
             popularData.slice(0, 4).map((course, i) => (
-              <div key={course.id || course._id || i} className="osc-item" onClick={() => navigate(`/academia/read-contents?courseId=${course.id}`)} style={{ cursor: 'pointer' }}>
+              <div key={course.id || course._id || i} className="osc-item" onClick={() => navigate('/academia/learner/course-part', { state: { courseId: course.id } })} style={{ cursor: 'pointer' }}>
                 <div className="osc-item-img">
                   <img src={course.thumbnail ? resolveStoryImage(course.thumbnail) : acOnImg} alt={course.title} />
                 </div>
@@ -472,7 +472,7 @@ function AcademiaIndex() {
                   </div>
                   <div>
                     <small>{course.starts_on || course.startsAt || 'Self-paced'}</small>
-                    <button type="button" onClick={(e) => { e.stopPropagation(); navigate(`/academia/read-contents?courseId=${course.id}`); }}>
+                    <button type="button" onClick={(e) => { e.stopPropagation(); navigate('/academia/learner/course-part', { state: { courseId: course.id } }); }}>
                       <img src={acEnIcon} alt="Enroll" />
                     </button>
                   </div>
@@ -482,7 +482,7 @@ function AcademiaIndex() {
           )}
         </div>
         <div className="sec-CTA">
-          <button type="button" onClick={() => navigate('/academia/syllabuses')}>
+          <button type="button" onClick={() => navigate('/academia/learner/courses?filter=All')}>
             <span>View More</span>
             <img src={acNextIcon} alt="Next" />
           </button>
@@ -507,7 +507,7 @@ function AcademiaIndex() {
 
           {!dataLoading && freeData && freeData.length > 0 && (
             freeData.map((course, i) => (
-              <div key={course.id || course._id || i} className="fsc-item" onClick={() => navigate(`/academia/read-contents?courseId=${course.id}`)} style={{ cursor: 'pointer' }}>
+              <div key={course.id || course._id || i} className="fsc-item" onClick={() => navigate('/academia/learner/course-part', { state: { courseId: course.id } })} style={{ cursor: 'pointer' }}>
                 <div className="fsc-item-img">
                   <img src={course.thumbnail ? resolveStoryImage(course.thumbnail) : acOnImg} alt="Free Course" />
                 </div>
@@ -524,7 +524,7 @@ function AcademiaIndex() {
               <div className="fsc-item-text">
                 <h6 style={{ fontWeight: 600 }}>No free courses</h6>
                 <p style={{ color: '#64748B', marginBottom: '16px' }}>There are no free courses to show at the moment.</p>
-                <button type="button" className="btn btn-primary" onClick={() => navigate('/academia/syllabuses')} style={{ background: '#450468', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: '8px' }}>
+                <button type="button" className="btn btn-primary" onClick={() => navigate('/academia/learner/courses?filter=All')} style={{ background: '#450468', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: '8px' }}>
                   Explore all courses
                 </button>
               </div>
@@ -532,7 +532,7 @@ function AcademiaIndex() {
           )}
         </div>
         <div className="sec-CTA">
-          <button type="button" onClick={() => navigate('/academia/syllabuses?type=free')}>
+          <button type="button" onClick={() => navigate('/academia/learner/courses?filter=Free')}>
             <span>View More</span>
             <img src={acNextIcon} alt="Next" />
           </button>

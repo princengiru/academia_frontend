@@ -27,6 +27,21 @@ const resolveImage = (value, fallback) => {
   return `${API_BASE_URL}${value}`;
 };
 
+const normalizeStory = (story) => {
+  if (!story) return null;
+  return {
+    ...story,
+    id: story.id || story._id || story.story_id,
+    title: story.title || story.heading || 'Story',
+    description: story.description || story.excerpt || 'No description available',
+    contents: story.contents || '',
+    thumbnail: story.thumbnail_url || story.thumbnail || story.image || null,
+    author_name: story.author_name || story.uploaded_by_name || story.user_name || 'Admin',
+    author_avatar: story.author_avatar || story.uploaded_by_avatar || story.user_avatar || null,
+    published_at: story.published_at || story.created_at || null,
+  };
+};
+
 function AcademiaSyllabuses() {
   const navigate = useNavigate();
   const ssSwiperRef = useRef(null);
@@ -140,7 +155,8 @@ function AcademiaSyllabuses() {
         const storiesRes = await fetch(`${API_BASE_URL}/api/community-stories`);
         const storiesBody = await storiesRes.json().catch(() => ({}));
         if (mounted) {
-          setStoriesData(Array.isArray(storiesBody?.data) ? storiesBody.data : (Array.isArray(storiesBody) ? storiesBody : []));
+          const raw = Array.isArray(storiesBody?.data) ? storiesBody.data : (Array.isArray(storiesBody) ? storiesBody : []);
+          setStoriesData(raw.map(normalizeStory));
         }
       } catch (err) {
         if (mounted) setStoriesData([]);
@@ -582,29 +598,29 @@ function AcademiaSyllabuses() {
                   </div>
                 </div>
               ) : storiesData && storiesData.length > 0 ? (
-                storiesData.map((story, idx) => (
-                  <div key={story.id || story._id || idx} className="swiper-slide">
-                    <div className="ss-item" onClick={() => handleStoryClick(story.id || story._id)} style={{ cursor: 'pointer' }}>
+                storiesData.map((story) => (
+                  <div key={story.id} className="swiper-slide">
+                    <div className="ss-item" onClick={() => handleStoryClick(story.id)} style={{ cursor: 'pointer' }}>
                       <div className="ss-item-img">
-                        <img src={resolveImage(story.thumbnail_url || story.thumbnail, storyImage)} alt="Story" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        <img src={resolveImage(story.thumbnail, storyImage)} alt={story.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                       </div>
                       <div className="ss-item-text">
                         <div className="ss-item-text-h">
                           <div>
                             <img src={acUsIcon} alt="User" />
-                            <span>{story.author_name || story.author || 'Admin'}</span>
+                            <span>{story.author_name}</span>
                           </div>
                           <div>
                             <img src={acMessIcon} alt="Comments" />
-                            <span>{story.comments_count || story.commentCount || 0}</span>
+                            <span>{story.comments_count || 0}</span>
                           </div>
                         </div>
-                        <h4>{story.title || story.heading}</h4>
-                        <p>{story.excerpt || story.summary || (story.description ? (story.description.substring(0, 100) + '...') : 'Read full story to learn more.')}</p>
+                        <h4>{story.title}</h4>
+                        <p>{story.description}</p>
                         <div className="ss-item-text-f">
                           <div>
                             <img src={acCalIcon} alt="Date" />
-                            <span>{new Date(story.published_at || story.created_at || Date.now()).toLocaleDateString()}</span>
+                            <span>{new Date(story.published_at || Date.now()).toLocaleDateString()}</span>
                           </div>
                           <button type="button" onClick={(e) => { e.stopPropagation(); }}>
                             <img src={acShareIcon} alt="Share" />

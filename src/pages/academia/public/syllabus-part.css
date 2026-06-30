@@ -1,3 +1,10 @@
+.syllabus-part-page {
+    max-width: 1200px;
+    margin: 0 auto;
+    width: 100%;
+    box-sizing: border-box;
+}
+
 .syllabus-part-page .hero-sec {
     padding: 20px 30px;
     border-bottom: 1px solid #DBDFE9;

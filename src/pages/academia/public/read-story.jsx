@@ -37,6 +37,34 @@ const resolveStoryImage = (value) => {
   return `${API_BASE_URL}${value}`;
 };
 
+const resolveYoutubeEmbedUrl = (url) => {
+  if (!url) return '';
+  if (url.includes('youtube.com/embed/')) {
+    return url;
+  }
+  let videoId = '';
+  if (url.includes('youtu.be/')) {
+    const parts = url.split('youtu.be/');
+    if (parts[1]) {
+      videoId = parts[1].split(/[?#]/)[0];
+    }
+  } else if (url.includes('v=')) {
+    const parts = url.split('v=');
+    if (parts[1]) {
+      videoId = parts[1].split(/[&#]/)[0];
+    }
+  } else if (url.includes('youtube.com/v/')) {
+    const parts = url.split('youtube.com/v/');
+    if (parts[1]) {
+      videoId = parts[1].split(/[?#]/)[0];
+    }
+  }
+  if (videoId) {
+    return `https://www.youtube.com/embed/${videoId}`;
+  }
+  return url;
+};
+
 const normalizeStory = (story) => {
   if (!story) return null;
   return {
@@ -44,7 +72,7 @@ const normalizeStory = (story) => {
     id: story.id || story._id || story.story_id,
     title: story.title || story.heading || 'Story',
     content: story.content || story.description || '',
-    contentHtml: story.contentHtml || story.content_html || '',
+    contentHtml: story.contents || story.contentHtml || story.content_html || '',
     thumbnail: story.thumbnail || story.thumbnail_url || story.image || null,
     author_name: story.author_name || story.uploaded_by_name || story.user_name || 'Author',
     author_avatar: story.author_avatar || story.uploaded_by_avatar || story.user_avatar || null,
@@ -76,6 +104,8 @@ function AcademiaReadStory() {
   // --- State ---
   const [storyData, setStoryData] = useState(null);
   const [comments, setComments] = useState([]);
+  const [commentsLoading, setCommentsLoading] = useState(false);
+  const [newComment, setNewComment] = useState('');
   const [relatedStories, setRelatedStories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [newsletterEmail, setNewsletterEmail] = useState('');
@@ -87,7 +117,7 @@ function AcademiaReadStory() {
 
     const loadContent = async () => {
       setLoading(true);
-      
+
       // Scroll to top automatically when a new story loads
       window.scrollTo({ top: 0, behavior: 'smooth' });
 
@@ -107,7 +137,7 @@ function AcademiaReadStory() {
 
         const activeStory = selectedStory || normalizeStory(publishedStories[0]) || null;
         setStoryData(activeStory);
-        
+
         // Filter out the current story from the related list
         setRelatedStories(
           publishedStories
@@ -116,8 +146,10 @@ function AcademiaReadStory() {
             .filter((story) => String(story.id) !== String(activeStory?.id))
         );
 
-        const commentSource = activeStory?.comments || activeStory?.feedbacks || activeStory?.remarks || [];
-        setComments(Array.isArray(commentSource) ? commentSource.map((comment) => normalizeComment(comment)).filter(Boolean) : []);
+        // Fetch comments using the new API
+        if (activeStory?.id) {
+          await fetchComments(activeStory.id);
+        }
       } catch (e) {
         console.error("Failed to load story:", e);
         if (mounted) {
@@ -133,6 +165,68 @@ function AcademiaReadStory() {
     loadContent();
     return () => { mounted = false; };
   }, [storyId]);
+
+  // Fetch comments from the new API
+  const fetchComments = async (storyId) => {
+    try {
+      setCommentsLoading(true);
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_BASE_URL}/api/community-stories/stories/${storyId}/comments`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch comments');
+      }
+
+      const result = await response.json();
+      if (result.success && result.data) {
+        setComments(result.data.map(normalizeComment).filter(Boolean));
+      } else {
+        setComments([]);
+      }
+    } catch (err) {
+      console.error('Error fetching comments:', err);
+      setComments([]);
+    } finally {
+      setCommentsLoading(false);
+    }
+  };
+
+  // Submit a new comment
+  const handleSubmitComment = async () => {
+    if (!newComment.trim() || !storyData?.id) return;
+
+    const token = localStorage.getItem('token');
+    if (!token) {
+      alert("Please log in to submit a comment.");
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/community-stories/stories/${storyData.id}/comments`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          story_id: storyData.id,
+          content: newComment.trim()
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to submit comment');
+      }
+
+      setNewComment('');
+      fetchComments(storyData.id);
+    } catch (err) {
+      console.error('Error submitting comment:', err);
+      alert('Failed to submit comment. Please try again.');
+    }
+  };
 
   // --- Swiper Initialization ---
   useEffect(() => {
@@ -217,25 +311,11 @@ function AcademiaReadStory() {
           </div>
         </div>
 
-        {/* --- Main Story Wrapper --- */}
-        <div className="main-content-inner">
-          <div className="main-content-inner-h">
-            <h3>{loading ? 'Loading…' : currentStoryTitle}</h3>
-            <div>
-              <p>{loading ? '—' : currentStoryReadTime}</p>
-              <p>|</p>
-              <p>{currentStoryDate}</p>
-            </div>
-          </div>
-
-          <div className="main-content-inner-b">
-            {currentStoryImage ? (
-              <img src={currentStoryImage} alt={currentStoryTitle} style={{ width: '100%', borderRadius: '12px', objectFit: 'cover', maxHeight: '500px' }} />
-            ) : null}
-          </div>
-
-          {/* --- Author & Social Footer --- */}
-          <div className="story-footer">
+        {/* --- Header / Headline Section --- */}
+        <div className="article-header">
+          <h1 className="article-title">{loading ? 'Loading…' : currentStoryTitle}</h1>
+          
+          <div className="article-meta-row">
             <div className="story-author">
               <div className="story-author-img">
                 <img src={resolveStoryImage(storyData?.author_avatar) || learnersProfileImage} alt={currentStoryAuthor} />
@@ -255,6 +335,12 @@ function AcademiaReadStory() {
               </div>
             </div>
 
+            <div className="article-reading-info">
+              <span>{loading ? '—' : currentStoryReadTime}</span>
+              <span className="meta-separator">•</span>
+              <span>{currentStoryDate}</span>
+            </div>
+
             <div className="story-footer-r">
               <a href="#/" aria-label="Social 1"><img src={con5Icon} alt="Social" /></a>
               <a href="#/" aria-label="Social 2"><img src={con6Icon} alt="Social" /></a>
@@ -268,151 +354,176 @@ function AcademiaReadStory() {
               </div>
             </div>
           </div>
-
-          {/* --- The Story Content (Rich Text) --- */}
-          <div className="full-story">
-            {currentStoryContent ? (
-              <div 
-                dangerouslySetInnerHTML={{ 
-                  __html: storyData?.contentHtml || (`<p>${String(currentStoryContent).replace(/\n/g, '</p><p>')}</p>`) 
-                }} 
-                style={{
-                  color: '#334155',
-                  lineHeight: '1.8',
-                  fontSize: '1.05rem',
-                  wordBreak: 'break-word',       // PRO FIX: Prevents long unbroken text/links from overflowing
-                  overflowWrap: 'anywhere',
-                  whiteSpace: 'pre-wrap',
-                  maxWidth: '100%'
-                }}
-              />
-            ) : (
-              <div className="story-empty" style={{ textAlign: 'center', padding: '40px', background: '#F8FAFC', borderRadius: '12px', color: '#64748B' }}>
-                <h4>No story content yet</h4>
-                <p>This published story does not include full body content yet.</p>
-              </div>
-            )}
-          </div>
         </div>
-      </section>
 
-      {/* --- Comments & Related Projects Grid --- */}
-      <section className="main-content" style={{ marginTop: '32px' }}>
+        {/* --- Large Hero Featured Image --- */}
+        <div className="article-hero-container">
+          {currentStoryImage ? (
+            <img src={currentStoryImage} alt={currentStoryTitle} className="article-hero-image" />
+          ) : null}
+        </div>
+
+        {/* --- Two Column Layout --- */}
         <div className="main-content-new-grid">
           
-          {/* Left: Comments */}
+          {/* Left Column: Full Story + Comments */}
           <div className="mcnd-l">
-            <div className="mcnd-l-h">
-              <h2>Comments</h2>
-              <div className="new-comment">
-                <div className="new-comment-sender">
-                  <img src={learnersProfileImage} alt="Current user" />
+            
+            {/* The Story Content (Rich Text) */}
+            <div className="full-story">
+              {currentStoryContent ? (
+                <div 
+                  dangerouslySetInnerHTML={{ 
+                    __html: storyData?.contentHtml || (`<p>${String(currentStoryContent).replace(/\n/g, '</p><p>')}</p>`) 
+                  }} 
+                  className="story-html-content"
+                />
+              ) : (
+                <div className="story-empty" style={{ textAlign: 'center', padding: '40px', background: '#F8FAFC', borderRadius: '12px', color: '#64748B' }}>
+                  <h4>No story content yet</h4>
+                  <p>This published story does not include full body content yet.</p>
                 </div>
-                <div className="new-comment-text">
-                  <textarea 
-                    ref={commentInputRef}
-                    rows={1} 
-                    placeholder="Write a comment..."
-                    onInput={handleTextareaInput}
-                  />
+              )}
+              
+              {/* YouTube Video Embed */}
+              {storyData?.youtube_url && (
+                <div className="story-youtube-embed" style={{ marginTop: '36px' }}>
+                  <iframe
+                    width="100%"
+                    height="450"
+                    src={resolveYoutubeEmbedUrl(storyData.youtube_url)}
+                    title="YouTube video player"
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    allowFullScreen
+                    style={{ borderRadius: '12px', boxShadow: '0 6px 20px rgba(0, 0, 0, 0.05)', border: '1px solid rgba(0, 0, 0, 0.03)', display: 'block' }}
+                  ></iframe>
+                </div>
+              )}
+            </div>
+
+            <hr className="story-comments-divider" />
+
+            {/* Comments Section */}
+            <div className="comments-section-container">
+              <div className="mcnd-l-h">
+                <h2>Comments</h2>
+                <div className="new-comment">
+                  <div className="new-comment-sender">
+                    <img src={learnersProfileImage} alt="Current user" />
+                  </div>
+                  <div className="new-comment-text">
+                    <textarea
+                      ref={commentInputRef}
+                      rows={1}
+                      placeholder="Write a comment..."
+                      value={newComment}
+                      onChange={(e) => setNewComment(e.target.value)}
+                      onInput={handleTextareaInput}
+                    />
+                    <button type="button" onClick={handleSubmitComment} disabled={!newComment.trim() || commentsLoading}>
+                      <img src={pictureIcon} alt="Attach" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mcnd-l-b">
+                <div className="mcnd-l-b-h">
                   <button type="button">
-                    <img src={pictureIcon} alt="Attach" />
+                    <img src={acComIcon} alt="Comments" />
+                    <span>{comments.length} Comments</span>
                   </button>
+                  <button type="button">
+                    <img src={acSide3Icon} alt="Likes" />
+                    <span>{storyData?.likes_count || 0} Likes</span>
+                  </button>
+                  <button type="button">
+                    <img src={acSavIcon} alt="Saves" />
+                    <span>{storyData?.saves_count || 0} Saves</span>
+                  </button>
+                </div>
+
+                <div className="mcnd-l-b-b">
+                  {comments.length > 0 ? comments.map((comment) => (
+                    <div key={comment.id} className="comment">
+                      <div className="comment-img">
+                        <img src={resolveStoryImage(comment.avatar) || learnersProfileImage} alt="Comment author" />
+                      </div>
+                      <div className="comment-text">
+                        <div>
+                          <h6>{comment.author}</h6>
+                          <span>{comment.time}</span>
+                        </div>
+                        <p>{comment.text}</p>
+                      </div>
+                    </div>
+                  )) : (
+                    <div className="comment comment-empty" style={{ background: '#F8FAFC', border: '1px dashed #CBD5E1' }}>
+                      <div className="comment-text" style={{ textAlign: 'center', width: '100%', padding: '16px' }}>
+                        <h6 style={{ color: '#0F172A', marginBottom: '4px' }}>No comments yet</h6>
+                        <p style={{ color: '#64748B' }}>Be the first to share a thought on this story.</p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
 
-            <div className="mcnd-l-b">
-              <div className="mcnd-l-b-h">
-                <button type="button">
-                  <img src={acComIcon} alt="Comments" />
-                  <span>{comments.length} Comments</span>
-                </button>
-                <button type="button">
-                  <img src={acSide3Icon} alt="Likes" />
-                  <span>{storyData?.likes_count || 0} Likes</span>
-                </button>
-                <button type="button">
-                  <img src={acSavIcon} alt="Saves" />
-                  <span>{storyData?.saves_count || 0} Saves</span>
-                </button>
-              </div>
+          </div>
 
-              <div className="mcnd-l-b-b">
-                {comments.length > 0 ? comments.map((comment) => (
-                  <div key={comment.id} className="comment">
-                    <div className="comment-img">
-                      <img src={resolveStoryImage(comment.avatar) || learnersProfileImage} alt="Comment author" />
+          {/* Right Column: Sticky Sidebar */}
+          <div className="mcnd-r">
+            <div className="sticky-sidebar-content">
+              <div className="mcnd-r-h">
+                <h3>Related Stories</h3>
+              </div>
+              <div className="mcnd-r-b">
+                {relatedStories.length > 0 ? relatedStories.slice(0, 3).map((item) => (
+                  <div key={item.id} className="related-item" onClick={() => handleRelatedStoryClick(item.id)} style={{ cursor: 'pointer' }}>
+                    <div className="related-item-img">
+                      {resolveStoryImage(item.thumbnail) ? <img src={resolveStoryImage(item.thumbnail)} alt={item.title} /> : null}
                     </div>
-                    <div className="comment-text">
-                      <div>
-                        <h6>{comment.author}</h6>
-                        <span>{comment.time}</span>
+                    <div className="related-item-l">
+                      <div className="related-item-l-t">
+                        <div>
+                          <label>By</label>
+                          <h6>{item.author_name}</h6>
+                        </div>
+                        <div>
+                          <p>
+                            <img src={acSide3Icon} alt="Likes" />
+                            <span>{item.likes_count || 0}</span>
+                          </p>
+                          <p>
+                            <img src={acEyeIcon} alt="Views" />
+                            <span>{item.views_count || 0}</span>
+                          </p>
+                        </div>
                       </div>
-                      <p>{comment.text}</p>
+                      <div className="related-item-l-b">
+                        <p>{item.title}</p>
+                      </div>
                     </div>
                   </div>
                 )) : (
-                  <div className="comment comment-empty" style={{ background: '#F8FAFC', border: '1px dashed #CBD5E1' }}>
-                    <div className="comment-text" style={{ textAlign: 'center', width: '100%', padding: '16px' }}>
-                      <h6 style={{ color: '#0F172A', marginBottom: '4px' }}>No comments yet</h6>
-                      <p style={{ color: '#64748B' }}>Be the first to share a thought on this story.</p>
+                  <div className="related-item related-item-empty" style={{ background: '#F8FAFC', border: '1px dashed #CBD5E1', justifyContent: 'center' }}>
+                    <div className="related-item-l">
+                      <div className="related-item-l-b" style={{ textAlign: 'center', color: '#64748B' }}>
+                        <p>No related stories available.</p>
+                      </div>
                     </div>
                   </div>
                 )}
               </div>
-            </div>
-          </div>
-
-          {/* Right: Related Projects (Side list) */}
-          <div className="mcnd-r">
-            <div className="mcnd-r-h">
-              <h3>Related Stories</h3>
-            </div>
-            <div className="mcnd-r-b">
-              {relatedStories.length > 0 ? relatedStories.slice(0, 3).map((item) => (
-                <div key={item.id} className="related-item" onClick={() => handleRelatedStoryClick(item.id)} style={{ cursor: 'pointer' }}>
-                  <div className="related-item-img">
-                    {resolveStoryImage(item.thumbnail) ? <img src={resolveStoryImage(item.thumbnail)} alt={item.title} /> : null}
-                  </div>
-                  <div className="related-item-l">
-                    <div className="related-item-l-t">
-                      <div>
-                        <label>By</label>
-                        <h6>{item.author_name}</h6>
-                      </div>
-                      <div>
-                        <p>
-                          <img src={acSide3Icon} alt="Likes" />
-                          <span>{item.likes_count || 0}</span>
-                        </p>
-                        <p>
-                          <img src={acEyeIcon} alt="Views" />
-                          <span>{item.views_count || 0}</span>
-                        </p>
-                      </div>
-                    </div>
-                    <div className="related-item-l-b">
-                      <p>{item.title}</p>
-                    </div>
-                  </div>
-                </div>
-              )) : (
-                <div className="related-item related-item-empty" style={{ background: '#F8FAFC', border: '1px dashed #CBD5E1', justifyContent: 'center' }}>
-                  <div className="related-item-l">
-                    <div className="related-item-l-b" style={{ textAlign: 'center', color: '#64748B' }}>
-                      <p>No related stories available.</p>
-                    </div>
-                  </div>
+              {relatedStories.length > 3 && (
+                <div className="mcnd-r-CTA">
+                  <button type="button" onClick={() => navigate('/academia/watch')}>See more</button>
                 </div>
               )}
             </div>
-            {relatedStories.length > 3 && (
-              <div className="mcnd-r-CTA">
-                <button type="button" onClick={() => navigate('/academia/watch')}>See more</button>
-              </div>
-            )}
           </div>
+
         </div>
       </section>
 
