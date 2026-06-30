@@ -5,9 +5,6 @@ import HOATopbar from './HOATopbar';
 import HOAFooter from './HOAFooter';
 import './hoa-layout.css';
 
-const HOALayout = ({ children, currentPage, breadcrumb }) => {
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-
 const HOALayout = ({ children, currentPage: propCurrentPage }) => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -65,7 +62,7 @@ const HOALayout = ({ children, currentPage: propCurrentPage }) => {
   // --- Auto-detect Current Page ---
   // If a prop isn't passed, it intelligently reads the URL to tell the sidebar what's active.
   const derivedPage = location.pathname.split('/').filter(Boolean).pop();
-  
+
   // If the path is exactly '/academia/hoa', set it to 'index' for the sidebar matching logic
   const currentPage = propCurrentPage || (derivedPage === 'hoa' ? 'index' : derivedPage);
 
@@ -94,10 +91,10 @@ const HOALayout = ({ children, currentPage: propCurrentPage }) => {
             Your account has been deactivated or suspended. You can no longer access this platform. Please contact support if you believe this is an error.
           </p>
           <div className="logout-modal-buttons" style={{ marginTop: '20px' }}>
-            <button 
-              type="button" 
-              className="logout-confirm" 
-              style={{ background: '#EF4444', color: '#fff', width: '100%', padding: '10px' }} 
+            <button
+              type="button"
+              className="logout-confirm"
+              style={{ background: '#EF4444', color: '#fff', width: '100%', padding: '10px' }}
               onClick={() => {
                 localStorage.clear();
                 navigate('/academia/auth/signin');
@@ -113,20 +110,19 @@ const HOALayout = ({ children, currentPage: propCurrentPage }) => {
 
   return (
     <div className="hoa-dashboard-wrapper animate-fade-in">
-      
+
       {/* Sidebar */}
       <HOASidebar currentPage={currentPage} onLogout={() => setShowLogoutModal(true)} />
-      
+
       {/* Main Content Area */}
       <div className="hoa-main-container">
-        <HOATopbar breadcrumb={breadcrumb} />
         <HOATopbar />
-        
+
         {/* Render explicitly passed children OR dynamically load via React Router Outlet */}
         <main className="hoa-content-area">
           {children || <Outlet />}
         </main>
-        
+
         <HOAFooter />
       </div>
 
@@ -137,9 +133,9 @@ const HOALayout = ({ children, currentPage: propCurrentPage }) => {
             <p>Are you sure you want to log out?</p>
             <div className="logout-modal-buttons">
               <button type="button" className="logout-cancel" onClick={() => setShowLogoutModal(false)}>Cancel</button>
-              <button 
-                type="button" 
-                className="logout-confirm" 
+              <button
+                type="button"
+                className="logout-confirm"
                 onClick={() => {
                   localStorage.clear();
                   setShowLogoutModal(false);
@@ -152,7 +148,7 @@ const HOALayout = ({ children, currentPage: propCurrentPage }) => {
           </div>
         </div>
       )}
-      
+
     </div>
   );
 };

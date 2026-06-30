@@ -15,11 +15,10 @@ const languageOptions = [
   { label: 'FR', flag: '/assets/icons/france.svg' },
 ];
 
-const HOATopbar = ({ breadcrumb = { section: 'Dashboard', page: 'Overview' } }) => {
 const HOATopbar = () => {
   const location = useLocation();
   const dropdownRef = useRef(null);
-  
+
   // --- State ---
   const [isLanguageOpen, setIsLanguageOpen] = useState(false);
   const [activeLanguage, setActiveLanguage] = useState(languageOptions[1]); // Default to EN
@@ -63,10 +62,10 @@ const HOATopbar = () => {
           headers: { Authorization: `Bearer ${token}` }
         });
         const data = await res.json();
-        
+
         if (mounted && res.ok) {
           const user = data.data || data;
-          
+
           // Safe Image Resolver
           let avatarSrc = defaultProfileImage;
           if (user.avatar) {
@@ -101,7 +100,6 @@ const HOATopbar = () => {
     <header className="hoa-topbar">
       {/* Left: Dynamic Breadcrumbs */}
       <div className="hoa-topbar-left">
-        <h2>{breadcrumb.section} <span>/ {breadcrumb.page}</span></h2>
         <h2 style={{ textTransform: 'capitalize' }}>
           Dashboard <span>/ {getPageName()}</span>
         </h2>
@@ -123,7 +121,7 @@ const HOATopbar = () => {
         <button className="hoa-icon-btn" title="Apps">
           <img src={hoatopicon2} alt="Apps" />
         </button>
-        
+
         {/* Language Selector */}
         <div className="hoa-lang-selector" ref={dropdownRef}>
           <button
@@ -135,14 +133,14 @@ const HOATopbar = () => {
           >
             <img src={activeLanguage.flag} alt={activeLanguage.label} />
             <span>{activeLanguage.label}</span>
-            <img 
-              src={hoadowncaret} 
-              alt="Dropdown" 
-              className="hoa-caret" 
+            <img
+              src={hoadowncaret}
+              alt="Dropdown"
+              className="hoa-caret"
               style={{ transform: isLanguageOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}
             />
           </button>
-          
+
           {isLanguageOpen && (
             <div className="hoa-lang-dropdown" role="listbox">
               {languageOptions.map((option) => (

@@ -15,7 +15,6 @@ const PLANNING_NAV_ITEMS = [
   { label: 'Community', to: '/academia/hoa/community', page: 'community' },
 ];
 
-const HOASidebar = ({ currentPage }) => {
 const HOASidebar = ({ currentPage, onLogout }) => {
   const navigate = useNavigate();
   const preventDefault = (e) => e.preventDefault();
@@ -85,6 +84,8 @@ const HOASidebar = ({ currentPage, onLogout }) => {
             <NavLink to="/academia/hoa/events-planning" className={getPlanningIconClassName}>
               <button aria-label="Plannings">
                 <img src="/assets/icons/briefcase2.svg" alt="Plannings" />
+              </button>
+            </NavLink>
             <a href="#reports" onClick={preventDefault}>
               <button type="button" aria-label="Reports">
                 <img src="/assets/icons/agent2.svg" alt="Reports" />
@@ -94,7 +95,7 @@ const HOASidebar = ({ currentPage, onLogout }) => {
               <button type="button" aria-label="Chat">
                 <img src="/assets/icons/tsidebar2-1.svg" alt="Chat" />
               </button>
-            </NavLink>
+            </a>
           </div>
 
           <div className="sidebar-footer">
