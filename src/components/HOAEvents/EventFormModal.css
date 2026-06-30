@@ -1,0 +1,342 @@
+.create-event-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.4);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    backdrop-filter: blur(4px);
+    font-family: 'Inter', sans-serif;
+}
+
+.create-event-modal-content {
+    background: #ffffff;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 680px;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: 24px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    position: relative;
+    box-sizing: border-box;
+}
+
+.create-event-modal-close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    border: none;
+    background: transparent;
+    font-size: 28px;
+    font-weight: 300;
+    color: #A1A5B7;
+    cursor: pointer;
+    line-height: 1;
+    transition: color 0.2s;
+}
+
+.create-event-modal-close:hover {
+    color: #450468;
+}
+
+.create-event-modal-header {
+    margin-bottom: 20px;
+    border-bottom: 1px solid #F1F1F4;
+    padding-bottom: 12px;
+}
+
+.create-event-modal-header h2 {
+    margin: 0;
+    font-size: 20px;
+    color: #071437;
+    font-weight: 700;
+}
+
+.create-event-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.create-event-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.create-event-row-sub {
+    display: grid;
+    grid-template-columns: 100px 1fr;
+    gap: 12px;
+}
+
+.create-event-form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.create-event-form-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #4B5675;
+}
+
+.create-event-form-label.required::after {
+    content: " *";
+    color: #F8285A;
+}
+
+.create-event-form-input,
+.create-event-form-select,
+.create-event-form-textarea {
+    border: 1px solid #DBDFE9;
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-size: 13px;
+    font-family: inherit;
+    color: #071437;
+    background: #FCFCFC;
+    outline: none;
+    transition: border-color 0.2s, background-color 0.2s;
+    box-sizing: border-box;
+    width: 100%;
+}
+
+.create-event-form-input:focus,
+.create-event-form-select:focus,
+.create-event-form-textarea:focus {
+    border-color: #450468;
+    background: #FFFFFF;
+}
+
+.create-event-form-textarea {
+    resize: vertical;
+}
+
+.create-event-row-checkboxes {
+    display: flex;
+    gap: 24px;
+    margin-top: 4px;
+}
+
+.create-event-checkbox-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.create-event-checkbox-group label {
+    font-size: 13px;
+    font-weight: 500;
+    color: #4B5675;
+    cursor: pointer;
+}
+
+.create-event-checkbox {
+    width: 16px;
+    height: 16px;
+    accent-color: #450468;
+    cursor: pointer;
+}
+
+.create-event-file-upload {
+    border: 1.5px dashed #DBDFE9;
+    border-radius: 8px;
+    padding: 16px;
+    text-align: center;
+    background: #FCFCFC;
+    cursor: pointer;
+    transition: background-color 0.2s, border-color 0.2s;
+}
+
+.create-event-file-upload:hover {
+    background: #F8FAFC;
+    border-color: #450468;
+}
+
+.create-event-file-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    color: #78829D;
+}
+
+.create-event-file-placeholder svg {
+    color: #A1A5B7;
+}
+
+.create-event-file-placeholder p {
+    margin: 0;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.create-event-form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 12px;
+    border-top: 1px solid #F1F1F4;
+    padding-top: 16px;
+}
+
+.create-event-btn {
+    border: none;
+    border-radius: 6px;
+    padding: 10px 20px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s, transform 0.1s;
+}
+
+.create-event-btn:active {
+    transform: scale(0.98);
+}
+
+.create-event-btn-secondary {
+    background: #F5F5F7;
+    color: #78829D;
+}
+
+.create-event-btn-secondary:hover {
+    background: #EAEAEF;
+    color: #4B5675;
+}
+
+.create-event-btn-primary {
+    background: #450468;
+    color: #ffffff;
+}
+
+.create-event-btn-primary:hover {
+    background: #340250;
+}
+
+/* Custom Scrollbar for the modal content */
+.create-event-modal-content::-webkit-scrollbar {
+    width: 6px;
+}
+
+.create-event-modal-content::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.create-event-modal-content::-webkit-scrollbar-thumb {
+    background: #E4E6EF;
+    border-radius: 100px;
+}
+
+.create-event-modal-content::-webkit-scrollbar-thumb:hover {
+    background: #CBD5E1;
+}
+
+@media (max-width: 600px) {
+    .create-event-row {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+}
+
+/* Autocomplete and Tags/Chips styling */
+.create-event-search-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.create-event-search-results {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: #ffffff;
+    border: 1px solid #DBDFE9;
+    border-radius: 6px;
+    margin-top: 4px;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 1100;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.create-event-search-item {
+    padding: 8px 12px;
+    font-size: 13px;
+    color: #071437;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    transition: background-color 0.15s;
+}
+
+.create-event-search-item:hover {
+    background-color: #F8F9FA;
+}
+
+.create-event-search-item strong {
+    font-weight: 600;
+    color: #450468;
+}
+
+.create-event-search-item span {
+    font-size: 11px;
+    color: #78829D;
+}
+
+.create-event-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+    max-height: 120px;
+    overflow-y: auto;
+    padding: 4px;
+    border: 1px solid #F1F1F4;
+    border-radius: 6px;
+    background: #FCFCFC;
+}
+
+.create-event-chip {
+    display: inline-flex;
+    align-items: center;
+    background: #F1E9F6;
+    border: 1px solid #D6C2E6;
+    border-radius: 4px;
+    padding: 4px 8px;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    color: #450468;
+    transition: background-color 0.15s;
+}
+
+.create-event-chip:hover {
+    background: #E6D5EE;
+}
+
+.create-event-chip button {
+    border: none;
+    background: transparent;
+    color: #7A5B94;
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 1;
+    padding: 0;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.create-event-chip button:hover {
+    color: #F8285A;
+}
+

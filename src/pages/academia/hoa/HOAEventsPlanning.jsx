@@ -1,5 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo, useRef, useCallback } from 'react';
 import HOALayout from '../../../components/layouts/HOALayout/HOALayout';
+import EventFormModal from '../../../components/HOAEvents/EventFormModal';
+import Toast from '../../../components/Toast/Toast';
 import './hoa-events-planning.css';
 import './hoa-reports.css';
 
@@ -45,9 +47,31 @@ const IconChevronRight = () => (
 );
 
 const getStatusColor = (status) => {
-    if (status === 'Confirmed') return 'completed';
-    if (status === 'Canceled') return 'failed';
+    const s = String(status).toLowerCase();
+    if (s === 'scheduled' || s === 'confirmed' || s === 'active') return 'completed';
+    if (s === 'cancelled' || s === 'failed') return 'failed';
     return 'progress';
+};
+
+const getEventColor = (status) => {
+    const s = String(status).toLowerCase();
+    switch (s) {
+        case 'draft': return 'gray';
+        case 'scheduled': return 'blue';
+        case 'active': return 'green';
+        case 'completed': return 'purple';
+        case 'cancelled': return 'red';
+        default: return 'yellow';
+    }
+};
+
+const getMonday = (d) => {
+  const date = new Date(d);
+  const day = date.getDay();
+  const diff = date.getDate() - day + (day === 0 ? -6 : 1);
+  const monday = new Date(date.setDate(diff));
+  monday.setHours(0, 0, 0, 0);
+  return monday;
 };
 
 const HOAEventsPlanning = () => {
@@ -57,36 +81,56 @@ const HOAEventsPlanning = () => {
     const [pageSize, setPageSize] = useState('5');
     const [isPageSizeOpen, setIsPageSizeOpen] = useState(false);
     const [activeActionMenu, setActiveActionMenu] = useState(null);
+    const [currentPage, setCurrentPage] = useState(1);
+    
+    const [events, setEvents] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [selectedWeekStart, setSelectedWeekStart] = useState(() => getMonday(new Date()));
+    const [toast, setToast] = useState(null);
+    const handleCloseToast = useCallback(() => setToast(null), []);
+
+    // Modal state
+    const [isFormModalOpen, setIsFormModalOpen] = useState(false);
+    const [editingEvent, setEditingEvent] = useState(null);
+
     const pageSizeOptions = ['5', '10', '25'];
+    const pageSizeRef = useRef(null);
 
-    const scheduledEvents = [
-        { id: 1, day: 2, top: 160, height: 160, title: 'Math Exam', time: '08:00 AM - 10:00 AM', status: 'Confirmed', color: 'yellow', attendees: '+4' },
-        { id: 2, day: 2, top: 480, height: 80, title: 'Math Explanation', time: '12:00 PM - 01:00 PM', status: 'Confirmed', color: 'blue', attendees: null, subtitle: 'All Students' },
-        { id: 3, day: 3, top: 240, height: 120, title: 'Math Explanation', time: '09:00 AM - 10:30 AM', status: 'In Review', color: 'gray', attendees: '+4', subtitle: 'All Students' },
-        { id: 4, day: 5, top: 80, height: 120, title: 'Math Explanation', time: '07:00 AM - 08:30 AM', status: 'In Review', color: 'purple', attendees: '+4' },
-        { id: 5, day: 5, top: 640, height: 120, title: 'Math Explanation', time: '14:00 PM - 15:30 PM', status: 'In Review', color: 'purple', attendees: '+4' },
-        { id: 6, day: 6, top: 320, height: 120, title: 'Math Explanation', time: '10:00 AM - 11:30 AM', status: 'Confirmed', color: 'green', attendees: '+4', subtitle: 'All Students' },
-        { id: 7, day: 6, top: 440, height: 120, title: 'Math Explanation', time: '11:30 AM - 01:00 PM', status: 'Canceled', color: 'red', attendees: '+4' },
-    ];
+    const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
-    const logsData = Array(8).fill(null).map((_, idx) => ({
-        id: idx + 1,
-        eventName: 'Math Explanations',
-        eventTime: idx === 0 ? '1 day ago' : idx === 1 ? '14 hours ago' : '12 Jan 2024',
-        coordinator: idx === 0 ? 'Ndayamabje Froduard' : idx === 1 ? 'Aime' : idx === 2 ? 'Anna' : 'Dominika',
-        role: idx === 0 ? 'Tutor' : idx === 1 ? 'Design' : 'Tutor',
-        timeRange: idx === 2 ? '---' : '08:00 AM - 10:00 AM',
-        students: idx === 2 ? '---' : idx === 1 ? '345' : idx === 0 ? '45' : '23',
-        duration: idx === 2 ? '1 Hours 13 Min' : idx === 1 ? '1 Hours 0 Min' : '2 Hours 24 Min',
-        status: idx === 1 ? 'Canceled' : idx === 2 ? 'In Review' : 'Confirmed',
-    }));
+    const fetchEvents = async () => {
+        try {
+            setLoading(true);
+            const token = localStorage.getItem('token');
+            const res = await fetch(`${API_BASE_URL}/api/events?limit=250`, {
+                headers: token ? { Authorization: `Bearer ${token}` } : {}
+            });
+            const result = await res.json();
+            if (res.ok && result.success && Array.isArray(result.data)) {
+                setEvents(result.data);
+                setError(null);
+            } else {
+                throw new Error(result.message || 'Failed to fetch events');
+            }
+        } catch (err) {
+            console.error('Fetch events error:', err);
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchEvents();
+    }, []);
 
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (!event.target.closest('.rep-action-dropdown-menu') && !event.target.closest('.rep-action-btn')) {
                 setActiveActionMenu(null);
             }
-            if (!event.target.closest('.page-size-menu') && !event.target.closest('.page-size-button')) {
+            if (pageSizeRef.current && !pageSizeRef.current.contains(event.target)) {
                 setIsPageSizeOpen(false);
             }
         };
@@ -94,6 +138,53 @@ const HOAEventsPlanning = () => {
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [pageSize]);
+
+    const updateEventStatus = async (id, newStatus) => {
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`${API_BASE_URL}/api/events/${id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: token ? `Bearer ${token}` : ''
+                },
+                body: JSON.stringify({ status: newStatus })
+            });
+            const result = await res.json();
+            if (res.ok) {
+                setToast({ message: `Event status updated to ${newStatus}`, type: 'success' });
+                fetchEvents();
+            } else {
+                throw new Error(result.message || 'Failed to update status');
+            }
+        } catch (err) {
+            setToast({ message: err.message, type: 'error' });
+        }
+    };
+
+    const handleDeleteEvent = async (id) => {
+        if (!window.confirm('Are you sure you want to delete this event?')) return;
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`${API_BASE_URL}/api/events/${id}`, {
+                method: 'DELETE',
+                headers: token ? { Authorization: `Bearer ${token}` } : {}
+            });
+            const result = await res.json();
+            if (res.ok) {
+                setToast({ message: 'Event deleted successfully', type: 'success' });
+                fetchEvents();
+            } else {
+                throw new Error(result.message || 'Failed to delete event');
+            }
+        } catch (err) {
+            setToast({ message: err.message, type: 'error' });
+        }
+    };
 
     const clearSelectedRows = () => setSelectedRows([]);
 
@@ -109,6 +200,304 @@ const HOAEventsPlanning = () => {
         setSortConfig({ key, direction });
     };
 
+    const getWeekRangeLabel = (monday) => {
+        const sunday = new Date(monday);
+        sunday.setDate(sunday.getDate() + 6);
+        
+        const startOpt = { day: '2-digit' };
+        const endOpt = { day: '2-digit', month: 'long' };
+        
+        if (monday.getMonth() !== sunday.getMonth()) {
+            startOpt.month = 'short';
+        }
+        
+        const startStr = monday.toLocaleDateString('en-US', startOpt);
+        const endStr = sunday.toLocaleDateString('en-US', endOpt);
+        return `${startStr} - ${endStr}`;
+    };
+
+    const handlePrevWeek = () => {
+        setSelectedWeekStart(prev => {
+            const next = new Date(prev);
+            next.setDate(next.getDate() - 7);
+            return next;
+        });
+    };
+
+    const handleNextWeek = () => {
+        setSelectedWeekStart(prev => {
+            const next = new Date(prev);
+            next.setDate(next.getDate() + 7);
+            return next;
+        });
+    };
+
+    const getHeaderDayLabel = (dayIndex) => {
+        const d = new Date(selectedWeekStart);
+        d.setDate(d.getDate() + (dayIndex - 1));
+        const dayName = d.toLocaleDateString('en-US', { weekday: 'short' });
+        const dayNum = d.getDate();
+        return { label: `${dayIndex}- ${dayName} ${dayNum}`, date: d };
+    };
+
+    const isToday = (date) => new Date().toDateString() === date.toDateString();
+
+    // Dynamic calendar hours calculation for HOAEventsPlanning
+    const calendarHoursInfo = useMemo(() => {
+        const DEFAULT_START_HOUR = 8; // 8:00 AM
+        const DEFAULT_END_HOUR = 18;  // 6:00 PM
+
+        const weekStart = new Date(selectedWeekStart);
+        weekStart.setHours(0, 0, 0, 0);
+        const weekEnd = new Date(weekStart);
+        weekEnd.setDate(weekEnd.getDate() + 7);
+
+        let minHour = DEFAULT_START_HOUR;
+        let maxHour = DEFAULT_END_HOUR;
+
+        events.forEach(event => {
+            if (!event.event_datetime) return;
+            const startsAt = new Date(event.event_datetime);
+            if (startsAt >= weekStart && startsAt < weekEnd) {
+                const durMins = Number(event.duration_minutes || 60);
+                const endsAt = event.end_datetime ? new Date(event.end_datetime) : new Date(startsAt.getTime() + durMins * 60000);
+
+                const startHour = startsAt.getHours();
+                const endHour = Math.ceil((endsAt.getHours() * 60 + endsAt.getMinutes()) / 60);
+
+                if (startHour < minHour) minHour = startHour;
+                if (endHour > maxHour) maxHour = endHour;
+            }
+        });
+
+        minHour = Math.max(0, minHour);
+        maxHour = Math.min(24, maxHour);
+
+        const hours = [];
+        for (let h = minHour; h < maxHour; h++) {
+            hours.push(h);
+        }
+
+        return {
+            scheduleHours: hours,
+            startHour: minHour,
+            endHour: maxHour
+        };
+    }, [events, selectedWeekStart]);
+
+    const scheduleHours = calendarHoursInfo.scheduleHours;
+
+    const scheduledEvents = useMemo(() => {
+        const weekStart = new Date(selectedWeekStart);
+        weekStart.setHours(0, 0, 0, 0);
+        const weekEnd = new Date(weekStart);
+        weekEnd.setDate(weekEnd.getDate() + 7);
+
+        const { startHour, endHour } = calendarHoursInfo;
+        const calendarStartMins = startHour * 60;
+        const totalCalendarMins = (endHour - startHour) * 60;
+
+        const weekEvents = [];
+
+        events.forEach(event => {
+            if (!event.event_datetime) return;
+            const eventDate = new Date(event.event_datetime);
+            if (eventDate >= weekStart && eventDate < weekEnd) {
+                const rawDay = eventDate.getDay(); 
+                const day = rawDay === 0 ? 7 : rawDay;
+
+                const startMins = eventDate.getHours() * 60 + eventDate.getMinutes();
+
+                let duration = 60;
+                if (event.duration_minutes) {
+                    duration = event.duration_minutes;
+                } else if (event.end_datetime) {
+                    duration = (new Date(event.end_datetime) - eventDate) / 60000;
+                }
+
+                const endMins = startMins + duration;
+
+                const relativeStart = Math.max(0, startMins - calendarStartMins);
+                const top = (relativeStart / 60) * 80;
+                const height = (duration / 60) * 80;
+
+                const formatTime = (date) => date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                const endLimit = new Date(eventDate.getTime() + duration * 60000);
+                const time = `${formatTime(eventDate)} - ${formatTime(endLimit)}`;
+
+                weekEvents.push({
+                    id: event.id,
+                    day,
+                    top,
+                    height,
+                    startMins,
+                    endMins,
+                    title: event.name,
+                    subtitle: event.subtitle || event.location || '',
+                    time,
+                    status: event.status,
+                    color: getEventColor(event.status),
+                    attendees: event.total_registrations ? `+${event.total_registrations}` : null,
+                    rawEvent: event,
+                    column: 0,
+                    maxColumns: 1
+                });
+            }
+        });
+
+        // Resolve overlaps per day
+        const finalizedEvents = [];
+        for (let d = 1; d <= 7; d++) {
+            const dayEvents = weekEvents.filter(e => e.day === d);
+            
+            // Sort
+            dayEvents.sort((a, b) => {
+                if (a.startMins !== b.startMins) return a.startMins - b.startMins;
+                return (b.endMins - b.startMins) - (a.endMins - a.startMins);
+            });
+
+            const clusters = [];
+            dayEvents.forEach(event => {
+                let placed = false;
+                for (let i = 0; i < clusters.length; i++) {
+                    const cluster = clusters[i];
+                    const overlaps = cluster.some(member => {
+                        return event.startMins < member.endMins && event.endMins > member.startMins;
+                    });
+                    if (overlaps) {
+                        cluster.push(event);
+                        placed = true;
+                        break;
+                    }
+                }
+                if (!placed) {
+                    clusters.push([event]);
+                }
+            });
+
+            clusters.forEach(cluster => {
+                const columns = [];
+                cluster.forEach(event => {
+                    let colIndex = 0;
+                    while (true) {
+                        if (!columns[colIndex]) {
+                            columns[colIndex] = [];
+                        }
+                        const col = columns[colIndex];
+                        const overlaps = col.some(member => {
+                            return event.startMins < member.endMins && event.endMins > member.startMins;
+                        });
+                        if (!overlaps) {
+                            col.push(event);
+                            event.column = colIndex;
+                            break;
+                        }
+                        colIndex++;
+                    }
+                });
+
+                const maxColumns = columns.length;
+                cluster.forEach(event => {
+                    event.maxColumns = maxColumns;
+                });
+            });
+
+            finalizedEvents.push(...dayEvents);
+        }
+
+        return finalizedEvents;
+    }, [events, selectedWeekStart, calendarHoursInfo]);
+
+    const todayIndicator = useMemo(() => {
+        const today = new Date();
+        const weekStart = new Date(selectedWeekStart);
+        weekStart.setHours(0, 0, 0, 0);
+        const weekEnd = new Date(weekStart);
+        weekEnd.setDate(weekEnd.getDate() + 7);
+
+        const inActiveWeek = today >= weekStart && today < weekEnd;
+        if (!inActiveWeek) return null;
+
+        const day = today.getDay();
+        const dayColIndex = day === 0 ? 7 : day;
+        const currentHour = today.getHours();
+        const currentMin = today.getMinutes();
+
+        const { startHour, endHour } = calendarHoursInfo;
+        if (currentHour >= startHour && currentHour < endHour) {
+            const top = (currentHour - startHour + currentMin / 60) * 80;
+            const timeLabel = today.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            return { day: dayColIndex, top, label: timeLabel };
+        }
+        return null;
+    }, [selectedWeekStart, calendarHoursInfo]);
+
+    const logsData = useMemo(() => {
+        return events.map(event => {
+            const eventDate = new Date(event.event_datetime);
+            
+            const formatTime = (date) => date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            let durationMin = 60;
+            if (event.duration_minutes) {
+                durationMin = event.duration_minutes;
+            } else if (event.end_datetime) {
+                durationMin = (new Date(event.end_datetime) - eventDate) / 60000;
+            }
+            const endTime = new Date(eventDate.getTime() + durationMin * 60000);
+            const timeRange = `${formatTime(eventDate)} - ${formatTime(endTime)}`;
+            
+            const hours = Math.floor(durationMin / 60);
+            const mins = Math.floor(durationMin % 60);
+            const durationStr = `${hours} Hours ${mins} Min`;
+
+            const diffMs = new Date() - eventDate;
+            const diffHours = diffMs / 3600000;
+            let relativeTime = '';
+            if (Math.abs(diffHours) < 24) {
+                relativeTime = diffHours > 0 ? `${Math.floor(diffHours)} hours ago` : `in ${Math.floor(Math.abs(diffHours))} hours`;
+            } else {
+                relativeTime = eventDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+            }
+
+            return {
+                id: event.id,
+                eventName: event.name,
+                eventTime: relativeTime,
+                coordinator: event.creator_name || 'Admin',
+                role: event.creator_role || 'admin',
+                timeRange,
+                students: event.total_registrations || 0,
+                duration: durationStr,
+                status: event.status,
+                rawEvent: event
+            };
+        });
+    }, [events]);
+
+    const stats = useMemo(() => {
+        const total = events.length;
+        const approved = events.filter(e => ['scheduled', 'active', 'completed'].includes(e.status)).length;
+        const failed = events.filter(e => e.status === 'cancelled').length;
+        const pending = events.filter(e => e.status === 'draft').length;
+        const totalAttendees = events.reduce((sum, e) => sum + (e.total_registrations || 0), 0);
+        return { total, approved, failed, pending, totalAttendees };
+    }, [events]);
+
+    const handleAddEventClick = () => {
+        setEditingEvent(null);
+        setIsFormModalOpen(true);
+    };
+
+    const handleEditEventClick = (eventObj) => {
+        setEditingEvent(eventObj);
+        setIsFormModalOpen(true);
+    };
+
+    const handleFormSuccess = (msg) => {
+        setToast({ message: msg, type: 'success' });
+        fetchEvents();
+    };
+
     const getSortedLogs = () => {
         const sorted = [...logsData];
         if (!sortConfig.key) return sorted;
@@ -122,6 +511,15 @@ const HOAEventsPlanning = () => {
         });
     };
 
+    const paginatedLogs = useMemo(() => {
+        const sorted = getSortedLogs();
+        const size = parseInt(pageSize, 10);
+        const start = (currentPage - 1) * size;
+        return sorted.slice(start, start + size);
+    }, [events, sortConfig, pageSize, currentPage]);
+
+    const totalPages = Math.ceil(logsData.length / parseInt(pageSize, 10)) || 1;
+
     return (
         <HOALayout currentPage="events-planning" breadcrumb={{ section: 'Plannings', page: 'Overview' }}>
             <div className="hoae-page-wrapper hoa-reports-page">
@@ -129,12 +527,12 @@ const HOAEventsPlanning = () => {
                 <div className="hoa-page-header">
                     <h1>Events & Planning</h1>
                     <div className="hoa-header-actions">
-                        <span className="hoa-update-status">
+                        <span className="hoa-update-status" onClick={fetchEvents} style={{ cursor: 'pointer' }}>
                             <img src={hoarefresh} alt="Refresh" className="sync-icon" />
-                            Data updated every 5min
-                            <span className="dot"></span>
+                            {loading ? 'Refreshing...' : 'Data updated just now'}
+                            <span className="dot" style={{ backgroundColor: loading ? '#FFC700' : '#17C653' }}></span>
                         </span>
-                        <button type="button" className="hoa-btn-primary">
+                        <button type="button" className="hoa-btn-primary" onClick={() => window.open('/', '_blank')}>
                             Go to website <img src={hoagoto} alt="Go" />
                         </button>
                     </div>
@@ -143,23 +541,23 @@ const HOAEventsPlanning = () => {
                 <div className="hoae-stats-top-container">
                     <div className="hoae-stats-container">
                         <div className="hoae-stat-block">
-                            <h3>13.3M</h3>
+                            <h3>{stats.total}</h3>
                             <p>Total Events</p>
                         </div>
                         <div className="hoae-stat-block">
-                            <h3>131</h3>
+                            <h3>{stats.approved}</h3>
                             <p>Approved Event</p>
                         </div>
                         <div className="hoae-stat-block">
-                            <h3>204</h3>
+                            <h3>{stats.failed}</h3>
                             <p>Failed Event</p>
                         </div>
                         <div className="hoae-stat-block">
-                            <h3>34</h3>
+                            <h3>{stats.pending}</h3>
                             <p>Pending Event</p>
                         </div>
                         <div className="hoae-stat-block">
-                            <h3>343</h3>
+                            <h3>{stats.totalAttendees}</h3>
                             <p>Tot. Attendees</p>
                         </div>
                     </div>
@@ -189,19 +587,19 @@ const HOAEventsPlanning = () => {
                         <div className="hoae-sub-header">
                             <div className="hoae-sub-title">
                                 <h2>Schedule</h2>
-                                <p>3,461 Events</p>
+                                <p>{scheduledEvents.length} Events this week</p>
                             </div>
                             <div className="hoae-date-navigator">
-                                <button type="button" className="hoae-icon-btn-outline" aria-label="Previous week">
+                                <button type="button" className="hoae-icon-btn-outline" aria-label="Previous week" onClick={handlePrevWeek}>
                                     <IconChevronLeft />
                                 </button>
-                                <span className="hoae-date-range">01 - 07 January</span>
-                                <button type="button" className="hoae-icon-btn-outline" aria-label="Next week">
+                                <span className="hoae-date-range">{getWeekRangeLabel(selectedWeekStart)}</span>
+                                <button type="button" className="hoae-icon-btn-outline" aria-label="Next week" onClick={handleNextWeek}>
                                     <IconChevronRight />
                                 </button>
                             </div>
                             <div className="hoae-add-actions">
-                                <button type="button" className="hoae-btn-outline">
+                                <button type="button" className="hoae-btn-outline" onClick={handleAddEventClick}>
                                     <img src={hoagrayadd} style={{ width: 16 }} alt="" /> Add Event
                                 </button>
                             </div>
@@ -210,30 +608,38 @@ const HOAEventsPlanning = () => {
                         <div className="hoae-calendar-wrapper">
                             <div className="hoae-cal-header">
                                 <div className="hoae-cal-th hoae-time-col">Hour</div>
-                                <div className="hoae-cal-th">1- Mon</div>
-                                <div className="hoae-cal-th active">2- Tue</div>
-                                <div className="hoae-cal-th">3- Wed</div>
-                                <div className="hoae-cal-th">4- Thu</div>
-                                <div className="hoae-cal-th">5- Fri</div>
-                                <div className="hoae-cal-th">6- Sat</div>
-                                <div className="hoae-cal-th">7- Sun</div>
+                                {[1, 2, 3, 4, 5, 6, 7].map((dayIdx) => {
+                                    const header = getHeaderDayLabel(dayIdx);
+                                    const isActiveCol = isToday(header.date);
+                                    return (
+                                        <div key={dayIdx} className={`hoae-cal-th ${isActiveCol ? 'active' : ''}`}>
+                                            {header.label}
+                                        </div>
+                                    );
+                                })}
                             </div>
-                            <div className="hoae-cal-body">
+                             <div className="hoae-cal-body">
                                 <div className="hoae-cal-times">
-                                    {[6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16].map((hour) => (
-                                        <div key={hour} className="hoae-time-slot">{hour}:00</div>
+                                    {scheduleHours.map((hour) => (
+                                        <div key={hour} className="hoae-time-slot">
+                                            {hour === 12 ? '12:00 PM' : (hour === 0 || hour === 24 ? '12:00 AM' : `${hour % 12}:00 ${hour > 12 ? 'PM' : 'AM'}`)}
+                                        </div>
                                     ))}
                                 </div>
 
                                 {[1, 2, 3, 4, 5, 6, 7].map((day) => (
-                                    <div key={day} className="hoae-day-col">
-                                        {[...Array(11)].map((_, i) => (
+                                    <div 
+                                        key={day} 
+                                        className="hoae-day-col"
+                                        style={{ height: `${scheduleHours.length * 80}px` }}
+                                    >
+                                        {[...Array(scheduleHours.length)].map((_, i) => (
                                             <div key={i} className="hoae-grid-line"></div>
                                         ))}
 
-                                        {day === 2 && (
-                                            <div className="hoae-current-time-line" style={{ top: '280px' }}>
-                                                <span className="hoae-time-badge">09 : 30 AM</span>
+                                        {todayIndicator && todayIndicator.day === day && (
+                                            <div className="hoae-current-time-line" style={{ top: `${todayIndicator.top}px` }}>
+                                                <span className="hoae-time-badge">{todayIndicator.label}</span>
                                             </div>
                                         )}
 
@@ -241,32 +647,52 @@ const HOAEventsPlanning = () => {
                                             <div
                                                 key={event.id}
                                                 className={`hoae-event-card hoae-bg-${event.color}`}
-                                                style={{ top: `${event.top}px`, height: `${event.height}px` }}
+                                                style={{ 
+                                                    top: `${event.top}px`, 
+                                                    height: `${event.height}px`, 
+                                                    left: `calc(${(event.column / event.maxColumns) * 100}% + 4px)`,
+                                                    width: `calc(${(1 / event.maxColumns) * 100}% - 8px)`,
+                                                    cursor: 'pointer' 
+                                                }}
+                                                onClick={() => handleEditEventClick(event.rawEvent)}
                                             >
                                                 <div className="hoae-event-header">
-                                                    <h5>{event.title}</h5>
-                                                    <div className="hoae-event-actions">
+                                                    <h5 title={event.title}>{event.title}</h5>
+                                                    <div className="hoae-event-actions" onClick={e => e.stopPropagation()}>
                                                         <IconMoreHorizontal />
-                                                        <span className="hoae-attendees-badge">{event.attendees || '<>'}</span>
+                                                        {event.attendees && (
+                                                            <span className="hoae-attendees-badge">{event.attendees}</span>
+                                                        )}
                                                     </div>
                                                 </div>
                                                 <p className="hoae-event-time">{event.time}</p>
-                                                {event.subtitle && <p className="hoae-event-subtitle">{event.subtitle}</p>}
+                                                {event.subtitle && <p className="hoae-event-subtitle" title={event.subtitle}>{event.subtitle}</p>}
 
                                                 <div className="hoae-event-status-row">
                                                     <span className={`rep-status rep-st-${getStatusColor(event.status)} hoae-event-status`}>
                                                         <span className="dot"></span> {event.status}
                                                     </span>
-                                                    <div className="hoae-avatar-stack">
-                                                        <div className="hoae-avatar hoae-av-1"></div>
-                                                        <div className="hoae-avatar hoae-av-2"></div>
-                                                        <div className="hoae-avatar hoae-av-3"></div>
-                                                    </div>
                                                 </div>
 
-                                                <div className="hoae-event-footer-btns">
-                                                    <button type="button" className="hoae-btn-confirm"><IconCheck /> Confirm</button>
-                                                    <button type="button" className="hoae-btn-cancel"><IconX /> Cancel</button>
+                                                <div className="hoae-event-footer-btns" onClick={e => e.stopPropagation()}>
+                                                    {event.status !== 'active' && event.status !== 'scheduled' && (
+                                                        <button 
+                                                            type="button" 
+                                                            className="hoae-btn-confirm"
+                                                            onClick={() => updateEventStatus(event.id, 'scheduled')}
+                                                        >
+                                                            <IconCheck /> Confirm
+                                                        </button>
+                                                    )}
+                                                    {event.status !== 'cancelled' && (
+                                                        <button 
+                                                            type="button" 
+                                                            className="hoae-btn-cancel"
+                                                            onClick={() => updateEventStatus(event.id, 'cancelled')}
+                                                        >
+                                                            <IconX /> Cancel
+                                                        </button>
+                                                    )}
                                                 </div>
                                             </div>
                                         ))}
@@ -284,7 +710,7 @@ const HOAEventsPlanning = () => {
                                 <h2>Events Logs</h2>
                             </div>
                             <div className="rep-table-actions">
-                                <button type="button" className="hoae-btn-outline">
+                                <button type="button" className="hoae-btn-outline" onClick={handleAddEventClick}>
                                     <img src={hoagrayadd} style={{ width: 16 }} alt="" /> Add Event
                                 </button>
                             </div>
@@ -301,7 +727,7 @@ const HOAEventsPlanning = () => {
                                         </th>
                                         <th className="sticky-col-2">
                                             <div className="th-inner" onClick={() => handleSort('eventName')}>
-                                                Event Name (23)
+                                                Event Name ({logsData.length})
                                                 <span className={`sort-icon ${sortConfig.key === 'eventName' ? `active ${sortConfig.direction}` : ''}`}>
                                                     <img src={hoaupdowncaret} alt="Sort" />
                                                 </span>
@@ -351,7 +777,7 @@ const HOAEventsPlanning = () => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {getSortedLogs().map((log) => (
+                                    {paginatedLogs.map((log) => (
                                         <tr key={log.id} className={selectedRows.includes(log.id) ? 'selected-row' : ''}>
                                             <td className="sticky-col-1" style={{ textAlign: 'center' }}>
                                                 <input
@@ -370,7 +796,7 @@ const HOAEventsPlanning = () => {
                                             <td>
                                                 <div className="rep-td-tutor">
                                                     <strong>{log.coordinator}</strong>
-                                                    <span>{log.role}</span>
+                                                    <span style={{ textTransform: 'capitalize' }}>{log.role}</span>
                                                 </div>
                                             </td>
                                             <td>
@@ -401,19 +827,28 @@ const HOAEventsPlanning = () => {
                                                 </button>
                                                 {activeActionMenu === log.id && (
                                                     <div className="rep-action-dropdown-menu">
-                                                        <div className="dropdown-item" onClick={() => setActiveActionMenu(null)}>Approve</div>
-                                                        <div className="dropdown-item" onClick={() => setActiveActionMenu(null)}>Edit</div>
-                                                        <div className="dropdown-item" onClick={() => setActiveActionMenu(null)} style={{ color: '#F8285A' }}>Delete</div>
+                                                        {log.status !== 'scheduled' && log.status !== 'active' && (
+                                                            <div className="dropdown-item" onClick={() => { updateEventStatus(log.id, 'scheduled'); setActiveActionMenu(null); }}>Confirm</div>
+                                                        )}
+                                                        <div className="dropdown-item" onClick={() => { handleEditEventClick(log.rawEvent); setActiveActionMenu(null); }}>Edit</div>
+                                                        <div className="dropdown-item" onClick={() => { handleDeleteEvent(log.id); setActiveActionMenu(null); }} style={{ color: '#F8285A' }}>Delete</div>
                                                     </div>
                                                 )}
                                             </td>
                                         </tr>
                                     ))}
+                                    {paginatedLogs.length === 0 && (
+                                        <tr>
+                                            <td colSpan="8" style={{ textAlign: 'center', padding: '24px', color: '#78829D' }}>
+                                                No events found.
+                                            </td>
+                                        </tr>
+                                    )}
                                 </tbody>
                             </table>
                         </div>
 
-                        <div className="hoa-pagination-container list-pagination">
+                        <div className="hoa-pagination-container list-pagination" ref={pageSizeRef}>
                             <div className="pagination-left">
                                 Show
                                 <div className="page-size-dropdown mx-8">
@@ -442,19 +877,54 @@ const HOAEventsPlanning = () => {
                                 per page
                             </div>
                             <div className="hoa-pagination">
-                                <span className="page-range">1-{pageSize} of 5</span>
-                                <button type="button" className="page-nav">
+                                <span className="page-range">
+                                    {logsData.length > 0 ? `${(currentPage - 1) * parseInt(pageSize, 10) + 1}-${Math.min(currentPage * parseInt(pageSize, 10), logsData.length)}` : '0-0'} of {logsData.length}
+                                </span>
+                                <button 
+                                    type="button" 
+                                    className="page-nav" 
+                                    disabled={currentPage === 1}
+                                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                                >
                                     <img src={hoaleftarrow} className="icon-15" style={{ width: '20px', height: '20px', padding: '0' }} alt="Prev" />
                                 </button>
-                                <button type="button" className="page-num">1</button>
-                                <button type="button" className="page-num active">2</button>
-                                <button type="button" className="page-num">3</button>
-                                <button type="button" className="page-nav">
+                                {[...Array(totalPages)].map((_, index) => (
+                                    <button 
+                                        key={index}
+                                        type="button" 
+                                        className={`page-num ${currentPage === index + 1 ? 'active' : ''}`}
+                                        onClick={() => setCurrentPage(index + 1)}
+                                    >
+                                        {index + 1}
+                                    </button>
+                                ))}
+                                <button 
+                                    type="button" 
+                                    className="page-nav"
+                                    disabled={currentPage === totalPages}
+                                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                                >
                                     <img src={hoarightarrow} className="icon-15" style={{ width: '20px', height: '20px', padding: '0' }} alt="Next" />
                                 </button>
                             </div>
                         </div>
                     </div>
+                )}
+
+                <EventFormModal
+                    isOpen={isFormModalOpen}
+                    onClose={() => { setIsFormModalOpen(false); setEditingEvent(null); }}
+                    onSuccess={handleFormSuccess}
+                    event={editingEvent}
+                />
+
+                {toast && (
+                    <Toast
+                        message={toast.message}
+                        type={toast.type}
+                        duration={toast.type === 'error' ? 8000 : 3000}
+                        onClose={handleCloseToast}
+                    />
                 )}
 
             </div>
