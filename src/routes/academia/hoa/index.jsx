@@ -15,6 +15,7 @@ import HOACommunity from '../../../pages/academia/hoa/HOACommunity';
 import HOACertificates from '../../../pages/academia/hoa/HOACertificates';
 import HOAEventsPlanning from '../../../pages/academia/hoa/HOAEventsPlanning';
 import HOAETravel from '../../../pages/academia/hoa/HOAEtravel';
+import HOATermsConditions from '../../../pages/academia/hoa/HOATermsConditions';
 
 const HOAPlaceholderPage = ({ currentPage, title, description, breadcrumb }) => (
   <HOALayout currentPage={currentPage} breadcrumb={breadcrumb}>
@@ -43,19 +44,7 @@ function AcademiaHOARoutes() {
       <Route path="academia/hoa/certificates" element={<HOACertificates />} />
       <Route path="academia/hoa/events-planning" element={<HOAEventsPlanning />} />
       <Route path="academia/hoa/e-travel" element={<HOAETravel />} />
-      <Route
-        path="academia/hoa/terms-conditions"
-        element={(
-          <HOAPlaceholderPage
-            currentPage="terms-conditions"
-            title="Terms & Conditions"
-            description="Terms & Conditions are not wired yet."
-            breadcrumb={{ section: 'Plannings', page: 'Terms & Conditions' }}
-          />
-        )}
-      />
-
-
+      <Route path="academia/hoa/terms-conditions" element={<HOATermsConditions />} />
       <Route
         path="academia/hoa/settings"
         element={( 
