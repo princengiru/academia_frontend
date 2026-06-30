@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import HOALayout from '../../../components/layouts/HOALayout/HOALayout';
 import { useCurrency, flagOptions } from '../../../hooks/useCurrency';
 import './hoa-online-courses.css';// Reuse standard project icons
@@ -82,15 +82,282 @@ const IconReply = () => (
 );
 
 const HOAOnlineCourses = () => {
-    // Top-level state
+    // API Configuration
+    const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
+    // Moderation Mode: 'explorer' (Approved), 'pending', 'rejected'
+    const [mode, setMode] = useState('explorer');
+
+    // Search and Filters
+    const [searchQuery, setSearchQuery] = useState('');
     const [activeFilter, setActiveFilter] = useState('All');
     const [isCourseFilterOpen, setIsCourseFilterOpen] = useState(false);
     const [selectedCourseFilter, setSelectedCourseFilter] = useState('All Courses');
 
-    // Modal state
+    // Data lists
+    const [approvedCourses, setApprovedCourses] = useState([]);
+    const [pendingCourses, setPendingCourses] = useState([]);
+    const [rejectedCourses, setRejectedCourses] = useState([]);
+    const [loading, setLoading] = useState(false);
+
+    // Selected Course detail state
+    const [selectedCourse, setSelectedCourse] = useState(null);
+    const [loadingCourseDetails, setLoadingCourseDetails] = useState(false);
+
+    // Modal display state
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [activeTab, setActiveTab] = useState('overview'); // 'overview', 'students', 'qa'
     const [expandedReplies, setExpandedReplies] = useState({});
+
+    // Custom Toast state
+    const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+
+    // Rejection Modal
+    const [rejectionModalOpen, setRejectionModalOpen] = useState(false);
+    const [rejectionCourseId, setRejectionCourseId] = useState(null);
+    const [rejectionReason, setRejectionReason] = useState('');
+
+    // Approve Modal
+    const [approveModalOpen, setApproveModalOpen] = useState(false);
+    const [approveCourseId, setApproveCourseId] = useState(null);
+
+    const showToast = (message, type = 'success') => {
+        setToast({ show: true, message, type });
+        setTimeout(() => {
+            setToast(prev => ({ ...prev, show: false }));
+        }, 3000);
+    };
+
+    const fetchCourses = async () => {
+        setLoading(true);
+        try {
+            const token = localStorage.getItem('token');
+            const headers = { Authorization: `Bearer ${token}` };
+
+            // Fetch Approved
+            const approvedRes = await fetch(`${API_BASE_URL}/api/courses/admin/approved?limit=100`, { headers });
+            const approvedResult = await approvedRes.json();
+            if (approvedResult.success) {
+                const list = approvedResult.data?.data || approvedResult.data || approvedResult.courses || [];
+                setApprovedCourses(Array.isArray(list) ? list : []);
+            }
+
+            // Fetch Pending
+            const pendingRes = await fetch(`${API_BASE_URL}/api/courses/admin/pending-approval?limit=100`, { headers });
+            const pendingResult = await pendingRes.json();
+            if (pendingResult.success) {
+                const list = pendingResult.data?.data || pendingResult.data || pendingResult.courses || [];
+                setPendingCourses(Array.isArray(list) ? list : []);
+            }
+
+            // Fetch Rejected
+            const rejectedRes = await fetch(`${API_BASE_URL}/api/courses/admin/rejected?limit=100`, { headers });
+            const rejectedResult = await rejectedRes.json();
+            if (rejectedResult.success) {
+                const list = rejectedResult.data?.data || rejectedResult.data || rejectedResult.courses || [];
+                setRejectedCourses(Array.isArray(list) ? list : []);
+            }
+        } catch (err) {
+            console.error('Error fetching courses list:', err);
+            showToast('Failed to load courses', 'error');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Detailed Course enrollment & Q&A states
+    const [courseEnrollments, setCourseEnrollments] = useState([]);
+    const [loadingEnrollments, setLoadingEnrollments] = useState(false);
+    const [courseQuestions, setCourseQuestions] = useState([]);
+    const [loadingQuestions, setLoadingQuestions] = useState(false);
+    const [questionReplies, setQuestionReplies] = useState({});
+    const [loadingReplies, setLoadingReplies] = useState({});
+
+    const fetchCourseEnrollments = async (courseId) => {
+        setLoadingEnrollments(true);
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`${API_BASE_URL}/api/courses/${courseId}/enrollments`, {
+                headers: token ? { Authorization: `Bearer ${token}` } : {}
+            });
+            const result = await res.json();
+            if (result.success && Array.isArray(result.data)) {
+                setCourseEnrollments(result.data);
+            } else {
+                setCourseEnrollments([]);
+            }
+        } catch (err) {
+            console.error('Failed to load course enrollments:', err);
+            setCourseEnrollments([]);
+        } finally {
+            setLoadingEnrollments(false);
+        }
+    };
+
+    const fetchCourseQuestions = async (courseId) => {
+        setLoadingQuestions(true);
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`${API_BASE_URL}/api/qa/courses/${courseId}/questions?limit=100`, {
+                headers: token ? { Authorization: `Bearer ${token}` } : {}
+            });
+            const result = await res.json();
+            if (result.success && result.data && Array.isArray(result.data.questions)) {
+                setCourseQuestions(result.data.questions);
+            } else {
+                setCourseQuestions([]);
+            }
+        } catch (err) {
+            console.error('Failed to load course Q&A:', err);
+            setCourseQuestions([]);
+        } finally {
+            setLoadingQuestions(false);
+        }
+    };
+
+    const fetchQuestionReplies = async (questionId) => {
+        if (questionReplies[questionId]) {
+            toggleReplies(questionId);
+            return;
+        }
+
+        setLoadingReplies(prev => ({ ...prev, [questionId]: true }));
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`${API_BASE_URL}/api/qa/questions/${questionId}`, {
+                headers: token ? { Authorization: `Bearer ${token}` } : {}
+            });
+            const result = await res.json();
+            if (result.success && result.data && Array.isArray(result.data.answers)) {
+                setQuestionReplies(prev => ({ ...prev, [questionId]: result.data.answers }));
+            }
+        } catch (err) {
+            console.error('Failed to load answers for question:', err);
+        } finally {
+            setLoadingReplies(prev => ({ ...prev, [questionId]: false }));
+            toggleReplies(questionId);
+        }
+    };
+
+    const loadCourseDetails = async (course) => {
+        setLoadingCourseDetails(true);
+        setSelectedCourse(course);
+        setIsModalOpen(true);
+        setCourseEnrollments([]);
+        setCourseQuestions([]);
+        setQuestionReplies({});
+        setExpandedReplies({});
+        fetchCourseEnrollments(course.id);
+        fetchCourseQuestions(course.id);
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`${API_BASE_URL}/api/courses/${course.id}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            const result = await res.json();
+            if (result.success) {
+                setSelectedCourse(result.data);
+            } else {
+                throw new Error(result.message || 'Failed to fetch course details');
+            }
+        } catch (err) {
+            console.error('Error fetching course details:', err);
+            showToast('Failed to load course structure details', 'error');
+        } finally {
+            setLoadingCourseDetails(false);
+        }
+    };
+
+    const handleApproveCourse = (courseId) => {
+        setApproveCourseId(courseId);
+        setApproveModalOpen(true);
+    };
+
+    const submitApproval = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`${API_BASE_URL}/api/courses/${approveCourseId}/admin/approve`, {
+                method: 'POST',
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            });
+            const result = await res.json();
+            if (result.success) {
+                showToast('Course approved successfully!', 'success');
+                setApproveModalOpen(false);
+                setIsModalOpen(false);
+                fetchCourses();
+            } else {
+                throw new Error(result.message || 'Failed to approve course');
+            }
+        } catch (err) {
+            showToast(err.message, 'error');
+        }
+    };
+
+    const handleRejectCourse = (courseId) => {
+        setRejectionCourseId(courseId);
+        setRejectionReason('');
+        setRejectionModalOpen(true);
+    };
+
+    const submitRejection = async () => {
+        if (!rejectionReason.trim()) {
+            showToast('Rejection reason is required', 'error');
+            return;
+        }
+
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`${API_BASE_URL}/api/courses/${rejectionCourseId}/admin/reject`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`
+                },
+                body: JSON.stringify({ reason: rejectionReason })
+            });
+            const result = await res.json();
+            if (result.success) {
+                showToast('Course rejected successfully', 'success');
+                setRejectionModalOpen(false);
+                setIsModalOpen(false);
+                fetchCourses();
+            } else {
+                throw new Error(result.message || 'Failed to reject course');
+            }
+        } catch (err) {
+            showToast(err.message, 'error');
+        }
+    };
+
+    useEffect(() => {
+        fetchCourses();
+    }, []);
+
+    const filteredCourses = useMemo(() => {
+        const currentList = mode === 'explorer'
+            ? approvedCourses
+            : mode === 'pending'
+                ? pendingCourses
+                : rejectedCourses;
+
+        return currentList.filter(course => {
+            const matchesSearch = (course.title?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
+                (course.instructor_name?.toLowerCase() || '').includes(searchQuery.toLowerCase());
+
+            if (mode === 'explorer') {
+                if (activeFilter === 'Free') {
+                    return matchesSearch && (parseFloat(course.price) === 0 || course.price === 'Free');
+                }
+                if (activeFilter === 'Paid') {
+                    return matchesSearch && parseFloat(course.price) > 0;
+                }
+            }
+            return matchesSearch;
+        });
+    }, [mode, approvedCourses, pendingCourses, rejectedCourses, searchQuery, activeFilter]);
 
     const toggleReplies = (id) => {
         setExpandedReplies(prev => ({
@@ -206,12 +473,9 @@ const HOAOnlineCourses = () => {
         ]
     }));
 
-    const openCourseModal = (course) => {
-        setIsModalOpen(true);
-    };
-
     const closeModal = () => {
         setIsModalOpen(false);
+        setSelectedCourse(null);
     };
 
     return (
@@ -232,52 +496,81 @@ const HOAOnlineCourses = () => {
                     </div>
                 </div>
 
-                {/* Top Stats */}
-            <div className="oc-stats-top-container">
-                <div className="oc-stats-container">
-                    <div className="oc-stat-block">
-                        <h3>13.3M</h3>
-                        <p>Total Courses</p>
-                    </div>
-                    <div className="oc-stat-block">
-                        <h3>13.3M</h3>
-                        <p>Total Learners</p>
-                    </div>
-                    <div className="oc-stat-block">
-                        <h3>204</h3>
-                        <p>Avg. Learning Time</p>
-                    </div>
-                    <div className="oc-stat-block">
-                        <h3>
-                            19.3M
-                            <span className="oc-currency-dropdown">
-                                RWF <img src={rwanda} alt="flag" style={{ width: 10, borderRadius: '50%' }} /> <img src={hoadowncaret} alt="" style={{ width: 8 }} />
-                            </span>
-                        </h3>
-                        <p>Upload Payments <span className="oc-trend down">↘ -4.5%</span></p>
-                    </div>
-                    <div className="oc-stat-block">
-                        <h3>
-                            843.5K
-                            <span className="oc-currency-dropdown">
-                                RWF <img src={rwanda} alt="flag" style={{ width: 10, borderRadius: '50%' }} /> <img src={hoadowncaret} alt="" style={{ width: 8 }} />
-                            </span>
-                        </h3>
-                        <p>Course Payments <span className="oc-trend up">↗ +4.1</span></p>
+                {/* Moderation Mode Tabs */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '20px 0', borderBottom: '1px solid #EEF1F6', paddingBottom: '12px' }}>
+                    <div className="oc-type-toggles" style={{ display: 'flex', gap: '8px' }}>
+                        <button 
+                            className={`oc-type-btn ${mode === 'explorer' ? 'active' : ''}`} 
+                            onClick={() => { setMode('explorer'); setSelectedCourse(null); }} 
+                            style={{ padding: '8px 16px', borderRadius: '6px', fontSize: '13px', fontWeight: 600, border: 'none', cursor: 'pointer', background: mode === 'explorer' ? '#450468' : 'transparent', color: mode === 'explorer' ? '#FFFFFF' : '#78829D', transition: 'all 0.2s' }}
+                        >
+                            Courses Explorer ({approvedCourses.length})
+                        </button>
+                        <button 
+                            className={`oc-type-btn ${mode === 'pending' ? 'active' : ''}`} 
+                            onClick={() => { setMode('pending'); setSelectedCourse(null); }} 
+                            style={{ padding: '8px 16px', borderRadius: '6px', fontSize: '13px', fontWeight: 600, border: 'none', cursor: 'pointer', background: mode === 'pending' ? '#450468' : 'transparent', color: mode === 'pending' ? '#FFFFFF' : '#78829D', transition: 'all 0.2s' }}
+                        >
+                            Pending Moderation ({pendingCourses.length})
+                        </button>
+                        <button 
+                            className={`oc-type-btn ${mode === 'rejected' ? 'active' : ''}`} 
+                            onClick={() => { setMode('rejected'); setSelectedCourse(null); }} 
+                            style={{ padding: '8px 16px', borderRadius: '6px', fontSize: '13px', fontWeight: 600, border: 'none', cursor: 'pointer', background: mode === 'rejected' ? '#450468' : 'transparent', color: mode === 'rejected' ? '#FFFFFF' : '#78829D', transition: 'all 0.2s' }}
+                        >
+                            Rejected Courses ({rejectedCourses.length})
+                        </button>
                     </div>
                 </div>
-            </div>
+
+                {/* Top Stats */}
+                <div className="oc-stats-top-container">
+                    <div className="oc-stats-container">
+                        <div className="oc-stat-block">
+                            <h3>{approvedCourses.length}</h3>
+                            <p>Total Courses</p>
+                        </div>
+                        <div className="oc-stat-block">
+                            <h3>13.3M</h3>
+                            <p>Total Learners</p>
+                        </div>
+                        <div className="oc-stat-block">
+                            <h3>204</h3>
+                            <p>Avg. Learning Time</p>
+                        </div>
+                        <div className="oc-stat-block">
+                            <h3>
+                                19.3M
+                                <span className="oc-currency-dropdown">
+                                    RWF <img src={rwanda} alt="flag" style={{ width: 10, borderRadius: '50%' }} /> <img src={hoadowncaret} alt="" style={{ width: 8 }} />
+                                </span>
+                            </h3>
+                            <p>Upload Payments <span className="oc-trend down">↘ -4.5%</span></p>
+                        </div>
+                        <div className="oc-stat-block">
+                            <h3>
+                                843.5K
+                                <span className="oc-currency-dropdown">
+                                    RWF <img src={rwanda} alt="flag" style={{ width: 10, borderRadius: '50%' }} /> <img src={hoadowncaret} alt="" style={{ width: 8 }} />
+                                </span>
+                            </h3>
+                            <p>Course Payments <span className="oc-trend up">↗ +4.1</span></p>
+                        </div>
+                    </div>
+                </div>
 
                 {/* Sub Header & Actions */}
                 <div className="oc-sub-header">
                     <div className="oc-sub-title">
-                        <h2>Courses</h2>
-                        <p>3,461 Lessons</p>
+                        <h2>{mode === 'explorer' ? 'Approved Courses' : mode === 'pending' ? 'Pending Courses' : 'Rejected Courses'}</h2>
+                        <p>{filteredCourses.length} courses</p>
                     </div>
-                    <div className="oc-add-actions">
-                        <button className="oc-btn-outline"><img src={hoagrayadd} style={{ width: 16 }} alt="" /> Add New Course</button>
-                        <button className="oc-btn-primary"><img src={hoawhiteadd} style={{ width: 16 }} alt="" /> Add Category</button>
-                    </div>
+                    {mode === 'explorer' && (
+                        <div className="oc-add-actions">
+                            <button className="oc-btn-outline"><img src={hoagrayadd} style={{ width: 16 }} alt="" /> Add New Course</button>
+                            <button className="oc-btn-primary"><img src={hoawhiteadd} style={{ width: 16 }} alt="" /> Add Category</button>
+                        </div>
+                    )}
                 </div>
 
                 {/* Filter & Search Bar */}
@@ -310,20 +603,27 @@ const HOAOnlineCourses = () => {
                     <div className="oc-main-header-bar">
                         <div className="oc-search-bar">
                             <img src={hoasearch} alt="Search" style={{ opacity: 0.5, width: 14 }} />
-                            <input type="text" placeholder="Search any Courses..." />
+                            <input 
+                                type="text" 
+                                placeholder="Search courses or instructor..." 
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                            />
                         </div>
 
-                        <div className="oc-type-toggles">
-                            {['All', 'Free', 'Paid'].map(filter => (
-                                <button
-                                    key={filter}
-                                    className={`oc-type-btn ${activeFilter === filter ? 'active' : ''}`}
-                                    onClick={() => setActiveFilter(filter)}
-                                >
-                                    {filter}
-                                </button>
-                            ))}
-                        </div>
+                        {mode === 'explorer' && (
+                            <div className="oc-type-toggles">
+                                {['All', 'Free', 'Paid'].map(filter => (
+                                    <button
+                                        key={filter}
+                                        className={`oc-type-btn ${activeFilter === filter ? 'active' : ''}`}
+                                        onClick={() => setActiveFilter(filter)}
+                                    >
+                                        {filter}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
                         <div className="oc-v-divider"></div>
                         <button className="oc-btn-filter-pill">
                             <img src={hoafilter} style={{ width: 12, opacity: 0.5 }} alt="" /> Filters
@@ -332,29 +632,47 @@ const HOAOnlineCourses = () => {
                 </div>
 
                 {/* Courses Grid */}
-                <div className="oc-grid">
-                    {coursesData.map(course => (
-                        <div key={course.id} className="oc-card" onClick={() => openCourseModal(course)}>
-                            <img src={course.bg} alt="" className="oc-card-bg" />
-                            <div className="oc-card-badge" >
-                                {course.price}
-                            </div>
-                            <div className="oc-card-ribbon-wrapper">
-                                <img src={hoarank} alt="" className="oc-ribbon-img" onError={(e) => e.target.style.display = 'none'} />
-                                <span className="oc-ribbon-number">#{course.id}</span>
-                            </div>
-                            <div className="oc-card-content">
-                                <p className="oc-card-author">{course.author}</p>
-                                <h4 className="oc-card-title">{course.title}</h4>
-                                <p className="oc-card-students">Student : {course.students}</p>
-                                <div className="oc-card-footer">
-                                    <span>Created on : {course.date}</span>
-                                    <IconRightArrow />
+                {loading ? (
+                    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '200px' }}>
+                        <span style={{ fontSize: '14px', color: '#78829D' }}>Loading courses...</span>
+                    </div>
+                ) : filteredCourses.length === 0 ? (
+                    <div style={{ textAlign: 'center', padding: '60px 20px', background: '#FCFCFC', borderRadius: '12px', border: '1.5px dashed #E4E6EF', margin: '20px 0' }}>
+                        <h4 style={{ fontSize: '15px', fontWeight: 600, color: '#071437', marginBottom: '4px' }}>No courses found</h4>
+                        <p style={{ fontSize: '13px', color: '#78829D', margin: 0 }}>There are no courses in this view at this time.</p>
+                    </div>
+                ) : (
+                    <div className="oc-grid">
+                        {filteredCourses.map(course => {
+                            const courseBg = course.thumbnail_url || course.thumbnail 
+                                ? `${API_BASE_URL}${course.thumbnail_url || course.thumbnail}`
+                                : 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?q=80&w=600&auto=format&fit=crop';
+                            const isFree = parseFloat(course.price) === 0 || !course.price || course.price === 'Free';
+                            
+                            return (
+                                <div key={course.id} className="oc-card" onClick={() => loadCourseDetails(course)}>
+                                    <img src={courseBg} alt="" className="oc-card-bg" style={{ objectFit: 'cover' }} />
+                                    <div className="oc-card-badge" >
+                                        {isFree ? 'Free' : `$${course.price} / Month`}
+                                    </div>
+                                    <div className="oc-card-ribbon-wrapper">
+                                        <img src={hoarank} alt="" className="oc-ribbon-img" onError={(e) => e.target.style.display = 'none'} />
+                                        <span className="oc-ribbon-number">#{course.id}</span>
+                                    </div>
+                                    <div className="oc-card-content">
+                                        <p className="oc-card-author">{course.instructor_name || 'Instructor'}</p>
+                                        <h4 className="oc-card-title">{course.title}</h4>
+                                        <p className="oc-card-students">Category: {course.category || 'General'}</p>
+                                        <div className="oc-card-footer">
+                                            <span>Created: {new Date(course.created_at).toLocaleDateString()}</span>
+                                            <IconRightArrow />
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
-                        </div>
-                    ))}
-                </div>
+                            );
+                        })}
+                    </div>
+                )}
 
                 {/* Pagination */}
                 <div className="oc-pagination-container">
@@ -362,12 +680,7 @@ const HOAOnlineCourses = () => {
                         <button className="oc-page-nav" style={{ color: '#D8D8E5' }}>
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
                         </button>
-                        <button className="oc-page-num">1</button>
-                        <button className="oc-page-num active">2</button>
-                        <button className="oc-page-num">3</button>
-                        <button className="oc-page-num">4</button>
-                        <button className="oc-page-num">5</button>
-                        <span style={{ margin: '0 4px', color: '#4B5675' }}>...</span>
+                        <button className="oc-page-num active">1</button>
                         <button className="oc-page-nav" style={{ color: '#78829D' }}>
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
                         </button>
@@ -379,12 +692,51 @@ const HOAOnlineCourses = () => {
                     <div className="oc-modal-drawer" onClick={e => e.stopPropagation()}>
 
                         {/* Modal Header */}
-                        <div className="oc-modal-top-header">
+                        <div className="oc-modal-top-header" style={{ display: 'flex', alignItems: 'center' }}>
                             <button className="oc-modal-back-btn" onClick={closeModal}>
                                 <img src={hoagoback} alt="Back" />
                             </button>
                             <h2>Course Preview</h2>
-                            <span className="oc-update-status" style={{ border: '1px solid #EEF1F6' }}>
+
+                            {/* Moderator Actions in Header */}
+                            {selectedCourse?.status_approval === 'pending' && (
+                                <div style={{ display: 'flex', gap: '8px', marginLeft: 'auto', marginRight: '16px' }}>
+                                    <button 
+                                        onClick={() => handleRejectCourse(selectedCourse.id)}
+                                        style={{
+                                            padding: '8px 16px',
+                                            borderRadius: '8px',
+                                            background: '#FFF5F5',
+                                            border: '1px solid #FEE2E2',
+                                            color: '#E53E3E',
+                                            fontSize: '12px',
+                                            fontWeight: 600,
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s'
+                                        }}
+                                    >
+                                        Reject
+                                    </button>
+                                    <button 
+                                        onClick={() => handleApproveCourse(selectedCourse.id)}
+                                        style={{
+                                            padding: '8px 16px',
+                                            borderRadius: '8px',
+                                            background: '#E8FFF3',
+                                            border: '1px solid #D1FAE5',
+                                            color: '#10B981',
+                                            fontSize: '12px',
+                                            fontWeight: 600,
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s'
+                                        }}
+                                    >
+                                        Approve
+                                    </button>
+                                </div>
+                            )}
+
+                            <span className="oc-update-status" style={{ border: '1px solid #EEF1F6', marginLeft: selectedCourse?.status_approval === 'pending' ? '0' : 'auto' }}>
                                 <img src={hoarefresh} alt="Refresh" className="sync-icon" />
                                 Data updated every 1 hr
                                 <span className="dot" style={{ background: '#17C653' }}></span>
@@ -392,364 +744,607 @@ const HOAOnlineCourses = () => {
                         </div>
 
                         {/* Modal Content Scroll Area */}
-                        <div className="oc-modal-content-area">
-
-                            {/* Modal Stats Row */}
-                            <div className="oc-modal-stats-row">
-                                <div className="oc-mod-stat">
-                                    <h3>+ 2.8K <span style={{ fontSize: 10, color: '#A1A5B7' }}>USD <img src={hoausflag} style={{ width: 10, borderRadius: '50%', margin: '0 2px' }} alt="" /> <img src={hoadowncaret} style={{ width: 8 }} alt="" /></span></h3>
-                                    <p>Total Student</p>
-                                </div>
-                                <div className="oc-mod-stat">
-                                    <h3>2,340,044 <span style={{ fontSize: 10, color: '#A1A5B7' }}>RWF <img src={rwanda} style={{ width: 10, borderRadius: '50%', margin: '0 2px' }} alt="" /> <img src={hoadowncaret} style={{ width: 8 }} alt="" /></span></h3>
-                                    <p>Upload Amount</p>
-                                </div>
-                                <div className="oc-mod-stat">
-                                    <h3>+ 2.8K <span style={{ fontSize: 10, color: '#A1A5B7' }}>USD <img src={hoausflag} style={{ width: 10, borderRadius: '50%', margin: '0 2px' }} alt="" /> <img src={hoadowncaret} style={{ width: 8 }} alt="" /></span></h3>
-                                    <p>Courses Income</p>
-                                </div>
-                                <div className="oc-mod-stat" style={{ borderRight: 'none' }}>
-                                    <h3>23 - March - 2026 <span style={{ fontSize: 10, color: '#A1A5B7' }}>14:00:45</span></h3>
-                                    <p>Date Uploaded</p>
-                                </div>
+                        {loadingCourseDetails ? (
+                            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', minHeight: '300px' }}>
+                                <span style={{ fontSize: '14px', color: '#78829D' }}>Loading details...</span>
                             </div>
+                        ) : selectedCourse ? (
+                            <div className="oc-modal-content-area">
 
-                            {/* Modal Tabs Navigation */}
-                            <div className="oc-modal-tabs">
-                                <button className={`oc-tab-btn ${activeTab === 'overview' ? 'active' : ''}`} onClick={() => setActiveTab('overview')}>Overview</button>
-                                <button className={`oc-tab-btn ${activeTab === 'students' ? 'active' : ''}`} onClick={() => setActiveTab('students')}>Students</button>
-                                <button className={`oc-tab-btn ${activeTab === 'qa' ? 'active' : ''}`} onClick={() => setActiveTab('qa')}>Students Q&A</button>
-                            </div>
-
-                            {/* Modal Tab Content Area */}
-                            <div className="oc-modal-tab-content">
-
-                                {/* ==== OVERVIEW TAB ==== */}
-                                {activeTab === 'overview' && (
-                                    <div>
-                                        <div className="oc-breadcrumbs">
-                                            <span className="oc-bc-link">Online courses</span> / <span>Cyber security</span> /
-                                        </div>
-
-                                        <div className="oc-overview-header">
-                                            <div className="oc-overview-title">
-                                                <h2>Cyber Security</h2>
-                                                <p>Prepared by <strong>Emmanuella Jean Marie Vianney</strong></p>
-                                            </div>
-                                            <div className="oc-overview-ribbon-wrapper">
-                                                <img src={hoarank} alt="" className="oc-ribbon-img" onError={(e) => e.target.style.display = 'none'} />
-                                                <span className="oc-ribbon-number">29</span>
-                                            </div>
-                                        </div>
-
-                                        <h3 className="oc-overview-subtitle">Core Principles of Cybersecurity, Leadership and Oversight</h3>
-                                        <p className="oc-overview-desc">
-                                            Statistics is the branch of mathematics that deals with the collection, analysis, interpretation, presentation, and organization of data. It provides methodologies for making.
-                                        </p>
-
-                                        <img src="https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=1000&auto=format&fit=crop" alt="Course Hero" className="oc-overview-hero-img" />
-
-                                        <div className="oc-info-cards">
-                                            <div className="oc-info-card">
-                                                <div className="oc-ic-head">
-                                                    <img src={hoatime} alt="" />
-                                                    <p>Duration</p>
-                                                </div>
-                                                <h4>4 weeks</h4>
-                                            </div>
-                                            <div className="oc-info-card">
-                                                <div className="oc-ic-head">
-                                                    <img src={hoagraycalendar} alt="" />
-                                                    <p>Weekly study</p>
-                                                </div>
-                                                <h4>4 hours</h4>
-                                            </div>
-                                            <div className="oc-info-card">
-                                                <div className="oc-ic-head">
-                                                    <img src={hoapaperstack} alt="" />
-                                                    <p>Skill Level</p>
-                                                </div>
-                                                <h4>Intermediate</h4>
-                                            </div>
-                                            <div className="oc-info-card" style={{ position: 'relative' }}>
-                                                <div className="oc-discount-badge">-4% Off</div>
-                                                <div className="oc-ic-head">
-                                                    <img src={hoapayicon} alt="" />
-                                                    <p>subscription</p>
-                                                </div>
-                                                <h4><span style={{ color: '#EF305E' }}>5$</span> Per month</h4>
-                                            </div>
-                                        </div>
-
-                                        <h3 className="oc-section-title">Introduction</h3>
-                                        <p className="oc-overview-desc" style={{ marginBottom: 32 }}>
-                                            Statistics is the branch of mathematics that deals with the collection, analysis, interpretation, presentation, and organization of data. It provides methodologies for making inferences about populations based on sample data, enabling researchers to quantify uncertainty and variability in empirical findings... <span className="oc-read-more">Read more</span>
-                                        </p>
-
-                                        <h3 className="oc-section-title">Course Breakdown</h3>
-                                        <div className="oc-breakdown-list">
-                                            {/* ==== WEEK 1 ==== */}
-                                            <div className="oc-bd-week-group">
-                                                <div className="oc-bd-week-col">
-                                                    <div className="oc-bd-week">Week 1</div>
-                                                </div>
-                                                <div className="oc-bd-items-col">
-                                                    <div className="oc-bd-item">
-                                                        <div className="oc-bd-icon-col">
-                                                            <div className="oc-bd-icon"><img src={hoabasics} alt="" /></div>
-                                                            <div className="oc-bd-line"></div>
-                                                        </div>
-                                                        <div className="oc-bd-content" style={{ paddingBottom: 24 }}>
-                                                            <h4 style={{ margin: '0 0 4px 0', fontSize: 14, color: '#071437', fontWeight: 600 }}>Basic understanding and breakdowns</h4>
-                                                            <p style={{ margin: 0, fontSize: 13, color: '#4B5675' }}>Learn new skills, pursue your interests or advance your career with our short online courses.</p>
-                                                        </div>
-                                                    </div>
-                                                    {[1, 2, 3, 4, 5].map((num) => (
-                                                        <div className="oc-bd-item" key={num}>
-                                                            <div className="oc-bd-icon-col">
-                                                                <div className="oc-bd-icon" style={{ color: '#450468', fontSize: 12, fontWeight: 700 }}>{num}</div>
-                                                                {num !== 5 && <div className="oc-bd-line"></div>}
-                                                            </div>
-                                                            <div className="oc-bd-content" style={{ display: 'flex', alignItems: 'center', gap: 16, paddingBottom: num !== 5 ? 24 : 0 }}>
-                                                                <img src="https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=100&auto=format&fit=crop" alt="thumb" style={{ width: 80, height: 60, borderRadius: 4, objectFit: 'cover' }} />
-                                                                <div>
-                                                                    <h4 style={{ margin: '0 0 4px 0', fontSize: 14, color: '#071437', fontWeight: 600 }}>Introduction to Entire Course</h4>
-                                                                    <p style={{ margin: 0, fontSize: 11, color: '#A1A5B7' }}>Video • 20 mins</p>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </div>
-
-                                            {/* ==== WEEK 2 ==== */}
-                                            <div className="oc-bd-week-group">
-                                                <div className="oc-bd-week-col">
-                                                    <div className="oc-bd-week">Week 2</div>
-                                                </div>
-                                                <div className="oc-bd-items-col">
-                                                    <div className="oc-bd-item">
-                                                        <div className="oc-bd-icon-col">
-                                                            <div className="oc-bd-icon"><img src={hoabasics} alt="" /></div>
-                                                            <div className="oc-bd-line"></div>
-                                                        </div>
-                                                        <div className="oc-bd-content" style={{ paddingBottom: 24 }}>
-                                                            <h4 style={{ margin: '0 0 4px 0', fontSize: 14, color: '#071437', fontWeight: 600 }}>Advanced Concepts and Patterns</h4>
-                                                            <p style={{ margin: 0, fontSize: 13, color: '#4B5675' }}>Deep dive into complex topics to master the complete scope of the coursework and related elements.</p>
-                                                        </div>
-                                                    </div>
-                                                    {[1, 2].map((num) => (
-                                                        <div className="oc-bd-item" key={`w2-${num}`}>
-                                                            <div className="oc-bd-icon-col">
-                                                                <div className="oc-bd-icon" style={{ color: '#450468', fontSize: 12, fontWeight: 700 }}>{num}</div>
-                                                                {num !== 2 && <div className="oc-bd-line"></div>}
-                                                            </div>
-                                                            <div className="oc-bd-content" style={{ display: 'flex', alignItems: 'center', gap: 16, paddingBottom: num !== 2 ? 24 : 0 }}>
-                                                                <img src="https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=100&auto=format&fit=crop" alt="thumb" style={{ width: 80, height: 60, borderRadius: 4, objectFit: 'cover' }} />
-                                                                <div>
-                                                                    <h4 style={{ margin: '0 0 4px 0', fontSize: 14, color: '#071437', fontWeight: 600 }}>In-Depth Analysis Part {num}</h4>
-                                                                    <p style={{ margin: 0, fontSize: 11, color: '#A1A5B7' }}>Video • 25 mins</p>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        </div>
+                                {/* Modal Stats Row */}
+                                <div className="oc-modal-stats-row">
+                                    <div className="oc-mod-stat">
+                                        <h3>0 <span style={{ fontSize: 10, color: '#A1A5B7' }}>USD <img src={hoausflag} style={{ width: 10, borderRadius: '50%', margin: '0 2px' }} alt="" /> <img src={hoadowncaret} style={{ width: 8 }} alt="" /></span></h3>
+                                        <p>Total Students</p>
                                     </div>
-                                )}
-
-                                {/* ==== STUDENTS TAB ==== */}
-                                {activeTab === 'students' && (
-                                    <div>
-                                        <div className="oc-breadcrumbs">
-                                            <span className="oc-bc-link">Online courses</span> / <span>Students</span> /
-                                        </div>
-
-                                        <div className="hoa-list-container modal-table-container">
-                                            <table className="hoa-list-table mod-table">
-                                                <thead>
-                                                    <tr>
-                                                        <th className="w-40">
-                                                            <button type="button" className="th-content minus-btn-container minus-select-button" onClick={() => setModalSelectedRows([])}>
-                                                                <div className="minus-icon m-auto">-</div>
-                                                            </button>
-                                                        </th>
-                                                        <th><div className="th-content" onClick={() => handleModalSort('name')}>Students Details (34) <span className={`sort-icon ${modalSortConfig.key === 'name' ? 'active ' + modalSortConfig.direction : ''}`}><img src={hoaupdowncaret} alt="" /></span></div></th>
-                                                        <th><div className="th-content" onClick={() => handleModalSort('title')}>Course Title <span className={`sort-icon ${modalSortConfig.key === 'title' ? 'active ' + modalSortConfig.direction : ''}`}><img src={hoaupdowncaret} alt="" /></span></div></th>
-                                                        <th><div className="th-content" onClick={() => handleModalSort('type')}>Course Type <span className={`sort-icon ${modalSortConfig.key === 'type' ? 'active ' + modalSortConfig.direction : ''}`}><img src={hoaupdowncaret} alt="" /></span></div></th>
-                                                        <th><div className="th-content" onClick={() => handleModalSort('amount')}>Tot. Amount & Visits <span className={`sort-icon ${modalSortConfig.key === 'amount' ? 'active ' + modalSortConfig.direction : ''}`}><img src={hoaupdowncaret} alt="" /></span></div></th>
-                                                        <th><div className="th-content" onClick={() => handleModalSort('certs')}>Certificates & Avg. Score <span className={`sort-icon ${modalSortConfig.key === 'certs' ? 'active ' + modalSortConfig.direction : ''}`}><img src={hoaupdowncaret} alt="" /></span></div></th>
-                                                        <th style={{ position: 'relative' }}>
-                                                            <div className="th-content" onClick={() => handleModalSort('feeAmount')}>
-                                                                Charging Fee ({currency.label}) <img src={currency.flag} alt="flag" className="icon-12-mx4" onClick={(e) => { e.stopPropagation(); toggleFlagDropdown('modal-fee'); }} style={{ cursor: 'pointer', width: 14, height: 14, borderRadius: '50%' }} />
-                                                                <span className={`sort-icon ${modalSortConfig.key === 'feeAmount' ? 'active ' + modalSortConfig.direction : ''}`}><img src={hoaupdowncaret} alt="" /></span>
-                                                            </div>
-                                                            {openFlagDropdown === 'modal-fee' && (
-                                                                <div className="flag-dropdown-menu" style={{ minWidth: '80px', padding: '4px', top: '100%', right: '50%', transform: 'translateX(50%)', zIndex: 10, position: 'absolute' }}>
-                                                                    {flagOptions.map((option, idx) => (
-                                                                        <button key={idx} type="button" className={`flag-dropdown-option ${currency.label === option.label ? 'active' : ''}`} onClick={() => selectFlagOption(option)}>
-                                                                            <img src={option.flag} alt="flag" className="flag-icon" />
-                                                                            <span>{option.label}</span>
-                                                                        </button>
-                                                                    ))}
-                                                                </div>
-                                                            )}
-                                                        </th>
-                                                        <th className="status-col"><div className="th-content" onClick={() => handleModalSort('status')}>Status <span className={`sort-icon ${modalSortConfig.key === 'status' ? 'active ' + modalSortConfig.direction : ''}`}><img src={hoaupdowncaret} alt="" /></span></div></th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    {getSortedData(studentsData, modalSortConfig).map(student => (
-                                                        <tr key={student.id} className={modalSelectedRows.includes(student.id) ? 'selected-row' : ''}>
-                                                            <td className="w-40">
-                                                                <div className="checkbox-wrapper m-auto">
-                                                                    <input type="checkbox" className="hoa-checkbox" checked={modalSelectedRows.includes(student.id)} onChange={() => toggleModalRowSelection(student.id)} />
-                                                                </div>
-                                                            </td>
-                                                            <td>
-                                                                <div className="user-meta">
-                                                                    <h5>{student.name}</h5>
-                                                                    <p className="font-11-gray">{student.country}</p>
-                                                                </div>
-                                                            </td>
-                                                            <td>
-                                                                <div className="user-meta">
-                                                                    <h5 className="fw-500" style={{ margin: 0 }}>{student.title}</h5>
-                                                                </div>
-                                                            </td>
-                                                            <td>
-                                                                <div className="user-meta">
-                                                                    <h5 className="fw-500">{student.type}</h5>
-                                                                    <p className="font-11-gray">{student.duration}</p>
-                                                                </div>
-                                                            </td>
-                                                            <td>
-                                                                <div className="user-meta">
-                                                                    <h5 className="fw-600">{student.amount}</h5>
-                                                                    <p className="font-11-gray">{student.visits}</p>
-                                                                </div>
-                                                            </td>
-                                                            <td>
-                                                                <div className="user-meta">
-                                                                    <h5 className="fw-600">{student.certs}</h5>
-                                                                    <p className="font-11-gray">{student.score}</p>
-                                                                </div>
-                                                            </td>
-                                                            <td>
-                                                                <div className="user-meta">
-                                                                    <h5 style={{ fontWeight: '600', color: student.feeType === 'Free' ? '#7239EA' : '#17C653' }}>{student.feeType}</h5>
-                                                                    <p className="font-11-gray">{student.feeAmount}</p>
-                                                                </div>
-                                                            </td>
-                                                            <td className="status-col">
-                                                                <div className="flex-center-end-gap8">
-                                                                    <span className={`mod-status-pill st-${student.status === 'Completed' ? 'passed' : student.status === 'Failed' ? 'failed' : 'retake'}`}>{student.status}</span>
-                                                                </div>
-                                                            </td>
-                                                        </tr>
-                                                    ))}
-                                                </tbody>
-                                            </table>
-                                        </div>
-
-                                        {/* Table Pagination */}
-                                        <div className="hoa-pagination-container list-pagination modal-pagination">
-                                            <div className="pagination-left">
-                                                Show
-                                                <div className="page-size-dropdown mx-8">
-                                                    <button type="button" className="page-size-button px-8-py-2">10 <img src={hoadowncaret} alt="" /></button>
-                                                </div>
-                                                per page
-                                            </div>
-                                            <div className="hoa-pagination">
-                                                <span className="page-range">1-10 of 5</span>
-                                                <button className="page-nav"><img src={hoaleftarrow} className="icon-15" style={{ width: '20px', height: '20px', padding: '0' }} alt="Prev" /></button>
-                                                <button className="page-num">1</button>
-                                                <button className="page-num active">2</button>
-                                                <button className="page-num">3</button>
-                                                <button className="page-nav"><img src={hoarightarrow} className="icon-15" style={{ width: '20px', height: '20px', padding: '0' }} alt="Next" /></button>
-                                            </div>
-                                        </div>
+                                    <div className="oc-mod-stat">
+                                        <h3>0 <span style={{ fontSize: 10, color: '#A1A5B7' }}>RWF <img src={rwanda} style={{ width: 10, borderRadius: '50%', margin: '0 2px' }} alt="" /> <img src={hoadowncaret} style={{ width: 8 }} alt="" /></span></h3>
+                                        <p>Upload Amount</p>
                                     </div>
-                                )}
+                                    <div className="oc-mod-stat">
+                                        <h3>0 <span style={{ fontSize: 10, color: '#A1A5B7' }}>USD <img src={hoausflag} style={{ width: 10, borderRadius: '50%', margin: '0 2px' }} alt="" /> <img src={hoadowncaret} style={{ width: 8 }} alt="" /></span></h3>
+                                        <p>Courses Income</p>
+                                    </div>
+                                    <div className="oc-mod-stat" style={{ borderRight: 'none' }}>
+                                        <h3>{selectedCourse.created_at ? new Date(selectedCourse.created_at).toLocaleDateString() : 'N/A'} <span style={{ fontSize: 10, color: '#A1A5B7' }}>{selectedCourse.created_at ? new Date(selectedCourse.created_at).toLocaleTimeString() : ''}</span></h3>
+                                        <p>Date Uploaded</p>
+                                    </div>
+                                </div>
 
-                                {/* ==== STUDENTS Q&A TAB ==== */}
-                                {activeTab === 'qa' && (
-                                    <div>
-                                        <div className="oc-breadcrumbs">
-                                            <span className="oc-bc-link">Online courses</span> / <span>Students Q&A</span> /
-                                        </div>
+                                {/* Modal Tabs Navigation */}
+                                <div className="oc-modal-tabs">
+                                    <button className={`oc-tab-btn ${activeTab === 'overview' ? 'active' : ''}`} onClick={() => setActiveTab('overview')}>Overview</button>
+                                    <button className={`oc-tab-btn ${activeTab === 'students' ? 'active' : ''}`} onClick={() => setActiveTab('students')}>Students</button>
+                                    <button className={`oc-tab-btn ${activeTab === 'qa' ? 'active' : ''}`} onClick={() => setActiveTab('qa')}>Students Q&A</button>
+                                </div>
 
-                                        <div className="oc-qa-list">
-                                            {qaData.map(qa => (
-                                                <div key={qa.id} className="oc-qa-item">
-                                                    <div className="oc-qa-avatar-col">
-                                                        <img src={qa.avatar} alt="Avatar" className="oc-qa-avatar" />
+                                {/* Modal Tab Content Area */}
+                                <div className="oc-modal-tab-content">
+
+                                    {/* ==== OVERVIEW TAB ==== */}
+                                    {activeTab === 'overview' && (
+                                        <div>
+                                            <div className="oc-breadcrumbs">
+                                                <span className="oc-bc-link">Online courses</span> / <span>{selectedCourse.category || 'General'}</span> /
+                                            </div>
+
+                                            {/* Rejection Log Banner */}
+                                            {selectedCourse.status_approval === 'rejected' && (
+                                                <div style={{
+                                                    background: '#FFF5F5',
+                                                    border: '1px solid #FEE2E2',
+                                                    padding: '16px',
+                                                    borderRadius: '8px',
+                                                    marginBottom: '20px',
+                                                    display: 'flex',
+                                                    flexDirection: 'column',
+                                                    gap: '4px'
+                                                }}>
+                                                    <span style={{ fontSize: '13px', fontWeight: 700, color: '#C53030' }}>
+                                                        This Course was Rejected
+                                                    </span>
+                                                    <span style={{ fontSize: '12px', color: '#742A2A', lineHeight: 1.4 }}>
+                                                        <strong>Reason:</strong> {selectedCourse.rejection_reason || 'No specific reason provided.'}
+                                                    </span>
+                                                </div>
+                                            )}
+
+                                            <div className="oc-overview-header">
+                                                <div className="oc-overview-title">
+                                                    <h2>{selectedCourse.title}</h2>
+                                                    <p>Prepared by <strong>{selectedCourse.instructor_name || 'Instructor'}</strong></p>
+                                                </div>
+                                                <div className="oc-overview-ribbon-wrapper">
+                                                    <img src={hoarank} alt="" className="oc-ribbon-img" onError={(e) => e.target.style.display = 'none'} />
+                                                    <span className="oc-ribbon-number">{selectedCourse.id}</span>
+                                                </div>
+                                            </div>
+
+                                            <h3 className="oc-overview-subtitle">{selectedCourse.subtitle || 'Course Overview'}</h3>
+                                            <p className="oc-overview-desc" dangerouslySetInnerHTML={{ __html: selectedCourse.description || 'No description provided.' }} />
+
+                                            {selectedCourse.thumbnail_url || selectedCourse.thumbnail ? (
+                                                <img 
+                                                    src={`${API_BASE_URL}${selectedCourse.thumbnail_url || selectedCourse.thumbnail}`} 
+                                                    alt="Course Hero" 
+                                                    className="oc-overview-hero-img" 
+                                                    style={{ maxHeight: '300px', objectFit: 'cover' }}
+                                                />
+                                            ) : null}
+
+                                            <div className="oc-info-cards">
+                                                <div className="oc-info-card">
+                                                    <div className="oc-ic-head">
+                                                        <img src={hoatime} alt="" />
+                                                        <p>Duration</p>
                                                     </div>
-                                                    <div className="oc-qa-content">
-                                                        <div className="oc-qa-header">
-                                                            <h4>{qa.name}</h4>
-                                                            <span>{qa.timeAgo}</span>
-                                                        </div>
-                                                        <div className="oc-qa-meta-row">
-                                                            <div className="oc-qa-badge">{qa.week} <IconRightArrow /></div>
-                                                            <span className="oc-qa-title">{qa.title}</span>
-                                                        </div>
-                                                        <p className="oc-qa-text">{qa.text} <span className="oc-read-more">Read more</span></p>
+                                                    <h4>{selectedCourse.duration_weeks || 4} weeks</h4>
+                                                </div>
+                                                <div className="oc-info-card">
+                                                    <div className="oc-ic-head">
+                                                        <img src={hoagraycalendar} alt="" />
+                                                        <p>Weekly study</p>
+                                                    </div>
+                                                    <h4>{selectedCourse.required_hours_per_week || 4} hours</h4>
+                                                </div>
+                                                <div className="oc-info-card">
+                                                    <div className="oc-ic-head">
+                                                        <img src={hoapaperstack} alt="" />
+                                                        <p>Skill Level</p>
+                                                    </div>
+                                                    <h4 style={{ textTransform: 'capitalize' }}>{selectedCourse.education_level || 'Intermediate'}</h4>
+                                                </div>
+                                                <div className="oc-info-card" style={{ position: 'relative' }}>
+                                                    <div className="oc-discount-badge" style={{ display: 'none' }}>-4% Off</div>
+                                                    <div className="oc-ic-head">
+                                                        <img src={hoapayicon} alt="" />
+                                                        <p>Subscription</p>
+                                                    </div>
+                                                    <h4>
+                                                        {parseFloat(selectedCourse.price) === 0 ? (
+                                                            'Free'
+                                                        ) : (
+                                                            <>
+                                                                <span style={{ color: '#EF305E' }}>${selectedCourse.price}</span> Per month
+                                                            </>
+                                                        )}
+                                                    </h4>
+                                                </div>
+                                            </div>
 
-                                                        <div className="oc-qa-footer">
-                                                            <div className="oc-qa-replies" onClick={() => toggleReplies(qa.id)} style={{ cursor: qa.replies > 0 ? 'pointer' : 'default' }}>
-                                                                <IconReply /> {qa.replies} {expandedReplies[qa.id] && qa.replies > 0 ? 'Hide Replies' : 'View Replies'}
+                                            <h3 className="oc-section-title">Target Audience & Objectives</h3>
+                                            <p className="oc-overview-desc" style={{ marginBottom: 32 }} dangerouslySetInnerHTML={{ __html: selectedCourse.target_audience || selectedCourse.objectives || 'No details provided.' }} />
+
+                                            <h3 className="oc-section-title">Course Breakdown</h3>
+                                            <div className="oc-breakdown-list">
+                                                {selectedCourse.weeks && selectedCourse.weeks.length > 0 ? (
+                                                    selectedCourse.weeks.map((week, wIdx) => (
+                                                        <div className="oc-bd-week-group" key={week.id || wIdx}>
+                                                            <div className="oc-bd-week-col">
+                                                                <div className="oc-bd-week">{week.title || `Week ${week.week_number}`}</div>
                                                             </div>
-                                                            <span>Sent on <span style={{ fontWeight: 600, color: '#071437' }}>{qa.date}</span></span>
-                                                        </div>
-                                                        
-                                                        {expandedReplies[qa.id] && qa.replyData && qa.replyData.length > 0 && (
-                                                            <div className="oc-qa-reply-list" style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px dashed #EEF1F6' }}>
-                                                                {qa.replyData.map(reply => (
-                                                                    <div key={reply.id} className="oc-qa-reply-item">
-                                                                        <div className="oc-qa-header">
-                                                                            <img src={reply.avatar} alt="Avatar" style={{ width: '24px', height: '24px', borderRadius: '50%', objectFit: 'cover' }} />
-                                                                            <h4>{reply.name}</h4>
-                                                                            <span>{reply.timeAgo}</span>
+                                                            <div className="oc-bd-items-col">
+                                                                <div className="oc-bd-item">
+                                                                    <div className="oc-bd-icon-col">
+                                                                        <div className="oc-bd-icon"><img src={hoabasics} alt="" /></div>
+                                                                        {week.chapters && week.chapters.length > 0 && <div className="oc-bd-line"></div>}
+                                                                    </div>
+                                                                    <div className="oc-bd-content" style={{ paddingBottom: 24 }}>
+                                                                        <h4 style={{
+                                                                            margin: '0 0 4px 0',
+                                                                            fontSize: 14,
+                                                                            color: '#071437',
+                                                                            fontWeight: 600,
+                                                                            display: '-webkit-box',
+                                                                            WebkitLineClamp: '2',
+                                                                            WebkitBoxOrient: 'vertical',
+                                                                            overflow: 'hidden',
+                                                                            textOverflow: 'ellipsis'
+                                                                        }}>
+                                                                            {week.description || 'Weekly study plan & objectives'}
+                                                                        </h4>
+                                                                        <p style={{
+                                                                            margin: 0,
+                                                                            fontSize: 13,
+                                                                            color: '#4B5675',
+                                                                            display: '-webkit-box',
+                                                                            WebkitLineClamp: '3',
+                                                                            WebkitBoxOrient: 'vertical',
+                                                                            overflow: 'hidden',
+                                                                            textOverflow: 'ellipsis'
+                                                                        }}>
+                                                                            {week.learning_objectives ? week.learning_objectives.replace(/"/g, '') : 'Learn new skills, pursue your interests or advance your career.'}
+                                                                        </p>
+                                                                    </div>
+                                                                </div>
+                                                                {week.chapters && week.chapters.map((chap, cIdx) => (
+                                                                    <div className="oc-bd-item" key={chap.id || cIdx}>
+                                                                        <div className="oc-bd-icon-col">
+                                                                            <div className="oc-bd-icon" style={{ color: '#450468', fontSize: 12, fontWeight: 700 }}>
+                                                                                {cIdx + 1}
+                                                                            </div>
+                                                                            {cIdx !== week.chapters.length - 1 && <div className="oc-bd-line"></div>}
                                                                         </div>
-                                                                        <p className="oc-qa-text" style={{ margin: 0 }}>{reply.text}</p>
+                                                                        <div className="oc-bd-content" style={{ display: 'flex', alignItems: 'center', gap: 16, paddingBottom: cIdx !== week.chapters.length - 1 ? 24 : 0 }}>
+                                                                            {chap.thumbnail ? (
+                                                                                <img src={`${API_BASE_URL}${chap.thumbnail}`} alt="thumb" style={{ width: 80, height: 60, borderRadius: 4, objectFit: 'cover' }} />
+                                                                            ) : (
+                                                                                <div style={{ width: 80, height: 60, borderRadius: 4, background: '#F3F4F6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', color: '#9CA3AF' }}>No Video</div>
+                                                                            )}
+                                                                            <div>
+                                                                                <h4 style={{ margin: '0 0 4px 0', fontSize: 14, color: '#071437', fontWeight: 600 }}>{chap.title}</h4>
+                                                                                <p style={{ margin: 0, fontSize: 11, color: '#A1A5B7' }}>
+                                                                                    {chap.subtitle || 'Chapter lecture'} • {chap.duration ? `${chap.duration} mins` : 'Video content'}
+                                                                                </p>
+                                                                            </div>
+                                                                        </div>
                                                                     </div>
                                                                 ))}
                                                             </div>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-
-                                        {/* Q&A Pagination */}
-                                        <div className="oc-pagination-container" style={{ borderTop: 'none', marginTop: 0 }}>
-                                            <div className="oc-pagination-right">
-                                                <button className="oc-page-nav" style={{ color: '#D8D8E5' }}>
-                                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
-                                                </button>
-                                                <button className="oc-page-num">1</button>
-                                                <button className="oc-page-num active">2</button>
-                                                <button className="oc-page-num">3</button>
-                                                <button className="oc-page-num">4</button>
-                                                <button className="oc-page-num">5</button>
-                                                <span style={{ margin: '0 4px', color: '#4B5675' }}>...</span>
-                                                <button className="oc-page-nav" style={{ color: '#78829D' }}>
-                                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
-                                                </button>
+                                                        </div>
+                                                    ))
+                                                ) : (
+                                                    <p style={{ fontSize: '13px', color: '#78829D' }}>No breakdown structure uploaded for this course yet.</p>
+                                                )}
                                             </div>
                                         </div>
-                                    </div>
-                                )}
+                                    )}
 
+                                    {/* ==== STUDENTS TAB ==== */}
+                                    {activeTab === 'students' && (
+                                        <div>
+                                            <div className="oc-breadcrumbs">
+                                                <span className="oc-bc-link">Online courses</span> / <span>Students</span> /
+                                            </div>
+
+                                            {loadingEnrollments ? (
+                                                <p style={{ color: '#64748B', fontSize: '13px', textAlign: 'center', padding: '20px' }}>Loading students...</p>
+                                            ) : courseEnrollments.length === 0 ? (
+                                                <div style={{ textAlign: 'center', padding: '40px', background: '#F8FAFC', borderRadius: '8px', border: '1px dashed #CBD5E1', marginTop: '16px' }}>
+                                                    <p style={{ color: '#64748B', fontSize: '13px', margin: 0 }}>No student enrollments for this course.</p>
+                                                </div>
+                                            ) : (
+                                                <div style={{ overflowX: 'auto', marginTop: '16px' }}>
+                                                    <table className="oc-students-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+                                                        <thead>
+                                                            <tr style={{ borderBottom: '1px solid #EEF1F6', textAlign: 'left' }}>
+                                                                <th style={{ padding: '12px 8px', fontSize: '12px', fontWeight: '600', color: '#8A92A6' }}>STUDENT</th>
+                                                                <th style={{ padding: '12px 8px', fontSize: '12px', fontWeight: '600', color: '#8A92A6' }}>EMAIL</th>
+                                                                <th style={{ padding: '12px 8px', fontSize: '12px', fontWeight: '600', color: '#8A92A6' }}>ENROLLED DATE</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            {courseEnrollments.map((student) => {
+                                                                const avatarSrc = student.avatar ? (student.avatar.startsWith('http') ? student.avatar : `${API_BASE_URL}${student.avatar}`) : '/assets/imgs/default-profile.png';
+                                                                return (
+                                                                    <tr key={student.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                                                                        <td style={{ padding: '16px 8px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                                                            <img 
+                                                                                src={avatarSrc} 
+                                                                                alt={student.student_name} 
+                                                                                style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover' }} 
+                                                                                onError={(e) => { e.target.src = '/assets/imgs/default-profile.png'; }}
+                                                                            />
+                                                                            <span style={{ fontSize: '14px', fontWeight: '600', color: '#071437' }}>{student.student_name}</span>
+                                                                        </td>
+                                                                        <td style={{ padding: '16px 8px', fontSize: '13px', color: '#4B5675' }}>{student.student_email}</td>
+                                                                        <td style={{ padding: '16px 8px', fontSize: '13px', color: '#4B5675' }}>{student.created_at ? new Date(student.created_at).toLocaleDateString() : 'N/A'}</td>
+                                                                    </tr>
+                                                                );
+                                                            })}
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {/* ==== STUDENTS Q&A TAB ==== */}
+                                    {activeTab === 'qa' && (
+                                        <div>
+                                            <div className="oc-breadcrumbs">
+                                                <span className="oc-bc-link">Online courses</span> / <span>Students Q&A</span> /
+                                            </div>
+
+                                            {loadingQuestions ? (
+                                                <p style={{ color: '#64748B', fontSize: '13px', textAlign: 'center', padding: '20px' }}>Loading Q&A...</p>
+                                            ) : courseQuestions.length === 0 ? (
+                                                <div style={{ textAlign: 'center', padding: '40px', background: '#F8FAFC', borderRadius: '8px', border: '1px dashed #CBD5E1', marginTop: '16px' }}>
+                                                    <p style={{ color: '#64748B', fontSize: '13px', margin: 0 }}>No student discussions or questions for this course.</p>
+                                                </div>
+                                            ) : (
+                                                <div className="oc-qa-list" style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                                                    {courseQuestions.map((q) => {
+                                                        const isExpanded = !!expandedReplies[q.id];
+                                                        const replies = questionReplies[q.id] || [];
+                                                        const isLoadingRep = !!loadingReplies[q.id];
+                                                        const authorAvatar = q.student_avatar ? (q.student_avatar.startsWith('http') ? q.student_avatar : `${API_BASE_URL}${q.student_avatar}`) : '/assets/imgs/default-profile.png';
+                                                        
+                                                        return (
+                                                            <div key={q.id} style={{ border: '1px solid #E2E8F0', borderRadius: '8px', padding: '16px', background: '#FFFFFF' }}>
+                                                                {/* Question Header */}
+                                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+                                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                                                        <img 
+                                                                            src={authorAvatar} 
+                                                                            alt={q.student_name} 
+                                                                            style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover' }} 
+                                                                            onError={(e) => { e.target.src = '/assets/imgs/default-profile.png'; }}
+                                                                        />
+                                                                        <div>
+                                                                            <h4 style={{ margin: 0, fontSize: '14px', fontWeight: '600', color: '#071437' }}>{q.student_name}</h4>
+                                                                            <span style={{ fontSize: '11px', color: '#A1A5B7' }}>
+                                                                                {new Date(q.created_at).toLocaleDateString()}
+                                                                                {q.week_number ? ` • Week ${q.week_number}` : ''}
+                                                                                {q.chapter_title ? ` • ${q.chapter_title}` : ''}
+                                                                            </span>
+                                                                        </div>
+                                                                    </div>
+                                                                    <span style={{ 
+                                                                        fontSize: '11px', 
+                                                                        fontWeight: '600', 
+                                                                        padding: '4px 8px', 
+                                                                        borderRadius: '4px',
+                                                                        background: q.status === 'resolved' ? '#E8FFF3' : '#FFF5F5',
+                                                                        color: q.status === 'resolved' ? '#50CD89' : '#F1416C',
+                                                                        textTransform: 'capitalize'
+                                                                    }}>
+                                                                        {q.status}
+                                                                    </span>
+                                                                </div>
+
+                                                                {/* Question Title & Content */}
+                                                                <h3 style={{ fontSize: '15px', fontWeight: '700', color: '#071437', margin: '0 0 6px 0' }}>{q.title}</h3>
+                                                                <p style={{ fontSize: '13px', color: '#4B5675', lineHeight: '1.5', margin: '0 0 12px 0' }}>{q.content}</p>
+
+                                                                {/* Question Footer / Reply toggle */}
+                                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #F1F5F9', paddingTop: '12px' }}>
+                                                                    <span style={{ fontSize: '12px', color: '#78829D', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                                                                        {q.answers_count || 0} replies
+                                                                    </span>
+
+                                                                    <button 
+                                                                        onClick={() => fetchQuestionReplies(q.id)}
+                                                                        style={{ 
+                                                                            background: 'none', 
+                                                                            border: 'none', 
+                                                                            color: '#450468', 
+                                                                            fontSize: '12px', 
+                                                                            fontWeight: '600', 
+                                                                            cursor: 'pointer',
+                                                                            display: 'flex',
+                                                                            alignItems: 'center',
+                                                                            gap: '4px'
+                                                                        }}
+                                                                    >
+                                                                        {isLoadingRep ? 'Loading...' : isExpanded ? 'Hide Replies' : 'Show Replies'}
+                                                                    </button>
+                                                                </div>
+
+                                                                {/* Replies Section */}
+                                                                {isExpanded && (
+                                                                    <div style={{ marginTop: '16px', borderTop: '1px dashed #E4E6EF', paddingTop: '16px', display: 'flex', flexDirection: 'column', gap: '12px', background: '#F8FAFC', padding: '12px', borderRadius: '6px' }}>
+                                                                        {replies.length === 0 ? (
+                                                                            <p style={{ margin: 0, fontSize: '12px', color: '#78829D', fontStyle: 'italic' }}>No replies yet.</p>
+                                                                        ) : (
+                                                                            replies.map((reply) => {
+                                                                                const replyAvatar = reply.author_avatar ? (reply.author_avatar.startsWith('http') ? reply.author_avatar : `${API_BASE_URL}${reply.author_avatar}`) : '/assets/imgs/default-profile.png';
+                                                                                return (
+                                                                                    <div key={reply.id} style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
+                                                                                        <img 
+                                                                                            src={replyAvatar} 
+                                                                                            alt={reply.author_name} 
+                                                                                            style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover' }} 
+                                                                                            onError={(e) => { e.target.src = '/assets/imgs/default-profile.png'; }}
+                                                                                        />
+                                                                                        <div style={{ flex: 1 }}>
+                                                                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                                                                <span style={{ fontSize: '13px', fontWeight: '600', color: '#071437' }}>
+                                                                                                    {reply.author_name}
+                                                                                                    {(reply.author_role === 'instructor' || reply.author_role === 'admin') && (
+                                                                                                        <span style={{ marginLeft: '6px', fontSize: '9px', fontWeight: '700', textTransform: 'uppercase', background: '#E8FFF3', color: '#50CD89', padding: '2px 6px', borderRadius: '4px' }}>Staff</span>
+                                                                                                    )}
+                                                                                                </span>
+                                                                                                <span style={{ fontSize: '11px', color: '#A1A5B7' }}>{new Date(reply.created_at).toLocaleDateString()}</span>
+                                                                                            </div>
+                                                                                            <div 
+                                                                                                style={{ margin: '4px 0 0 0', fontSize: '12.5px', color: '#4B5675', lineHeight: '1.4', whiteSpace: 'pre-wrap' }} 
+                                                                                                dangerouslySetInnerHTML={{ __html: reply.content }}
+                                                                                            />
+                                                                                        </div>
+                                                                                    </div>
+                                                                                );
+                                                                            })
+                                                                        )}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+
+                                </div>
                             </div>
-                        </div>
+                        ) : null}
                     </div>
                 </div>
 
             </div>
+
+            {/* Custom Toast Notification */}
+            {toast.show && (
+                <div className="premium-toast" style={{
+                    position: 'fixed',
+                    top: '24px',
+                    right: '24px',
+                    background: toast.type === 'success' ? '#E8FFF3' : '#FFF5F5',
+                    border: toast.type === 'success' ? '1px solid #50CD89' : '1px solid #F1416C',
+                    borderRadius: '8px',
+                    padding: '16px 24px',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                    zIndex: 99999,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    animation: 'slideIn 0.3s ease-out'
+                }}>
+                    <span style={{
+                        width: '20px',
+                        height: '20px',
+                        borderRadius: '50%',
+                        background: toast.type === 'success' ? '#50CD89' : '#F1416C',
+                        color: '#FFFFFF',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '12px',
+                        fontWeight: 'bold'
+                    }}>
+                        {toast.type === 'success' ? '✓' : '✕'}
+                    </span>
+                    <span style={{
+                        fontSize: '14px',
+                        fontWeight: 600,
+                        color: toast.type === 'success' ? '#1E293B' : '#651A1A'
+                    }}>
+                        {toast.message}
+                    </span>
+                </div>
+            )}
+
+            {/* Custom Approve Confirmation Modal Overlay */}
+            {approveModalOpen && (
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '100%',
+                    backgroundColor: 'rgba(7, 20, 55, 0.4)',
+                    backdropFilter: 'blur(4px)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 9999
+                }}>
+                    <div style={{
+                        background: '#FFFFFF',
+                        width: '100%',
+                        maxWidth: '450px',
+                        borderRadius: '12px',
+                        padding: '24px',
+                        boxShadow: '0 10px 30px rgba(7, 20, 55, 0.15)',
+                        border: '1px solid #EEF1F6',
+                        textAlign: 'center'
+                    }}>
+                        <div style={{
+                            width: '48px',
+                            height: '48px',
+                            borderRadius: '50%',
+                            background: '#E8FFF3',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            marginBottom: '16px'
+                        }}>
+                            <span style={{ fontSize: '20px', color: '#50CD89', fontWeight: 'bold' }}>✓</span>
+                        </div>
+                        <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#071437', marginBottom: '8px' }}>
+                            Approve Course
+                        </h3>
+                        <p style={{ fontSize: '13px', color: '#78829D', marginBottom: '24px', lineHeight: '1.5' }}>
+                            Are you sure you want to approve this course? Once approved, it will be published and learners will be able to enroll and pay for it.
+                        </p>
+                        <div style={{ display: 'flex', justifyContent: 'center', gap: '12px' }}>
+                            <button
+                                onClick={() => setApproveModalOpen(false)}
+                                style={{
+                                    padding: '10px 20px',
+                                    borderRadius: '8px',
+                                    background: '#F9F9F9',
+                                    border: '1px solid #E4E6EF',
+                                    color: '#475569',
+                                    fontSize: '13px',
+                                    fontWeight: 600,
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s',
+                                    minWidth: '100px'
+                                }}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={submitApproval}
+                                style={{
+                                    padding: '10px 20px',
+                                    borderRadius: '8px',
+                                    background: '#50CD89',
+                                    border: 'none',
+                                    color: '#FFFFFF',
+                                    fontSize: '13px',
+                                    fontWeight: 600,
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s',
+                                    minWidth: '100px'
+                                }}
+                            >
+                                Approve
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Custom Rejection Modal Overlay */}
+            {rejectionModalOpen && (
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '100%',
+                    backgroundColor: 'rgba(7, 20, 55, 0.4)',
+                    backdropFilter: 'blur(4px)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 9999
+                }}>
+                    <div style={{
+                        background: '#FFFFFF',
+                        width: '100%',
+                        maxWidth: '500px',
+                        borderRadius: '12px',
+                        padding: '24px',
+                        boxShadow: '0 10px 30px rgba(7, 20, 55, 0.15)',
+                        border: '1px solid #EEF1F6'
+                    }}>
+                        <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#071437', marginBottom: '8px' }}>
+                            Reject Course
+                        </h3>
+                        <p style={{ fontSize: '13px', color: '#78829D', marginBottom: '16px', lineHeight: '1.4' }}>
+                            Please provide a detailed reason for rejecting this course. The instructor will receive this explanation via email.
+                        </p>
+                        <textarea
+                            value={rejectionReason}
+                            onChange={(e) => setRejectionReason(e.target.value)}
+                            placeholder="Type rejection explanation here..."
+                            style={{
+                                width: '100%',
+                                height: '120px',
+                                borderRadius: '8px',
+                                border: '1px solid #E4E6EF',
+                                padding: '12px',
+                                fontSize: '13px',
+                                fontFamily: 'inherit',
+                                color: '#071437',
+                                resize: 'none',
+                                marginBottom: '20px',
+                                outline: 'none',
+                                boxSizing: 'border-box'
+                            }}
+                        />
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+                            <button
+                                onClick={() => setRejectionModalOpen(false)}
+                                style={{
+                                    padding: '10px 20px',
+                                    borderRadius: '8px',
+                                    background: '#F9F9F9',
+                                    border: '1px solid #E4E6EF',
+                                    color: '#475569',
+                                    fontSize: '13px',
+                                    fontWeight: 600,
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s'
+                                }}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={submitRejection}
+                                style={{
+                                    padding: '10px 20px',
+                                    borderRadius: '8px',
+                                    background: '#F1416C',
+                                    border: 'none',
+                                    color: '#FFFFFF',
+                                    fontSize: '13px',
+                                    fontWeight: 600,
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s'
+                                }}
+                            >
+                                Reject Course
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </HOALayout>
     );
 };

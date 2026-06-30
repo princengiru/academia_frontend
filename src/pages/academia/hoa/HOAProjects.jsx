@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import HOALayout from '../../../components/layouts/HOALayout/HOALayout';
 import { useCurrency, flagOptions } from '../../../hooks/useCurrency';
 import './hoa-projects.css';
@@ -100,55 +100,222 @@ const IconCommentsTab = () => (
 );
 
 const HOAProjects = () => {
-    // Top-level state
+    // API Configuration
+    const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
+    // Moderation Mode: 'explorer' (Approved), 'pending', 'rejected'
+    const [mode, setMode] = useState('explorer');
+
+    // Search and Filters
+    const [searchQuery, setSearchQuery] = useState('');
     const [activeType, setActiveType] = useState('Projects'); // 'Projects' or 'People'
     const [isFilterOpen, setIsFilterOpen] = useState(false);
     const [selectedFilter, setSelectedFilter] = useState('Recommended');
     
-    // Modal state
+    // Data lists
+    const [approvedProjects, setApprovedProjects] = useState([]);
+    const [pendingProjects, setPendingProjects] = useState([]);
+    const [rejectedProjects, setRejectedProjects] = useState([]);
+    const [loading, setLoading] = useState(false);
+
+    // Selected Project detail state
+    const [selectedProject, setSelectedProject] = useState(null);
+    const [loadingProjectDetails, setLoadingProjectDetails] = useState(false);
+
+    // Modal display state
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [activeTab, setActiveTab] = useState('overview'); // 'overview' or 'comments'
 
-    // Dummy data for projects grid
-    const projectsData = [
-        { id: 1, title: 'Build your software & engineering dream career', author: 'Jose Carine', isTeam: false, likes: '10.6K', views: '10.6K', img: 'https://images.unsplash.com/photo-1503387762-592deb58ef4e?q=80&w=600&auto=format&fit=crop' },
-        { id: 2, title: 'Build your software & engineering dream career', author: 'Team owners', isTeam: true, likes: '11', views: '1.2K', img: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?q=80&w=600&auto=format&fit=crop' },
-        { id: 3, title: 'Build your software & engineering dream career', author: 'Jose Carine', isTeam: false, likes: '11', views: '1.2K', img: 'https://images.unsplash.com/photo-1542831371-29b0f74f9713?q=80&w=600&auto=format&fit=crop' },
-        { id: 4, title: 'Build your software & engineering dream career', author: 'Jose Carine', isTeam: false, likes: '11', views: '1.2K', img: 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?q=80&w=600&auto=format&fit=crop' },
-        { id: 5, title: 'Build your software & engineering dream career', author: 'Team owners', isTeam: true, likes: '11', views: '1.2K', img: 'https://images.unsplash.com/photo-1497215728101-856f4ea42174?q=80&w=600&auto=format&fit=crop' },
-        { id: 6, title: 'Build your software & engineering dream career', author: 'Jose Carine', isTeam: false, likes: '11', views: '1.2K', img: 'https://images.unsplash.com/photo-1531482615713-2afd69097998?q=80&w=600&auto=format&fit=crop' },
-        { id: 7, title: 'Build your software & engineering dream career', author: 'Jose Carine', isTeam: false, likes: '10.6K', views: '10.6K', img: 'https://images.unsplash.com/photo-1586281380349-632531db7ed4?q=80&w=600&auto=format&fit=crop' },
-        { id: 8, title: 'Build your software & engineering dream career', author: 'Jose Carine', isTeam: false, likes: '11', views: '1.2K', img: 'https://images.unsplash.com/photo-1513364776144-60967b0f800f?q=80&w=600&auto=format&fit=crop' },
-        { id: 9, title: 'Build your software & engineering dream career', author: 'Jose Carine', isTeam: false, likes: '10.6K', views: '10.6K', img: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?q=80&w=600&auto=format&fit=crop' },
-        { id: 10, title: 'Build your software & engineering dream career', author: 'Team owners', isTeam: true, likes: '11', views: '1.2K', img: 'https://images.unsplash.com/photo-1503387762-592deb58ef4e?q=80&w=600&auto=format&fit=crop' },
-        { id: 11, title: 'Build your software & engineering dream career', author: 'Jose Carine', isTeam: false, likes: '11', views: '1.2K', img: 'https://images.unsplash.com/photo-1503387762-592deb58ef4e?q=80&w=600&auto=format&fit=crop' },
-        { id: 12, title: 'Build your software & engineering dream career', author: 'Jose Carine', isTeam: false, likes: '11', views: '1.2K', img: 'https://images.unsplash.com/photo-1513364776144-60967b0f800f?q=80&w=600&auto=format&fit=crop' },
-    ];
+    // Comments state
+    const [projectComments, setProjectComments] = useState([]);
+    const [loadingComments, setLoadingComments] = useState(false);
 
-    // Dummy data for Comments tab
-    const commentsData = Array(6).fill({
-        avatar: '/assets/imgs/default-profile.png', // Assuming a fallback will show or use initials
-        name: 'Mrs. Anderson',
-        timeAgo: '1 Day ago',
-        text: 'Nice Project',
-        date: 'Apr 23, 2025'
-    }).map((comment, idx) => {
-        if (idx === 0) {
-            return {
-                ...comment,
-                name: 'Mr. Anderson',
-                text: 'Long before you sit dow to put digital pen to paper you need to make sure you have to sit down and write. I\'ll show you how to write a great blog post in five simple steps that people will actually want to read. Ready?'
-            }
-        }
-        return { ...comment, id: idx + 1 };
-    });
+    // Custom Toast state
+    const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
 
-    const openProjectModal = () => {
-        setIsModalOpen(true);
+    // Rejection Modal
+    const [rejectionModalOpen, setRejectionModalOpen] = useState(false);
+    const [rejectionProjectId, setRejectionProjectId] = useState(null);
+    const [rejectionReason, setRejectionReason] = useState('');
+
+    // Approve Modal
+    const [approveModalOpen, setApproveModalOpen] = useState(false);
+    const [approveProjectId, setApproveProjectId] = useState(null);
+
+    const showToast = (message, type = 'success') => {
+        setToast({ show: true, message, type });
+        setTimeout(() => {
+            setToast(prev => ({ ...prev, show: false }));
+        }, 3000);
     };
+
+    const fetchProjects = async () => {
+        setLoading(true);
+        try {
+            const token = localStorage.getItem('token');
+            const headers = { Authorization: `Bearer ${token}` };
+
+            // Fetch Approved
+            const approvedRes = await fetch(`${API_BASE_URL}/api/projects/admin/approved?limit=100`, { headers });
+            const approvedResult = await approvedRes.json();
+            if (approvedResult.success) {
+                const list = approvedResult.data?.projects || approvedResult.data || approvedResult.projects || [];
+                setApprovedProjects(Array.isArray(list) ? list : []);
+            }
+
+            // Fetch Pending
+            const pendingRes = await fetch(`${API_BASE_URL}/api/projects/admin/pending?limit=100`, { headers });
+            const pendingResult = await pendingRes.json();
+            if (pendingResult.success) {
+                const list = pendingResult.data?.projects || pendingResult.data || pendingResult.projects || [];
+                setPendingProjects(Array.isArray(list) ? list : []);
+            }
+
+            // Fetch Rejected
+            const rejectedRes = await fetch(`${API_BASE_URL}/api/projects/admin/rejected?limit=100`, { headers });
+            const rejectedResult = await rejectedRes.json();
+            if (rejectedResult.success) {
+                const list = rejectedResult.data?.projects || rejectedResult.data || rejectedResult.projects || [];
+                setRejectedProjects(Array.isArray(list) ? list : []);
+            }
+        } catch (err) {
+            console.error('Error fetching projects list:', err);
+            showToast('Failed to load projects', 'error');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const fetchProjectComments = async (projectId) => {
+        setLoadingComments(true);
+        try {
+            const token = localStorage.getItem('token');
+            const headers = token ? { Authorization: `Bearer ${token}` } : {};
+            const res = await fetch(`${API_BASE_URL}/api/projects/${projectId}/comments?limit=100`, { headers });
+            const result = await res.json();
+            if (result.success && Array.isArray(result.data)) {
+                setProjectComments(result.data);
+            } else {
+                setProjectComments([]);
+            }
+        } catch (err) {
+            console.error('Failed to load comments for project:', err);
+            setProjectComments([]);
+        } finally {
+            setLoadingComments(false);
+        }
+    };
+
+    const loadProjectDetails = async (proj) => {
+        setLoadingProjectDetails(true);
+        setSelectedProject(proj);
+        setIsModalOpen(true);
+        setProjectComments([]);
+        setActiveTab('overview');
+        fetchProjectComments(proj.id);
+        try {
+            const token = localStorage.getItem('token');
+            const headers = token ? { Authorization: `Bearer ${token}` } : {};
+            const res = await fetch(`${API_BASE_URL}/api/projects/${proj.id}`, { headers });
+            const result = await res.json();
+            if (result.success && result.data) {
+                setSelectedProject(result.data);
+            } else {
+                throw new Error(result.message || 'Failed to fetch project details');
+            }
+        } catch (err) {
+            console.error('Error fetching project details:', err);
+            showToast('Failed to load project details', 'error');
+        } finally {
+            setLoadingProjectDetails(false);
+        }
+    };
+
+    const handleApproveProject = (projectId) => {
+        setApproveProjectId(projectId);
+        setApproveModalOpen(true);
+    };
+
+    const submitApproval = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`${API_BASE_URL}/api/projects/${approveProjectId}/approve`, {
+                method: 'POST',
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            });
+            const result = await res.json();
+            if (result.success) {
+                showToast('Project approved successfully!', 'success');
+                setApproveModalOpen(false);
+                setIsModalOpen(false);
+                fetchProjects();
+            } else {
+                throw new Error(result.message || 'Failed to approve project');
+            }
+        } catch (err) {
+            showToast(err.message, 'error');
+        }
+    };
+
+    const handleRejectProject = (projectId) => {
+        setRejectionProjectId(projectId);
+        setRejectionReason('');
+        setRejectionModalOpen(true);
+    };
+
+    const submitRejection = async () => {
+        if (!rejectionReason.trim()) {
+            showToast('Rejection reason is required', 'error');
+            return;
+        }
+
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`${API_BASE_URL}/api/projects/${rejectionProjectId}/reject`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`
+                },
+                body: JSON.stringify({ reason: rejectionReason.trim() })
+            });
+            const result = await res.json();
+            if (result.success) {
+                showToast('Project rejected successfully', 'success');
+                setRejectionModalOpen(false);
+                setIsModalOpen(false);
+                fetchProjects();
+            } else {
+                throw new Error(result.message || 'Failed to reject project');
+            }
+        } catch (err) {
+            showToast(err.message, 'error');
+        }
+    };
+
+    useEffect(() => {
+        fetchProjects();
+    }, []);
+
+    const filteredProjects = useMemo(() => {
+        const currentList = mode === 'explorer'
+            ? approvedProjects
+            : mode === 'pending'
+                ? pendingProjects
+                : rejectedProjects;
+
+        return currentList.filter(project => {
+            const matchesSearch = (project.title?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
+                (project.user_name?.toLowerCase() || '').includes(searchQuery.toLowerCase());
+            return matchesSearch;
+        });
+    }, [mode, approvedProjects, pendingProjects, rejectedProjects, searchQuery]);
 
     const closeModal = () => {
         setIsModalOpen(false);
+        setSelectedProject(null);
     };
 
     return (
@@ -169,52 +336,81 @@ const HOAProjects = () => {
                     </div>
                 </div>
 
-                {/* Top Stats */}
-            <div className="hoap-stats-top-container">
-                <div className="hoap-stats-container">
-                    <div className="hoap-stat-block">
-                        <h3>13.3M</h3>
-                        <p>Total Courses</p>
-                    </div>
-                    <div className="hoap-stat-block">
-                        <h3>13.3M</h3>
-                        <p>Total Learners</p>
-                    </div>
-                    <div className="hoap-stat-block">
-                        <h3>204</h3>
-                        <p>Avg. Learning Time</p>
-                    </div>
-                    <div className="hoap-stat-block">
-                        <h3>
-                            19.3M
-                            <span className="hoap-currency-dropdown">
-                                RWF <img src={rwanda} alt="flag" style={{ width: 10, borderRadius: '50%' }} /> <img src={hoadowncaret} alt="" style={{ width: 8 }} />
-                            </span>
-                        </h3>
-                        <p>Upload Payments <span className="hoap-trend down">↘ -4.5%</span></p>
-                    </div>
-                    <div className="hoap-stat-block">
-                        <h3>
-                            843.5K
-                            <span className="hoap-currency-dropdown">
-                                RWF <img src={rwanda} alt="flag" style={{ width: 10, borderRadius: '50%' }} /> <img src={hoadowncaret} alt="" style={{ width: 8 }} />
-                            </span>
-                        </h3>
-                        <p>Course Payments <span className="hoap-trend up">↗ +4.1</span></p>
+                {/* Moderation Mode Tabs */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '20px 0', borderBottom: '1px solid #EEF1F6', paddingBottom: '12px' }}>
+                    <div className="hoap-type-toggles" style={{ display: 'flex', gap: '8px' }}>
+                        <button 
+                            className={`hoap-type-btn ${mode === 'explorer' ? 'active' : ''}`} 
+                            onClick={() => { setMode('explorer'); setSelectedProject(null); }} 
+                            style={{ padding: '8px 16px', borderRadius: '6px', fontSize: '13px', fontWeight: 600, border: 'none', cursor: 'pointer', background: mode === 'explorer' ? '#450468' : 'transparent', color: mode === 'explorer' ? '#FFFFFF' : '#78829D', transition: 'all 0.2s' }}
+                        >
+                            Projects Explorer ({approvedProjects.length})
+                        </button>
+                        <button 
+                            className={`hoap-type-btn ${mode === 'pending' ? 'active' : ''}`} 
+                            onClick={() => { setMode('pending'); setSelectedProject(null); }} 
+                            style={{ padding: '8px 16px', borderRadius: '6px', fontSize: '13px', fontWeight: 600, border: 'none', cursor: 'pointer', background: mode === 'pending' ? '#450468' : 'transparent', color: mode === 'pending' ? '#FFFFFF' : '#78829D', transition: 'all 0.2s' }}
+                        >
+                            Pending Moderation ({pendingProjects.length})
+                        </button>
+                        <button 
+                            className={`hoap-type-btn ${mode === 'rejected' ? 'active' : ''}`} 
+                            onClick={() => { setMode('rejected'); setSelectedProject(null); }} 
+                            style={{ padding: '8px 16px', borderRadius: '6px', fontSize: '13px', fontWeight: 600, border: 'none', cursor: 'pointer', background: mode === 'rejected' ? '#450468' : 'transparent', color: mode === 'rejected' ? '#FFFFFF' : '#78829D', transition: 'all 0.2s' }}
+                        >
+                            Rejected Projects ({rejectedProjects.length})
+                        </button>
                     </div>
                 </div>
-            </div>
+
+                {/* Top Stats */}
+                <div className="hoap-stats-top-container">
+                    <div className="hoap-stats-container">
+                        <div className="hoap-stat-block">
+                            <h3>{approvedProjects.length}</h3>
+                            <p>Total Projects</p>
+                        </div>
+                        <div className="hoap-stat-block">
+                            <h3>13.3M</h3>
+                            <p>Total Learners</p>
+                        </div>
+                        <div className="hoap-stat-block">
+                            <h3>204</h3>
+                            <p>Avg. Learning Time</p>
+                        </div>
+                        <div className="hoap-stat-block">
+                            <h3>
+                                19.3M
+                                <span className="hoap-currency-dropdown">
+                                    RWF <img src={rwanda} alt="flag" style={{ width: 10, borderRadius: '50%' }} /> <img src={hoadowncaret} alt="" style={{ width: 8 }} />
+                                </span>
+                            </h3>
+                            <p>Upload Payments <span className="hoap-trend down">↘ -4.5%</span></p>
+                        </div>
+                        <div className="hoap-stat-block">
+                            <h3>
+                                843.5K
+                                <span className="hoap-currency-dropdown">
+                                    RWF <img src={rwanda} alt="flag" style={{ width: 10, borderRadius: '50%' }} /> <img src={hoadowncaret} alt="" style={{ width: 8 }} />
+                                </span>
+                            </h3>
+                            <p>Course Payments <span className="hoap-trend up">↗ +4.1</span></p>
+                        </div>
+                    </div>
+                </div>
 
                 {/* Sub Header & Actions */}
                 <div className="hoap-sub-header">
                     <div className="hoap-sub-title">
-                        <h2>Journals & Projects</h2>
-                        <p>3,461 Projects</p>
+                        <h2>{mode === 'explorer' ? 'Approved Projects' : mode === 'pending' ? 'Pending Projects' : 'Rejected Projects'}</h2>
+                        <p>{filteredProjects.length} projects</p>
                     </div>
-                    <div className="hoap-add-actions">
-                        <button className="hoap-btn-outline"><img src={hoagrayadd} style={{ width: 16 }} alt="" /> Add Project</button>
-                        <button className="hoap-btn-primary"><img src={hoawhiteadd} style={{ width: 16 }} alt="" /> Add Category</button>
-                    </div>
+                    {mode === 'explorer' && (
+                        <div className="hoap-add-actions">
+                            <button className="hoap-btn-outline"><img src={hoagrayadd} style={{ width: 16 }} alt="" /> Add Project</button>
+                            <button className="hoap-btn-primary"><img src={hoawhiteadd} style={{ width: 16 }} alt="" /> Add Category</button>
+                        </div>
+                    )}
                 </div>
 
                 {/* Filter & Search Bar */}
@@ -247,7 +443,12 @@ const HOAProjects = () => {
                     <div className="hoap-main-header-bar">
                         <div className="hoap-search-bar">
                             <img src={hoasearch} alt="Search" style={{ opacity: 0.5, width: 14 }} />
-                            <input type="text" placeholder="Search any projects..." />
+                            <input 
+                                type="text" 
+                                placeholder="Search projects or author..." 
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                            />
                         </div>
 
                         <div className="hoap-type-toggles">
@@ -269,26 +470,42 @@ const HOAProjects = () => {
                 </div>
 
                 {/* Projects Grid */}
-                <div className="hoap-grid">
-                    {projectsData.map(project => (
-                        <div key={project.id} className="hoap-card" onClick={() => openProjectModal()}>
-                            <img src={project.img} alt={project.title} className="hoap-card-img" />
-                            <div className="hoap-card-content">
-                                <div className="hoap-card-meta">
-                                    <span className="hoap-card-author">
-                                        By <span style={{ textDecoration: 'underline', color: '#071437', fontWeight: 500, marginLeft: '5px' }}>{project.author}</span>
-                                        {project.isTeam && <IconDownCaret style={{ marginLeft: 4, width: 10 }} />}
-                                    </span>
-                                    <div className="hoap-card-stats">
-                                        <span><IconHeart /> {project.likes}</span>
-                                        <span><IconEye /> {project.views}</span>
+                {loading ? (
+                    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '200px' }}>
+                        <span style={{ fontSize: '14px', color: '#78829D' }}>Loading projects...</span>
+                    </div>
+                ) : filteredProjects.length === 0 ? (
+                    <div style={{ textAlign: 'center', padding: '60px 20px', background: '#FCFCFC', borderRadius: '12px', border: '1.5px dashed #E4E6EF', margin: '20px 0' }}>
+                        <h4 style={{ fontSize: '15px', fontWeight: 600, color: '#071437', marginBottom: '4px' }}>No projects found</h4>
+                        <p style={{ fontSize: '13px', color: '#78829D', margin: 0 }}>There are no projects in this view at this time.</p>
+                    </div>
+                ) : (
+                    <div className="hoap-grid">
+                        {filteredProjects.map(project => {
+                            const projectBg = project.thumbnail_url
+                                ? `${API_BASE_URL}${project.thumbnail_url}`
+                                : 'https://images.unsplash.com/photo-1503387762-592deb58ef4e?q=80&w=600&auto=format&fit=crop';
+                            
+                            return (
+                                <div key={project.id} className="hoap-card" onClick={() => loadProjectDetails(project)}>
+                                    <img src={projectBg} alt="" className="hoap-card-img" style={{ objectFit: 'cover' }} />
+                                    <div className="hoap-card-content">
+                                        <div className="hoap-card-meta">
+                                            <span className="hoap-card-author">
+                                                By <span style={{ textDecoration: 'underline', color: '#071437', fontWeight: 500, marginLeft: '5px' }}>{project.user_name || 'Author'}</span>
+                                            </span>
+                                            <div className="hoap-card-stats">
+                                                <span><IconHeart /> {project.likes_count || 0}</span>
+                                                <span><IconEye /> {project.views_count || 0}</span>
+                                            </div>
+                                        </div>
+                                        <h4 className="hoap-card-title">{project.title}</h4>
                                     </div>
                                 </div>
-                                <h4 className="hoap-card-title">{project.title}</h4>
-                            </div>
-                        </div>
-                    ))}
-                </div>
+                            );
+                        })}
+                    </div>
+                )}
 
                 {/* Pagination */}
                 <div className="hoap-pagination-container">
@@ -296,12 +513,7 @@ const HOAProjects = () => {
                         <button className="hoap-page-nav" style={{ color: '#D8D8E5' }}>
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
                         </button>
-                        <button className="hoap-page-num">1</button>
-                        <button className="hoap-page-num active">2</button>
-                        <button className="hoap-page-num">3</button>
-                        <button className="hoap-page-num">4</button>
-                        <button className="hoap-page-num">5</button>
-                        <span style={{ margin: '0 4px', color: '#4B5675' }}>...</span>
+                        <button className="hoap-page-num active">1</button>
                         <button className="hoap-page-nav" style={{ color: '#78829D' }}>
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
                         </button>
@@ -313,12 +525,51 @@ const HOAProjects = () => {
                     <div className="hoap-modal-drawer" onClick={e => e.stopPropagation()}>
 
                         {/* Modal Header */}
-                        <div className="hoap-modal-top-header">
+                        <div className="hoap-modal-top-header" style={{ display: 'flex', alignItems: 'center' }}>
                             <button className="hoap-modal-close-btn" onClick={closeModal}>
                                 <img src={hoagoback} alt="Back" />          
                             </button>
                             <h2>Project Preview</h2>
-                            <span className="hoap-update-status" style={{ border: '1px solid #EEF1F6' }}>
+
+                            {/* Moderator Actions in Header */}
+                            {selectedProject?.approval_status === 'pending' && (
+                                <div style={{ display: 'flex', gap: '8px', marginLeft: 'auto', marginRight: '16px' }}>
+                                    <button 
+                                        onClick={() => handleRejectProject(selectedProject.id)}
+                                        style={{
+                                            padding: '8px 16px',
+                                            borderRadius: '8px',
+                                            background: '#FFF5F5',
+                                            border: '1px solid #FEE2E2',
+                                            color: '#E53E3E',
+                                            fontSize: '12px',
+                                            fontWeight: 600,
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s'
+                                        }}
+                                    >
+                                        Reject
+                                    </button>
+                                    <button 
+                                        onClick={() => handleApproveProject(selectedProject.id)}
+                                        style={{
+                                            padding: '8px 16px',
+                                            borderRadius: '8px',
+                                            background: '#E8FFF3',
+                                            border: '1px solid #D1FAE5',
+                                            color: '#10B981',
+                                            fontSize: '12px',
+                                            fontWeight: 600,
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s'
+                                        }}
+                                    >
+                                        Approve
+                                    </button>
+                                </div>
+                            )}
+
+                            <span className="hoap-update-status" style={{ border: '1px solid #EEF1F6', marginLeft: selectedProject?.approval_status === 'pending' ? '0' : 'auto' }}>
                                 <img src={hoarefresh} alt="Refresh" className="hoap-sync-icon" />
                                 Data updated every 1 hr
                                 <span className="hoap-dot" style={{ background: '#17C653' }}></span>
@@ -326,125 +577,379 @@ const HOAProjects = () => {
                         </div>
 
                         {/* Modal Content Scroll Area */}
-                        <div className="hoap-modal-content-area">
-                            
-                            {/* Drawer Sub Header */}
-                            <div className="hoap-drawer-owner-row">
-                                <div className="hoap-owner-info">
-                                    <div className="hoap-owner-avatar-placeholder">
-                                        <img src={hoapeople} alt="" width={16} height={16} />
-                                    </div>
-                                    <span className="hoap-owner-name">Team Owners <IconDownCaret style={{marginLeft: 4}}/></span>
-                                    <span className="hoap-owner-dot">•</span>
-                                    <span className="hoap-project-type">Building Project</span>
-                                </div>
-                                <div className="hoap-owner-actions">
-                                    <span className="hoap-hirings-count">Total Hirings <strong>3,461</strong></span>
-                                    <button className="hoap-btn-icon-light"><IconMoreDots /></button>
-                                </div>
+                        {loadingProjectDetails ? (
+                            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', minHeight: '300px' }}>
+                                <span style={{ fontSize: '14px', color: '#78829D' }}>Loading details...</span>
                             </div>
-
-                            <hr className="hoap-divider" />
-
-                            {/* Info Grid */}
-                            <div className="hoap-drawer-info-grid">
-                                <div className="hoap-info-col">
-                                    <h5>Project Info</h5>
-                                    <ul>
-                                        <li><IconBuilding /> Building and Construction</li>
-                                        <li><IconClock /> 6 yrs since posted</li>
-                                        <li><IconLocation /> Kigali, Rwanda</li>
-                                    </ul>
-                                </div>
-                                <div className="hoap-info-col">
-                                    <h5>Tools & Skills</h5>
-                                    <ul>
-                                        <li>Adobe illustrator</li>
-                                        <li>Adobe Photoshop</li>
-                                        <li>Coding Skills (CSS, HTML & REACT ), <span className="hoap-link-more">+8 More</span></li>
-                                    </ul>
-                                </div>
-                                <div className="hoap-info-col">
-                                    <h5>Projects Stats</h5>
-                                    <ul className="hoap-stats-list">
-                                        <li><span>Project Views</span> <span>1,345,780</span></li>
-                                        <li><span>Project Likes</span> <span>236,890</span></li>
-                                        <li><span>Project Feedbacks</span> <span>103,006</span></li>
-                                    </ul>
-                                </div>
-                            </div>
-
-                            <hr className="hoap-divider" />
-
-                            {/* Tabs & Breadcrumbs row */}
-                            <div className="hoap-drawer-tabs-row">
-                                <div className="hoap-breadcrumbs">
-                                    <span className="hoap-bc-link">Projects</span> / <span>Build your software & engineering dream career</span>
-                                </div>
-                                <div className="hoap-toggle-tabs">
-                                    <button className={`hoap-pill-tab ${activeTab === 'overview' ? 'active' : ''}`} onClick={() => setActiveTab('overview')}>Overview</button>
-                                    <button className={`hoap-pill-tab ${activeTab === 'comments' ? 'active' : ''}`} onClick={() => setActiveTab('comments')}>
-                                        <IconCommentsTab /> Comments
-                                    </button>
-                                </div>
-                            </div>
-
-                            {/* Tab Content */}
-                            <div className="hoap-tab-content-container">
+                        ) : selectedProject ? (
+                            <div className="hoap-modal-content-area">
                                 
-                                {/* ==== OVERVIEW TAB ==== */}
-                                {activeTab === 'overview' && (
-                                    <div className="hoap-overview-content">
-                                        <h3 className="hoap-section-title">Abstract</h3>
-                                        <p className="hoap-abstract-text">
-                                            Statistics is the branch of mathematics that deals with the collection, analysis, interpretation, presentation, and organization of data. It provides methodologies for making inferences about populations based on sample data, enabling researchers to quantify uncertainty and variability in empirical findings.
-                                        </p>
+                                {/* Rejection Log Banner */}
+                                {selectedProject.approval_status === 'rejected' && (
+                                    <div style={{
+                                        background: '#FFF5F5',
+                                        border: '1px solid #FEE2E2',
+                                        padding: '16px',
+                                        borderRadius: '8px',
+                                        marginBottom: '20px',
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        gap: '4px'
+                                    }}>
+                                        <span style={{ fontSize: '13px', fontWeight: 700, color: '#C53030' }}>
+                                            This Project was Rejected
+                                        </span>
+                                        <span style={{ fontSize: '12px', color: '#742A2A', lineHeight: 1.4 }}>
+                                            <strong>Reason:</strong> {selectedProject.rejection_reason || 'No specific reason provided.'}
+                                        </span>
+                                    </div>
+                                )}
 
-                                        <div className="hoap-preview-gallery">
-                                            <img src="https://images.unsplash.com/photo-1555066931-4365d14bab8c?q=80&w=1000&auto=format&fit=crop" alt="Main Project" className="hoap-gallery-main" />
-                                            <div className="hoap-gallery-sub">
-                                                <img src="https://images.unsplash.com/photo-1542831371-29b0f74f9713?q=80&w=500&auto=format&fit=crop" alt="Sub Project 1" />
-                                                <img src="https://images.unsplash.com/photo-1531403009284-440f080d1e12?q=80&w=500&auto=format&fit=crop" alt="Sub Project 2" />
+                                {/* Drawer Sub Header */}
+                                <div className="hoap-drawer-owner-row">
+                                    <div className="hoap-owner-info">
+                                        <div className="hoap-owner-avatar-placeholder" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                                            {selectedProject.user_avatar ? (
+                                                <img src={selectedProject.user_avatar.startsWith('http') ? selectedProject.user_avatar : `${API_BASE_URL}${selectedProject.user_avatar}`} alt="" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} onError={(e) => { e.target.style.display = 'none'; }} />
+                                            ) : (
+                                                <img src={hoapeople} alt="" width={16} height={16} />
+                                            )}
+                                        </div>
+                                        <span className="hoap-owner-name">{selectedProject.user_name || 'Author'} <IconDownCaret style={{marginLeft: 4}}/></span>
+                                        <span className="hoap-owner-dot">•</span>
+                                        <span className="hoap-project-type">Academic Project</span>
+                                    </div>
+                                    <div className="hoap-owner-actions">
+                                        <button className="hoap-btn-icon-light"><IconMoreDots /></button>
+                                    </div>
+                                </div>
+
+                                <hr className="hoap-divider" />
+
+                                {/* Info Grid */}
+                                <div className="hoap-drawer-info-grid">
+                                    <div className="hoap-info-col">
+                                        <h5>Project Info</h5>
+                                        <ul>
+                                            <li><IconBuilding /> {selectedProject.category || 'Academic Development'}</li>
+                                            <li><IconClock /> Created: {new Date(selectedProject.created_at).toLocaleDateString()}</li>
+                                            <li><IconLocation /> Platform Upload</li>
+                                        </ul>
+                                    </div>
+                                    <div className="hoap-info-col">
+                                        <h5>Collaborators</h5>
+                                        <ul>
+                                            {(selectedProject.collaborators && selectedProject.collaborators.length > 0) ? (
+                                                selectedProject.collaborators.map((c, i) => (
+                                                    <li key={i}>{typeof c === 'string' ? c : c.name || c.email}</li>
+                                                ))
+                                            ) : (
+                                                <li>No collaborators</li>
+                                            )}
+                                        </ul>
+                                    </div>
+                                    <div className="hoap-info-col">
+                                        <h5>Projects Stats</h5>
+                                        <ul className="hoap-stats-list">
+                                            <li><span>Project Views</span> <span>{selectedProject.views_count || 0}</span></li>
+                                            <li><span>Project Likes</span> <span>{selectedProject.likes_count || 0}</span></li>
+                                            <li><span>Project Saves</span> <span>{selectedProject.saves_count || 0}</span></li>
+                                        </ul>
+                                    </div>
+                                </div>
+
+                                <hr className="hoap-divider" />
+
+                                {/* Tabs & Breadcrumbs row */}
+                                <div className="hoap-drawer-tabs-row">
+                                    <div className="hoap-breadcrumbs">
+                                        <span className="hoap-bc-link">Projects</span> / <span>{selectedProject.title}</span>
+                                    </div>
+                                    <div className="hoap-toggle-tabs">
+                                        <button className={`hoap-pill-tab ${activeTab === 'overview' ? 'active' : ''}`} onClick={() => setActiveTab('overview')}>Overview</button>
+                                        <button className={`hoap-pill-tab ${activeTab === 'comments' ? 'active' : ''}`} onClick={() => setActiveTab('comments')}>
+                                            <IconCommentsTab /> Comments ({projectComments.length})
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* Tab Content */}
+                                <div className="hoap-tab-content-container">
+                                    
+                                    {/* ==== OVERVIEW TAB ==== */}
+                                    {activeTab === 'overview' && (
+                                        <div className="hoap-overview-content">
+                                            <h3 className="hoap-section-title">Abstract</h3>
+                                            <p className="hoap-abstract-text" style={{ whiteSpace: 'pre-wrap' }}>
+                                                {selectedProject.abstract || 'No abstract/description provided for this project.'}
+                                            </p>
+
+                                            <div className="hoap-preview-gallery">
+                                                {selectedProject.thumbnail_url && (
+                                                    <img src={`${API_BASE_URL}${selectedProject.thumbnail_url}`} alt="Main Project" className="hoap-gallery-main" style={{ objectFit: 'cover', maxHeight: '350px' }} />
+                                                )}
+                                                <div className="hoap-gallery-sub">
+                                                    {selectedProject.images && selectedProject.images.map((img, index) => (
+                                                        <img key={index} src={`${API_BASE_URL}${img}`} alt={`Sub Project ${index + 1}`} style={{ objectFit: 'cover', maxHeight: '150px' }} />
+                                                    ))}
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                )}
+                                    )}
 
-                                {/* ==== COMMENTS TAB ==== */}
-                                {activeTab === 'comments' && (
-                                    <div className="hoap-comments-content">
-                                        <h3 className="hoap-section-title">Comments</h3>
-                                        <div className="hoap-comments-list">
-                                            {commentsData.map((comment, idx) => (
-                                                <div key={idx} className="hoap-comment-item">
-                                                    <div className="hoap-comment-avatar">
-                                                        <div className="hoap-avatar-circle">
-                                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-                                                        </div>
-                                                    </div>
-                                                    <div className="hoap-comment-body">
-                                                        <div className="hoap-comment-header">
-                                                            <h4>{comment.name}</h4>
-                                                            <span>{comment.timeAgo}</span>
-                                                        </div>
-                                                        <p className="hoap-comment-text">{comment.text}</p>
-                                                        <div className="hoap-comment-actions">
-                                                            <button className="hoap-reply-btn"><IconReply /> Reply</button>
-                                                            <span className="hoap-posted-date">Posted on <strong>{comment.date}</strong></span>
-                                                        </div>
-                                                    </div>
+                                    {/* ==== COMMENTS TAB ==== */}
+                                    {activeTab === 'comments' && (
+                                        <div className="hoap-comments-content">
+                                            <h3 className="hoap-section-title">Comments</h3>
+                                            {loadingComments ? (
+                                                <p style={{ fontSize: '13px', color: '#78829D' }}>Loading comments...</p>
+                                            ) : projectComments.length === 0 ? (
+                                                <p style={{ fontSize: '13px', color: '#78829D', fontStyle: 'italic' }}>No comments yet.</p>
+                                            ) : (
+                                                <div className="hoap-comments-list">
+                                                    {projectComments.map((comment) => {
+                                                        const commentAvatar = comment.user_avatar ? (comment.user_avatar.startsWith('http') ? comment.user_avatar : `${API_BASE_URL}${comment.user_avatar}`) : '/assets/imgs/default-profile.png';
+                                                        return (
+                                                            <div key={comment.id} className="hoap-comment-item">
+                                                                <div className="hoap-comment-avatar">
+                                                                    <img src={commentAvatar} alt={comment.user_name} style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover' }} onError={(e) => { e.target.src = '/assets/imgs/default-profile.png'; }} />
+                                                                </div>
+                                                                <div className="hoap-comment-body">
+                                                                    <div className="hoap-comment-header">
+                                                                        <h4>{comment.user_name || 'Anonymous'}</h4>
+                                                                        <span>{new Date(comment.created_at).toLocaleDateString()}</span>
+                                                                    </div>
+                                                                    <p className="hoap-comment-text" style={{ whiteSpace: 'pre-wrap' }}>{comment.content}</p>
+                                                                    <div className="hoap-comment-actions">
+                                                                        <span className="hoap-posted-date">Posted on <strong>{new Date(comment.created_at).toLocaleDateString()}</strong></span>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })}
                                                 </div>
-                                            ))}
+                                            )}
                                         </div>
-                                    </div>
-                                )}
-                            </div>
+                                    )}
+                                </div>
 
-                        </div>
+                            </div>
+                        ) : null}
                     </div>
                 </div>
 
             </div>
+
+            {/* Custom Approve Confirmation Modal Overlay */}
+            {approveModalOpen && (
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '100%',
+                    backgroundColor: 'rgba(7, 20, 55, 0.4)',
+                    backdropFilter: 'blur(4px)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 9999
+                }}>
+                    <div style={{
+                        background: '#FFFFFF',
+                        width: '100%',
+                        maxWidth: '450px',
+                        borderRadius: '12px',
+                        padding: '24px',
+                        boxShadow: '0 10px 30px rgba(7, 20, 55, 0.15)',
+                        border: '1px solid #EEF1F6',
+                        textAlign: 'center'
+                    }}>
+                        <div style={{
+                            width: '48px',
+                            height: '48px',
+                            borderRadius: '50%',
+                            background: '#E8FFF3',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            marginBottom: '16px'
+                        }}>
+                            <span style={{ fontSize: '20px', color: '#50CD89', fontWeight: 'bold' }}>✓</span>
+                        </div>
+                        <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#071437', marginBottom: '8px' }}>
+                            Approve Project
+                        </h3>
+                        <p style={{ fontSize: '13px', color: '#78829D', marginBottom: '24px', lineHeight: '1.5' }}>
+                            Are you sure you want to approve this project? Once approved, it will be published and available to all users.
+                        </p>
+                        <div style={{ display: 'flex', justifyContent: 'center', gap: '12px' }}>
+                            <button
+                                onClick={() => setApproveModalOpen(false)}
+                                style={{
+                                    padding: '10px 20px',
+                                    borderRadius: '8px',
+                                    background: '#F9F9F9',
+                                    border: '1px solid #E4E6EF',
+                                    color: '#475569',
+                                    fontSize: '13px',
+                                    fontWeight: 600,
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s',
+                                    minWidth: '100px'
+                                }}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={submitApproval}
+                                style={{
+                                    padding: '10px 20px',
+                                    borderRadius: '8px',
+                                    background: '#50CD89',
+                                    border: 'none',
+                                    color: '#FFFFFF',
+                                    fontSize: '13px',
+                                    fontWeight: 600,
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s',
+                                    minWidth: '100px'
+                                }}
+                            >
+                                Approve
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Custom Rejection Modal Overlay */}
+            {rejectionModalOpen && (
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '100%',
+                    backgroundColor: 'rgba(7, 20, 55, 0.4)',
+                    backdropFilter: 'blur(4px)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 9999
+                }}>
+                    <div style={{
+                        background: '#FFFFFF',
+                        width: '100%',
+                        maxWidth: '500px',
+                        borderRadius: '12px',
+                        padding: '24px',
+                        boxShadow: '0 10px 30px rgba(7, 20, 55, 0.15)',
+                        border: '1px solid #EEF1F6'
+                    }}>
+                        <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#071437', marginBottom: '8px' }}>
+                            Reject Project
+                        </h3>
+                        <p style={{ fontSize: '13px', color: '#78829D', marginBottom: '16px', lineHeight: '1.4' }}>
+                            Please provide a detailed reason for rejecting this project. The student will receive this explanation via email.
+                        </p>
+                        <textarea
+                            value={rejectionReason}
+                            onChange={(e) => setRejectionReason(e.target.value)}
+                            placeholder="Type rejection explanation here..."
+                            style={{
+                                width: '100%',
+                                height: '120px',
+                                borderRadius: '8px',
+                                border: '1px solid #E4E6EF',
+                                padding: '12px',
+                                fontSize: '13px',
+                                fontFamily: 'inherit',
+                                color: '#071437',
+                                resize: 'none',
+                                marginBottom: '20px',
+                                outline: 'none',
+                                boxSizing: 'border-box'
+                            }}
+                        />
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+                            <button
+                                onClick={() => setRejectionModalOpen(false)}
+                                style={{
+                                    padding: '10px 20px',
+                                    borderRadius: '8px',
+                                    background: '#F9F9F9',
+                                    border: '1px solid #E4E6EF',
+                                    color: '#475569',
+                                    fontSize: '13px',
+                                    fontWeight: 600,
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s'
+                                }}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={submitRejection}
+                                style={{
+                                    padding: '10px 20px',
+                                    borderRadius: '8px',
+                                    background: '#F1416C',
+                                    border: 'none',
+                                    color: '#FFFFFF',
+                                    fontSize: '13px',
+                                    fontWeight: 600,
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s'
+                                }}
+                            >
+                                Reject Project
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Custom Toast Notification */}
+            {toast.show && (
+                <div className="premium-toast" style={{
+                    position: 'fixed',
+                    top: '24px',
+                    right: '24px',
+                    background: toast.type === 'success' ? '#E8FFF3' : '#FFF5F5',
+                    border: toast.type === 'success' ? '1px solid #50CD89' : '1px solid #F1416C',
+                    borderRadius: '8px',
+                    padding: '16px 24px',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                    zIndex: 99999,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    animation: 'slideIn 0.3s ease-out'
+                }}>
+                    <span style={{
+                        width: '20px',
+                        height: '20px',
+                        borderRadius: '50%',
+                        background: toast.type === 'success' ? '#50CD89' : '#F1416C',
+                        color: '#FFFFFF',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '12px',
+                        fontWeight: 'bold'
+                    }}>
+                        {toast.type === 'success' ? '✓' : '✕'}
+                    </span>
+                    <span style={{
+                        fontSize: '14px',
+                        fontWeight: 600,
+                        color: toast.type === 'success' ? '#1E293B' : '#651A1A'
+                    }}>
+                        {toast.message}
+                    </span>
+                </div>
+            )}
         </HOALayout>
     );
 };
