@@ -95,17 +95,17 @@
 
 .hoatc-card {
     background: #FFFFFF;
-    border: 1px solid #EEF1F6;
+    border: 1px solid #F1F1F4;
     border-radius: 12px;
     padding: 24px;
     display: flex;
     flex-direction: column;
     transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 2px 2px 10px 0px rgba(0, 0, 0, 0.03);
 }
 
 .hoatc-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(0,0,0,0.04);
+    transform: translateY(-1px);
 }
 
 .hoatc-card-header {
