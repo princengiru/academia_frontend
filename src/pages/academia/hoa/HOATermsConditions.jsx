@@ -7,6 +7,8 @@ import hoagoto from '../../../assets/icons/hoagoto.svg';
 import hoarules from '../../../assets/icons/hoarules.svg';
 import hoaeditrule from '../../../assets/icons/hoaeditrule.svg';
 import hoaattach from '../../../assets/icons/hoaattach.svg';
+import rule_image1 from '../../../assets/imgs/rule-image1.png';
+import rule_image2 from '../../../assets/imgs/rule-image2.png';
 
 // Custom Inline SVGs
 const IconPlus = () => (
@@ -169,10 +171,10 @@ const HOATermsConditions = () => {
                             {/* Images mockup wrapper */}
                             <div className="hoatc-detail-images">
                                 <div className="hoatc-image-placeholder">
-                                    <img src="https://images.unsplash.com/photo-1618761714954-0b8cd0026356?q=80&w=800&auto=format&fit=crop" alt="Screenshot 1" />
+                                    <img src={rule_image1} alt="Screenshot 1" />
                                 </div>
                                 <div className="hoatc-image-placeholder">
-                                    <img src="https://images.unsplash.com/photo-1618761714954-0b8cd0026356?q=80&w=800&auto=format&fit=crop" alt="Screenshot 2" />
+                                    <img src={rule_image2} alt="Screenshot 2" />
                                 </div>
                             </div>
 

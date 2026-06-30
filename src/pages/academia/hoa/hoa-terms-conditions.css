@@ -316,10 +316,8 @@
 
 .hoatc-image-placeholder {
     flex: 1;
-    border-radius: 8px;
+    border-radius: 2px;
     overflow: hidden;
-    background: #F1F1F4;
-    border: 1px solid #EEF1F6;
 }
 
 .hoatc-image-placeholder img {
