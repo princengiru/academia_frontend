@@ -763,11 +763,33 @@
     color: #6A7287;
     line-height: 1.8;
     margin-bottom: 32px;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    white-space: normal;
 }
 
 .hoac-community-page .hoac-article-body p {
     margin-top: 0;
     margin-bottom: 16px;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    white-space: normal;
+}
+
+.hoac-community-page .hoac-article-body * {
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.hoac-community-page .hoac-article-body img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+}
+
+.hoac-community-page .hoac-article-body iframe {
+    max-width: 100%;
+    height: auto;
 }
 
 .hoac-community-page .hoac-article-gallery {
@@ -1072,4 +1094,72 @@
     color: #6A7287;
     line-height: 1.5;
     margin: 0;
+}
+
+/* =========================================
+   PREMIUM TOAST NOTIFICATION STYLES
+========================================= */
+.hoa-toast-notification {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 20px;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.12);
+  border-left: 4px solid #10B981;
+  animation: hoaToastIn 0.22s cubic-bezier(0, 0, 0.2, 1);
+  max-width: 380px;
+}
+
+.hoa-toast-notification.is-success {
+  border-left-color: #10B981;
+}
+
+.hoa-toast-notification.is-error {
+  border-left-color: #EF4444;
+}
+
+.hoa-toast-icon {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 11px;
+}
+
+.hoa-toast-notification.is-success .hoa-toast-icon {
+  background: #DCFCE7;
+  color: #15803D;
+}
+
+.hoa-toast-notification.is-error .hoa-toast-icon {
+  background: #FEE2E2;
+  color: #B91C1C;
+}
+
+.hoa-toast-message {
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: #1E293B;
+  margin: 0;
+}
+
+@keyframes hoaToastIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }

@@ -1,6 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import HOALayout from '../../../components/layouts/HOALayout/HOALayout';
+import CreateStoryModal from '../../../components/HOACommunity/CreateStoryModal';
 import './hoa-community.css';
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 // Reusing standard project icons where applicable
 import hoarefresh from '../../../assets/icons/hoarefresh.svg';
@@ -78,6 +81,34 @@ const IconReply = () => (
     </svg>
 );
 
+const resolveYoutubeEmbedUrl = (url) => {
+  if (!url) return '';
+  if (url.includes('youtube.com/embed/')) {
+    return url;
+  }
+  let videoId = '';
+  if (url.includes('youtu.be/')) {
+    const parts = url.split('youtu.be/');
+    if (parts[1]) {
+      videoId = parts[1].split(/[?#]/)[0];
+    }
+  } else if (url.includes('v=')) {
+    const parts = url.split('v=');
+    if (parts[1]) {
+      videoId = parts[1].split(/[&#]/)[0];
+    }
+  } else if (url.includes('youtube.com/v/')) {
+    const parts = url.split('youtube.com/v/');
+    if (parts[1]) {
+      videoId = parts[1].split(/[?#]/)[0];
+    }
+  }
+  if (videoId) {
+    return `https://www.youtube.com/embed/${videoId}`;
+  }
+  return url;
+};
+
 const HOACommunity = () => {
     // Top-level state
     const [isCategoryOpen, setIsCategoryOpen] = useState(false);
@@ -87,40 +118,515 @@ const HOACommunity = () => {
     
     // Modal state
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [editingStory, setEditingStory] = useState(null);
+    const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+    
+    const showToast = (message, type = 'success') => {
+        setToast({ show: true, message, type });
+        setTimeout(() => {
+            setToast(prev => ({ ...prev, show: false }));
+        }, 3000);
+    };
     const [activeTab, setActiveTab] = useState('overview'); // 'overview' or 'comments'
     
     // Comments state
+    const [comments, setComments] = useState([]);
+    const [commentsLoading, setCommentsLoading] = useState(false);
     const [newComment, setNewComment] = useState('');
     const [replyingTo, setReplyingTo] = useState(null);
     const [replyText, setReplyText] = useState({});
     const [replies, setReplies] = useState({});
 
-    // Dummy data for stories grid
-    const storiesData = Array(12).fill({
-        title: 'Build your dream software & engineering career',
-        excerpt: 'A small river named Duden flows by their place and supplies it with the necessary regelialia.',
-        author: 'ADMIN',
-        comments: 3,
-        date: 'Oct 19, 2025 07:50 AM',
-    }).map((story, idx) => {
-        const images = [
-            'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=600&auto=format&fit=crop',
-            'https://images.unsplash.com/photo-1522071820081-009f0129c71c?q=80&w=600&auto=format&fit=crop',
-            'https://images.unsplash.com/photo-1531482615713-2afd69097998?q=80&w=600&auto=format&fit=crop',
-            'https://images.unsplash.com/photo-1540569014015-19a7be504e3a?q=80&w=600&auto=format&fit=crop'
-        ];
-        return { ...story, id: idx + 1, img: images[idx % images.length] };
+    // Stories data state
+    const [storiesData, setStoriesData] = useState([]);
+    const [allStories, setAllStories] = useState([]); // Store all stories for client-side filtering
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [stats, setStats] = useState({
+        totalStories: 0,
+        totalLikes: 0,
+        totalFeedbacks: 0,
+        totalShares: 0,
+        totalReads: 0
     });
 
-    // Updated dummy data for Comments tab to include an actual avatar image
-    const commentsData = Array(6).fill({
-        avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?q=80&w=100&auto=format&fit=crop',
-        name: 'Mrs. Anderson',
-        timeAgo: '1 Day ago',
-        text: 'What is Statistics is the branch of mathematics that deals with the collection, analysis, interpretation, presentation, and organization of data. It provides methodologies for making inferences abo...',
-        date: 'Apr 23, 2025',
-        replies: 0
-    }).map((comment, idx) => ({ ...comment, id: idx + 1 }));
+    // Pagination state
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [totalStoriesCount, setTotalStoriesCount] = useState(0);
+    const storiesPerPage = 12;
+
+    // Search state
+    const [searchQuery, setSearchQuery] = useState('');
+
+    // Modal state
+    const [selectedStory, setSelectedStory] = useState(null);
+    const [loadingStory, setLoadingStory] = useState(false);
+
+    // Fetch all community stories from backend
+    const fetchStories = async () => {
+        try {
+            setLoading(true);
+            const token = localStorage.getItem('token');
+            
+            // Fetch all stories without pagination for client-side filtering
+            const response = await fetch(`${API_BASE_URL}/api/admin/community-stories?page=1&limit=100`, {
+                headers: token ? { Authorization: `Bearer ${token}` } : {}
+            });
+            
+            if (!response.ok) {
+                throw new Error('Failed to fetch community stories');
+            }
+            
+            const result = await response.json();
+            
+            if (result.success && result.data) {
+                // Transform backend data to match frontend structure
+                const transformedStories = result.data.map((story, idx) => ({
+                    id: story.id,
+                    title: story.title,
+                    excerpt: story.description || 'No description available',
+                    author: story.uploaded_by_name || 'ADMIN',
+                    comments: 0,
+                    date: new Date(story.created_at).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    }),
+                    rawDate: new Date(story.created_at), // Store raw date for filtering
+                    img: story.thumbnail_url.startsWith('http') 
+                        ? story.thumbnail_url 
+                        : `${API_BASE_URL}${story.thumbnail_url}`,
+                    status: story.status,
+                    youtube_url: story.youtube_url
+                }));
+                
+                setAllStories(transformedStories);
+                setTotalStoriesCount(result.data.length);
+                
+                // Update stats based on real data
+                setStats({
+                    totalStories: result.data.length,
+                    totalLikes: Math.floor(Math.random() * 100) + 10, // Placeholder until backend provides
+                    totalFeedbacks: '+ 2.8K', // Placeholder
+                    totalShares: Math.floor(Math.random() * 500) + 100, // Placeholder
+                    totalReads: '1.8K' // Placeholder
+                });
+            }
+        } catch (err) {
+            console.error('Error fetching community stories:', err);
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchStories();
+    }, []);
+
+    // Client-side filtering
+    useEffect(() => {
+        let filtered = [...allStories];
+
+        // Apply search filter
+        if (searchQuery.trim()) {
+            const query = searchQuery.toLowerCase();
+            filtered = filtered.filter(story =>
+                story.title.toLowerCase().includes(query) ||
+                story.excerpt.toLowerCase().includes(query)
+            );
+        }
+
+        // Apply category filter (mock - since backend doesn't have category field)
+        if (selectedCategory !== 'All Categories') {
+            // For now, this is a placeholder - you'd need a category field in the database
+            // We'll just filter by title containing the category name as a demo
+            const categoryLower = selectedCategory.toLowerCase();
+            filtered = filtered.filter(story =>
+                story.title.toLowerCase().includes(categoryLower) ||
+                story.excerpt.toLowerCase().includes(categoryLower)
+            );
+        }
+
+        // Apply date filter
+        if (selectedDateFilter !== 'All Time') {
+            const now = new Date();
+            const storyDate = story => new Date(story.rawDate);
+            
+            switch (selectedDateFilter) {
+                case 'Today':
+                    filtered = filtered.filter(story => {
+                        const diff = now - storyDate(story);
+                        return diff < 24 * 60 * 60 * 1000;
+                    });
+                    break;
+                case 'This Week':
+                    filtered = filtered.filter(story => {
+                        const diff = now - storyDate(story);
+                        return diff < 7 * 24 * 60 * 60 * 1000;
+                    });
+                    break;
+                case 'This Month':
+                    filtered = filtered.filter(story => {
+                        const diff = now - storyDate(story);
+                        return diff < 30 * 24 * 60 * 60 * 1000;
+                    });
+                    break;
+            }
+        }
+
+        // Update total pages based on filtered results
+        setTotalPages(Math.ceil(filtered.length / storiesPerPage));
+        
+        // Reset to page 1 when filters change
+        setCurrentPage(1);
+        
+        // Apply pagination
+        const startIndex = 0;
+        const paginatedStories = filtered.slice(startIndex, startIndex + storiesPerPage);
+        
+        setStoriesData(paginatedStories);
+    }, [allStories, searchQuery, selectedCategory, selectedDateFilter]);
+
+    // Pagination effect (separate from filters)
+    useEffect(() => {
+        let filtered = [...allStories];
+
+        // Re-apply filters
+        if (searchQuery.trim()) {
+            const query = searchQuery.toLowerCase();
+            filtered = filtered.filter(story =>
+                story.title.toLowerCase().includes(query) ||
+                story.excerpt.toLowerCase().includes(query)
+            );
+        }
+
+        if (selectedCategory !== 'All Categories') {
+            const categoryLower = selectedCategory.toLowerCase();
+            filtered = filtered.filter(story =>
+                story.title.toLowerCase().includes(categoryLower) ||
+                story.excerpt.toLowerCase().includes(categoryLower)
+            );
+        }
+
+        if (selectedDateFilter !== 'All Time') {
+            const now = new Date();
+            const storyDate = story => new Date(story.rawDate);
+            
+            switch (selectedDateFilter) {
+                case 'Today':
+                    filtered = filtered.filter(story => {
+                        const diff = now - storyDate(story);
+                        return diff < 24 * 60 * 60 * 1000;
+                    });
+                    break;
+                case 'This Week':
+                    filtered = filtered.filter(story => {
+                        const diff = now - storyDate(story);
+                        return diff < 7 * 24 * 60 * 60 * 1000;
+                    });
+                    break;
+                case 'This Month':
+                    filtered = filtered.filter(story => {
+                        const diff = now - storyDate(story);
+                        return diff < 30 * 24 * 60 * 60 * 1000;
+                    });
+                    break;
+            }
+        }
+
+        // Apply pagination
+        const startIndex = (currentPage - 1) * storiesPerPage;
+        const paginatedStories = filtered.slice(startIndex, startIndex + storiesPerPage);
+        
+        setStoriesData(paginatedStories);
+    }, [currentPage]);
+
+    // Handle successful story creation
+    const handleCreateSuccess = (message) => {
+        // Refetch stories to include the new/updated one
+        fetchStories();
+        showToast(message || 'Story saved successfully!', 'success');
+    };
+
+    // Fetch comments for a story
+    const fetchComments = async (storyId) => {
+        try {
+            setCommentsLoading(true);
+            const token = localStorage.getItem('token');
+            const response = await fetch(`${API_BASE_URL}/api/community-stories/stories/${storyId}/comments`, {
+                headers: token ? { Authorization: `Bearer ${token}` } : {}
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to fetch comments');
+            }
+
+            const result = await response.json();
+            if (result.success && result.data) {
+                setComments(result.data);
+            }
+        } catch (err) {
+            console.error('Error fetching comments:', err);
+        } finally {
+            setCommentsLoading(false);
+        }
+    };
+
+    // Submit a new comment
+    const handleSubmitComment = async () => {
+        if (!newComment.trim() || !selectedStory) return;
+
+        try {
+            const token = localStorage.getItem('token');
+            const response = await fetch(`${API_BASE_URL}/api/community-stories/stories/${selectedStory.id}/comments`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    story_id: selectedStory.id,
+                    content: newComment.trim()
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to submit comment');
+            }
+
+            setNewComment('');
+            fetchComments(selectedStory.id);
+        } catch (err) {
+            console.error('Error submitting comment:', err);
+        }
+    };
+
+    // Submit a reply
+    const handleSubmitReply = async (commentId) => {
+        if (!replyText[commentId]?.trim() || !selectedStory) return;
+
+        try {
+            const token = localStorage.getItem('token');
+            const response = await fetch(`${API_BASE_URL}/api/community-stories/stories/${selectedStory.id}/comments`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    story_id: selectedStory.id,
+                    parent_comment_id: commentId,
+                    content: replyText[commentId].trim()
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to submit reply');
+            }
+
+            setReplyText({ ...replyText, [commentId]: '' });
+            setReplyingTo(null);
+            fetchComments(selectedStory.id);
+        } catch (err) {
+            console.error('Error submitting reply:', err);
+        }
+    };
+
+    // Fetch replies for a comment
+    const fetchReplies = async (commentId) => {
+        try {
+            const token = localStorage.getItem('token');
+            const response = await fetch(`${API_BASE_URL}/api/community-stories/comments/${commentId}/replies`, {
+                headers: token ? { Authorization: `Bearer ${token}` } : {}
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to fetch replies');
+            }
+
+            const result = await response.json();
+            if (result.success && result.data) {
+                setReplies({ ...replies, [commentId]: result.data });
+            }
+        } catch (err) {
+            console.error('Error fetching replies:', err);
+        }
+    };
+
+    // Fetch single story details for modal
+    const handleStoryClick = async (storyId) => {
+        try {
+            setLoadingStory(true);
+            setIsModalOpen(true);
+            
+            const token = localStorage.getItem('token');
+            const response = await fetch(`${API_BASE_URL}/api/admin/community-stories/${storyId}`, {
+                headers: token ? { Authorization: `Bearer ${token}` } : {}
+            });
+            
+            if (!response.ok) {
+                throw new Error('Failed to fetch story details');
+            }
+            
+            const result = await response.json();
+            
+            if (result.success && result.data) {
+                const story = result.data;
+                setSelectedStory({
+                    id: story.id,
+                    title: story.title,
+                    description: story.description || 'No description available',
+                    contents: story.contents || null,
+                    excerpt: story.description ? story.description.substring(0, 150) + '...' : 'No description available',
+                    thumbnail: story.thumbnail_url.startsWith('http') 
+                        ? story.thumbnail_url 
+                        : `${API_BASE_URL}${story.thumbnail_url}`,
+                    youtube_url: story.youtube_url,
+                    author: story.uploaded_by_name || 'Admin',
+                    authorAvatar: story.uploaded_by_avatar || 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=100&auto=format&fit=crop',
+                    date: new Date(story.created_at).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    }),
+                    status: story.status
+                });
+
+                // Fetch comments for this story
+                fetchComments(storyId);
+            }
+        } catch (err) {
+            console.error('Error fetching story details:', err);
+            setError(err.message);
+        } finally {
+            setLoadingStory(false);
+        }
+    };
+
+    const handleStatusChange = async (storyId, newStatus) => {
+        try {
+            const token = localStorage.getItem('token');
+            const response = await fetch(`${API_BASE_URL}/api/admin/community-stories/${storyId}`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`
+                },
+                body: JSON.stringify({ status: newStatus })
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to update story status');
+            }
+
+            const result = await response.json();
+            if (result.success) {
+                // Update selectedStory locally
+                setSelectedStory(prev => ({ ...prev, status: newStatus }));
+                // Update storiesData locally to reflect status changes in the grid
+                setStoriesData(prev => prev.map(s => s.id === storyId ? { ...s, status: newStatus } : s));
+                setAllStories(prev => prev.map(s => s.id === storyId ? { ...s, status: newStatus } : s));
+            }
+        } catch (err) {
+            console.error('Error updating story status:', err);
+            alert(err.message);
+        }
+    };
+
+    const handleDeleteStory = async (storyId) => {
+        if (!window.confirm('Are you sure you want to delete this story?')) return;
+
+        try {
+            const token = localStorage.getItem('token');
+            const response = await fetch(`${API_BASE_URL}/api/admin/community-stories/${storyId}`, {
+                method: 'DELETE',
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to delete story');
+            }
+
+            const result = await response.json();
+            if (result.success) {
+                // Close modal and refresh list
+                setIsModalOpen(false);
+                setSelectedStory(null);
+                setAllStories(prev => prev.filter(s => s.id !== storyId));
+            }
+        } catch (err) {
+            console.error('Error deleting story:', err);
+            alert(err.message);
+        }
+    };
+
+    const handleDeleteComment = async (commentId) => {
+        if (!window.confirm('Are you sure you want to delete this comment?')) return;
+
+        try {
+            const token = localStorage.getItem('token');
+            const response = await fetch(`${API_BASE_URL}/api/community-stories/comments/${commentId}`, {
+                method: 'DELETE',
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to delete comment');
+            }
+
+            const result = await response.json();
+            if (result.success) {
+                // Remove comment from local comments list
+                setComments(prev => prev.filter(c => c.id !== commentId));
+            }
+        } catch (err) {
+            console.error('Error deleting comment:', err);
+            alert(err.message);
+        }
+    };
+
+    const handleDeleteReply = async (commentId, replyId) => {
+        if (!window.confirm('Are you sure you want to delete this reply?')) return;
+
+        try {
+            const token = localStorage.getItem('token');
+            const response = await fetch(`${API_BASE_URL}/api/community-stories/comments/${replyId}`, {
+                method: 'DELETE',
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to delete reply');
+            }
+
+            const result = await response.json();
+            if (result.success) {
+                // Update local replies state
+                setReplies(prev => ({
+                    ...prev,
+                    [commentId]: (prev[commentId] || []).filter(r => r.id !== replyId)
+                }));
+                // Decrease reply_count in comments list
+                setComments(prev => prev.map(c => c.id === commentId ? { ...c, reply_count: Math.max(0, (c.reply_count || 1) - 1) } : c));
+            }
+        } catch (err) {
+            console.error('Error deleting reply:', err);
+            alert(err.message);
+        }
+    };
 
     return (
         <HOALayout currentPage="community">
@@ -142,35 +648,35 @@ const HOACommunity = () => {
                     <div className="hoac-stat-block">
                         <div className="hoac-stat-icon "><IconStories /></div>
                         <div className="hoac-stat-text">
-                            <h3>21</h3>
+                            <h3>{loading ? '...' : stats.totalStories}</h3>
                             <p>Total Stories</p>
                         </div>
                     </div>
                     <div className="hoac-stat-block">
                         <div className="hoac-stat-icon "><IconThumbsUp /></div>
                         <div className="hoac-stat-text">
-                            <h3>21</h3>
+                            <h3>{loading ? '...' : stats.totalLikes}</h3>
                             <p>Total Likes</p>
                         </div>
                     </div>
                     <div className="hoac-stat-block">
                         <div className="hoac-stat-icon "><IconChat /></div>
                         <div className="hoac-stat-text">
-                            <h3>+ 2.8K</h3>
+                            <h3>{loading ? '...' : stats.totalFeedbacks}</h3>
                             <p>Total Feedbacks</p>
                         </div>
                     </div>
                     <div className="hoac-stat-block">
                         <div className="hoac-stat-icon "><IconShare /></div>
                         <div className="hoac-stat-text">
-                            <h3>157</h3>
+                            <h3>{loading ? '...' : stats.totalShares}</h3>
                             <p>Total Shares</p>
                         </div>
                     </div>
                     <div className="hoac-stat-block">
                         <div className="hoac-stat-icon "><IconEye /></div>
                         <div className="hoac-stat-text">
-                            <h3>1.8K</h3>
+                            <h3>{loading ? '...' : stats.totalReads}</h3>
                             <p>Total Reads</p>
                         </div>
                     </div>
@@ -179,10 +685,10 @@ const HOACommunity = () => {
                 <div className="hoac-sub-header">
                     <div className="hoac-sub-title">
                         <h2>Community Stories</h2>
-                        <p>3,461 Stories</p>
+                        <p>{loading ? 'Loading...' : `${totalStoriesCount} Stories`}</p>
                     </div>
                     <div className="hoac-add-actions">
-                        <button className="hoac-btn-primary"><img src={hoawhiteadd} style={{ width: 16 }} alt="" /> Add New Story</button>
+                        <button className="hoac-btn-primary" onClick={() => { setEditingStory(null); setIsCreateModalOpen(true); }}><img src={hoawhiteadd} style={{ width: 16 }} alt="" /> Add New Story</button>
                     </div>
                 </div>
 
@@ -214,7 +720,12 @@ const HOACommunity = () => {
                     <div className="hoac-search-bar-wrapper">
                         <div className="hoac-search-input">
                             <img src={hoasearch} alt="Search" style={{ opacity: 0.5, width: 14 }} />
-                            <input type="text" placeholder="Search any Stories..." />
+                            <input 
+                                type="text" 
+                                placeholder="Search any Stories..." 
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                            />
                         </div>
                         <div className="hoac-v-divider" />
                         <div className="hoac-filter-container hoac-date-filter-container">
@@ -267,36 +778,80 @@ const HOACommunity = () => {
                 </div>
 
                 <div className="hoac-grid">
-                    {storiesData.map(story => (
-                        <div key={story.id} className="hoac-card" onClick={() => setIsModalOpen(true)}>
-                            <img src={story.img} alt={story.title} className="hoac-card-img" />
-                            <div className="hoac-card-body">
-                                <div className="hoac-card-top-meta">
-                                    <span><img src={hoaadmin} alt="Admin" /> {story.author}</span>
-                                    <span className="hoac-card-comments"><img src={hoamessages} alt="Comments" /> {story.comments}</span>
-                                </div>
-                                <h4 className="hoac-card-title">{story.title}</h4>
-                                <p className="hoac-card-excerpt">{story.excerpt}</p>
-                                <div className="hoac-card-footer">
-                                    <span className="hoac-card-date"><img src={hoacalendar} alt="Calendar" /> {story.date}</span>
-                                    <button className="hoac-icon-btn"><IconMoreVertical /></button>
+                    {loading ? (
+                        <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '40px' }}>
+                            <p>Loading community stories...</p>
+                        </div>
+                    ) : error ? (
+                        <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '40px' }}>
+                            <p style={{ color: '#EF4444' }}>Error: {error}</p>
+                        </div>
+                    ) : storiesData.length === 0 ? (
+                        <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '40px' }}>
+                            <p>No community stories found.</p>
+                        </div>
+                    ) : (
+                        storiesData.map(story => (
+                            <div key={story.id} className="hoac-card" onClick={() => handleStoryClick(story.id)}>
+                                <img src={story.img} alt={story.title} className="hoac-card-img" />
+                                <div className="hoac-card-body">
+                                    <div className="hoac-card-top-meta">
+                                        <span><img src={hoaadmin} alt="Admin" /> {story.author}</span>
+                                        <span className="hoac-card-comments"><img src={hoamessages} alt="Comments" /> {story.comments}</span>
+                                    </div>
+                                    <h4 className="hoac-card-title">{story.title}</h4>
+                                    <p className="hoac-card-excerpt">{story.excerpt}</p>
+                                    <div className="hoac-card-footer">
+                                        <span className="hoac-card-date"><img src={hoacalendar} alt="Calendar" /> {story.date}</span>
+                                        <button className="hoac-icon-btn"><IconMoreVertical /></button>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    ))}
+                        ))
+                    )}
                 </div>
 
                 <div className="hoac-pagination-container">
-                    <button className="hoac-page-nav" style={{ color: '#D8D8E5' }}>
+                    <button 
+                        className="hoac-page-nav" 
+                        style={{ color: currentPage === 1 ? '#D8D8E5' : '#78829D' }}
+                        onClick={() => currentPage > 1 && setCurrentPage(currentPage - 1)}
+                        disabled={currentPage === 1}
+                    >
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
                     </button>
-                    <button className="hoac-page-num">1</button>
-                    <button className="hoac-page-num active">2</button>
-                    <button className="hoac-page-num">3</button>
-                    <button className="hoac-page-num">4</button>
-                    <button className="hoac-page-num">5</button>
-                    <span style={{ margin: '0 4px', color: '#4B5675' }}>...</span>
-                    <button className="hoac-page-nav" style={{ color: '#78829D' }}>
+                    
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                        let pageNum;
+                        if (totalPages <= 5) {
+                            pageNum = i + 1;
+                        } else if (currentPage <= 3) {
+                            pageNum = i + 1;
+                        } else if (currentPage >= totalPages - 2) {
+                            pageNum = totalPages - 4 + i;
+                        } else {
+                            pageNum = currentPage - 2 + i;
+                        }
+                        
+                        return (
+                            <button
+                                key={pageNum}
+                                className={`hoac-page-num ${currentPage === pageNum ? 'active' : ''}`}
+                                onClick={() => setCurrentPage(pageNum)}
+                            >
+                                {pageNum}
+                            </button>
+                        );
+                    })}
+                    
+                    {totalPages > 5 && <span style={{ margin: '0 4px', color: '#4B5675' }}>...</span>}
+                    
+                    <button 
+                        className="hoac-page-nav" 
+                        style={{ color: currentPage === totalPages ? '#D8D8E5' : '#78829D' }}
+                        onClick={() => currentPage < totalPages && setCurrentPage(currentPage + 1)}
+                        disabled={currentPage === totalPages}
+                    >
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
                     </button>
                 </div>
@@ -316,88 +871,157 @@ const HOACommunity = () => {
                             </span>
                         </div>
 
-                        <div className="hoac-modal-content-area">
-                            <div className="hoac-drawer-header-row">
-                                <div className="hoac-drawer-title-info">
-                                    <div className="hoac-avatar-placeholder"><IconUser /></div>
-                                    <span className="hoac-owner-name">Admin</span>
-                                    <span className="hoac-owner-dot">•</span>
-                                    <span className="hoac-project-title">Build your software & engineering dream career</span>
-                                </div>
-                                <div className="hoac-drawer-actions">
-                                    <span className="hoac-status-pill published">Published</span>
-                                    <button className="hoac-btn-icon-light"><IconMoreVertical /></button>
-                                </div>
+                        {loadingStory ? (
+                            <div className="hoac-modal-content-area" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
+                                <p>Loading story details...</p>
                             </div>
-
-                            <hr className="hoac-divider" />
-
-                            <div className="hoac-drawer-tabs-row">
-                                <div className="hoac-toggle-tabs">
-                                    <button className={`hoac-pill-tab ${activeTab === 'overview' ? 'active' : ''}`} onClick={() => setActiveTab('overview')}>
-                                        Overview
-                                    </button>
-                                    <button className={`hoac-pill-tab ${activeTab === 'comments' ? 'active' : ''}`} onClick={() => setActiveTab('comments')}>
-                                        <IconChat /> Comments
-                                    </button>
+                        ) : selectedStory ? (
+                            <div className="hoac-modal-content-area">
+                                <div className="hoac-drawer-header-row">
+                                    <div className="hoac-drawer-title-info">
+                                        <div className="hoac-avatar-placeholder"><IconUser /></div>
+                                        <span className="hoac-owner-name">{selectedStory.author}</span>
+                                        <span className="hoac-owner-dot">•</span>
+                                        <span className="hoac-project-title">{selectedStory.title}</span>
+                                    </div>
+                                    <div className="hoac-drawer-actions" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                        <span className={`hoac-status-pill ${selectedStory.status}`}>{selectedStory.status}</span>
+                                        {selectedStory.status === 'draft' && (
+                                            <button 
+                                                className="hoac-btn-primary" 
+                                                onClick={() => handleStatusChange(selectedStory.id, 'published')}
+                                                style={{ padding: '6px 12px', fontSize: '12px', height: 'auto', minHeight: 'unset' }}
+                                            >
+                                                Publish
+                                            </button>
+                                        )}
+                                        {selectedStory.status === 'published' && (
+                                            <button 
+                                                className="hoac-btn-outline" 
+                                                onClick={() => handleStatusChange(selectedStory.id, 'draft')}
+                                                style={{ padding: '6px 12px', fontSize: '12px', height: 'auto', minHeight: 'unset', borderColor: '#450468', color: '#450468' }}
+                                            >
+                                                Revert to Draft
+                                            </button>
+                                        )}
+                                        {selectedStory.status !== 'archived' && (
+                                            <button 
+                                                className="hoac-btn-outline" 
+                                                onClick={() => handleStatusChange(selectedStory.id, 'archived')}
+                                                style={{ padding: '6px 12px', fontSize: '12px', height: 'auto', minHeight: 'unset' }}
+                                            >
+                                                Archive
+                                            </button>
+                                        )}
+                                        {selectedStory.status === 'archived' && (
+                                            <button 
+                                                className="hoac-btn-primary" 
+                                                onClick={() => handleStatusChange(selectedStory.id, 'published')}
+                                                style={{ padding: '6px 12px', fontSize: '12px', height: 'auto', minHeight: 'unset' }}
+                                            >
+                                                Publish
+                                            </button>
+                                        )}
+                                        <button 
+                                            className="hoac-btn-outline" 
+                                            onClick={() => {
+                                                setEditingStory(selectedStory);
+                                                setIsCreateModalOpen(true);
+                                            }}
+                                            style={{ padding: '6px 12px', fontSize: '12px', height: 'auto', minHeight: 'unset', borderColor: '#450468', color: '#450468', fontWeight: 600 }}
+                                        >
+                                            Edit
+                                        </button>
+                                        <button 
+                                            className="hoac-btn-danger" 
+                                            onClick={() => handleDeleteStory(selectedStory.id)}
+                                            style={{ padding: '6px 12px', fontSize: '12px', background: '#EF4444', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 600 }}
+                                        >
+                                            Delete
+                                        </button>
+                                    </div>
                                 </div>
-                                <div className="hoac-drawer-right-stats">
-                                    <span><IconEye /> 675.4K Reads</span>
-                                    <span><IconThumbsUp /> 47K Likes</span>
-                                    <span><IconShare /> 907 Shares</span>
-                                </div>
-                            </div>
 
-                            <div className="hoac-tab-content-container">
-                                {/* OVERVIEW TAB */}
-                                {activeTab === 'overview' && (
-                                    <div className="hoac-overview-content">
-                                        <h2 className="hoac-article-title">Build your dream software & engineering career</h2>
-                                        <div className="hoac-article-meta">
-                                            <strong>5 mins read</strong>
-                                            <span className="hoac-divider-vert">|</span>
-                                            <span>Oct 21, 2025 07:51 AM</span>
-                                        </div>
-                                        <div className="hoac-article-hero-container">
-                                            <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=1000&auto=format&fit=crop" alt="Hero" className="hoac-article-hero" />
-                                            <div className="hoac-author-block">
-                                                <div className="hoac-author-profile">
-                                                    <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=100&auto=format&fit=crop" alt="Author" className="hoac-author-avatar" />
-                                                    <div className="hoac-author-details">
-                                                        <h4>Esther Howard</h4>
-                                                        <p>Admin</p>
+                                <hr className="hoac-divider" />
+
+                                <div className="hoac-drawer-tabs-row">
+                                    <div className="hoac-toggle-tabs">
+                                        <button className={`hoac-pill-tab ${activeTab === 'overview' ? 'active' : ''}`} onClick={() => setActiveTab('overview')}>
+                                            Overview
+                                        </button>
+                                        <button className={`hoac-pill-tab ${activeTab === 'comments' ? 'active' : ''}`} onClick={() => setActiveTab('comments')}>
+                                            <IconChat /> Comments
+                                        </button>
+                                    </div>
+                                    <div className="hoac-drawer-right-stats">
+                                        <span><IconEye /> 675.4K Reads</span>
+                                        <span><IconThumbsUp /> 47K Likes</span>
+                                        <span><IconShare /> 907 Shares</span>
+                                    </div>
+                                </div>
+
+                                <div className="hoac-tab-content-container">
+                                    {/* OVERVIEW TAB */}
+                                    {activeTab === 'overview' && (
+                                        <div className="hoac-overview-content">
+                                            <h2 className="hoac-article-title">{selectedStory.title}</h2>
+                                            <div className="hoac-article-meta">
+                                                <strong>5 mins read</strong>
+                                                <span className="hoac-divider-vert">|</span>
+                                                <span>{selectedStory.date}</span>
+                                            </div>
+                                            <div className="hoac-article-hero-container">
+                                                <img src={selectedStory.thumbnail} alt="Hero" className="hoac-article-hero" />
+                                                <div className="hoac-author-block">
+                                                    <div className="hoac-author-profile">
+                                                        <img src={selectedStory.authorAvatar} alt="Author" className="hoac-author-avatar" />
+                                                        <div className="hoac-author-details">
+                                                            <h4>{selectedStory.author}</h4>
+                                                            <p>Admin</p>
+                                                        </div>
                                                     </div>
-                                                </div>
-                                                <div className="hoac-author-actions">
-                                                    <div className="hoac-social-icons">
-                                                        <button><img src={hoatiktok} alt="Tiktok" /></button>
-                                                        <button><img src={hoawhatsapp} alt="Whatsapp" /></button>
-                                                        <button><img src={hoafacebook} alt="Facebook" /></button>
-                                                        <button><img src={hoainstagram} alt="Instagram" /></button>
+                                                    <div className="hoac-author-actions">
+                                                        <div className="hoac-social-icons">
+                                                            <button><img src={hoatiktok} alt="Tiktok" /></button>
+                                                            <button><img src={hoawhatsapp} alt="Whatsapp" /></button>
+                                                            <button><img src={hoafacebook} alt="Facebook" /></button>
+                                                            <button><img src={hoainstagram} alt="Instagram" /></button>
+                                                        </div>
+                                                        <button className="hoac-btn-share"><IconShare /> Share</button>
                                                     </div>
-                                                    <button className="hoac-btn-share"><IconShare /> Share</button>
                                                 </div>
                                             </div>
-                                        </div>
 
-                                        <div className="hoac-article-body">
-                                            <p>Statistics is the branch of mathematics that deals with the collection, analysis, interpretation, presentation, and organization of data. It provides methodologies for making inferences about populations based on sample data, enabling researchers to quantify uncertainty and variability in empirical findings.</p>
-                                            <p>Lorem ipsum dolor sit amet, consectetur adipisici elit, sed eiusmod tempor incidunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquid ex ea commodi consequat. Lorem ipsum dolor sit amet, consectetur adipisici elit, sed eiusmod tempor incidunt ut labore et dolore magna aliqua.</p>
-                                        </div>
+                                            <div className="hoac-article-body">
+                                                {selectedStory.contents ? (
+                                                    <div dangerouslySetInnerHTML={{ __html: selectedStory.contents }} />
+                                                ) : (
+                                                    <p>{selectedStory.description}</p>
+                                                )}
+                                            </div>
 
-                                        <div className="hoac-article-gallery">
-                                            <img src="https://images.unsplash.com/photo-1555066931-4365d14bab8c?q=80&w=500&auto=format&fit=crop" alt="Gallery 1" />
-                                            <img src="https://images.unsplash.com/photo-1542831371-29b0f74f9713?q=80&w=500&auto=format&fit=crop" alt="Gallery 2" />
+                                            {selectedStory.youtube_url && (
+                                                <div className="hoac-article-gallery">
+                                                    <iframe
+                                                        width="100%"
+                                                        height="400"
+                                                        src={resolveYoutubeEmbedUrl(selectedStory.youtube_url)}
+                                                        title="YouTube video"
+                                                        frameBorder="0"
+                                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                                        allowFullScreen
+                                                    ></iframe>
+                                                </div>
+                                            )}
                                         </div>
-                                    </div>
-                                )}
+                                    )}
 
                                 {/* COMMENTS TAB (UPDATED SECTION) */}
                                 {activeTab === 'comments' && (
                                     <div className="hoac-comments-content">
                                      <div className='hoac-comments-header-container'>
                                         <div className="hoac-comments-header">
-                                            <h3>Comments <span>231</span></h3>
+                                            <h3>Comments <span>{comments.length}</span></h3>
                                         </div>
 
                                         {/* Input Box Redesign */}
@@ -412,11 +1036,7 @@ const HOACommunity = () => {
                                                 />
                                                 <button 
                                                     className="hoac-inline-send-btn"
-                                                    onClick={() => {
-                                                        if (newComment.trim()) {
-                                                            setNewComment('');
-                                                        }
-                                                    }}
+                                                    onClick={handleSubmitComment}
                                                 >
                                                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                                         <polyline points="9 18 15 12 9 6"></polyline>
@@ -428,87 +1048,117 @@ const HOACommunity = () => {
 
                                         {/* Comment List Redesign */}
                                         <div className="hoac-comments-list">
-                                            {commentsData.map((comment) => (
-                                                <div key={comment.id} className="hoac-comment-item">
-                                                    <div className="hoac-comment-avatar">
-                                                        <img src={comment.avatar} alt={comment.name} style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover' }} />
-                                                    </div>
-                                                    <div className="hoac-comment-body">
-                                                        <div className="hoac-comment-meta">
-                                                            <h4>{comment.name}</h4>
-                                                            <span>{comment.timeAgo}</span>
-                                                        </div>
-                                                        <p className="hoac-comment-text">
-                                                            {comment.text} <span className="hoac-read-more">Read more</span>
-                                                        </p>
-                                                        <div className="hoac-comment-actions">
-                                                            <button 
-                                                                className="hoac-reply-btn"
-                                                                onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)}
-                                                            >
-                                                                <IconReply /> {comment.replies + (replies[comment.id]?.length || 0)} View Replies
-                                                            </button>
-                                                            <span className="hoac-posted-date">Sent on <strong>{comment.date}</strong></span>
-                                                        </div>
-                                                        
-                                                        {/* Reply Section */}
-                                                        {replyingTo === comment.id && (
-                                                            <div className="hoac-reply-section">
-                                                                <div className="hoac-reply-input-wrapper">
-                                                                    <input 
-                                                                        type="text" 
-                                                                        placeholder="Write a reply..." 
-                                                                        value={replyText[comment.id] || ''}
-                                                                        onChange={(e) => setReplyText({...replyText, [comment.id]: e.target.value})}
-                                                                    />
-                                                                    <button 
-                                                                        className="hoac-reply-submit-btn"
-                                                                        onClick={() => {
-                                                                            if (replyText[comment.id]?.trim()) {
-                                                                                setReplies({
-                                                                                    ...replies,
-                                                                                    [comment.id]: [
-                                                                                        ...(replies[comment.id] || []),
-                                                                                        {
-                                                                                            id: Date.now(),
-                                                                                            name: 'You',
-                                                                                            timeAgo: 'Just now',
-                                                                                            text: replyText[comment.id]
-                                                                                        }
-                                                                                    ]
-                                                                                });
-                                                                                setReplyText({...replyText, [comment.id]: ''});
-                                                                            }
-                                                                        }}
-                                                                    >
-                                                                        Reply
-                                                                    </button>
-                                                                </div>
-                                                                
-                                                                {/* Replies List */}
-                                                                {(replies[comment.id] || []).length > 0 && (
-                                                                    <div className="hoac-replies-list">
-                                                                        {replies[comment.id].map((reply) => (
-                                                                            <div key={reply.id} className="hoac-reply-item">
-                                                                                <div className="hoac-reply-avatar">
-                                                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-                                                                                </div>
-                                                                                <div className="hoac-reply-content">
-                                                                                    <div className="hoac-reply-meta">
-                                                                                        <h5>{reply.name}</h5>
-                                                                                        <span>{reply.timeAgo}</span>
-                                                                                    </div>
-                                                                                    <p className="hoac-reply-text">{reply.text}</p>
-                                                                                </div>
-                                                                            </div>
-                                                                        ))}
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                        )}
+                                            {commentsLoading ? (
+                                                <div className="comment comment-empty">
+                                                    <div className="comment-text">
+                                                        <p>Loading comments…</p>
                                                     </div>
                                                 </div>
-                                            ))}
+                                            ) : comments.length > 0 ? (
+                                                comments.map((comment) => (
+                                                    <div key={comment.id} className="hoac-comment-item">
+                                                        <div className="hoac-comment-avatar">
+                                                            <img 
+                                                                src={comment.user_avatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=100&auto=format&fit=crop'} 
+                                                                alt={comment.user_name} 
+                                                                style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover' }} 
+                                                            />
+                                                        </div>
+                                                        <div className="hoac-comment-body">
+                                                            <div className="hoac-comment-meta" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                                    <h4>{comment.user_name}</h4>
+                                                                    <span>{new Date(comment.created_at).toLocaleDateString()}</span>
+                                                                </div>
+                                                                <button 
+                                                                    onClick={() => handleDeleteComment(comment.id)} 
+                                                                    style={{ border: 'none', background: 'transparent', color: '#EF4444', cursor: 'pointer', padding: '2px 6px', fontSize: '12px' }}
+                                                                    title="Delete Comment"
+                                                                >
+                                                                    Delete
+                                                                </button>
+                                                            </div>
+                                                            <p className="hoac-comment-text">
+                                                                {comment.content}
+                                                            </p>
+                                                            <div className="hoac-comment-actions">
+                                                                <button 
+                                                                    className="hoac-reply-btn"
+                                                                    onClick={() => {
+                                                                        setReplyingTo(replyingTo === comment.id ? null : comment.id);
+                                                                        if (!replies[comment.id]) {
+                                                                            fetchReplies(comment.id);
+                                                                        }
+                                                                    }}
+                                                                >
+                                                                    <IconReply /> {comment.reply_count || 0} View Replies
+                                                                </button>
+                                                                <span className="hoac-posted-date">Sent on <strong>{new Date(comment.created_at).toLocaleDateString()}</strong></span>
+                                                            </div>
+                                                            
+                                                            {/* Reply Section */}
+                                                            {replyingTo === comment.id && (
+                                                                <div className="hoac-reply-section">
+                                                                    <div className="hoac-reply-input-wrapper">
+                                                                        <input 
+                                                                            type="text" 
+                                                                            placeholder="Write a reply..." 
+                                                                            value={replyText[comment.id] || ''}
+                                                                            onChange={(e) => setReplyText({...replyText, [comment.id]: e.target.value})}
+                                                                        />
+                                                                        <button 
+                                                                            className="hoac-reply-submit-btn"
+                                                                            onClick={() => handleSubmitReply(comment.id)}
+                                                                        >
+                                                                            Reply
+                                                                        </button>
+                                                                    </div>
+                                                                    
+                                                                    {/* Replies List */}
+                                                                    {(replies[comment.id] || []).length > 0 && (
+                                                                        <div className="hoac-replies-list">
+                                                                            {replies[comment.id].map((reply) => (
+                                                                                <div key={reply.id} className="hoac-reply-item">
+                                                                                    <div className="hoac-reply-avatar">
+                                                                                        <img 
+                                                                                            src={reply.user_avatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=100&auto=format&fit=crop'} 
+                                                                                            alt={reply.user_name} 
+                                                                                            style={{ width: 28, height: 28, borderRadius: '50%', objectFit: 'cover' }} 
+                                                                                        />
+                                                                                    </div>
+                                                                                    <div className="hoac-reply-content">
+                                                                                         <div className="hoac-reply-meta" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                                                                                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                                                                 <h5>{reply.user_name}</h5>
+                                                                                                 <span>{new Date(reply.created_at).toLocaleDateString()}</span>
+                                                                                             </div>
+                                                                                             <button 
+                                                                                                 onClick={() => handleDeleteReply(comment.id, reply.id)} 
+                                                                                                 style={{ border: 'none', background: 'transparent', color: '#EF4444', cursor: 'pointer', padding: '2px 6px', fontSize: '11px' }}
+                                                                                                 title="Delete Reply"
+                                                                                             >
+                                                                                                 Delete
+                                                                                             </button>
+                                                                                         </div>
+                                                                                        <p className="hoac-reply-text">{reply.content}</p>
+                                                                                    </div>
+                                                                                </div>
+                                                                            ))}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                ))
+                                            ) : (
+                                                <div className="comment comment-empty">
+                                                    <div className="comment-text">
+                                                        <h6>No comments yet</h6>
+                                                        <p>Be the first to leave a comment on this story.</p>
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
 
                                         <div className="hoac-pagination-container">
@@ -529,8 +1179,20 @@ const HOACommunity = () => {
                                 )}
                             </div>
                         </div>
+                        ) : null}
                     </div>
                 </div>
+
+                <CreateStoryModal
+                    key={editingStory ? `edit-${editingStory.id}` : 'new'}
+                    isOpen={isCreateModalOpen}
+                    onClose={() => {
+                        setIsCreateModalOpen(false);
+                        setEditingStory(null);
+                    }}
+                    onSuccess={handleCreateSuccess}
+                    story={editingStory}
+                />
 
             </div>
         </HOALayout>
