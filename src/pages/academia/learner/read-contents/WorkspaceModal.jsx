@@ -283,15 +283,6 @@ const WorkspaceModal = ({
               ) : textPages.length > 0 ? (
                 <div
                   className="learners-book-text-page"
-                  style={{
-                    padding: '40px',
-                    height: '100%',
-                    overflowY: 'auto',
-                    fontFamily: 'Inter, sans-serif',
-                    fontSize: '15px',
-                    lineHeight: '1.6',
-                    color: '#1E293B',
-                  }}
                   dangerouslySetInnerHTML={{ __html: formatHtmlContent(textPages[activeTextPageIndex]) }}
                 />
               ) : (

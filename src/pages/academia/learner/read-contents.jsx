@@ -207,6 +207,30 @@ function LearnersReadContents() {
   const [exerciseAnswers, setExerciseAnswers] = useState({});
   const [exerciseGradedList, setExerciseGradedList] = useState({});
   const [completedChapters, setCompletedChapters] = useState([]);
+  const [courseAvgScore, setCourseAvgScore] = useState('0.0%');
+
+  const viewedPercentage = useMemo(() => {
+    let total = 0;
+    let completed = 0;
+    outlineWeeksState.forEach(w => {
+      if (Array.isArray(w.chapters)) {
+        total += w.chapters.length;
+        completed += w.chapters.filter(ch => ch.completed).length;
+      }
+    });
+
+    if (total > 0) {
+      return Math.round((completed / total) * 100);
+    }
+
+    const keys = Object.keys(chapterContentMapState);
+    if (keys.length > 0) {
+      const done = keys.filter(id => completedChapters.includes(id) || completedChapters.includes(Number(id)));
+      return Math.round((done.length / keys.length) * 100);
+    }
+
+    return 0;
+  }, [outlineWeeksState, chapterContentMapState, completedChapters]);
 
   const [loadingCourse, setLoadingCourse] = useState(false);
 
@@ -220,6 +244,10 @@ function LearnersReadContents() {
   const [assessmentQuestions, setAssessmentQuestions] = useState([]);
   const [assessmentTracker, setAssessmentTracker] = useState([]);
   const [assessmentResult, setAssessmentResult] = useState(apexAssessmentResult);
+
+  const [isAssessmentStarted, setIsAssessmentStarted] = useState(false);
+  const [isConfirmingSubmit, setIsConfirmingSubmit] = useState(false);
+  const [assessmentAttemptData, setAssessmentAttemptData] = useState(null);
 
   const [currentAssessmentIndex, setCurrentAssessmentIndex] = useState(0);
   const [selectedAssessmentOptions, setSelectedAssessmentOptions] = useState([]);
@@ -483,7 +511,33 @@ function LearnersReadContents() {
 
   const loadSummativeAssessment = async (courseId) => {
     setLoadingAssessment(true);
+    setAssessmentQuestions([]);
+    setAssessmentTracker([]);
+    setAssessmentAnswers({});
+    setSelectedAssessmentOptions([]);
+    setIsAssessmentComplete(false);
+    setIsAssessmentStarted(false);
+    setIsConfirmingSubmit(false);
+    setAssessmentAttemptData(null);
     try {
+      // 1. Fetch performance history first to know attempt status without starting!
+      let historyList = [];
+      const token = localStorage.getItem('token');
+      if (token) {
+        try {
+          const perfRes = await fetch(`${API_BASE_URL}/api/profile/performance?limit=1000`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          if (perfRes.ok) {
+            const perfBody = await perfRes.json();
+            historyList = perfBody?.data?.assessmentHistory || [];
+            setUserPerformanceHistory(historyList);
+          }
+        } catch (e) {
+          console.error("Failed to fetch performance history on load:", e);
+        }
+      }
+
       const res = await fetch(`${API_BASE_URL}/api/courses/${courseId}/summative-assessment`);
       if (!res.ok) return;
       const body = await res.json();
@@ -496,13 +550,14 @@ function LearnersReadContents() {
       const fullAssessment = extractBody(body2);
 
       if (fullAssessment) {
+        const limitVal = fullAssessment.attempt_limit || fullAssessment.attemptLimit || 1;
         setCurrentAssessmentDetails({
           id: data.id,
           type: 'summative',
           title: fullAssessment.title || 'Summative Assessment',
           passingScore: Number(fullAssessment.passingScore || fullAssessment.passing_score || 80),
           durationMinutes: Number(fullAssessment.duration_minutes || fullAssessment.durationMinutes || 0),
-          attemptLimit: fullAssessment.attempt_limit || fullAssessment.attemptLimit || 1,
+          attemptLimit: limitVal,
           showCorrectAnswers: !!(fullAssessment.show_correct_answers ?? false),
           showScoreImmediately: !!(fullAssessment.show_score_immediately ?? true),
           randomizeQuestions: !!(fullAssessment.randomize_questions ?? false),
@@ -510,6 +565,7 @@ function LearnersReadContents() {
 
         setAssessmentAnswers({});
         setIsAssessmentReviewMode(false);
+        setIsConfirmingSubmit(false);
 
         let finalQuestions = [];
 
@@ -520,9 +576,7 @@ function LearnersReadContents() {
               try { options = JSON.parse(options); } catch (e) { options = null; }
             }
             const optionLabels = Array.isArray(options) ? options.map(getOptionLabel) : (options || ['Option A', 'Option B']);
-            
             const correctAnswers = extractCorrectAnswers(q, options, optionLabels);
-
             const qType = (q.question_type === 'multiple_choice' || q.question_type === 'checkbox' || q.question_type === 'multi')
               ? 'multi'
               : (q.question_type === 'true_false' || q.question_type === 'radio' || q.question_type === 'single') ? 'single'
@@ -543,7 +597,6 @@ function LearnersReadContents() {
             };
           });
 
-          // Randomize questions if flag is enabled
           const processedQuestions = (fullAssessment.randomize_questions || fullAssessment.randomizeQuestions)
             ? shuffleArray(mappedQuestions)
             : mappedQuestions;
@@ -558,123 +611,77 @@ function LearnersReadContents() {
           setAssessmentTracker(finalQuestions.map(() => 'pending'));
         }
 
-        // Start summative attempt on backend!
-        const token = localStorage.getItem('token');
-        if (token) {
-          try {
-            const startRes = await fetch(`${API_BASE_URL}/api/summative-assessments/${data.id}/start`, {
-              method: 'POST',
-              headers: { 'Authorization': `Bearer ${token}` }
-            });
-            if (startRes.ok) {
-              const startBody = await startRes.json();
-              const attemptData = startBody.data || startBody;
-              if (attemptData && (attemptData.attempt_id || attemptData.id)) {
-                const attemptId = attemptData.attempt_id || attemptData.id;
-                setCurrentAttemptId(attemptId);
-                setAttemptNumber(attemptData.attempt_number || 1);
+        if (finalQuestions.length === 0) {
+          setIsAssessmentComplete(false);
+          setIsAssessmentStarted(false);
+          setCompletedChapters(prev => prev.filter(id => id !== 'assessment'));
+          return;
+        }
 
-                // Restore saved answers if resumed attempt returned answers
-                if (Array.isArray(attemptData.answers) && finalQuestions.length > 0) {
-                  const answersMap = {};
-                  const nextTracker = finalQuestions.map(() => 'pending');
+        // 3. Determine attempt state based on history
+        const myAttempts = historyList.filter(att => Number(att.assessmentId) === Number(data.id));
+        const completedAttempts = myAttempts.filter(att => att.status === 'submitted' || att.status === 'graded');
+        const activeAttempt = myAttempts.find(att => att.status === 'in_progress');
 
-                  attemptData.answers.forEach(a => {
-                    const qIdx = finalQuestions.findIndex(q => q.id === a.question_id);
-                    if (qIdx >= 0) {
-                      const q = finalQuestions[qIdx];
-                      nextTracker[qIdx] = 'answered';
-                      if (q.type === 'short_answer' || q.type === 'essay') {
-                        answersMap[q.id] = a.answer_text;
-                      } else {
-                        const optTexts = String(a.answer_text).split(',').map(s => s.trim().toLowerCase());
-                        const indices = optTexts.map(text => q.options.findIndex(opt => String(opt).trim().toLowerCase() === text)).filter(idx => idx >= 0);
-                        answersMap[q.id] = indices;
-                      }
-                    }
-                  });
-                  setAssessmentAnswers(answersMap);
-                  setAssessmentTracker(nextTracker);
-                }
+        // Check if the user has reached the attempt limit
+        if (limitVal && completedAttempts.length >= limitVal && myAttempts.length > 0) {
+          const latestAttempt = myAttempts[0];
+          const attemptId = latestAttempt.id;
+          setCurrentAttemptId(attemptId);
+          setAttemptNumber(latestAttempt.attemptNumber || 1);
+          setIsAssessmentComplete(true);
 
-                // If attempt is already completed (limit reached), fetch and show results
-                if (attemptData.limit_reached || attemptData.status === 'submitted' || attemptData.status === 'graded') {
-                  setIsAssessmentComplete(true);
-                  try {
-                    const resultsRes = await fetch(`${API_BASE_URL}/api/summative-attempts/${attemptId}/results`, {
-                      headers: { 'Authorization': `Bearer ${token}` }
-                    });
-                    if (resultsRes.ok) {
-                      const resultsBody = await resultsRes.json();
-                      const finalResults = resultsBody.data || resultsBody;
-                      
-                      const scorePct = parseFloat(finalResults.attempt?.percentage ?? finalResults.attempt?.score ?? attemptData.percentage ?? 0);
-                      const passed = finalResults.attempt?.is_passed ?? (scorePct >= (fullAssessment.passing_score ?? 80));
-                      const total = finalQuestions.length;
-                      const correct = finalResults.results?.correct_answers || 0;
-                      const wrong = finalResults.results?.wrong_answers || 0;
-                      const answered = finalResults.results?.pending_review || 0;
+          if (token) {
+            try {
+              // Fetch results directly from history attempt ID!
+              const resultsRes = await fetch(`${API_BASE_URL}/api/summative-attempts/${attemptId}/results`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+              });
+              if (resultsRes.ok) {
+                const resultsBody = await resultsRes.json();
+                const finalResults = resultsBody.data || resultsBody;
+                const scorePct = parseFloat(finalResults.attempt?.percentage ?? finalResults.attempt?.score ?? latestAttempt.percentage ?? 0);
+                const passed = finalResults.attempt?.is_passed ?? (scorePct >= (fullAssessment.passing_score ?? 80));
+                const total = finalQuestions.length;
+                const correct = finalResults.results?.correct_answers || 0;
+                const wrong = finalResults.results?.wrong_answers || 0;
+                const answered = finalResults.results?.pending_review || 0;
 
-                      setAssessmentResult({
-                        score: `${scorePct.toFixed(1)}%`,
-                        headline: passed ? 'Congratulations!' : (answered > 0 ? 'Submitted for Review' : 'Assessment Completed'),
-                        summary: passed
-                          ? 'You have passed the summative assessment. Great job!'
-                          : answered > 0
-                            ? `Your essay/text answers will be reviewed by the instructor. Auto-graded score: ${scorePct.toFixed(1)}%`
-                            : 'You did not achieve the required passing score.',
-                        buttonLabel: passed ? 'Claim Certificate' : 'Retry Quiz',
-                        stats: [
-                          { value: String(total), label: 'Questions' },
-                          { value: String(correct), label: 'Correct' },
-                          { value: String(wrong), label: 'Wrong' },
-                          ...(answered > 0 ? [{ value: String(answered), label: 'Pending Review' }] : []),
-                          { value: passed ? 'Passed' : (answered > 0 ? 'Pending' : 'Failed'), label: 'Status', tone: passed ? 'success' : (answered > 0 ? '' : 'danger') },
-                        ],
-                        status: finalResults.attempt?.status || attemptData.status || 'graded'
-                      });
-                    } else {
-                      const scorePct = parseFloat(attemptData.percentage ?? attemptData.score ?? 0);
-                      const passed = attemptData.is_passed ?? (scorePct >= (fullAssessment.passing_score ?? 80));
-                      setAssessmentResult({
-                        score: `${scorePct.toFixed(1)}%`,
-                        headline: passed ? 'Congratulations!' : 'Assessment Completed',
-                        summary: 'You have used all attempts for this assessment.',
-                        buttonLabel: 'Claim Certificate',
-                        stats: [
-                          { value: String(finalQuestions.length), label: 'Questions' },
-                          { value: passed ? 'Passed' : 'Failed', label: 'Status', tone: passed ? 'success' : 'danger' }
-                        ],
-                        status: attemptData.status || 'graded'
-                      });
-                    }
-                  } catch (e) {
-                    console.error("Failed to load summative results:", e);
-                    const scorePct = parseFloat(attemptData.percentage ?? attemptData.score ?? 0);
-                    const passed = attemptData.is_passed ?? (scorePct >= (fullAssessment.passing_score ?? 80));
-                    setAssessmentResult({
-                      score: `${scorePct.toFixed(1)}%`,
-                      headline: passed ? 'Congratulations!' : 'Assessment Completed',
-                      summary: 'You have used all attempts for this assessment.',
-                      buttonLabel: 'Claim Certificate',
-                      stats: [
-                        { value: String(finalQuestions.length), label: 'Questions' },
-                        { value: passed ? 'Passed' : 'Failed', label: 'Status', tone: passed ? 'success' : 'danger' }
-                      ],
-                      status: attemptData.status || 'graded'
-                    });
-                  }
-                } else {
-                  // Active taking flow: Start countdown timer if status is in_progress
-                  startAssessmentTimer(Number(fullAssessment.duration_minutes || fullAssessment.durationMinutes || 0), attemptData?.start_time);
-                }
+                setAssessmentResult({
+                  score: `${scorePct.toFixed(1)}%`,
+                  headline: passed ? 'Congratulations!' : 'Assessment Completed',
+                  summary: 'You have used all attempts for this assessment.',
+                  buttonLabel: passed ? 'Claim Certificate' : 'No attempt left',
+                  stats: [
+                    { value: String(total), label: 'Questions' },
+                    { value: passed ? 'Passed' : 'Failed', label: 'Status', tone: passed ? 'success' : 'danger' }
+                  ],
+                  status: latestAttempt.status || 'graded'
+                });
               }
+            } catch (e) {
+              console.error("Failed to load completed summative state:", e);
             }
-            // Get previous attempts count for max attempts display
-            setMaxAttempts(fullAssessment.attempt_limit || fullAssessment.attemptLimit || 1);
-          } catch (e) {
-            console.error("Failed to start summative attempt:", e);
           }
+        } else if (activeAttempt) {
+          // Active attempt exists: set up metadata for prep card
+          setIsAssessmentStarted(false);
+          setIsAssessmentComplete(false);
+          setAttemptNumber(activeAttempt.attemptNumber || 1);
+          setMaxAttempts(limitVal);
+          setCurrentAttemptId(activeAttempt.id);
+          setAssessmentAttemptData({
+            attempt_id: activeAttempt.id,
+            attempt_number: activeAttempt.attemptNumber,
+            start_time: activeAttempt.startTime
+          });
+        } else {
+          // Fresh attempt: do not call start yet!
+          setIsAssessmentStarted(false);
+          setIsAssessmentComplete(false);
+          setAttemptNumber(completedAttempts.length + 1);
+          setMaxAttempts(limitVal);
+          setAssessmentAttemptData(null);
         }
       }
     } catch (err) {
@@ -686,20 +693,47 @@ function LearnersReadContents() {
 
   const loadFormativeAssessment = async (assessmentId) => {
     setLoadingAssessment(true);
+    setAssessmentQuestions([]);
+    setAssessmentTracker([]);
+    setAssessmentAnswers({});
+    setSelectedAssessmentOptions([]);
+    setIsAssessmentComplete(false);
+    setIsAssessmentStarted(false);
+    setIsConfirmingSubmit(false);
+    setAssessmentAttemptData(null);
     try {
+      // 1. Fetch performance history first to know attempt status without starting!
+      let historyList = [];
+      const token = localStorage.getItem('token');
+      if (token) {
+        try {
+          const perfRes = await fetch(`${API_BASE_URL}/api/profile/performance?limit=1000`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          if (perfRes.ok) {
+            const perfBody = await perfRes.json();
+            historyList = perfBody?.data?.assessmentHistory || [];
+            setUserPerformanceHistory(historyList);
+          }
+        } catch (e) {
+          console.error("Failed to fetch performance history on load:", e);
+        }
+      }
+
       const res = await fetch(`${API_BASE_URL}/api/formative-assessments/${assessmentId}`);
       if (!res.ok) return;
       const body = await res.json();
       const fullAssessment = extractBody(body);
 
       if (fullAssessment) {
+        const limitVal = fullAssessment.attempt_limit || fullAssessment.attemptLimit || null;
         setCurrentAssessmentDetails({
           id: assessmentId,
           type: 'formative',
           title: fullAssessment.title || 'Quiz Assessment',
           passingScore: Number(fullAssessment.passingScore || fullAssessment.passing_score || 60),
           durationMinutes: Number(fullAssessment.duration_minutes || fullAssessment.durationMinutes || 0),
-          attemptLimit: fullAssessment.attempt_limit || fullAssessment.attemptLimit || null,
+          attemptLimit: limitVal,
           showCorrectAnswers: !!(fullAssessment.show_correct_answers ?? true),
           showScoreImmediately: !!(fullAssessment.show_score_immediately ?? true),
           randomizeQuestions: !!(fullAssessment.randomize_questions ?? false),
@@ -707,6 +741,7 @@ function LearnersReadContents() {
 
         setAssessmentAnswers({});
         setIsAssessmentReviewMode(false);
+        setIsConfirmingSubmit(false);
 
         let finalQuestions = [];
 
@@ -717,9 +752,7 @@ function LearnersReadContents() {
               try { options = JSON.parse(options); } catch (e) { options = null; }
             }
             const optionLabels = Array.isArray(options) ? options.map(getOptionLabel) : (options || ['Option A', 'Option B']);
-            
             const correctAnswers = extractCorrectAnswers(q, options, optionLabels);
-
             const qType = (q.question_type === 'multiple_choice' || q.question_type === 'checkbox' || q.question_type === 'multi')
               ? 'multi'
               : (q.question_type === 'true_false' || q.question_type === 'radio' || q.question_type === 'single') ? 'single'
@@ -740,7 +773,6 @@ function LearnersReadContents() {
             };
           });
 
-          // Randomize questions if flag is enabled
           const processedQuestions = (fullAssessment.randomize_questions || fullAssessment.randomizeQuestions)
             ? shuffleArray(mappedQuestions)
             : mappedQuestions;
@@ -758,126 +790,157 @@ function LearnersReadContents() {
           setAssessmentTracker([]);
         }
 
-        // Start formative attempt on backend!
-        const token = localStorage.getItem('token');
-        if (token) {
-          try {
-            const startRes = await fetch(`${API_BASE_URL}/api/formative-assessments/${assessmentId}/start`, {
-              method: 'POST',
-              headers: { 'Authorization': `Bearer ${token}` }
-            });
-            if (startRes.ok) {
-              const startBody = await startRes.json();
-              const attemptData = startBody.data || startBody;
-              if (attemptData && (attemptData.attempt_id || attemptData.id)) {
-                const attemptId = attemptData.attempt_id || attemptData.id;
-                setCurrentAttemptId(attemptId);
-                setAttemptNumber(attemptData.attempt_number || 1);
-
-                // Restore saved answers if resumed attempt returned answers
-                if (Array.isArray(attemptData.answers) && finalQuestions.length > 0) {
-                  const answersMap = {};
-                  const nextTracker = finalQuestions.map(() => 'pending');
-
-                  attemptData.answers.forEach(a => {
-                    const qIdx = finalQuestions.findIndex(q => q.id === a.question_id);
-                    if (qIdx >= 0) {
-                      const q = finalQuestions[qIdx];
-                      nextTracker[qIdx] = 'answered';
-                      if (q.type === 'short_answer' || q.type === 'essay') {
-                        answersMap[q.id] = a.answer_text;
-                      } else {
-                        const optTexts = String(a.answer_text).split(',').map(s => s.trim().toLowerCase());
-                        const indices = optTexts.map(text => q.options.findIndex(opt => String(opt).trim().toLowerCase() === text)).filter(idx => idx >= 0);
-                        answersMap[q.id] = indices;
-                      }
-                    }
-                  });
-                  setAssessmentAnswers(answersMap);
-                  setAssessmentTracker(nextTracker);
-                }
-
-                // If attempt is already completed (limit reached), fetch and show results
-                if (attemptData.limit_reached || attemptData.status === 'submitted' || attemptData.status === 'graded') {
-                  setIsAssessmentComplete(true);
-                  try {
-                    const resultsRes = await fetch(`${API_BASE_URL}/api/formative-attempts/${attemptId}/results`, {
-                      headers: { 'Authorization': `Bearer ${token}` }
-                    });
-                    if (resultsRes.ok) {
-                      const resultsBody = await resultsRes.json();
-                      const finalResults = resultsBody.data || resultsBody;
-                      
-                      const scorePct = parseFloat(finalResults.attempt?.percentage ?? finalResults.attempt?.score ?? attemptData.percentage ?? 0);
-                      const passed = finalResults.attempt?.is_passed ?? (scorePct >= (fullAssessment.passing_score ?? 60));
-                      const total = finalQuestions.length;
-                      const correct = finalResults.results?.correct_answers || 0;
-                      const wrong = finalResults.results?.wrong_answers || 0;
-                      const answered = finalResults.results?.pending_review || 0;
-
-                      setAssessmentResult({
-                        score: `${scorePct.toFixed(1)}%`,
-                        headline: passed ? 'Congratulations!' : (answered > 0 ? 'Submitted for Review' : 'Quiz Completed'),
-                        summary: passed
-                          ? 'You have passed the quiz assessment. Great job!'
-                          : answered > 0
-                            ? `Your essay/text answers will be reviewed by the instructor. Auto-graded score: ${scorePct.toFixed(1)}%`
-                            : 'You did not achieve the required passing score.',
-                        buttonLabel: passed ? 'Continue Course' : 'Retry Quiz',
-                        stats: [
-                          { value: String(total), label: 'Questions' },
-                          { value: String(correct), label: 'Correct' },
-                          { value: String(wrong), label: 'Wrong' },
-                          ...(answered > 0 ? [{ value: String(answered), label: 'Pending Review' }] : []),
-                          { value: passed ? 'Passed' : (answered > 0 ? 'Pending' : 'Failed'), label: 'Status', tone: passed ? 'success' : (answered > 0 ? '' : 'danger') },
-                        ],
-                        status: finalResults?.attempt?.status || attemptData.status || 'graded'
-                      });
-                    } else {
-                      const scorePct = parseFloat(attemptData.percentage ?? attemptData.score ?? 0);
-                      const passed = attemptData.is_passed ?? (scorePct >= (fullAssessment.passing_score ?? 60));
-                      setAssessmentResult({
-                        score: `${scorePct.toFixed(1)}%`,
-                        headline: passed ? 'Congratulations!' : 'Quiz Completed',
-                        summary: 'You have used all attempts for this assessment.',
-                        buttonLabel: 'Continue Course',
-                        stats: [
-                          { value: String(finalQuestions.length), label: 'Questions' },
-                          { value: passed ? 'Passed' : 'Failed', label: 'Status', tone: passed ? 'success' : 'danger' }
-                        ],
-                        status: attemptData.status || 'graded'
-                      });
-                    }
-                  } catch (e) {
-                    console.error("Failed to load formative results:", e);
-                    const scorePct = parseFloat(attemptData.percentage ?? attemptData.score ?? 0);
-                    const passed = attemptData.is_passed ?? (scorePct >= (fullAssessment.passing_score ?? 60));
-                    setAssessmentResult({
-                      score: `${scorePct.toFixed(1)}%`,
-                      headline: passed ? 'Congratulations!' : 'Quiz Completed',
-                      summary: 'You have used all attempts for this assessment.',
-                      buttonLabel: 'Continue Course',
-                      stats: [
-                        { value: String(finalQuestions.length), label: 'Questions' },
-                        { value: passed ? 'Passed' : 'Failed', label: 'Status', tone: passed ? 'success' : 'danger' }
-                      ]
-                    });
-                  }
-                } else {
-                  // Active taking flow: Start countdown timer if status is in_progress
-                  startAssessmentTimer(Number(fullAssessment.duration_minutes || fullAssessment.durationMinutes || 0), attemptData?.start_time);
-                }
+        if (finalQuestions.length === 0) {
+          setIsAssessmentComplete(false);
+          setIsAssessmentStarted(false);
+          // Force completed status to false in sidebar state
+          setOutlineWeeksState(prev => prev.map(w => ({
+            ...w,
+            assessments: w.assessments ? w.assessments.map(a => {
+              if (String(a.id) === `formative-${assessmentId}`) {
+                return { ...a, completed: false };
               }
+              return a;
+            }) : []
+          })));
+          setCompletedChapters(prev => prev.filter(id => String(id) !== `formative-${assessmentId}`));
+          return;
+        }
+
+        // 3. Determine attempt state based on history
+        const myAttempts = historyList.filter(att => Number(att.assessmentId) === Number(assessmentId));
+        const completedAttempts = myAttempts.filter(att => att.status === 'submitted' || att.status === 'graded');
+        const activeAttempt = myAttempts.find(att => att.status === 'in_progress');
+
+        // Check if the user has reached the attempt limit
+        if (limitVal && completedAttempts.length >= limitVal && myAttempts.length > 0) {
+          const latestAttempt = myAttempts[0];
+          const attemptId = latestAttempt.id;
+          setCurrentAttemptId(attemptId);
+          setAttemptNumber(latestAttempt.attemptNumber || 1);
+          setIsAssessmentComplete(true);
+
+          if (token) {
+            try {
+              // Fetch results directly from history attempt ID!
+              const resultsRes = await fetch(`${API_BASE_URL}/api/formative-attempts/${attemptId}/results`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+              });
+              if (resultsRes.ok) {
+                const resultsBody = await resultsRes.json();
+                const finalResults = resultsBody.data || resultsBody;
+                const scorePct = parseFloat(finalResults.attempt?.percentage ?? finalResults.attempt?.score ?? latestAttempt.percentage ?? 0);
+                const passed = finalResults.attempt?.is_passed ?? (scorePct >= (fullAssessment.passing_score ?? 60));
+                const total = finalQuestions.length;
+                const correct = finalResults.results?.correct_answers || 0;
+                const wrong = finalResults.results?.wrong_answers || 0;
+                const answered = finalResults.results?.pending_review || 0;
+
+                setAssessmentResult({
+                  score: `${scorePct.toFixed(1)}%`,
+                  headline: passed ? 'Congratulations!' : (answered > 0 ? 'Submitted for Review' : 'Quiz Completed'),
+                  summary: passed
+                    ? 'You have passed the quiz assessment. Great job!'
+                    : answered > 0
+                      ? `Your essay/text answers will be reviewed by the instructor. Auto-graded score: ${scorePct.toFixed(1)}%`
+                      : 'You did not achieve the required passing score.',
+                  buttonLabel: passed ? 'Continue Course' : 'No attempt left',
+                  stats: [
+                    { value: String(total), label: 'Questions' },
+                    { value: String(correct), label: 'Correct' },
+                    { value: String(wrong), label: 'Wrong' },
+                    ...(answered > 0 ? [{ value: String(answered), label: 'Pending Review' }] : []),
+                    { value: passed ? 'Passed' : (answered > 0 ? 'Pending' : 'Failed'), label: 'Status', tone: passed ? 'success' : (answered > 0 ? '' : 'danger') },
+                  ],
+                  status: latestAttempt.status || 'graded'
+                });
+              }
+            } catch (e) {
+              console.error("Failed to load completed formative state:", e);
             }
-            // Set max attempts display
-            setMaxAttempts(fullAssessment.attempt_limit || fullAssessment.attemptLimit || null);
-          } catch (e) {
-            console.error("Failed to start formative attempt:", e);
           }
+        } else if (activeAttempt) {
+          // Active attempt exists: set up metadata for prep card
+          setIsAssessmentStarted(false);
+          setIsAssessmentComplete(false);
+          setAttemptNumber(activeAttempt.attemptNumber || 1);
+          setMaxAttempts(limitVal);
+          setCurrentAttemptId(activeAttempt.id);
+          setAssessmentAttemptData({
+            attempt_id: activeAttempt.id,
+            attempt_number: activeAttempt.attemptNumber,
+            start_time: activeAttempt.startTime
+          });
+        } else {
+          // Fresh attempt: do not call start yet!
+          setIsAssessmentStarted(false);
+          setIsAssessmentComplete(false);
+          setAttemptNumber(completedAttempts.length + 1);
+          setMaxAttempts(limitVal);
+          setAssessmentAttemptData(null);
         }
       }
     } catch (err) {
       console.error("Failed to load formative assessment:", err);
+    } finally {
+      setLoadingAssessment(false);
+    }
+  };
+
+  const handleStartAssessment = async () => {
+    const token = localStorage.getItem('token');
+    if (!token || !currentAssessmentDetails.id) return;
+    
+    setLoadingAssessment(true);
+    try {
+      const isFormative = currentAssessmentDetails.type === 'formative';
+      const endpoint = isFormative 
+        ? `${API_BASE_URL}/api/formative-assessments/${currentAssessmentDetails.id}/start`
+        : `${API_BASE_URL}/api/summative-assessments/${currentAssessmentDetails.id}/start`;
+
+      const startRes = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (startRes.ok) {
+        const startBody = await startRes.json();
+        const attemptData = startBody.data || startBody;
+        if (attemptData && (attemptData.attempt_id || attemptData.id)) {
+          const attemptId = attemptData.attempt_id || attemptData.id;
+          setCurrentAttemptId(attemptId);
+          setAttemptNumber(attemptData.attempt_number || 1);
+          setAssessmentAttemptData(attemptData);
+
+          // Restore saved answers if resumed attempt returned answers
+          if (Array.isArray(attemptData.answers) && assessmentQuestions.length > 0) {
+            const answersMap = {};
+            const nextTracker = assessmentQuestions.map(() => 'pending');
+
+            attemptData.answers.forEach(a => {
+              const qIdx = assessmentQuestions.findIndex(q => q.id === a.question_id);
+              if (qIdx >= 0) {
+                const q = assessmentQuestions[qIdx];
+                nextTracker[qIdx] = 'answered';
+                if (q.type === 'short_answer' || q.type === 'essay') {
+                  answersMap[q.id] = a.answer_text;
+                } else {
+                  const optTexts = String(a.answer_text).split(',').map(s => s.trim().toLowerCase());
+                  const indices = optTexts.map(text => q.options.findIndex(opt => String(opt).trim().toLowerCase() === text)).filter(idx => idx >= 0);
+                  answersMap[q.id] = indices;
+                }
+              }
+            });
+            setAssessmentAnswers(answersMap);
+            setAssessmentTracker(nextTracker);
+          }
+
+          startAssessmentTimer(Number(currentAssessmentDetails.durationMinutes || 0), attemptData.start_time);
+          setIsAssessmentStarted(true);
+        }
+      }
+    } catch (e) {
+      console.error("Failed to start assessment:", e);
     } finally {
       setLoadingAssessment(false);
     }
@@ -1184,6 +1247,7 @@ function LearnersReadContents() {
           const courseId = courseData.id || courseData.course_id || id;
           fetchCourseProgress(courseId).catch(() => { });
           fetchCourseStudentAttempts(courseId).catch(() => { });
+          fetchCourseAvgScore(courseId).catch(() => { });
         }
       } catch (err) {
         // keep fallbacks
@@ -1396,6 +1460,35 @@ function LearnersReadContents() {
     }
   };
 
+  const fetchCourseAvgScore = async (courseId) => {
+    const token = localStorage.getItem('token');
+    if (!token || !courseId) return;
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/profile/performance?limit=1000`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const body = await res.json();
+        const list = body?.data?.assessmentHistory || [];
+        const courseHistory = list.filter(item => 
+          Number(item.courseId) === Number(courseId) && 
+          item.percentage !== null && 
+          item.percentage !== undefined
+        );
+        
+        if (courseHistory.length > 0) {
+          const sum = courseHistory.reduce((acc, item) => acc + parseFloat(item.percentage), 0);
+          const avg = sum / courseHistory.length;
+          setCourseAvgScore(`${avg.toFixed(1)}%`);
+        } else {
+          setCourseAvgScore('0.0%');
+        }
+      }
+    } catch (err) {
+      console.error("Failed to fetch course average score:", err);
+    }
+  };
+
   const markChapterCompleteOnBackend = async (chapterId) => {
     const token = localStorage.getItem('token');
     if (!token || !inboundId || !chapterId) return;
@@ -1477,6 +1570,9 @@ function LearnersReadContents() {
       setAssessmentTextAnswer('');
       setAssessmentAnswers({});
       setIsAssessmentReviewMode(false);
+      setIsAssessmentStarted(false);
+      setIsConfirmingSubmit(false);
+      setAssessmentAttemptData(null);
       // Stop any running timer from previous assessment
       if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
       setAssessmentTimerActive(false);
@@ -1826,7 +1922,7 @@ function LearnersReadContents() {
             : 'You did not achieve the required passing score. Please try again.',
         buttonLabel: passed
           ? (currentAssessmentDetails.type === 'summative' ? 'Claim Certificate' : 'Continue Course')
-          : 'Retry Quiz',
+          : (hasAttemptsLeft ? 'Retry Quiz' : 'No attempt left'),
         stats: [
           { value: String(total), label: 'Questions' },
           { value: String(correct), label: 'Correct' },
@@ -1875,6 +1971,10 @@ function LearnersReadContents() {
           });
           return next;
         });
+      }
+
+      if (inboundId) {
+        fetchCourseAvgScore(inboundId).catch(() => {});
       }
 
       setIsAssessmentComplete(true);
@@ -2019,7 +2119,7 @@ function LearnersReadContents() {
 
         <div className={`learners-read-contents-shell ${isSidebarOpen ? 'is-sidebar-open' : ''}`}>
           <Sidebar
-            courseReader={courseReader}
+            courseReader={{ ...courseReader, score: courseAvgScore }}
             isSidebarOpen={isSidebarOpen}
             setIsSidebarOpen={setIsSidebarOpen}
             outlineWeeksState={outlineWeeksState}
@@ -2057,7 +2157,7 @@ function LearnersReadContents() {
               </div>
               <div className="learners-read-contents-summary-side">
                 <h3>Progress</h3>
-                <p>{stripHtml(activeContent.progressLabel)}</p>
+                <p>Viewed : {viewedPercentage}%</p>
               </div>
             </section>
 
@@ -2136,6 +2236,13 @@ function LearnersReadContents() {
                     hasAttemptsLeft={hasAttemptsLeft}
                     stripHtml={stripHtml}
                     loadingAssessment={loadingAssessment}
+                    isAssessmentStarted={isAssessmentStarted}
+                    setIsAssessmentStarted={setIsAssessmentStarted}
+                    isConfirmingSubmit={isConfirmingSubmit}
+                    setIsConfirmingSubmit={setIsConfirmingSubmit}
+                    assessmentAttemptData={assessmentAttemptData}
+                    startAssessmentTimer={startAssessmentTimer}
+                    handleStartAssessment={handleStartAssessment}
                   />
                 </>
               ) : (

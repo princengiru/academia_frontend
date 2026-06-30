@@ -1,4 +1,6 @@
 import React from 'react';
+import { ClipboardList } from 'lucide-react';
+
 
 // Icons & Images
 import accMinus from '../../../../assets/icons/acc-minus.svg';
@@ -111,8 +113,9 @@ const Sidebar = ({
                             onClick={() => handleChapterSelect(huskAss.id)}
                           >
                             <span className="learners-read-chapter-line" aria-hidden="true"></span>
-                            <span className="learners-read-chapter-title" style={{ fontStyle: 'italic' }}>
-                              📝 {stripHtml(huskAss.title)}
+                            <span className="learners-read-chapter-title" style={{ fontStyle: 'italic', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              <ClipboardList size={14} color="#5B0A86" style={{ flexShrink: 0 }} />
+                              <span>{stripHtml(huskAss.title)}</span>
                             </span>
                             <img
                               src={huskAss.completed ? checkCircle : noCheckCircle}
@@ -131,7 +134,7 @@ const Sidebar = ({
               <div className="learners-read-week-rail" aria-hidden="true">
                 <img 
                   className="learners-read-week-status" 
-                  src={(isAssessmentComplete || (completedChapters && completedChapters.includes('assessment'))) ? checkCircle : noCheckCircle} 
+                  src={((activeChapterId === 'assessment' && isAssessmentComplete) || (completedChapters && completedChapters.includes('assessment'))) ? checkCircle : noCheckCircle} 
                   alt="Status" 
                 />
               </div>
