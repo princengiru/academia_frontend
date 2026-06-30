@@ -4,6 +4,9 @@ import './hoa-terms-conditions.css';
 
 // Reusing standard project icons
 import hoagoto from '../../../assets/icons/hoagoto.svg';
+import hoarules from '../../../assets/icons/hoarules.svg';
+import hoaeditrule from '../../../assets/icons/hoaeditrule.svg';
+import hoaattach from '../../../assets/icons/hoaattach.svg';
 
 // Custom Inline SVGs
 const IconPlus = () => (
@@ -14,18 +17,11 @@ const IconPlus = () => (
 );
 
 const IconRuleBook = () => (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#450468" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <rect x="4" y="4" width="16" height="16" rx="4" ry="4"></rect>
-        <line x1="8" y1="10" x2="16" y2="10"></line>
-        <line x1="8" y1="14" x2="12" y2="14"></line>
-    </svg>
+<img src={hoarules} alt="Rule Book" />
 );
 
 const IconPencil = () => (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M12 20h9"></path>
-        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
-    </svg>
+<img src={hoaeditrule} alt="Edit Rule" />
 );
 
 const IconChevronRight = () => (
