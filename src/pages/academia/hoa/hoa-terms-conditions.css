@@ -115,10 +115,6 @@
     margin-bottom: 20px;
 }
 
-.hoatc-card-icon-wrapper {
-
-}
-
 .hoatc-card-actions {
     display: flex;
     align-items: center;
@@ -268,12 +264,12 @@
 
 .hoatc-view-count {
     font-size: 13px;
-    color: #78829D;
-    font-weight: 500;
+    color: #4B5675;
+    font-weight: 400;
 }
 
 .hoatc-btn-outline-small {
-    background: #FCFCFC;
+    background: #FFFFFF;
     border: 1px solid #DBDFE9;
     color: #4B5675;
     padding: 6px 16px;
