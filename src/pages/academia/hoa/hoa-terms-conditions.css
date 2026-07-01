@@ -97,7 +97,7 @@
     background: #FFFFFF;
     border: 1px solid #F1F1F4;
     border-radius: 12px;
-    padding: 24px;
+    padding: 18px 20px 16px;
     display: flex;
     flex-direction: column;
     transition: transform 0.2s, box-shadow 0.2s;
@@ -112,7 +112,7 @@
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    margin-bottom: 20px;
+    margin-bottom: 12px;
 }
 
 .hoatc-card-actions {
@@ -163,34 +163,45 @@
 
 .hoatc-card-body {
     flex: 1;
-    margin-bottom: 24px;
+    margin-bottom: 16px;
 }
 
 .hoatc-card-body h4 {
-    margin: 0 0 8px 0;
-    font-size: 16px;
+    margin: 0 0 6px 0;
+    font-size: 15px;
     font-weight: 700;
     color: #071437;
 }
 
 .hoatc-card-desc {
-    font-size: 13px;
+    font-size: 12px;
     color: #78829D;
     line-height: 1.5;
-    margin: 0 0 16px 0;
+    margin: 0 0 12px 0;
 }
 
 .hoatc-tags-list {
     display: flex;
     flex-wrap: wrap;
-    column-gap: 12px;
-    row-gap: 8px;
+    column-gap: 0;
+    row-gap: 4px;
 }
 
 .hoatc-tag {
     font-size: 12px;
     font-weight: 600;
     color: #450468;
+}
+
+.hoatc-tag::after {
+    content: ' | ';
+    margin-right:5px;
+    color: #DBDFE9;
+    font-weight: 400;
+}
+
+.hoatc-tag:last-child::after {
+    content: none;
 }
 
 .hoatc-btn-continue {
