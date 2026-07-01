@@ -105,6 +105,372 @@ const Toggle = ({ checked, onChange }) => (
     </label>
 );
 
+// ─── Country Data (all world countries) ───────────────────────────────────────
+const COUNTRIES = [
+    { code:'AF',name:'Afghanistan',dial:'+93',flag:'🇦🇫',pattern:'## ### ####'},
+    { code:'AL',name:'Albania',dial:'+355',flag:'🇦🇱',pattern:'### ### ###'},
+    { code:'DZ',name:'Algeria',dial:'+213',flag:'🇩🇿',pattern:'### ## ## ##'},
+    { code:'AD',name:'Andorra',dial:'+376',flag:'🇦🇩',pattern:'### ###'},
+    { code:'AO',name:'Angola',dial:'+244',flag:'🇦🇴',pattern:'### ### ###'},
+    { code:'AG',name:'Antigua and Barbuda',dial:'+1268',flag:'🇦🇬',pattern:'### ####'},
+    { code:'AR',name:'Argentina',dial:'+54',flag:'🇦🇷',pattern:'## #### ####'},
+    { code:'AM',name:'Armenia',dial:'+374',flag:'🇦🇲',pattern:'## ######'},
+    { code:'AU',name:'Australia',dial:'+61',flag:'🇦🇺',pattern:'#### ### ###'},
+    { code:'AT',name:'Austria',dial:'+43',flag:'🇦🇹',pattern:'### ######'},
+    { code:'AZ',name:'Azerbaijan',dial:'+994',flag:'🇦🇿',pattern:'## ### ## ##'},
+    { code:'BS',name:'Bahamas',dial:'+1242',flag:'🇧🇸',pattern:'### ####'},
+    { code:'BH',name:'Bahrain',dial:'+973',flag:'🇧🇭',pattern:'#### ####'},
+    { code:'BD',name:'Bangladesh',dial:'+880',flag:'🇧🇩',pattern:'### ### ###'},
+    { code:'BB',name:'Barbados',dial:'+1246',flag:'🇧🇧',pattern:'### ####'},
+    { code:'BY',name:'Belarus',dial:'+375',flag:'🇧🇾',pattern:'## ### ## ##'},
+    { code:'BE',name:'Belgium',dial:'+32',flag:'🇧🇪',pattern:'### ## ## ##'},
+    { code:'BZ',name:'Belize',dial:'+501',flag:'🇧🇿',pattern:'### ####'},
+    { code:'BJ',name:'Benin',dial:'+229',flag:'🇧🇯',pattern:'## ## ## ##'},
+    { code:'BT',name:'Bhutan',dial:'+975',flag:'🇧🇹',pattern:'## ### ###'},
+    { code:'BO',name:'Bolivia',dial:'+591',flag:'🇧🇴',pattern:'## ### ####'},
+    { code:'BA',name:'Bosnia and Herzegovina',dial:'+387',flag:'🇧🇦',pattern:'## ### ###'},
+    { code:'BW',name:'Botswana',dial:'+267',flag:'🇧🇼',pattern:'## ### ###'},
+    { code:'BR',name:'Brazil',dial:'+55',flag:'🇧🇷',pattern:'## ##### ####'},
+    { code:'BN',name:'Brunei',dial:'+673',flag:'🇧🇳',pattern:'### ####'},
+    { code:'BG',name:'Bulgaria',dial:'+359',flag:'🇧🇬',pattern:'### ### ###'},
+    { code:'BF',name:'Burkina Faso',dial:'+226',flag:'🇧🇫',pattern:'## ## ## ##'},
+    { code:'BI',name:'Burundi',dial:'+257',flag:'🇧🇮',pattern:'## ## ## ##'},
+    { code:'CV',name:'Cabo Verde',dial:'+238',flag:'🇨🇻',pattern:'### ## ##'},
+    { code:'KH',name:'Cambodia',dial:'+855',flag:'🇰🇭',pattern:'## ### ###'},
+    { code:'CM',name:'Cameroon',dial:'+237',flag:'🇨🇲',pattern:'#### ## ## ##'},
+    { code:'CA',name:'Canada',dial:'+1',flag:'🇨🇦',pattern:'(###) ###-####'},
+    { code:'CF',name:'Central African Republic',dial:'+236',flag:'🇨🇫',pattern:'## ## ## ##'},
+    { code:'TD',name:'Chad',dial:'+235',flag:'🇹🇩',pattern:'## ## ## ##'},
+    { code:'CL',name:'Chile',dial:'+56',flag:'🇨🇱',pattern:'# #### ####'},
+    { code:'CN',name:'China',dial:'+86',flag:'🇨🇳',pattern:'### #### ####'},
+    { code:'CO',name:'Colombia',dial:'+57',flag:'🇨🇴',pattern:'### ### ####'},
+    { code:'KM',name:'Comoros',dial:'+269',flag:'🇰🇲',pattern:'### ## ##'},
+    { code:'CD',name:'Congo (DRC)',dial:'+243',flag:'🇨🇩',pattern:'### ### ###'},
+    { code:'CG',name:'Congo (Republic)',dial:'+242',flag:'🇨🇬',pattern:'## ### ####'},
+    { code:'CR',name:'Costa Rica',dial:'+506',flag:'🇨🇷',pattern:'#### ####'},
+    { code:'CI',name:"Côte d'Ivoire",dial:'+225',flag:'🇨🇮',pattern:'## ## ## ##'},
+    { code:'HR',name:'Croatia',dial:'+385',flag:'🇭🇷',pattern:'## ### ####'},
+    { code:'CU',name:'Cuba',dial:'+53',flag:'🇨🇺',pattern:'# ### ####'},
+    { code:'CY',name:'Cyprus',dial:'+357',flag:'🇨🇾',pattern:'## ### ###'},
+    { code:'CZ',name:'Czech Republic',dial:'+420',flag:'🇨🇿',pattern:'### ### ###'},
+    { code:'DK',name:'Denmark',dial:'+45',flag:'🇩🇰',pattern:'## ## ## ##'},
+    { code:'DJ',name:'Djibouti',dial:'+253',flag:'🇩🇯',pattern:'## ## ## ##'},
+    { code:'DM',name:'Dominica',dial:'+1767',flag:'🇩🇲',pattern:'### ####'},
+    { code:'DO',name:'Dominican Republic',dial:'+1809',flag:'🇩🇴',pattern:'### ####'},
+    { code:'EC',name:'Ecuador',dial:'+593',flag:'🇪🇨',pattern:'## ### ####'},
+    { code:'EG',name:'Egypt',dial:'+20',flag:'🇪🇬',pattern:'### ### ####'},
+    { code:'SV',name:'El Salvador',dial:'+503',flag:'🇸🇻',pattern:'#### ####'},
+    { code:'GQ',name:'Equatorial Guinea',dial:'+240',flag:'🇬🇶',pattern:'### ### ###'},
+    { code:'ER',name:'Eritrea',dial:'+291',flag:'🇪🇷',pattern:'# ### ###'},
+    { code:'EE',name:'Estonia',dial:'+372',flag:'🇪🇪',pattern:'#### ####'},
+    { code:'SZ',name:'Eswatini',dial:'+268',flag:'🇸🇿',pattern:'#### ####'},
+    { code:'ET',name:'Ethiopia',dial:'+251',flag:'🇪🇹',pattern:'## ### ####'},
+    { code:'FJ',name:'Fiji',dial:'+679',flag:'🇫🇯',pattern:'### ####'},
+    { code:'FI',name:'Finland',dial:'+358',flag:'🇫🇮',pattern:'## ### ## ##'},
+    { code:'FR',name:'France',dial:'+33',flag:'🇫🇷',pattern:'# ## ## ## ##'},
+    { code:'GA',name:'Gabon',dial:'+241',flag:'🇬🇦',pattern:'# ## ## ##'},
+    { code:'GM',name:'Gambia',dial:'+220',flag:'🇬🇲',pattern:'### ####'},
+    { code:'GE',name:'Georgia',dial:'+995',flag:'🇬🇪',pattern:'### ## ## ##'},
+    { code:'DE',name:'Germany',dial:'+49',flag:'🇩🇪',pattern:'#### #######'},
+    { code:'GH',name:'Ghana',dial:'+233',flag:'🇬🇭',pattern:'## ### ####'},
+    { code:'GR',name:'Greece',dial:'+30',flag:'🇬🇷',pattern:'### ### ####'},
+    { code:'GD',name:'Grenada',dial:'+1473',flag:'🇬🇩',pattern:'### ####'},
+    { code:'GT',name:'Guatemala',dial:'+502',flag:'🇬🇹',pattern:'#### ####'},
+    { code:'GN',name:'Guinea',dial:'+224',flag:'🇬🇳',pattern:'### ### ###'},
+    { code:'GW',name:'Guinea-Bissau',dial:'+245',flag:'🇬🇼',pattern:'### ####'},
+    { code:'GY',name:'Guyana',dial:'+592',flag:'🇬🇾',pattern:'### ####'},
+    { code:'HT',name:'Haiti',dial:'+509',flag:'🇭🇹',pattern:'## ## ####'},
+    { code:'HN',name:'Honduras',dial:'+504',flag:'🇭🇳',pattern:'#### ####'},
+    { code:'HU',name:'Hungary',dial:'+36',flag:'🇭🇺',pattern:'## ### ####'},
+    { code:'IS',name:'Iceland',dial:'+354',flag:'🇮🇸',pattern:'### ####'},
+    { code:'IN',name:'India',dial:'+91',flag:'🇮🇳',pattern:'##### #####'},
+    { code:'ID',name:'Indonesia',dial:'+62',flag:'🇮🇩',pattern:'### #### ####'},
+    { code:'IR',name:'Iran',dial:'+98',flag:'🇮🇷',pattern:'### ### ####'},
+    { code:'IQ',name:'Iraq',dial:'+964',flag:'🇮🇶',pattern:'### ### ####'},
+    { code:'IE',name:'Ireland',dial:'+353',flag:'🇮🇪',pattern:'## ### ####'},
+    { code:'IL',name:'Israel',dial:'+972',flag:'🇮🇱',pattern:'## ### ####'},
+    { code:'IT',name:'Italy',dial:'+39',flag:'🇮🇹',pattern:'### ### ####'},
+    { code:'JM',name:'Jamaica',dial:'+1876',flag:'🇯🇲',pattern:'### ####'},
+    { code:'JP',name:'Japan',dial:'+81',flag:'🇯🇵',pattern:'## #### ####'},
+    { code:'JO',name:'Jordan',dial:'+962',flag:'🇯🇴',pattern:'# #### ####'},
+    { code:'KZ',name:'Kazakhstan',dial:'+7',flag:'🇰🇿',pattern:'### ### ## ##'},
+    { code:'KE',name:'Kenya',dial:'+254',flag:'🇰🇪',pattern:'### ### ###'},
+    { code:'KI',name:'Kiribati',dial:'+686',flag:'🇰🇮',pattern:'## ###'},
+    { code:'KW',name:'Kuwait',dial:'+965',flag:'🇰🇼',pattern:'#### ####'},
+    { code:'KG',name:'Kyrgyzstan',dial:'+996',flag:'🇰🇬',pattern:'### ### ###'},
+    { code:'LA',name:'Laos',dial:'+856',flag:'🇱🇦',pattern:'## ## ### ###'},
+    { code:'LV',name:'Latvia',dial:'+371',flag:'🇱🇻',pattern:'## ### ###'},
+    { code:'LB',name:'Lebanon',dial:'+961',flag:'🇱🇧',pattern:'## ### ###'},
+    { code:'LS',name:'Lesotho',dial:'+266',flag:'🇱🇸',pattern:'#### ####'},
+    { code:'LR',name:'Liberia',dial:'+231',flag:'🇱🇷',pattern:'### ### ###'},
+    { code:'LY',name:'Libya',dial:'+218',flag:'🇱🇾',pattern:'## ### ####'},
+    { code:'LI',name:'Liechtenstein',dial:'+423',flag:'🇱🇮',pattern:'### ####'},
+    { code:'LT',name:'Lithuania',dial:'+370',flag:'🇱🇹',pattern:'### ## ###'},
+    { code:'LU',name:'Luxembourg',dial:'+352',flag:'🇱🇺',pattern:'### ### ###'},
+    { code:'MG',name:'Madagascar',dial:'+261',flag:'🇲🇬',pattern:'## ## ### ##'},
+    { code:'MW',name:'Malawi',dial:'+265',flag:'🇲🇼',pattern:'### ## ## ##'},
+    { code:'MY',name:'Malaysia',dial:'+60',flag:'🇲🇾',pattern:'## #### ####'},
+    { code:'MV',name:'Maldives',dial:'+960',flag:'🇲🇻',pattern:'### ####'},
+    { code:'ML',name:'Mali',dial:'+223',flag:'🇲🇱',pattern:'## ## ## ##'},
+    { code:'MT',name:'Malta',dial:'+356',flag:'🇲🇹',pattern:'#### ####'},
+    { code:'MH',name:'Marshall Islands',dial:'+692',flag:'🇲🇭',pattern:'### ####'},
+    { code:'MR',name:'Mauritania',dial:'+222',flag:'🇲🇷',pattern:'## ## ## ##'},
+    { code:'MU',name:'Mauritius',dial:'+230',flag:'🇲🇺',pattern:'#### ####'},
+    { code:'MX',name:'Mexico',dial:'+52',flag:'🇲🇽',pattern:'## #### ####'},
+    { code:'FM',name:'Micronesia',dial:'+691',flag:'🇫🇲',pattern:'### ####'},
+    { code:'MD',name:'Moldova',dial:'+373',flag:'🇲🇩',pattern:'### ## ###'},
+    { code:'MC',name:'Monaco',dial:'+377',flag:'🇲🇨',pattern:'## ## ## ##'},
+    { code:'MN',name:'Mongolia',dial:'+976',flag:'🇲🇳',pattern:'#### ####'},
+    { code:'ME',name:'Montenegro',dial:'+382',flag:'🇲🇪',pattern:'## ### ###'},
+    { code:'MA',name:'Morocco',dial:'+212',flag:'🇲🇦',pattern:'## ## ## ## ##'},
+    { code:'MZ',name:'Mozambique',dial:'+258',flag:'🇲🇿',pattern:'## ### ####'},
+    { code:'MM',name:'Myanmar',dial:'+95',flag:'🇲🇲',pattern:'## ### ###'},
+    { code:'NA',name:'Namibia',dial:'+264',flag:'🇳🇦',pattern:'## ### ####'},
+    { code:'NR',name:'Nauru',dial:'+674',flag:'🇳🇷',pattern:'### ####'},
+    { code:'NP',name:'Nepal',dial:'+977',flag:'🇳🇵',pattern:'### ### ###'},
+    { code:'NL',name:'Netherlands',dial:'+31',flag:'🇳🇱',pattern:'## ### ####'},
+    { code:'NZ',name:'New Zealand',dial:'+64',flag:'🇳🇿',pattern:'## ### ####'},
+    { code:'NI',name:'Nicaragua',dial:'+505',flag:'🇳🇮',pattern:'#### ####'},
+    { code:'NE',name:'Niger',dial:'+227',flag:'🇳🇪',pattern:'## ## ## ##'},
+    { code:'NG',name:'Nigeria',dial:'+234',flag:'🇳🇬',pattern:'### ### ####'},
+    { code:'NO',name:'Norway',dial:'+47',flag:'🇳🇴',pattern:'### ## ###'},
+    { code:'OM',name:'Oman',dial:'+968',flag:'🇴🇲',pattern:'#### ####'},
+    { code:'PK',name:'Pakistan',dial:'+92',flag:'🇵🇰',pattern:'### ### ####'},
+    { code:'PW',name:'Palau',dial:'+680',flag:'🇵🇼',pattern:'### ####'},
+    { code:'PA',name:'Panama',dial:'+507',flag:'🇵🇦',pattern:'#### ####'},
+    { code:'PG',name:'Papua New Guinea',dial:'+675',flag:'🇵🇬',pattern:'### ####'},
+    { code:'PY',name:'Paraguay',dial:'+595',flag:'🇵🇾',pattern:'### ### ###'},
+    { code:'PE',name:'Peru',dial:'+51',flag:'🇵🇪',pattern:'### ### ###'},
+    { code:'PH',name:'Philippines',dial:'+63',flag:'🇵🇭',pattern:'### ### ####'},
+    { code:'PL',name:'Poland',dial:'+48',flag:'🇵🇱',pattern:'### ### ###'},
+    { code:'PT',name:'Portugal',dial:'+351',flag:'🇵🇹',pattern:'### ### ###'},
+    { code:'QA',name:'Qatar',dial:'+974',flag:'🇶🇦',pattern:'#### ####'},
+    { code:'RO',name:'Romania',dial:'+40',flag:'🇷🇴',pattern:'### ### ###'},
+    { code:'RU',name:'Russia',dial:'+7',flag:'🇷🇺',pattern:'### ### ## ##'},
+    { code:'RW',name:'Rwanda',dial:'+250',flag:'🇷🇼',pattern:'### ### ###'},
+    { code:'KN',name:'Saint Kitts and Nevis',dial:'+1869',flag:'🇰🇳',pattern:'### ####'},
+    { code:'LC',name:'Saint Lucia',dial:'+1758',flag:'🇱🇨',pattern:'### ####'},
+    { code:'VC',name:'Saint Vincent',dial:'+1784',flag:'🇻🇨',pattern:'### ####'},
+    { code:'WS',name:'Samoa',dial:'+685',flag:'🇼🇸',pattern:'## ####'},
+    { code:'SM',name:'San Marino',dial:'+378',flag:'🇸🇲',pattern:'#### ######'},
+    { code:'ST',name:'São Tomé and Príncipe',dial:'+239',flag:'🇸🇹',pattern:'### ####'},
+    { code:'SA',name:'Saudi Arabia',dial:'+966',flag:'🇸🇦',pattern:'## ### ####'},
+    { code:'SN',name:'Senegal',dial:'+221',flag:'🇸🇳',pattern:'## ### ## ##'},
+    { code:'RS',name:'Serbia',dial:'+381',flag:'🇷🇸',pattern:'## ### ####'},
+    { code:'SC',name:'Seychelles',dial:'+248',flag:'🇸🇨',pattern:'# ### ###'},
+    { code:'SL',name:'Sierra Leone',dial:'+232',flag:'🇸🇱',pattern:'## ######'},
+    { code:'SG',name:'Singapore',dial:'+65',flag:'🇸🇬',pattern:'#### ####'},
+    { code:'SK',name:'Slovakia',dial:'+421',flag:'🇸🇰',pattern:'### ### ###'},
+    { code:'SI',name:'Slovenia',dial:'+386',flag:'🇸🇮',pattern:'## ### ###'},
+    { code:'SB',name:'Solomon Islands',dial:'+677',flag:'🇸🇧',pattern:'## ###'},
+    { code:'SO',name:'Somalia',dial:'+252',flag:'🇸🇴',pattern:'## ### ###'},
+    { code:'ZA',name:'South Africa',dial:'+27',flag:'🇿🇦',pattern:'## ### ####'},
+    { code:'SS',name:'South Sudan',dial:'+211',flag:'🇸🇸',pattern:'## ### ####'},
+    { code:'ES',name:'Spain',dial:'+34',flag:'🇪🇸',pattern:'### ### ###'},
+    { code:'LK',name:'Sri Lanka',dial:'+94',flag:'🇱🇰',pattern:'## ### ####'},
+    { code:'SD',name:'Sudan',dial:'+249',flag:'🇸🇩',pattern:'## ### ####'},
+    { code:'SR',name:'Suriname',dial:'+597',flag:'🇸🇷',pattern:'### ####'},
+    { code:'SE',name:'Sweden',dial:'+46',flag:'🇸🇪',pattern:'## ### ## ##'},
+    { code:'CH',name:'Switzerland',dial:'+41',flag:'🇨🇭',pattern:'## ### ## ##'},
+    { code:'SY',name:'Syria',dial:'+963',flag:'🇸🇾',pattern:'### ### ###'},
+    { code:'TW',name:'Taiwan',dial:'+886',flag:'🇹🇼',pattern:'#### ### ###'},
+    { code:'TJ',name:'Tajikistan',dial:'+992',flag:'🇹🇯',pattern:'## ### ####'},
+    { code:'TZ',name:'Tanzania',dial:'+255',flag:'🇹🇿',pattern:'### ### ###'},
+    { code:'TH',name:'Thailand',dial:'+66',flag:'🇹🇭',pattern:'## ### ####'},
+    { code:'TL',name:'Timor-Leste',dial:'+670',flag:'🇹🇱',pattern:'#### ####'},
+    { code:'TG',name:'Togo',dial:'+228',flag:'🇹🇬',pattern:'## ## ## ##'},
+    { code:'TO',name:'Tonga',dial:'+676',flag:'🇹🇴',pattern:'### ####'},
+    { code:'TT',name:'Trinidad and Tobago',dial:'+1868',flag:'🇹🇹',pattern:'### ####'},
+    { code:'TN',name:'Tunisia',dial:'+216',flag:'🇹🇳',pattern:'## ### ###'},
+    { code:'TR',name:'Turkey',dial:'+90',flag:'🇹🇷',pattern:'### ### ## ##'},
+    { code:'TM',name:'Turkmenistan',dial:'+993',flag:'🇹🇲',pattern:'## ## ## ##'},
+    { code:'TV',name:'Tuvalu',dial:'+688',flag:'🇹🇻',pattern:'## ###'},
+    { code:'UG',name:'Uganda',dial:'+256',flag:'🇺🇬',pattern:'### ### ###'},
+    { code:'UA',name:'Ukraine',dial:'+380',flag:'🇺🇦',pattern:'## ### ## ##'},
+    { code:'AE',name:'United Arab Emirates',dial:'+971',flag:'🇦🇪',pattern:'## ### ####'},
+    { code:'GB',name:'United Kingdom',dial:'+44',flag:'🇬🇧',pattern:'#### ######'},
+    { code:'US',name:'United States',dial:'+1',flag:'🇺🇸',pattern:'(###) ###-####'},
+    { code:'UY',name:'Uruguay',dial:'+598',flag:'🇺🇾',pattern:'#### ####'},
+    { code:'UZ',name:'Uzbekistan',dial:'+998',flag:'🇺🇿',pattern:'## ### ## ##'},
+    { code:'VU',name:'Vanuatu',dial:'+678',flag:'🇻🇺',pattern:'### ####'},
+    { code:'VE',name:'Venezuela',dial:'+58',flag:'🇻🇪',pattern:'### ### ####'},
+    { code:'VN',name:'Vietnam',dial:'+84',flag:'🇻🇳',pattern:'### #### ###'},
+    { code:'YE',name:'Yemen',dial:'+967',flag:'🇾🇪',pattern:'### ### ###'},
+    { code:'ZM',name:'Zambia',dial:'+260',flag:'🇿🇲',pattern:'## ### ####'},
+    { code:'ZW',name:'Zimbabwe',dial:'+263',flag:'🇿🇼',pattern:'## ### ####'},
+];
+
+const formatPhone = (raw, pattern) => {
+    const digits = raw.replace(/\D/g, '');
+    let result = '';
+    let di = 0;
+    for (let i = 0; i < pattern.length && di < digits.length; i++) {
+        if (pattern[i] === '#') { result += digits[di++]; }
+        else { result += pattern[i]; }
+    }
+    return result;
+};
+
+// ─── Phone Input Component ─────────────────────────────────────────────────────
+// NOTE: number state is kept internally so parent re-renders don't steal focus
+const PhoneInput = () => {
+    const [country, setCountry] = useState(COUNTRIES.find(c => c.code === 'RW'));
+    const [open, setOpen] = useState(false);
+    const [search, setSearch] = useState('');
+    const [number, setNumber] = useState('700 000 000');
+    const ref = useRef(null);
+    const inputRef = useRef(null);
+
+    const filtered = COUNTRIES.filter(c =>
+        c.name.toLowerCase().includes(search.toLowerCase()) ||
+        c.dial.includes(search)
+    );
+
+    useEffect(() => {
+        const handler = (e) => {
+            if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+        };
+        document.addEventListener('mousedown', handler);
+        return () => document.removeEventListener('mousedown', handler);
+    }, []);
+
+    const handleNumber = (e) => {
+        const formatted = formatPhone(e.target.value, country.pattern);
+        setNumber(formatted);
+    };
+
+    const selectCountry = (c) => {
+        setCountry(c);
+        setOpen(false);
+        setSearch('');
+        setNumber('');
+        // restore focus to number input after dropdown closes
+        setTimeout(() => inputRef.current?.focus(), 0);
+    };
+
+    return (
+        <div className="hoas-phone-input" ref={ref}>
+            <button type="button" className="hoas-phone-dial" onClick={() => setOpen(o => !o)}>
+                <span className="hoas-phone-flag">{country.flag}</span>
+                <span className="hoas-phone-code">{country.dial}</span>
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <polyline points="6 9 12 15 18 9" />
+                </svg>
+            </button>
+            <input
+                ref={inputRef}
+                type="tel"
+                className="hoas-phone-number"
+                value={number}
+                onChange={handleNumber}
+                placeholder={country.pattern.replace(/#/g, '0')}
+            />
+            {open && (
+                <div className="hoas-phone-dropdown">
+                    <div className="hoas-phone-search">
+                        <input
+                            autoFocus
+                            type="text"
+                            placeholder="Search country..."
+                            value={search}
+                            onChange={e => setSearch(e.target.value)}
+                        />
+                    </div>
+                    <ul>
+                        {filtered.map(c => (
+                            <li
+                                key={c.code}
+                                className={c.code === country.code ? 'selected' : ''}
+                                onClick={() => selectCountry(c)}
+                            >
+                                <span>{c.flag}</span>
+                                <span className="hoas-phone-country-name">{c.name}</span>
+                                <span className="hoas-phone-country-dial">{c.dial}</span>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            )}
+        </div>
+    );
+};
+
+// ─── Custom Dropdown Component ─────────────────────────────────────────────────
+const CustomDropdown = ({ value, onChange, options }) => {
+    const [open, setOpen] = useState(false);
+    const ref = useRef(null);
+
+    useEffect(() => {
+        const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+        document.addEventListener('mousedown', handler);
+        return () => document.removeEventListener('mousedown', handler);
+    }, []);
+
+    const selected = options.find(o => o.value === value) || options[0];
+
+    return (
+        <div className="hoas-custom-dropdown" ref={ref}>
+            <button type="button" className="hoas-custom-dropdown-btn" onClick={() => setOpen(o => !o)}>
+                <span>{selected.label}</span>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <polyline points="6 9 12 15 18 9" />
+                </svg>
+            </button>
+            {open && (
+                <ul className="hoas-custom-dropdown-list">
+                    {options.map(opt => (
+                        <li
+                            key={opt.value}
+                            className={opt.value === value ? 'selected' : ''}
+                            onClick={() => { onChange(opt.value); setOpen(false); }}
+                        >
+                            {opt.label}
+                            {opt.value === value && (
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#450468" strokeWidth="2.5">
+                                    <polyline points="20 6 9 17 4 12" />
+                                </svg>
+                            )}
+                        </li>
+                    ))}
+                </ul>
+            )}
+        </div>
+    );
+};
+
+// ─── Section Card (defined OUTSIDE HOASettings to prevent remount on re-render) ─
+const SectionCard = ({ id, title, children, saved, onSave, sectionRef }) => (
+    <div
+        className="hoas-section-card"
+        id={id}
+        data-section={id}
+        ref={sectionRef}
+    >
+        <div className="hoas-section-header">
+            <div className="hoas-section-title-row">
+                <h2>{title}</h2>
+                {saved && (
+                    <span className="hoas-saved-badge">
+                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                            <path d="M2 6.5L4.8 9.5L10 3" stroke="#17C653" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                        Saved
+                    </span>
+                )}
+            </div>
+        </div>
+        <div className="hoas-section-body">
+            {children}
+            <div className="hoas-section-footer">
+                <button className="hoas-btn-discard">Discard</button>
+                <button className="hoas-btn-save" onClick={onSave}>
+                    Save Changes
+                </button>
+            </div>
+        </div>
+    </div>
+);
+
 // ─── Main Component ────────────────────────────────────────────────────────────
 const HOASettings = () => {
     const [saved, setSaved] = useState({});
@@ -113,6 +479,10 @@ const HOASettings = () => {
 
     const [uploadedPhoto, setUploadedPhoto] = useState(null);
     const [uploadError, setUploadError] = useState('');
+
+    // Phone & Visibility
+    const [phoneNumber, setPhoneNumber] = useState('700 000 000');
+    const [visibility, setVisibility] = useState('public');
 
     // Theme selection
     const [selectedTheme, setSelectedTheme] = useState('light');
@@ -167,37 +537,6 @@ const HOASettings = () => {
         return () => observer.disconnect();
     }, []);
 
-    const SectionCard = ({ id, title, children }) => (
-        <div
-            className="hoas-section-card"
-            id={id}
-            data-section={id}
-            ref={el => sectionRefs.current[id] = el}
-        >
-            <div className="hoas-section-header">
-                <div className="hoas-section-title-row">
-                    <h2>{title}</h2>
-                    {saved[id] && (
-                        <span className="hoas-saved-badge">
-                            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                                <path d="M2 6.5L4.8 9.5L10 3" stroke="#17C653" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                            </svg>
-                            Saved
-                        </span>
-                    )}
-                </div>
-            </div>
-            <div className="hoas-section-body">
-                {children}
-                <div className="hoas-section-footer">
-                    <button className="hoas-btn-discard">Discard</button>
-                    <button className="hoas-btn-save" onClick={() => handleSave(id)}>
-                        Save Changes
-                    </button>
-                </div>
-            </div>
-        </div>
-    );
 
     return (
         <HOALayout currentPage="settings">
@@ -252,7 +591,7 @@ const HOASettings = () => {
                     <div className="hoas-content-area">
 
                         {/* ── 1. Basic Settings ── */}
-                        <SectionCard id="general" title="Basic Settings">
+                        <SectionCard id="general" title="Basic Settings" saved={saved['general']} onSave={() => handleSave('general')} sectionRef={el => sectionRefs.current['general'] = el}>
                             <div className="hoas-form-horizontal-row">
                                 <label className="hoas-form-horizontal-label">Client ID</label>
                                 <div className="hoas-form-horizontal-control">
@@ -321,20 +660,22 @@ const HOASettings = () => {
                             <div className="hoas-form-horizontal-row">
                                 <label className="hoas-form-horizontal-label">Phone number</label>
                                 <div className="hoas-form-horizontal-control">
-                                    <div className="hoas-input-with-flag" style={{ width: '100%' }}>
-                                        <img src={rwanda} alt="Rwanda" style={{ left: '12px' }} />
-                                        <input type="text" defaultValue="+250 700 000 000" style={{ paddingLeft: '40px' }} />
-                                    </div>
+                                    <PhoneInput value={phoneNumber} onChange={setPhoneNumber} />
                                 </div>
                             </div>
 
                             <div className="hoas-form-horizontal-row">
                                 <label className="hoas-form-horizontal-label">Visibility</label>
                                 <div className="hoas-form-horizontal-control">
-                                    <select defaultValue="public">
-                                        <option value="public">Public</option>
-                                        <option value="private">Private</option>
-                                    </select>
+                                    <CustomDropdown
+                                        value={visibility}
+                                        onChange={setVisibility}
+                                        options={[
+                                            { value: 'public', label: 'Public' },
+                                            { value: 'private', label: 'Private' },
+                                            { value: 'unlisted', label: 'Unlisted' },
+                                        ]}
+                                    />
                                 </div>
                             </div>
 
@@ -350,7 +691,7 @@ const HOASettings = () => {
                         </SectionCard>
 
                         {/* ── 2. Layout ── */}
-                        <SectionCard id="layout" title="Layout">
+                        <SectionCard id="layout" title="Layout" saved={saved['layout']} onSave={() => handleSave('layout')} sectionRef={el => sectionRefs.current['layout'] = el}>
                             <div className="hoas-form-group">
                                 <label>Logo</label>
                                 <p className="hoas-sub-label">Supported formats: JPG, PNG, SVG. Max size: 2MB.</p>
@@ -391,7 +732,7 @@ const HOASettings = () => {
                         </SectionCard>
 
                         {/* ── 3. Social Media Links ── */}
-                        <SectionCard id="social" title="Social Media Links">
+                        <SectionCard id="social" title="Social Media Links" saved={saved['social']} onSave={() => handleSave('social')} sectionRef={el => sectionRefs.current['social'] = el}>
                             {[
                                 { id: 'ig', icon: <IconInstagram />, label: 'Instagram', placeholder: 'instagram.com/gonaraza', bg: '#FFEEF3', color: '#F8285A', checked: socialIG, onChange: e => setSocialIG(e.target.checked) },
                                 { id: 'li', icon: <IconLinkedIn />, label: 'LinkedIn', placeholder: 'linkedin.com/company/gonaraza', bg: '#F0F5FF', color: '#1B84FF', checked: socialLI, onChange: e => setSocialLI(e.target.checked) },
@@ -413,7 +754,7 @@ const HOASettings = () => {
                         </SectionCard>
 
                         {/* ── 4. SEO & Metadata ── */}
-                        <SectionCard id="seo" title="SEO and Metadata">
+                        <SectionCard id="seo" title="SEO and Metadata" saved={saved['seo']} onSave={() => handleSave('seo')} sectionRef={el => sectionRefs.current['seo'] = el}>
                             <div className="hoas-toggle-wrapper hoas-mb-20">
                                 <div>
                                     <span className="hoas-toggle-label"><b>Enable Search Engine Indexing</b></span>
@@ -436,7 +777,7 @@ const HOASettings = () => {
                         </SectionCard>
 
                         {/* ── 5. Payment Methods ── */}
-                        <SectionCard id="payment" title="Payment Methods">
+                        <SectionCard id="payment" title="Payment Methods" saved={saved['payment']} onSave={() => handleSave('payment')} sectionRef={el => sectionRefs.current['payment'] = el}>
                             <div className="hoas-form-group">
                                 <label>Gateway Type</label>
                                 <div className="hoas-gateway-options">
@@ -500,7 +841,7 @@ const HOASettings = () => {
                         </SectionCard>
 
                         {/* ── 6. App Theme ── */}
-                        <SectionCard id="theme" title="App Theme">
+                        <SectionCard id="theme" title="App Theme" saved={saved['theme']} onSave={() => handleSave('theme')} sectionRef={el => sectionRefs.current['theme'] = el}>
                             <p className="hoas-sub-label">Choose the look and feel of your dashboard.</p>
                             <div className="hoas-theme-grid">
                                 {[
@@ -543,7 +884,7 @@ const HOASettings = () => {
                         </SectionCard>
 
                         {/* ── 7. Notifications ── */}
-                        <SectionCard id="notifications" title="Notifications">
+                        <SectionCard id="notifications" title="Notifications" saved={saved['notifications']} onSave={() => handleSave('notifications')} sectionRef={el => sectionRefs.current['notifications'] = el}>
                             <p className="hoas-sub-label">Configure how and when you receive notifications.</p>
 
                             <div className="hoas-notif-group">
@@ -582,7 +923,7 @@ const HOASettings = () => {
                         </SectionCard>
 
                         {/* ── 8. Address ── */}
-                        <SectionCard id="address" title="Address">
+                        <SectionCard id="address" title="Address" saved={saved['address']} onSave={() => handleSave('address')} sectionRef={el => sectionRefs.current['address'] = el}>
                             <div className="hoas-form-row">
                                 <div className="hoas-form-group">
                                     <label>Name / Organisation</label>
@@ -627,7 +968,7 @@ const HOASettings = () => {
                         </SectionCard>
 
                         {/* ── 9. Appearance ── */}
-                        <SectionCard id="appearance" title="Appearance">
+                        <SectionCard id="appearance" title="Appearance" saved={saved['appearance']} onSave={() => handleSave('appearance')} sectionRef={el => sectionRefs.current['appearance'] = el}>
                             <p className="hoas-sub-label">Customise fonts, colours and branding elements.</p>
 
                             <div className="hoas-form-row">

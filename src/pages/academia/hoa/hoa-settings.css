@@ -27,6 +27,160 @@
 }
 
 /* =========================================
+   PHONE INPUT
+   ========================================= */
+.hoas-phone-input {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+    border: 1px solid #E8E8F0;
+    border-radius: 6px;
+    overflow: visible;
+    background: #fff;
+    transition: border-color 0.2s;
+}
+.hoas-phone-input:focus-within {
+    border-color: #450468;
+    box-shadow: 0 0 0 3px rgba(69,4,104,0.07);
+}
+.hoas-phone-dial {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 9px 10px 9px 12px;
+    background: #F8F8FC;
+    border: none;
+    border-right: 1px solid #E8E8F0;
+    cursor: pointer;
+    white-space: nowrap;
+    font-family: inherit;
+    font-size: 13px;
+    color: #3F4254;
+    border-radius: 6px 0 0 6px;
+    transition: background 0.15s;
+    flex-shrink: 0;
+}
+.hoas-phone-dial:hover { background: #F0EEF8; }
+.hoas-phone-flag { font-size: 16px; line-height: 1; }
+.hoas-phone-code { font-size: 12.5px; font-weight: 600; color: #450468; }
+.hoas-phone-number {
+    flex: 1;
+    padding: 10px 12px;
+    border: none;
+    outline: none;
+    font-size: 13px;
+    color: #450468;
+    font-family: inherit;
+    background: transparent;
+    min-width: 0;
+}
+.hoas-phone-dropdown {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    width: 280px;
+    background: #fff;
+    border: 1px solid #E8E8F0;
+    border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+    z-index: 100;
+    overflow: hidden;
+}
+.hoas-phone-search {
+    padding: 10px 12px;
+    border-bottom: 1px solid #F1F1F4;
+}
+.hoas-phone-search input {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid #E8E8F0;
+    border-radius: 6px;
+    font-size: 12.5px;
+    font-family: inherit;
+    outline: none;
+    box-sizing: border-box;
+}
+.hoas-phone-dropdown ul {
+    list-style: none;
+    margin: 0;
+    padding: 6px 0;
+    max-height: 200px;
+    overflow-y: auto;
+}
+.hoas-phone-dropdown ul li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 14px;
+    cursor: pointer;
+    font-size: 13px;
+    color: #3F4254;
+    transition: background 0.15s;
+}
+.hoas-phone-dropdown ul li:hover { background: #F8F5FF; }
+.hoas-phone-dropdown ul li.selected { background: #F3EFFE; color: #450468; font-weight: 600; }
+.hoas-phone-country-name { flex: 1; }
+.hoas-phone-country-dial { font-size: 11.5px; color: #A1A5B7; }
+
+/* =========================================
+   CUSTOM DROPDOWN
+   ========================================= */
+.hoas-custom-dropdown {
+    position: relative;
+    width: 100%;
+}
+.hoas-custom-dropdown-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    border: 1px solid #E8E8F0;
+    border-radius: 6px;
+    background: #FFFFFF;
+    font-size: 13px;
+    color: #450468;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: left;
+}
+.hoas-custom-dropdown-btn:hover,
+.hoas-custom-dropdown-btn:focus {
+    border-color: #450468;
+    box-shadow: 0 0 0 3px rgba(69,4,104,0.07);
+    outline: none;
+}
+.hoas-custom-dropdown-list {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    right: 0;
+    background: #fff;
+    border: 1px solid #E8E8F0;
+    border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+    list-style: none;
+    margin: 0;
+    padding: 6px 0;
+    z-index: 100;
+    overflow: hidden;
+}
+.hoas-custom-dropdown-list li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    font-size: 13px;
+    color: #3F4254;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+.hoas-custom-dropdown-list li:hover { background: #F8F5FF; }
+.hoas-custom-dropdown-list li.selected { color: #450468; font-weight: 600; background: #F3EFFE; }
+
+/* =========================================
    PAGE HEADER
    ========================================= */
 .hoas-page-header {
