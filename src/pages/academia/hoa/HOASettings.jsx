@@ -90,6 +90,56 @@ const IconDotsVertical = () => (
     </svg>
 );
 
+const IconGlobe = () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="9" />
+        <path d="M3 12h18" />
+        <path d="M12 3a15 15 0 0 1 0 18" />
+        <path d="M12 3a15 15 0 0 0 0 18" />
+    </svg>
+);
+
+const IconClock = () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="9" />
+        <path d="M12 7v5l3 2" />
+    </svg>
+);
+
+const IconCurrency = () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="9" />
+        <path d="M12 7v10" />
+        <path d="M15 9.5c0-1.38-1.34-2.5-3-2.5s-3 1.12-3 2.5S10.34 12 12 12s3 1.12 3 2.5S13.66 17 12 17s-3-1.12-3-2.5" />
+    </svg>
+);
+
+const IconMail = () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="5" width="18" height="14" rx="3" />
+        <path d="M4 7.5 12 13l8-5.5" />
+    </svg>
+);
+
+const IconMessage = () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M4 5h16a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H9l-5 4v-4H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Z" />
+    </svg>
+);
+
+const IconCheckSquare = () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="4" y="4" width="16" height="16" rx="3" />
+        <path d="m8 12 2.5 2.5L16 9" />
+    </svg>
+);
+
+const IconSquare = () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="4" y="4" width="16" height="16" rx="3" />
+    </svg>
+);
+
 // ─── Nav sections definition ───────────────────────────────────────────────────
 const NAV_CATEGORIES = [
     {
@@ -112,8 +162,9 @@ const NAV_CATEGORIES = [
     {
         title: 'Advanced Settings',
         items: [
-            { id: 'theme', label: 'App Theme' },
+            { id: 'preferences', label: 'Preferences' },
             { id: 'notifications', label: 'Notifications' },
+            { id: 'theme', label: 'App Theme' },
             { id: 'address', label: 'Address' },
             { id: 'appearance', label: 'Appearance' },
         ]
@@ -201,6 +252,38 @@ const PAYMENT_TYPES = [
     { id: 'mtn', label: 'MTN Mobile Money', icon: '/assets/icons/MTN-pay.svg', bg: '#FFF8DD' },
     { id: 'airtel', label: 'Airtel Money', icon: '/assets/icons/AIR-pay.svg', bg: '#FFEEF3' },
     { id: 'card', label: 'Bank Cards', icon: '/assets/icons/CARD-pay.svg', bg: '#F3EEFF' },
+];
+
+const PREFERENCE_LANGUAGE_OPTIONS = [
+    { value: 'en-us', label: 'American English', icon: '🇺🇸' },
+    { value: 'en-gb', label: 'British English', icon: '🇬🇧' },
+    { value: 'fr-fr', label: 'French', icon: '🇫🇷' },
+];
+
+const PREFERENCE_TIMEZONE_OPTIONS = [
+    { value: 'gmt-5-est', label: 'GMT -5:00 - Eastern Time(US & Canada)', icon: <IconClock /> },
+    { value: 'gmt+2-east-africa', label: 'GMT +2:00 - East Africa Time', icon: <IconClock /> },
+    { value: 'gmt+1-cet', label: 'GMT +1:00 - Central European Time', icon: <IconClock /> },
+];
+
+const PREFERENCE_CURRENCY_OPTIONS = [
+    { value: 'usd', label: 'United States Dollar (USD)', icon: <IconCurrency /> },
+    { value: 'rwf', label: 'Rwandan Franc (RWF)', icon: <IconCurrency /> },
+    { value: 'eur', label: 'Euro (EUR)', icon: <IconCurrency /> },
+];
+
+const PROJECT_NOTIFICATION_OPTIONS = [
+    { value: 'all', label: 'All new messages (Recommended)' },
+    { value: 'mentions-hiring', label: 'Direct @mentions & Hiring' },
+    { value: 'mentions', label: 'Only Direct @mentions' },
+    { value: 'hiring', label: 'Only Hiring' },
+    { value: 'disabled', label: 'Disabled' },
+];
+
+const EMAIL_NOTIFICATION_OPTIONS = [
+    { value: 'all-statuses', label: 'All new messages and statuses' },
+    { value: 'unread-statuses', label: 'Unread messages and statuses ( Recommended )' },
+    { value: 'disabled', label: 'Disabled' },
 ];
 
 const INITIAL_SOCIAL_CONNECTIONS = [
@@ -580,7 +663,10 @@ const CustomDropdown = ({ value, onChange, options }) => {
     return (
         <div className="hoas-custom-dropdown" ref={ref}>
             <button type="button" className="hoas-custom-dropdown-btn" onClick={() => setOpen(o => !o)}>
-                <span>{selected.label}</span>
+                <span className="hoas-custom-dropdown-selected">
+                    {selected.icon && <span className="hoas-custom-dropdown-icon">{selected.icon}</span>}
+                    <span>{selected.label}</span>
+                </span>
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                     <polyline points="6 9 12 15 18 9" />
                 </svg>
@@ -593,7 +679,10 @@ const CustomDropdown = ({ value, onChange, options }) => {
                             className={opt.value === value ? 'selected' : ''}
                             onClick={() => { onChange(opt.value); setOpen(false); }}
                         >
-                            {opt.label}
+                            <span className="hoas-custom-dropdown-option">
+                                {opt.icon && <span className="hoas-custom-dropdown-icon">{opt.icon}</span>}
+                                <span>{opt.label}</span>
+                            </span>
                             {opt.value === value && (
                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#450468" strokeWidth="2.5">
                                     <polyline points="20 6 9 17 4 12" />
@@ -682,14 +771,6 @@ const HOASettings = () => {
     const [publicProfile, setPublicProfile] = useState(true);
     const [searchIndexing, setSearchIndexing] = useState(true);
 
-    // Notification toggles
-    const [notifEmail, setNotifEmail] = useState(true);
-    const [notifSMS, setNotifSMS] = useState(false);
-    const [notifPush, setNotifPush] = useState(true);
-    const [notifNewLearner, setNotifNewLearner] = useState(true);
-    const [notifNewAssignment, setNotifNewAssignment] = useState(true);
-    const [notifGrades, setNotifGrades] = useState(false);
-
     // Two-factor authentication
     const [twoFactorSMS, setTwoFactorSMS] = useState(true);
     const [twoFactorAuthenticator, setTwoFactorAuthenticator] = useState(false);
@@ -705,6 +786,21 @@ const HOASettings = () => {
     const [paymentExpiryYear, setPaymentExpiryYear] = useState('');
     const [paymentCvv, setPaymentCvv] = useState('');
     const [paymentPhoneNumber, setPaymentPhoneNumber] = useState('');
+
+    // Preferences
+    const [preferenceLanguage, setPreferenceLanguage] = useState('en-us');
+    const [preferenceTimezone, setPreferenceTimezone] = useState('gmt-5-est');
+    const [preferenceCurrency, setPreferenceCurrency] = useState('usd');
+    const [showListNames, setShowListNames] = useState(false);
+    const [showLinkedTaskNames, setShowLinkedTaskNames] = useState(true);
+    const [emailVisibility, setEmailVisibility] = useState(true);
+
+    // Notifications
+    const [notificationEmailEnabled, setNotificationEmailEnabled] = useState(true);
+    const [notificationMessageEnabled, setNotificationMessageEnabled] = useState(true);
+    const [projectNotifications, setProjectNotifications] = useState('disabled');
+    const [emailNotifications, setEmailNotifications] = useState('unread-statuses');
+    const [autoSubscribeTasks, setAutoSubscribeTasks] = useState(true);
 
     const [socialConnections, setSocialConnections] = useState(INITIAL_SOCIAL_CONNECTIONS);
     const [socialPopover, setSocialPopover] = useState(null);
@@ -1480,7 +1576,158 @@ const HOASettings = () => {
                             </p>
                         </SectionCard>
 
-                        {/* ── 6. SEO & Metadata ── */}
+                        {/* ── 6. Preferences ── */}
+                        <SectionCard id="preferences" title="Preferences" saved={saved['preferences']} onSave={() => handleSave('preferences')} sectionRef={el => sectionRefs.current['preferences'] = el} showDiscard={false}>
+                            <div className="hoas-preferences-list">
+                                <div className="hoas-form-horizontal-row hoas-preference-row">
+                                    <label className="hoas-form-horizontal-label">Language</label>
+                                    <div className="hoas-form-horizontal-control">
+                                        <CustomDropdown
+                                            value={preferenceLanguage}
+                                            onChange={setPreferenceLanguage}
+                                            options={PREFERENCE_LANGUAGE_OPTIONS}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="hoas-form-horizontal-row hoas-preference-row">
+                                    <label className="hoas-form-horizontal-label">Time zone</label>
+                                    <div className="hoas-form-horizontal-control">
+                                        <CustomDropdown
+                                            value={preferenceTimezone}
+                                            onChange={setPreferenceTimezone}
+                                            options={PREFERENCE_TIMEZONE_OPTIONS}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="hoas-form-horizontal-row hoas-preference-row">
+                                    <label className="hoas-form-horizontal-label">Currency</label>
+                                    <div className="hoas-form-horizontal-control">
+                                        <CustomDropdown
+                                            value={preferenceCurrency}
+                                            onChange={setPreferenceCurrency}
+                                            options={PREFERENCE_CURRENCY_OPTIONS}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="hoas-form-horizontal-row hoas-preference-row hoas-preference-attributes-row">
+                                    <label className="hoas-form-horizontal-label">Attributes</label>
+                                    <div className="hoas-form-horizontal-control">
+                                        <div className="hoas-preference-attributes">
+                                            <label className="hoas-preference-checkbox">
+                                                <input type="checkbox" checked={showListNames} onChange={e => setShowListNames(e.target.checked)} />
+                                                <span className="hoas-preference-checkbox-box">{showListNames ? <IconCheckSquare /> : <IconSquare />}</span>
+                                                <span className="hoas-preference-checkbox-copy">
+                                                    <span className="hoas-preference-checkbox-title">Show list names</span>
+                                                    <span className="hoas-preference-checkbox-desc">See the name next to each icon</span>
+                                                </span>
+                                            </label>
+
+                                            <label className="hoas-preference-checkbox">
+                                                <input type="checkbox" checked={showLinkedTaskNames} onChange={e => setShowLinkedTaskNames(e.target.checked)} />
+                                                <span className="hoas-preference-checkbox-box">{showLinkedTaskNames ? <IconCheckSquare /> : <IconSquare />}</span>
+                                                <span className="hoas-preference-checkbox-copy">
+                                                    <span className="hoas-preference-checkbox-title">Show linked task names</span>
+                                                    <span className="hoas-preference-checkbox-desc">Show task names next to ids for linked project tasks.</span>
+                                                </span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="hoas-form-horizontal-row hoas-preference-row">
+                                    <label className="hoas-form-horizontal-label">Email visibility</label>
+                                    <div className="hoas-form-horizontal-control">
+                                        <div className="hoas-preference-visibility">
+                                            <Toggle checked={emailVisibility} onChange={e => setEmailVisibility(e.target.checked)} />
+                                            <span>{emailVisibility ? 'Visible' : 'Hidden'}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </SectionCard>
+
+                        {/* ── 7. Notifications ── */}
+                        <SectionCard id="notifications" title="Notifications" saved={saved['notifications']} onSave={() => handleSave('notifications')} sectionRef={el => sectionRefs.current['notifications'] = el} showDiscard={false}>
+                            <div className="hoas-notification-top-grid">
+                                <div className="hoas-notification-channel-card">
+                                    <div className="hoas-notification-channel-main">
+                                        <div className="hoas-notification-channel-icon">
+                                            <IconMail />
+                                        </div>
+                                        <div>
+                                            <div className="hoas-notification-channel-title">Email</div>
+                                            <div className="hoas-notification-channel-desc">Tailor Your Email Preferences.</div>
+                                        </div>
+                                    </div>
+                                    <Toggle checked={notificationEmailEnabled} onChange={e => setNotificationEmailEnabled(e.target.checked)} />
+                                </div>
+
+                                <div className="hoas-notification-channel-card">
+                                    <div className="hoas-notification-channel-main">
+                                        <div className="hoas-notification-channel-icon">
+                                            <IconMessage />
+                                        </div>
+                                        <div>
+                                            <div className="hoas-notification-channel-title">Messages</div>
+                                            <div className="hoas-notification-channel-desc">Stay Updated on Mobile.</div>
+                                        </div>
+                                    </div>
+                                    <Toggle checked={notificationMessageEnabled} onChange={e => setNotificationMessageEnabled(e.target.checked)} />
+                                </div>
+                            </div>
+
+                            <div className="hoas-notification-group">
+                                <div className="hoas-notification-group-title">Project notifications</div>
+                                <div className="hoas-notification-radio-list">
+                                    {PROJECT_NOTIFICATION_OPTIONS.map((option) => (
+                                        <label key={option.value} className="hoas-notification-radio-item">
+                                            <input
+                                                type="radio"
+                                                name="project-notifications"
+                                                checked={projectNotifications === option.value}
+                                                onChange={() => setProjectNotifications(option.value)}
+                                            />
+                                            <span className="hoas-notification-radio-dot" />
+                                            <span>{option.label}</span>
+                                        </label>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="hoas-notification-group">
+                                <div className="hoas-notification-group-title">Email notifications</div>
+                                <div className="hoas-notification-radio-list">
+                                    {EMAIL_NOTIFICATION_OPTIONS.map((option) => (
+                                        <label key={option.value} className="hoas-notification-radio-item">
+                                            <input
+                                                type="radio"
+                                                name="email-notifications"
+                                                checked={emailNotifications === option.value}
+                                                onChange={() => setEmailNotifications(option.value)}
+                                            />
+                                            <span className="hoas-notification-radio-dot" />
+                                            <span>{option.label}</span>
+                                        </label>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="hoas-notification-group">
+                                <div className="hoas-notification-group-title">Subscriptions</div>
+                                <label className="hoas-notification-checkbox">
+                                    <input type="checkbox" checked={autoSubscribeTasks} onChange={e => setAutoSubscribeTasks(e.target.checked)} />
+                                    <span className="hoas-notification-checkbox-box">
+                                        <IconCheckSquare />
+                                    </span>
+                                    <span>Automatically subscribe to tasks you create</span>
+                                </label>
+                            </div>
+                        </SectionCard>
+
+                        {/* ── 8. SEO & Metadata ── */}
                         <SectionCard id="seo" title="SEO and Metadata" saved={saved['seo']} onSave={() => handleSave('seo')} sectionRef={el => sectionRefs.current['seo'] = el}>
                             <div className="hoas-toggle-wrapper hoas-mb-20">
                                 <div>
@@ -1503,7 +1750,7 @@ const HOASettings = () => {
                             </div>
                         </SectionCard>
 
-                        {/* ── 7. App Theme ── */}
+                        {/* ── 9. App Theme ── */}
                         <SectionCard id="theme" title="App Theme" saved={saved['theme']} onSave={() => handleSave('theme')} sectionRef={el => sectionRefs.current['theme'] = el}>
                             <p className="hoas-sub-label">Choose the look and feel of your dashboard.</p>
                             <div className="hoas-theme-grid">
@@ -1546,46 +1793,7 @@ const HOASettings = () => {
                             </div>
                         </SectionCard>
 
-                        {/* ── 5. Notifications ── */}
-                        <SectionCard id="notifications" title="Notifications" saved={saved['notifications']} onSave={() => handleSave('notifications')} sectionRef={el => sectionRefs.current['notifications'] = el}>
-                            <p className="hoas-sub-label">Configure how and when you receive notifications.</p>
-
-                            <div className="hoas-notif-group">
-                                <h3 className="hoas-notif-group-title">Delivery Channels</h3>
-                                {[
-                                    { label: 'Email Notifications', desc: 'Receive alerts via email', checked: notifEmail, onChange: e => setNotifEmail(e.target.checked) },
-                                    { label: 'SMS Notifications', desc: 'Receive alerts via SMS', checked: notifSMS, onChange: e => setNotifSMS(e.target.checked) },
-                                    { label: 'Push Notifications', desc: 'In-app push alerts', checked: notifPush, onChange: e => setNotifPush(e.target.checked) },
-                                ].map(({ label, desc, checked, onChange }) => (
-                                    <div key={label} className="hoas-toggle-wrapper hoas-toggle-sm">
-                                        <div>
-                                            <span className="hoas-toggle-label">{label}</span>
-                                            <p className="hoas-toggle-desc">{desc}</p>
-                                        </div>
-                                        <Toggle checked={checked} onChange={onChange} />
-                                    </div>
-                                ))}
-                            </div>
-
-                            <div className="hoas-notif-group hoas-mt-20">
-                                <h3 className="hoas-notif-group-title">Event Triggers</h3>
-                                {[
-                                    { label: 'New Learner Enrolled', desc: 'Notify when a new learner joins', checked: notifNewLearner, onChange: e => setNotifNewLearner(e.target.checked) },
-                                    { label: 'New Assignment Submitted', desc: 'Alert when learners submit work', checked: notifNewAssignment, onChange: e => setNotifNewAssignment(e.target.checked) },
-                                    { label: 'Grade Published', desc: 'Alert when results are released', checked: notifGrades, onChange: e => setNotifGrades(e.target.checked) },
-                                ].map(({ label, desc, checked, onChange }) => (
-                                    <div key={label} className="hoas-toggle-wrapper hoas-toggle-sm">
-                                        <div>
-                                            <span className="hoas-toggle-label">{label}</span>
-                                            <p className="hoas-toggle-desc">{desc}</p>
-                                        </div>
-                                        <Toggle checked={checked} onChange={onChange} />
-                                    </div>
-                                ))}
-                            </div>
-                        </SectionCard>
-
-                        {/* ── 6. Address ── */}
+                        {/* ── 10. Address ── */}
                         <SectionCard id="address" title="Address" saved={saved['address']} onSave={() => handleSave('address')} sectionRef={el => sectionRefs.current['address'] = el}>
                             <div className="hoas-form-row">
                                 <div className="hoas-form-group">
@@ -1620,73 +1828,28 @@ const HOASettings = () => {
                             <div className="hoas-form-group">
                                 <label>Country</label>
                                 <div className="hoas-input-with-flag">
-                                    <img src={rwanda} alt="Rwanda" />
                                     <select defaultValue="rwanda">
                                         <option value="rwanda">Rwanda</option>
-                                        <option value="kenya">Kenya</option>
                                         <option value="uganda">Uganda</option>
                                     </select>
                                 </div>
                             </div>
                         </SectionCard>
 
-                        {/* ── 9. Appearance ── */}
-                        <SectionCard id="appearance" title="Appearance" saved={saved['appearance']} onSave={() => handleSave('appearance')} sectionRef={el => sectionRefs.current['appearance'] = el}>
-                            <p className="hoas-sub-label">Customise fonts, colours and branding elements.</p>
-
-                            <div className="hoas-form-row">
-                                <div className="hoas-form-group">
-                                    <label>Primary Color</label>
-                                    <div className="hoas-color-picker-row">
-                                        <input type="color" defaultValue="#450468" className="hoas-color-swatch" />
-                                        <input type="text" defaultValue="#450468" className="hoas-color-hex" />
-                                    </div>
-                                </div>
-                                <div className="hoas-form-group">
-                                    <label>Accent Color</label>
-                                    <div className="hoas-color-picker-row">
-                                        <input type="color" defaultValue="#1B84FF" className="hoas-color-swatch" />
-                                        <input type="text" defaultValue="#1B84FF" className="hoas-color-hex" />
+                        <div className="hoas-appearance-preview">
+                            <div className="hoas-appearance-preview-label">Live Preview</div>
+                            <div className="hoas-appearance-card">
+                                <div className="hoas-appearance-sidebar" />
+                                <div className="hoas-appearance-main">
+                                    <div className="hoas-appearance-topbar" />
+                                    <div className="hoas-appearance-widgets">
+                                        <div className="hoas-appearance-widget hoas-appearance-widget--dark" />
+                                        <div className="hoas-appearance-widget" />
+                                        <div className="hoas-appearance-widget" />
                                     </div>
                                 </div>
                             </div>
-
-                            <div className="hoas-form-row">
-                                <div className="hoas-form-group">
-                                    <label>Font Family</label>
-                                    <select defaultValue="inter">
-                                        <option value="inter">Inter</option>
-                                        <option value="poppins">Poppins</option>
-                                        <option value="roboto">Roboto</option>
-                                        <option value="outfit">Outfit</option>
-                                    </select>
-                                </div>
-                                <div className="hoas-form-group">
-                                    <label>Border Radius</label>
-                                    <select defaultValue="8">
-                                        <option value="4">4px – Sharp</option>
-                                        <option value="8">8px – Rounded (Default)</option>
-                                        <option value="12">12px – Soft</option>
-                                        <option value="20">20px – Pill</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div className="hoas-appearance-preview">
-                                <div className="hoas-appearance-preview-label">Live Preview</div>
-                                <div className="hoas-appearance-card">
-                                    <div className="hoas-appearance-sidebar" />
-                                    <div className="hoas-appearance-main">
-                                        <div className="hoas-appearance-topbar" />
-                                        <div className="hoas-appearance-widgets">
-                                            <div className="hoas-appearance-widget hoas-appearance-widget--dark" />
-                                            <div className="hoas-appearance-widget" />
-                                            <div className="hoas-appearance-widget" />
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </SectionCard>
+                        </div>
 
                     </div>{/* end content-area */}
                 </div>{/* end layout-container */}

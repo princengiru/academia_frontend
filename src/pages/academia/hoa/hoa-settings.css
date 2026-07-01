@@ -146,6 +146,33 @@
     transition: all 0.2s;
     text-align: left;
 }
+.hoas-custom-dropdown-selected,
+.hoas-custom-dropdown-option {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+
+.hoas-custom-dropdown-selected span:last-child,
+.hoas-custom-dropdown-option span:last-child {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.hoas-custom-dropdown-icon {
+    width: 18px;
+    height: 18px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 16px;
+    line-height: 1;
+    color: #7B879C;
+}
 .hoas-custom-dropdown-btn:hover,
 .hoas-custom-dropdown-btn:focus {
     border-color: #450468;
@@ -179,6 +206,219 @@
 }
 .hoas-custom-dropdown-list li:hover { background: #F8F5FF; }
 .hoas-custom-dropdown-list li.selected { color: #450468; font-weight: 600; background: #F3EFFE; }
+
+/* =========================================
+   PREFERENCES
+   ========================================= */
+.hoas-preferences-list {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.hoas-preference-row {
+    align-items: flex-start;
+    margin-bottom: 0;
+}
+
+.hoas-preference-row .hoas-form-horizontal-label {
+    padding-top: 11px;
+}
+
+.hoas-preference-row .hoas-form-horizontal-control {
+    align-items: flex-start;
+}
+
+.hoas-preference-attributes {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.hoas-preference-checkbox {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.hoas-preference-checkbox input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.hoas-preference-checkbox-box {
+    width: 18px;
+    height: 18px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: #450468;
+    margin-top: 1px;
+}
+
+.hoas-preference-checkbox-copy {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.hoas-preference-checkbox-title {
+    font-size: 13px;
+    font-weight: 500;
+    color: #3F4254;
+}
+
+.hoas-preference-checkbox-desc {
+    font-size: 11.5px;
+    line-height: 1.4;
+    color: #99A1B7;
+}
+
+.hoas-preference-visibility {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.hoas-preference-visibility span {
+    font-size: 13px;
+    font-weight: 600;
+    color: #450468;
+}
+
+/* =========================================
+   NOTIFICATIONS
+   ========================================= */
+.hoas-notification-top-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+    margin-bottom: 22px;
+}
+
+.hoas-notification-channel-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 14px 16px;
+    border: 1px solid #EEF1F6;
+    border-radius: 10px;
+    background: #FFFFFF;
+    box-shadow: 0 1px 0 rgba(7, 20, 55, 0.02);
+}
+
+.hoas-notification-channel-main {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+}
+
+.hoas-notification-channel-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    border: 1px solid #E6EAF2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #99A1B7;
+    flex-shrink: 0;
+    background: #FFFFFF;
+}
+
+.hoas-notification-channel-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #071437;
+}
+
+.hoas-notification-channel-desc {
+    margin-top: 2px;
+    font-size: 11.5px;
+    line-height: 1.4;
+    color: #99A1B7;
+}
+
+.hoas-notification-group {
+    margin-bottom: 18px;
+}
+
+.hoas-notification-group-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #071437;
+    margin-bottom: 10px;
+}
+
+.hoas-notification-radio-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.hoas-notification-radio-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12.5px;
+    color: #3F4254;
+    cursor: pointer;
+    user-select: none;
+}
+
+.hoas-notification-radio-item input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.hoas-notification-radio-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 1.5px solid #D5DCEE;
+    background: #FFFFFF;
+    flex-shrink: 0;
+    box-shadow: inset 0 0 0 2px #FFFFFF;
+}
+
+.hoas-notification-radio-item input:checked + .hoas-notification-radio-dot {
+    border-color: #450468;
+    background: #450468;
+    box-shadow: inset 0 0 0 2px #FFFFFF;
+}
+
+.hoas-notification-checkbox {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    user-select: none;
+    font-size: 12.5px;
+    color: #3F4254;
+}
+
+.hoas-notification-checkbox input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.hoas-notification-checkbox-box {
+    width: 18px;
+    height: 18px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #450468;
+    flex-shrink: 0;
+}
 
 /* =========================================
    PAGE HEADER
