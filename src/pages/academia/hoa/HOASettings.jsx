@@ -5,6 +5,9 @@ import './hoa-settings.css';
 import hoarefresh from '../../../assets/icons/hoarefresh.svg';
 import hoagoto from '../../../assets/icons/hoagoto.svg';
 import rwanda from '../../../assets/icons/rwanda.svg';
+import light_theme from '../../../assets/imgs/light_theme.png';
+import dark_theme from '../../../assets/imgs/dark_theme.png';
+import system_default_theme from '../../../assets/imgs/system_default_theme.png';
 
 // ─── Inline SVGs ──────────────────────────────────────────────────────────────
 const IconChecked = () => (
@@ -148,15 +151,15 @@ const NAV_CATEGORIES = [
             { id: 'general', label: 'General Settings' },
             { id: 'email', label: 'Email' },
             { id: 'documents', label: 'Documents & Files' },
-            { id: 'layout', label: 'Layout' },
             { id: 'social', label: 'Social Media Links' },
-            { id: 'seo', label: 'SEO and Metadata' },
         ]
     },
     {
         title: 'Payments',
         items: [
-            { id: 'payment', label: 'Payment Methods' },
+            { id: 'payment-mtn', label: 'MTN Mobile Money' },
+            { id: 'payment-airtel', label: 'Airtel Money' },
+            { id: 'payment-card', label: 'Bank Cards' },
         ]
     },
     {
@@ -164,7 +167,6 @@ const NAV_CATEGORIES = [
         items: [
             { id: 'preferences', label: 'Preferences' },
             { id: 'notifications', label: 'Notifications' },
-            { id: 'theme', label: 'App Theme' },
             { id: 'address', label: 'Address' },
             { id: 'appearance', label: 'Appearance' },
         ]
@@ -764,6 +766,17 @@ const HOASettings = () => {
     const [selectedTheme, setSelectedTheme] = useState('light');
     const [syncSystem, setSyncSystem] = useState(true);
 
+    // Address section
+    const [addrAddress, setAddrAddress] = useState('Avenida Imaginária, 789');
+    const [addrCountry, setAddrCountry] = useState('ES');
+    const [addrState, setAddrState] = useState('');
+    const [addrCity, setAddrCity] = useState('Barcelona');
+    const [addrPostcode, setAddrPostcode] = useState('08013');
+
+    // Appearance section
+    const [appearanceTheme, setAppearanceTheme] = useState('dark');
+    const [transparentSidebar, setTransparentSidebar] = useState(true);
+
     // Payment gateway
     const [selectedGateway, setSelectedGateway] = useState('card');
 
@@ -1003,8 +1016,23 @@ const HOASettings = () => {
     }, [closeSocialPopover, socialPopover]);
 
     const scrollToSection = (id) => {
-        sectionRefs.current[id]?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        setActiveSection(id);
+        // For payment sub-tabs, switch the tab and scroll to the payment section
+        if (id === 'payment-mtn') {
+            setSelectedGateway('mtn');
+            sectionRefs.current['payment']?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            setActiveSection('payment-mtn');
+        } else if (id === 'payment-airtel') {
+            setSelectedGateway('airtel');
+            sectionRefs.current['payment']?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            setActiveSection('payment-airtel');
+        } else if (id === 'payment-card') {
+            setSelectedGateway('card');
+            sectionRefs.current['payment']?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            setActiveSection('payment-card');
+        } else {
+            sectionRefs.current[id]?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            setActiveSection(id);
+        }
     };
 
     // Scroll spy
@@ -1013,7 +1041,16 @@ const HOASettings = () => {
             (entries) => {
                 entries.forEach(entry => {
                     if (entry.isIntersecting) {
-                        setActiveSection(entry.target.dataset.section);
+                        const section = entry.target.dataset.section;
+                        // When scrolling to the payment section, mirror active to the right tab key
+                        if (section === 'payment') {
+                            const tabKey = selectedGateway === 'mtn' ? 'payment-mtn'
+                                : selectedGateway === 'airtel' ? 'payment-airtel'
+                                : 'payment-card';
+                            setActiveSection(tabKey);
+                        } else {
+                            setActiveSection(section);
+                        }
                     }
                 });
             },
@@ -1265,46 +1302,7 @@ const HOASettings = () => {
                             </div>
                         </SectionCard>
 
-                        {/* ── 3. Layout ── */}
-                        <SectionCard id="layout" title="Layout" saved={saved['layout']} onSave={() => handleSave('layout')} sectionRef={el => sectionRefs.current['layout'] = el}>
-                            <div className="hoas-form-group">
-                                <label>Logo</label>
-                                <p className="hoas-sub-label">Supported formats: JPG, PNG, SVG. Max size: 2MB.</p>
-                                <div className="hoas-upload-grid">
-                                    <div className="hoas-upload-box">
-                                        <div className="hoas-upload-icon-wrapper">
-                                            <IconUpload />
-                                        </div>
-                                        <div className="hoas-upload-text">
-                                            <strong>Light Logo</strong>
-                                            <span>Click to upload or drag & drop</span>
-                                        </div>
-                                    </div>
-                                    <div className="hoas-upload-box">
-                                        <div className="hoas-upload-icon-wrapper">
-                                            <IconUpload />
-                                        </div>
-                                        <div className="hoas-upload-text">
-                                            <strong>Dark Logo</strong>
-                                            <span>Click to upload or drag & drop</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="hoas-form-group hoas-mt-16">
-                                <label>Favicon</label>
-                                <p className="hoas-sub-label">ICO or PNG, 32×32px recommended.</p>
-                                <div className="hoas-upload-box hoas-upload-box--single">
-                                    <div className="hoas-upload-icon-wrapper">
-                                        <IconUpload />
-                                    </div>
-                                    <div className="hoas-upload-text">
-                                        <strong>Favicon</strong>
-                                        <span>Click to upload</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </SectionCard>
+
 
                         {/* ── 3. Social Media Links ── */}
                         <SectionCard id="social" title="Social Media Links" saved={saved['social']} onSave={() => handleSave('social')} sectionRef={el => sectionRefs.current['social'] = el}>
@@ -1456,21 +1454,24 @@ const HOASettings = () => {
                         {/* ── 5. Payment Methods ── */}
                         <SectionCard
                             id="payment"
-                            title="Payments Method"
-                            saved={saved['payment']}
-                            onSave={() => handleSave('payment')}
+                            title="Payment Methods"
+                            saved={saved['payment-mtn'] || saved['payment-airtel'] || saved['payment-card']}
+                            onSave={() => handleSave(selectedGateway === 'mtn' ? 'payment-mtn' : selectedGateway === 'airtel' ? 'payment-airtel' : 'payment-card')}
                             sectionRef={el => sectionRefs.current['payment'] = el}
                             showFooter={false}
                         >
-                            <div className="hoas-payment-step-label">1. Payment Type</div>
-
+                            {/* Tab switcher */}
                             <div className="hoas-payment-types">
-                                {PAYMENT_TYPES.map((type) => (
+                                {[
+                                    { id: 'mtn',    label: 'MTN Mobile Money', icon: '/assets/icons/MTN-pay.svg',    bg: '#FFF8DD' },
+                                    { id: 'airtel', label: 'Airtel Money',      icon: '/assets/icons/AIR-pay.svg',    bg: '#FFEEF3' },
+                                    { id: 'card',   label: 'Bank Cards',        icon: '/assets/icons/CARD-pay.svg',   bg: '#F3EEFF' },
+                                ].map((type) => (
                                     <button
                                         key={type.id}
                                         type="button"
                                         className={`hoas-payment-type-card ${selectedGateway === type.id ? 'active' : ''}`}
-                                        onClick={() => setSelectedGateway(type.id)}
+                                        onClick={() => { setSelectedGateway(type.id); setActiveSection('payment-' + type.id); }}
                                     >
                                         <div className="hoas-payment-type-icon" style={{ background: type.bg }}>
                                             <img src={type.icon} alt={type.label} />
@@ -1481,16 +1482,83 @@ const HOASettings = () => {
                                 ))}
                             </div>
 
-                            {selectedGateway === 'card' ? (
+                            {/* MTN Mobile Money form */}
+                            {selectedGateway === 'mtn' && (
+                                <>
+                                    <div className="hoas-payment-subtitle">Add MTN Mobile Money</div>
+                                    <div className="hoas-payment-form">
+                                        <div className="hoas-payment-field">
+                                            <PaymentFieldLabel hint="Enter the name registered on your MTN SIM card.">SIM Card Name</PaymentFieldLabel>
+                                            <input
+                                                type="text"
+                                                value={paymentSimName}
+                                                onChange={e => setPaymentSimName(e.target.value)}
+                                                placeholder="Max Smith"
+                                            />
+                                        </div>
+                                        <div className="hoas-payment-field hoas-payment-phone-field">
+                                            <PaymentFieldLabel hint="Rwanda MTN numbers start with 078 or 079.">Phone Number <span className="hoas-required">*</span></PaymentFieldLabel>
+                                            <input
+                                                type="tel"
+                                                inputMode="numeric"
+                                                value={paymentPhoneNumber}
+                                                onChange={e => setPaymentPhoneNumber(formatRwandaPhoneNumber(e.target.value))}
+                                                placeholder="07 88 123 456"
+                                                className="hoas-payment-phone-field-input"
+                                            />
+                                        </div>
+                                        <div className="hoas-payment-footer-row">
+                                            <div className="hoas-payment-save-toggle">
+                                                <span className="hoas-toggle-label">Save for future use</span>
+                                                <Toggle checked={savePaymentMethod} onChange={e => setSavePaymentMethod(e.target.checked)} />
+                                            </div>
+                                            <button type="button" className="hoas-btn-save" onClick={() => handleSave('payment-mtn')}>Save Changes</button>
+                                        </div>
+                                    </div>
+                                </>
+                            )}
+
+                            {/* Airtel Money form */}
+                            {selectedGateway === 'airtel' && (
+                                <>
+                                    <div className="hoas-payment-subtitle">Add Airtel Money</div>
+                                    <div className="hoas-payment-form">
+                                        <div className="hoas-payment-field">
+                                            <PaymentFieldLabel hint="Enter the name registered on your Airtel SIM card.">SIM Card Name</PaymentFieldLabel>
+                                            <input
+                                                type="text"
+                                                placeholder="Max Smith"
+                                            />
+                                        </div>
+                                        <div className="hoas-payment-field hoas-payment-phone-field">
+                                            <PaymentFieldLabel hint="Rwanda Airtel numbers start with 073 or 072.">Phone Number <span className="hoas-required">*</span></PaymentFieldLabel>
+                                            <input
+                                                type="tel"
+                                                inputMode="numeric"
+                                                placeholder="07 32 123 456"
+                                                className="hoas-payment-phone-field-input"
+                                            />
+                                        </div>
+                                        <div className="hoas-payment-footer-row">
+                                            <div className="hoas-payment-save-toggle">
+                                                <span className="hoas-toggle-label">Save for future use</span>
+                                                <Toggle checked={savePaymentMethod} onChange={e => setSavePaymentMethod(e.target.checked)} />
+                                            </div>
+                                            <button type="button" className="hoas-btn-save" onClick={() => handleSave('payment-airtel')}>Save Changes</button>
+                                        </div>
+                                    </div>
+                                </>
+                            )}
+
+                            {/* Bank Cards form */}
+                            {selectedGateway === 'card' && (
                                 <>
                                     <div className="hoas-payment-subtitle">Add Bank Card</div>
-
                                     <div className="hoas-payment-form">
                                         <div className="hoas-payment-field">
                                             <PaymentFieldLabel hint="Use the name exactly as it appears on the card.">Name On Card <span className="hoas-required">*</span></PaymentFieldLabel>
                                             <input type="text" value={paymentCardName} onChange={e => setPaymentCardName(e.target.value)} placeholder="Max Smith" />
                                         </div>
-
                                         <div className="hoas-payment-field">
                                             <PaymentFieldLabel hint="Card brand is detected automatically as you type.">Card Number <span className="hoas-required">*</span></PaymentFieldLabel>
                                             <div className="hoas-input-with-icon-right hoas-payment-card-number">
@@ -1512,10 +1580,9 @@ const HOASettings = () => {
                                                 </div>
                                             </div>
                                             {paymentCardBrand !== 'unknown' && (
-                                                <p className="hoas-payment-detected-brand">Detected card: {paymentCardBrand === 'mastercard' ? 'Mastercard' : paymentCardBrand === 'visa' ? 'Visa' : 'Amex'}</p>
+                                                <p className="hoas-payment-detected-brand">Detected: {paymentCardBrand === 'mastercard' ? 'Mastercard' : paymentCardBrand === 'visa' ? 'Visa' : 'Amex'}</p>
                                             )}
                                         </div>
-
                                         <div className="hoas-payment-field">
                                             <PaymentFieldLabel hint="Enter the expiration month and year, plus the CVV security code.">Expiration Date</PaymentFieldLabel>
                                             <div className="hoas-payment-expiry-grid">
@@ -1524,48 +1591,12 @@ const HOASettings = () => {
                                                 <input type="text" value={paymentCvv} onChange={e => setPaymentCvv(e.target.value)} placeholder="CVV" />
                                             </div>
                                         </div>
-
                                         <div className="hoas-payment-footer-row">
                                             <div className="hoas-payment-save-toggle">
                                                 <span className="hoas-toggle-label">Save for future use</span>
                                                 <Toggle checked={savePaymentMethod} onChange={e => setSavePaymentMethod(e.target.checked)} />
                                             </div>
-                                            <button type="button" className="hoas-btn-save" onClick={() => handleSave('payment')}>Save Changes</button>
-                                        </div>
-                                    </div>
-                                </>
-                            ) : (
-                                <>
-                                    <div className="hoas-payment-subtitle">Add Phone Number</div>
-                                    <div className="hoas-payment-form">
-                                        <div className="hoas-payment-field">
-                                            <PaymentFieldLabel hint="Enter the name registered on the SIM card used for mobile money or Airtel Money.">SIM Card Name</PaymentFieldLabel>
-                                            <input
-                                                type="text"
-                                                value={paymentSimName}
-                                                onChange={e => setPaymentSimName(e.target.value)}
-                                                placeholder="Max Smith"
-                                            />
-                                        </div>
-
-                                        <div className="hoas-payment-field hoas-payment-phone-field">
-                                            <PaymentFieldLabel hint="Rwanda mobile money numbers start with 07 and do not need a country selector.">Phone Number <span className="hoas-required">*</span></PaymentFieldLabel>
-                                            <input
-                                                type="tel"
-                                                inputMode="numeric"
-                                                value={paymentPhoneNumber}
-                                                onChange={e => setPaymentPhoneNumber(formatRwandaPhoneNumber(e.target.value))}
-                                                placeholder="07 88 123 456"
-                                                className="hoas-payment-phone-field-input"
-                                            />
-                                        </div>
-
-                                        <div className="hoas-payment-footer-row">
-                                            <div className="hoas-payment-save-toggle">
-                                                <span className="hoas-toggle-label">Save for future use</span>
-                                                <Toggle checked={savePaymentMethod} onChange={e => setSavePaymentMethod(e.target.checked)} />
-                                            </div>
-                                            <button type="button" className="hoas-btn-save" onClick={() => handleSave('payment')}>Save Changes</button>
+                                            <button type="button" className="hoas-btn-save" onClick={() => handleSave('payment-card')}>Save Changes</button>
                                         </div>
                                     </div>
                                 </>
@@ -1727,129 +1758,133 @@ const HOASettings = () => {
                             </div>
                         </SectionCard>
 
-                        {/* ── 8. SEO & Metadata ── */}
-                        <SectionCard id="seo" title="SEO and Metadata" saved={saved['seo']} onSave={() => handleSave('seo')} sectionRef={el => sectionRefs.current['seo'] = el}>
-                            <div className="hoas-toggle-wrapper hoas-mb-20">
-                                <div>
-                                    <span className="hoas-toggle-label"><b>Enable Search Engine Indexing</b></span>
-                                    <p className="hoas-toggle-desc">Allow search engines to index your site.</p>
-                                </div>
-                                <Toggle checked={searchIndexing} onChange={e => setSearchIndexing(e.target.checked)} />
-                            </div>
-                            <div className="hoas-form-group">
-                                <label>Meta Title</label>
-                                <input type="text" defaultValue="Gonaraza — All-in-one digital marketing" />
-                            </div>
-                            <div className="hoas-form-group">
-                                <label>Meta Description</label>
-                                <textarea rows="3" defaultValue="Gonaraza provides the best tools to manage your digital marketing campaigns efficiently and effectively." />
-                            </div>
-                            <div className="hoas-form-group">
-                                <label>Meta Keywords</label>
-                                <input type="text" defaultValue="digital marketing, Rwanda, online learning, courses" />
-                            </div>
-                        </SectionCard>
 
-                        {/* ── 9. App Theme ── */}
-                        <SectionCard id="theme" title="App Theme" saved={saved['theme']} onSave={() => handleSave('theme')} sectionRef={el => sectionRefs.current['theme'] = el}>
-                            <p className="hoas-sub-label">Choose the look and feel of your dashboard.</p>
-                            <div className="hoas-theme-grid">
-                                {[
-                                    { id: 'light', label: 'Light', colors: ['#FFFFFF', '#F6F6F9', '#450468'] },
-                                    { id: 'dark', label: 'Dark', colors: ['#1E1E2D', '#151521', '#7239EA'] },
-                                    { id: 'custom', label: 'Custom', colors: ['#E8F4FD', '#D0E8FA', '#0D6EFD'] },
-                                ].map(({ id, label, colors }) => (
-                                    <div
-                                        key={id}
-                                        className={`hoas-theme-box ${selectedTheme === id ? 'active' : ''}`}
-                                        onClick={() => setSelectedTheme(id)}
-                                    >
-                                        <div className="hoas-theme-preview" style={{ background: colors[0] }}>
-                                            <div className="hoas-theme-preview-sidebar" style={{ background: colors[1] }} />
-                                            <div className="hoas-theme-preview-content">
-                                                <div className="hoas-theme-preview-bar" style={{ background: colors[2] }} />
-                                                <div className="hoas-theme-preview-lines">
-                                                    <div style={{ background: colors[1] }} />
-                                                    <div style={{ background: colors[1] }} />
-                                                    <div style={{ background: colors[1] }} />
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div className="hoas-theme-label">
-                                            <div className={`hoas-theme-radio ${selectedTheme === id ? 'checked' : ''}`}>
-                                                {selectedTheme === id && <div />}
-                                            </div>
-                                            {label}
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                            <div className="hoas-toggle-wrapper hoas-mt-20">
-                                <div>
-                                    <span className="hoas-toggle-label">Sync with system preferences</span>
-                                    <p className="hoas-toggle-desc">Automatically switch theme based on your OS setting</p>
-                                </div>
-                                <Toggle checked={syncSystem} onChange={e => setSyncSystem(e.target.checked)} />
-                            </div>
-                        </SectionCard>
 
                         {/* ── 10. Address ── */}
-                        <SectionCard id="address" title="Address" saved={saved['address']} onSave={() => handleSave('address')} sectionRef={el => sectionRefs.current['address'] = el}>
-                            <div className="hoas-form-row">
-                                <div className="hoas-form-group">
-                                    <label>Name / Organisation</label>
-                                    <input type="text" defaultValue="Gonaraza Ltd" />
+                        <SectionCard id="address" title="Address" saved={saved['address']} onSave={() => handleSave('address')} sectionRef={el => sectionRefs.current['address'] = el} showDiscard={false}>
+                            <div className="hoas-address-form">
+                                <div className="hoas-address-row">
+                                    <label className="hoas-address-label">Address</label>
+                                    <div className="hoas-address-control">
+                                        <input
+                                            type="text"
+                                            value={addrAddress}
+                                            onChange={e => setAddrAddress(e.target.value)}
+                                            placeholder="Street address"
+                                        />
+                                    </div>
                                 </div>
-                                <div className="hoas-form-group">
-                                    <label>Phone</label>
-                                    <input type="text" defaultValue="+250 788 123 456" />
+
+                                <div className="hoas-address-row">
+                                    <label className="hoas-address-label">Country</label>
+                                    <div className="hoas-address-control">
+                                        <div className="hoas-addr-country-select">
+                                            <span className="hoas-addr-country-flag">
+                                                {COUNTRIES.find(c => c.code === addrCountry)?.flag || '🌍'}
+                                            </span>
+                                            <select
+                                                value={addrCountry}
+                                                onChange={e => setAddrCountry(e.target.value)}
+                                                className="hoas-addr-select"
+                                            >
+                                                {COUNTRIES.map(c => (
+                                                    <option key={c.code} value={c.code}>{c.name}</option>
+                                                ))}
+                                            </select>
+                                            <svg className="hoas-addr-select-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                                <polyline points="6 9 12 15 18 9" />
+                                            </svg>
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
-                            <div className="hoas-form-row">
-                                <div className="hoas-form-group">
-                                    <label>Street Address</label>
-                                    <input type="text" defaultValue="KG 541 St" />
+
+                                <div className="hoas-address-row">
+                                    <label className="hoas-address-label">State</label>
+                                    <div className="hoas-address-control">
+                                        <input
+                                            type="text"
+                                            value={addrState}
+                                            onChange={e => setAddrState(e.target.value)}
+                                            placeholder="State"
+                                        />
+                                    </div>
                                 </div>
-                                <div className="hoas-form-group">
-                                    <label>City</label>
-                                    <input type="text" defaultValue="Kigali" />
+
+                                <div className="hoas-address-row">
+                                    <label className="hoas-address-label">City</label>
+                                    <div className="hoas-address-control">
+                                        <input
+                                            type="text"
+                                            value={addrCity}
+                                            onChange={e => setAddrCity(e.target.value)}
+                                            placeholder="City"
+                                        />
+                                    </div>
                                 </div>
-                            </div>
-                            <div className="hoas-form-row">
-                                <div className="hoas-form-group">
-                                    <label>Province / State</label>
-                                    <input type="text" defaultValue="Kigali City" />
-                                </div>
-                                <div className="hoas-form-group">
-                                    <label>Postal Code</label>
-                                    <input type="text" defaultValue="00100" />
-                                </div>
-                            </div>
-                            <div className="hoas-form-group">
-                                <label>Country</label>
-                                <div className="hoas-input-with-flag">
-                                    <select defaultValue="rwanda">
-                                        <option value="rwanda">Rwanda</option>
-                                        <option value="uganda">Uganda</option>
-                                    </select>
+
+                                <div className="hoas-address-row">
+                                    <label className="hoas-address-label">Postcode</label>
+                                    <div className="hoas-address-control">
+                                        <input
+                                            type="text"
+                                            value={addrPostcode}
+                                            onChange={e => setAddrPostcode(e.target.value)}
+                                            placeholder="Postcode"
+                                        />
+                                    </div>
                                 </div>
                             </div>
                         </SectionCard>
 
-                        <div className="hoas-appearance-preview">
-                            <div className="hoas-appearance-preview-label">Live Preview</div>
-                            <div className="hoas-appearance-card">
-                                <div className="hoas-appearance-sidebar" />
-                                <div className="hoas-appearance-main">
-                                    <div className="hoas-appearance-topbar" />
-                                    <div className="hoas-appearance-widgets">
-                                        <div className="hoas-appearance-widget hoas-appearance-widget--dark" />
-                                        <div className="hoas-appearance-widget" />
-                                        <div className="hoas-appearance-widget" />
-                                    </div>
-                                </div>
+                        {/* ── 11. Appearance ── */}
+                        <SectionCard id="appearance" title="Appearance" saved={saved['appearance']} onSave={() => handleSave('appearance')} sectionRef={el => sectionRefs.current['appearance'] = el} showDiscard={false}>
+                            <div className="hoas-appearance-intro">
+                                <div className="hoas-appearance-intro-title">Theme mode</div>
+                                <p>Select or customize your theme. Drop in your downloaded images below.</p>
                             </div>
-                        </div>
+
+                            <div className="hoas-appearance-theme-grid">
+                                {[
+                                    { id: 'dark',   label: 'Dark',   src: '/assets/themes/theme-dark.png' },
+                                    { id: 'light',  label: 'Light',  src: '/assets/themes/theme-light.png' },
+                                    { id: 'system', label: 'System', src: '/assets/themes/theme-system.png' },
+                                ].map(({ id, label, src }) => (
+                                    <button
+                                        key={id}
+                                        type="button"
+                                        className={`hoas-appearance-theme-card ${appearanceTheme === id ? 'active' : ''}`}
+                                        onClick={() => setAppearanceTheme(id)}
+                                    >
+                                        <div className="hoas-appearance-theme-img-wrap">
+                                            <img
+                                                src={id === 'dark' ? dark_theme : id === 'light' ? light_theme : system_default_theme}
+                                                alt={label}
+                                                className="hoas-appearance-theme-img"
+                                                onError={e => { e.currentTarget.style.display = 'none'; }}
+                                            />
+                                            {appearanceTheme === id && <div className="hoas-appearance-preview-check" />}
+                                        </div>
+                                        <span className="hoas-appearance-theme-label">{label}</span>
+                                    </button>
+                                ))}
+                            </div>
+
+                            <div className="hoas-appearance-toggle-row">
+                                <span className="hoas-appearance-toggle-label">Transparent sidebar</span>
+                                <div className="hoas-appearance-toggle-control">
+                                    <span className="hoas-appearance-toggle-state">
+                                        {transparentSidebar ? 'Active' : 'Inactive'}
+                                    </span>
+                                    <Toggle
+                                        checked={transparentSidebar}
+                                        onChange={e => setTransparentSidebar(e.target.checked)}
+                                    />
+                                </div>
+                                <p className="hoas-appearance-toggle-copy">
+                                    Toggle the transparent sidebar for a sleek interface. Switch it on for transparency or off for a solid background.
+                                </p>
+                            </div>
+                        </SectionCard>
 
                     </div>{/* end content-area */}
                 </div>{/* end layout-container */}

@@ -1034,6 +1034,337 @@
     pointer-events: none;
 }
 
+/* Address */
+.hoas-address-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.hoas-address-row {
+    display: grid;
+    grid-template-columns: 116px minmax(0, 1fr);
+    align-items: center;
+    gap: 18px;
+    padding: 12px 0;
+    border-bottom: 1px solid #F4F4F8;
+}
+
+.hoas-address-row:last-child {
+    border-bottom: none;
+}
+
+.hoas-address-label {
+    margin: 0;
+    font-size: 11.5px;
+    font-weight: 500;
+    color: #7A4CA1;
+}
+
+.hoas-address-control {
+    min-width: 0;
+}
+
+/* Address input base styles */
+.hoas-address-control input {
+    width: 100%;
+    padding: 8px 14px;
+    border: 1px solid #E6EAF2;
+    border-radius: 5px;
+    font-size: 12px;
+    color: #450468;
+    outline: none;
+    box-sizing: border-box;
+    font-family: inherit;
+    background: #FFFFFF;
+    transition: all 0.2s;
+    height: 36px;
+}
+
+.hoas-address-control input::placeholder {
+    color: #B5B5C3;
+}
+
+.hoas-address-control input:focus {
+    border-color: #450468;
+    box-shadow: 0 0 0 3px rgba(69, 4, 104, 0.06);
+}
+
+/* Country select */
+.hoas-addr-country-select {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+    border: 1px solid #E6EAF2;
+    border-radius: 5px;
+    background: #FFFFFF;
+    height: 36px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    overflow: hidden;
+}
+
+.hoas-addr-country-select:focus-within {
+    border-color: #450468;
+    box-shadow: 0 0 0 3px rgba(69, 4, 104, 0.06);
+}
+
+.hoas-addr-country-flag {
+    position: absolute;
+    left: 10px;
+    font-size: 16px;
+    line-height: 1;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.hoas-addr-select {
+    width: 100%;
+    height: 100%;
+    padding: 0 30px 0 36px;
+    border: none;
+    outline: none;
+    background: transparent;
+    font-size: 12px;
+    font-family: inherit;
+    color: #450468;
+    font-weight: 500;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+}
+
+.hoas-addr-select-chevron {
+    position: absolute;
+    right: 10px;
+    pointer-events: none;
+    color: #99A1B7;
+    flex-shrink: 0;
+}
+
+/* Appearance */
+.hoas-appearance-intro {
+    margin-bottom: 14px;
+}
+
+.hoas-appearance-intro-title {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #071437;
+}
+
+.hoas-appearance-intro p {
+    margin: 3px 0 0;
+    font-size: 11.5px;
+    line-height: 1.5;
+    color: #99A1B7;
+}
+
+.hoas-appearance-theme-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.hoas-appearance-theme-card {
+    border: none;
+    background: transparent;
+    padding: 0;
+    text-align: left;
+    cursor: pointer;
+}
+
+.hoas-appearance-theme-preview {
+    position: relative;
+    height: 132px;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 2px solid #EEF1F6;
+    background: linear-gradient(180deg, #FFFFFF 0%, #F6F6F9 100%);
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.hoas-appearance-theme-card.active .hoas-appearance-theme-preview {
+    border-color: #17C653;
+    box-shadow: 0 0 0 1px rgba(23, 198, 83, 0.12);
+}
+
+/* Image-based theme card wrapper */
+.hoas-appearance-theme-img-wrap {
+    position: relative;
+    height: 132px;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 2px solid #EEF1F6;
+    background: #F4F5F9;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.hoas-appearance-theme-card.active .hoas-appearance-theme-img-wrap {
+    border-color: #17C653;
+    box-shadow: 0 0 0 1px rgba(23, 198, 83, 0.12);
+}
+
+.hoas-appearance-theme-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.hoas-appearance-theme-label {
+    display: block;
+    margin-top: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #3F4254;
+}
+
+.hoas-appearance-theme-preview.dark {
+    background: linear-gradient(180deg, #20232E 0%, #171A23 100%);
+}
+
+.hoas-appearance-theme-preview.light {
+    background: linear-gradient(180deg, #FFFFFF 0%, #FAFAFD 100%);
+}
+
+.hoas-appearance-theme-preview.system {
+    background: linear-gradient(135deg, #FFFFFF 0%, #F7F8FC 52%, #20232E 52%, #1A1D26 100%);
+}
+
+.hoas-appearance-preview-rail {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 28px;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.hoas-appearance-preview-header {
+    position: absolute;
+    left: 36px;
+    right: 12px;
+    top: 10px;
+    height: 6px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.18);
+}
+
+.hoas-appearance-preview-sidebar {
+    position: absolute;
+    left: 8px;
+    top: 12px;
+    width: 12px;
+    height: 52px;
+    border-radius: 6px;
+    background: linear-gradient(180deg, #2F3544 0%, #171A23 100%);
+}
+
+.hoas-appearance-theme-preview.light .hoas-appearance-preview-rail,
+.hoas-appearance-theme-preview.light .hoas-appearance-preview-header,
+.hoas-appearance-theme-preview.light .hoas-appearance-preview-sidebar,
+.hoas-appearance-theme-preview.system .hoas-appearance-preview-rail,
+.hoas-appearance-theme-preview.system .hoas-appearance-preview-header,
+.hoas-appearance-theme-preview.system .hoas-appearance-preview-sidebar {
+    background: #EEF1F6;
+}
+
+.hoas-appearance-preview-panel {
+    position: absolute;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.hoas-appearance-theme-preview.light .hoas-appearance-preview-panel,
+.hoas-appearance-theme-preview.system .hoas-appearance-preview-panel {
+    background: #F3F5FA;
+    border-color: #E9EDF5;
+}
+
+.hoas-appearance-preview-panel-a {
+    left: 48px;
+    top: 38px;
+    width: 58px;
+    height: 22px;
+}
+
+.hoas-appearance-preview-panel-b {
+    left: 112px;
+    top: 38px;
+    right: 12px;
+    height: 22px;
+}
+
+.hoas-appearance-preview-panel-c {
+    left: 48px;
+    right: 12px;
+    top: 70px;
+    height: 42px;
+}
+
+.hoas-appearance-preview-check {
+    position: absolute;
+    left: 10px;
+    bottom: 10px;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #17C653;
+    box-shadow: 0 0 0 3px rgba(23, 198, 83, 0.14);
+}
+
+.hoas-appearance-toggle-row {
+    display: grid;
+    grid-template-columns: 172px 130px minmax(0, 1fr);
+    gap: 14px;
+    align-items: center;
+    margin-top: 22px;
+}
+
+.hoas-appearance-toggle-copy {
+    min-width: 0;
+    margin: 0;
+    font-size: 11.5px;
+    line-height: 1.45;
+    color: #99A1B7;
+}
+
+.hoas-appearance-toggle-copy p {
+    margin: 4px 0 0;
+    font-size: 11.5px;
+    line-height: 1.45;
+    color: #99A1B7;
+}
+
+.hoas-appearance-toggle-label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: #071437;
+}
+
+.hoas-appearance-toggle-copy p {
+    margin: 4px 0 0;
+    font-size: 11.5px;
+    line-height: 1.45;
+    color: #99A1B7;
+}
+
+.hoas-appearance-toggle-control {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 10px;
+}
+
+.hoas-appearance-toggle-state {
+    font-size: 11.5px;
+    font-weight: 600;
+    color: #7A4CA1;
+}
+
 /* Input with icon right */
 .hoas-input-with-icon-right { position: relative; display: flex; align-items: center; }
 .hoas-input-with-icon-right input { padding-right: 72px; }
@@ -1776,6 +2107,36 @@
     margin: 6px 0 16px;
 }
 
+/* Payment card header (used in split per-method cards) */
+.hoas-payment-type-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 22px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid #F4F4F8;
+}
+
+.hoas-payment-type-header .hoas-payment-type-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 12px;
+    flex-shrink: 0;
+}
+
+.hoas-payment-type-header-name {
+    font-size: 14px;
+    font-weight: 700;
+    color: #071437;
+    margin-bottom: 3px;
+}
+
+.hoas-payment-type-header-desc {
+    font-size: 12px;
+    color: #99A1B7;
+    line-height: 1.45;
+}
+
 .hoas-payment-form {
     display: flex;
     flex-direction: column;
@@ -2168,69 +2529,6 @@
     color: #3F4254;
 }
 .hoas-color-hex:focus { box-shadow: none !important; border-color: transparent !important; }
-
-/* =========================================
-   APPEARANCE PREVIEW
-   ========================================= */
-.hoas-appearance-preview {
-    margin-top: 20px;
-    border: 1.5px solid #EEF1F6;
-    border-radius: 10px;
-    overflow: hidden;
-}
-
-.hoas-appearance-preview-label {
-    padding: 10px 16px;
-    font-size: 11px;
-    font-weight: 700;
-    color: #99A1B7;
-    text-transform: uppercase;
-    letter-spacing: 0.8px;
-    border-bottom: 1px solid #EEF1F6;
-    background: #FAFAFA;
-}
-
-.hoas-appearance-card {
-    display: flex;
-    height: 120px;
-    background: #F6F6F9;
-}
-
-.hoas-appearance-sidebar {
-    width: 60px;
-    height: 100%;
-    background: #450468;
-    flex-shrink: 0;
-}
-
-.hoas-appearance-main {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-}
-
-.hoas-appearance-topbar {
-    height: 28px;
-    background: #FFFFFF;
-    border-bottom: 1px solid #EEF1F6;
-    flex-shrink: 0;
-}
-
-.hoas-appearance-widgets {
-    flex: 1;
-    display: flex;
-    gap: 8px;
-    padding: 10px;
-}
-
-.hoas-appearance-widget {
-    flex: 1;
-    border-radius: 6px;
-    background: #FFFFFF;
-    border: 1px solid #EEF1F6;
-}
-
-.hoas-appearance-widget--dark { background: #450468; border-color: #450468; }
 
 /* =========================================
    EMAIL SECTION
