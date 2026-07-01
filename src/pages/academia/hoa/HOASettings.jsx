@@ -75,6 +75,7 @@ const NAV_CATEGORIES = [
         title: 'Basic Setup',
         items: [
             { id: 'general', label: 'General Settings' },
+            { id: 'email', label: 'Email' },
             { id: 'layout', label: 'Layout' },
             { id: 'social', label: 'Social Media Links' },
             { id: 'seo', label: 'SEO and Metadata' },
@@ -484,6 +485,11 @@ const HOASettings = () => {
     const [phoneNumber, setPhoneNumber] = useState('700 000 000');
     const [visibility, setVisibility] = useState('public');
 
+    // Email section
+    const [emailAddress, setEmailAddress] = useState('jasontatum@gonaraza.com');
+    const [emailSystemUpdates, setEmailSystemUpdates] = useState(true);
+    const [emailPrimary, setEmailPrimary] = useState(false);
+
     // Theme selection
     const [selectedTheme, setSelectedTheme] = useState('light');
     const [syncSystem, setSyncSystem] = useState(true);
@@ -686,6 +692,46 @@ const HOASettings = () => {
                                         <span className="hoas-availability-text">Available to hire</span>
                                         <Toggle checked={publicProfile} onChange={e => setPublicProfile(e.target.checked)} />
                                     </div>
+                                </div>
+                            </div>
+                        </SectionCard>
+
+                        {/* ── Email ── */}
+                        <SectionCard id="email" title="Email" saved={saved['email']} onSave={() => handleSave('email')} sectionRef={el => sectionRefs.current['email'] = el}>
+                            <div className="hoas-form-horizontal-row">
+                                <label className="hoas-form-horizontal-label">Email</label>
+                                <div className="hoas-form-horizontal-control">
+                                    <input
+                                        type="email"
+                                        value={emailAddress}
+                                        onChange={e => setEmailAddress(e.target.value)}
+                                        placeholder="jasontatum@gonaraza.com"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="hoas-form-horizontal-row" style={{ alignItems: 'center', minHeight: 0, marginBottom: '6px' }}>
+                                <label className="hoas-form-horizontal-label" />
+                                <div className="hoas-form-horizontal-control">
+                                    <div className="hoas-email-toggles">
+                                        <div className="hoas-email-toggle-item">
+                                            <span className="hoas-email-toggle-label">System Updates</span>
+                                            <Toggle checked={emailSystemUpdates} onChange={e => setEmailSystemUpdates(e.target.checked)} />
+                                        </div>
+                                        <div className="hoas-email-toggle-item">
+                                            <span className="hoas-email-toggle-label">Primary</span>
+                                            <Toggle checked={emailPrimary} onChange={e => setEmailPrimary(e.target.checked)} />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="hoas-form-horizontal-row" style={{ minHeight: 0, marginBottom: 0 }}>
+                                <label className="hoas-form-horizontal-label" />
+                                <div className="hoas-form-horizontal-control">
+                                    <p className="hoas-email-help-text">
+                                        Input your email, designate as primary for priority updates. Toggle to seamlessly customize your communication preferences.
+                                    </p>
                                 </div>
                             </div>
                         </SectionCard>

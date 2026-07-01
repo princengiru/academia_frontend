@@ -537,6 +537,7 @@
 }
 
 .hoas-form-horizontal-control input[type="text"],
+.hoas-form-horizontal-control input[type="email"],
 .hoas-form-horizontal-control select {
     width: 100%;
     padding: 10px 14px;
@@ -555,6 +556,62 @@
 .hoas-form-horizontal-control select:focus {
     border-color: #450468;
     box-shadow: 0 0 0 3px rgba(69,4,104,0.07);
+}
+
+.hoas-section-card[data-section="email"] .hoas-form-horizontal-row {
+    align-items: flex-start;
+}
+
+.hoas-section-card[data-section="email"] .hoas-form-horizontal-label {
+    width: 170px;
+    padding-top: 9px;
+    color: #450468;
+}
+
+.hoas-section-card[data-section="email"] .hoas-form-horizontal-control {
+    align-items: flex-start;
+}
+
+.hoas-section-card[data-section="email"] .hoas-form-horizontal-control input[type="email"] {
+    padding: 9px 12px;
+    border: 1px solid #DDE2EC;
+    border-radius: 2px;
+    background: #FFFFFF;
+    color: #1F2937;
+    font-size: 13px;
+    line-height: 1.35;
+    box-shadow: none;
+}
+
+.hoas-section-card[data-section="email"] .hoas-form-horizontal-control input[type="email"]::placeholder {
+    color: #8791A7;
+}
+
+.hoas-section-card[data-section="email"] .hoas-form-horizontal-control input[type="email"]:focus {
+    border-color: #450468;
+    box-shadow: 0 0 0 3px rgba(69, 4, 104, 0.07);
+}
+
+.hoas-section-card[data-section="email"] .hoas-email-toggles {
+    gap: 28px;
+    flex-wrap: nowrap;
+}
+
+.hoas-section-card[data-section="email"] .hoas-email-toggle-item {
+    gap: 12px;
+}
+
+.hoas-section-card[data-section="email"] .hoas-email-toggle-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: #3F4254;
+}
+
+.hoas-section-card[data-section="email"] .hoas-email-help-text {
+    max-width: 680px;
+    color: #A1A5B7;
+    font-size: 12.5px;
+    line-height: 1.55;
 }
 
 .hoas-photo-upload-area {
@@ -1156,3 +1213,34 @@
 }
 
 .hoas-appearance-widget--dark { background: #450468; border-color: #450468; }
+
+/* =========================================
+   EMAIL SECTION
+   ========================================= */
+.hoas-email-toggles {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    flex-wrap: wrap;
+}
+
+.hoas-email-toggle-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.hoas-email-toggle-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: #3F4254;
+    white-space: nowrap;
+}
+
+.hoas-email-help-text {
+    font-size: 12px;
+    color: #A1A5B7;
+    line-height: 1.6;
+    margin: 0;
+    font-style: italic;
+}
