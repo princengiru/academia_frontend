@@ -697,6 +697,7 @@ const HOASettings = () => {
 
     // Payments
     const [savePaymentMethod, setSavePaymentMethod] = useState(true);
+    const [paymentSimName, setPaymentSimName] = useState('');
     const [paymentCardName, setPaymentCardName] = useState('');
     const [paymentCardNumber, setPaymentCardNumber] = useState('');
     const [paymentCardBrand, setPaymentCardBrand] = useState('unknown');
@@ -1441,6 +1442,16 @@ const HOASettings = () => {
                                 <>
                                     <div className="hoas-payment-subtitle">Add Phone Number</div>
                                     <div className="hoas-payment-form">
+                                        <div className="hoas-payment-field">
+                                            <PaymentFieldLabel hint="Enter the name registered on the SIM card used for mobile money or Airtel Money.">SIM Card Name</PaymentFieldLabel>
+                                            <input
+                                                type="text"
+                                                value={paymentSimName}
+                                                onChange={e => setPaymentSimName(e.target.value)}
+                                                placeholder="Max Smith"
+                                            />
+                                        </div>
+
                                         <div className="hoas-payment-field hoas-payment-phone-field">
                                             <PaymentFieldLabel hint="Rwanda mobile money numbers start with 07 and do not need a country selector.">Phone Number <span className="hoas-required">*</span></PaymentFieldLabel>
                                             <input
