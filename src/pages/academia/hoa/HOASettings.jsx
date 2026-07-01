@@ -14,6 +14,12 @@ const IconChecked = () => (
     </svg>
 );
 
+const IconCamera = () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
+        <path d="M4 4h3l2-2h6l2 2h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm8 13a5 5 0 1 0 0-10 5 5 0 0 0 0 10zm0-2a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/>
+    </svg>
+);
+
 const IconUnchecked = () => (
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
         <circle cx="8" cy="8" r="8" fill="#E4E6EF" />
@@ -104,6 +110,8 @@ const HOASettings = () => {
     const [saved, setSaved] = useState({});
     const [activeSection, setActiveSection] = useState('general');
     const sectionRefs = useRef({});
+
+    const [uploadedPhoto, setUploadedPhoto] = useState(null);
 
     // Theme selection
     const [selectedTheme, setSelectedTheme] = useState('light');
@@ -257,13 +265,30 @@ const HOASettings = () => {
                                     <div className="hoas-photo-upload-area">
                                         <span className="hoas-photo-info">150×150px JPEG, PNG Image</span>
                                         <div className="hoas-photo-preview">
-                                            <img src="/assets/imgs/default-profile.png" alt="Profile" />
-                                            <div className="hoas-photo-remove">
-                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                                                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                                                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                                                </svg>
+                                            <div className="hoas-photo-inner">
+                                                <img src={uploadedPhoto || "/assets/imgs/default-profile.png"} alt="Profile" />
+                                                <label className="hoas-photo-camera-overlay">
+                                                    <IconCamera />
+                                                    <input 
+                                                        type="file" 
+                                                        accept="image/png, image/jpeg" 
+                                                        style={{display: 'none'}} 
+                                                        onChange={(e) => {
+                                                            if (e.target.files && e.target.files[0]) {
+                                                                setUploadedPhoto(URL.createObjectURL(e.target.files[0]));
+                                                            }
+                                                        }} 
+                                                    />
+                                                </label>
                                             </div>
+                                            {uploadedPhoto && (
+                                                <div className="hoas-photo-remove" onClick={() => setUploadedPhoto(null)}>
+                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                                                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                                                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                                                    </svg>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
