@@ -8,6 +8,18 @@ import rwanda from '../../../assets/icons/rwanda.svg';
 import light_theme from '../../../assets/imgs/light_theme.png';
 import dark_theme from '../../../assets/imgs/dark_theme.png';
 import system_default_theme from '../../../assets/imgs/system_default_theme.png';
+import hoadraganddrop from '../../../assets/icons/hoadraganddrop.svg';
+import hoapdffile from '../../../assets/icons/hoapdffile.svg';
+import hoafacebook2 from '../../../assets/icons/hoafacebook2.svg';
+import hoainstagram2 from '../../../assets/icons/hoainstagram2.svg';
+import hoalinkedin2 from '../../../assets/icons/hoalinkedin2.svg';
+import hoax2 from '../../../assets/icons/hoax2.svg';
+import hoaairtel from '../../../assets/icons/hoaairtel.svg';
+import hoamtn from '../../../assets/icons/hoamtn.svg';
+import hoabankcards from '../../../assets/icons/hoabankcards.svg';
+import hoayoutube from '../../../assets/icons/hoayoutube2.svg';
+import hoaadd2 from '../../../assets/icons/hoaadd2.svg';
+import hoadelete from '../../../assets/icons/hoadelete.svg';
 
 // ─── Inline SVGs ──────────────────────────────────────────────────────────────
 const IconChecked = () => (
@@ -31,45 +43,27 @@ const IconUnchecked = () => (
 );
 
 const IconUpload = () => (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#450468" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-        <polyline points="17 8 12 3 7 8" />
-        <line x1="12" y1="3" x2="12" y2="15" />
-    </svg>
+<img src={hoadraganddrop} alt="Upload" />
 );
 
 const IconInstagram = () => (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
-        <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
-        <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
-    </svg>
+    <img src={hoainstagram2} alt="Instagram" />
 );
 
 const IconLinkedIn = () => (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z" />
-        <rect x="2" y="9" width="4" height="12" />
-        <circle cx="4" cy="4" r="2" />
-    </svg>
+    <img src={hoalinkedin2} alt="LinkedIn" />
 );
 
 const IconFacebook = () => (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
-    </svg>
+    <img src={hoafacebook2} alt="Facebook" />
 );
 
 const IconTwitter = () => (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z" />
-    </svg>
+    <img src={hoax2} alt="Twitter" style={{ width: '12px', height: '12px' }} />
 );
 
 const IconTiktok = () => (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5" />
-    </svg>
+    <img src={hoax2} alt="Tiktok" />
 );
 
 const IconSms = () => (
@@ -213,7 +207,7 @@ const SOCIAL_CONNECT_ACTIONS = [
     {
         id: 'youtube',
         label: 'Connect Youtube',
-        icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.6 3.6 12 3.6 12 3.6s-7.6 0-9.4.5A3 3 0 0 0 .5 6.2 31.5 31.5 0 0 0 0 12a31.5 31.5 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.8.5 9.4.5 9.4.5s7.6 0 9.4-.5a3 3 0 0 0 2.1-2.1A31.5 31.5 0 0 0 24 12a31.5 31.5 0 0 0-.5-5.8ZM9.6 15.5V8.5L15.7 12l-6.1 3.5Z"/></svg>,
+        icon: <img src={hoayoutube} alt="Youtube" />,
         name: 'YouTube',
         handle: 'youtube.com/@gonaraza',
         iconBg: '#FFF2F2',
@@ -231,7 +225,7 @@ const SOCIAL_CONNECT_ACTIONS = [
     {
         id: 'more',
         label: 'Add More',
-        icon: <span className="hoas-social-plus">+</span>,
+        icon: <img src={hoaadd2} alt="Add" />,
     },
 ];
 
@@ -1247,7 +1241,7 @@ const HOASettings = () => {
                             <div className="hoas-form-horizontal-row" style={{ minHeight: 0, marginBottom: 0 }}>
                                 <label className="hoas-form-horizontal-label" />
                                 <div className="hoas-form-horizontal-control">
-                                    <p className="hoas-email-help-text">
+                                    <p className="hoas-email-help-text" style={{ color: "#450468"}}>
                                         Input your email, designate as primary for priority updates. Toggle to seamlessly customize your communication preferences.
                                     </p>
                                 </div>
@@ -1273,10 +1267,7 @@ const HOASettings = () => {
                                 onDrop={handleDocumentDrop}
                             >
                                 <div className="hoas-doc-upload-icon">
-                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                                        <path d="M12 19V6" />
-                                        <path d="M7 11l5-5 5 5" />
-                                    </svg>
+                                    <img src={hoadraganddrop} alt="PDF Icon" />
                                 </div>
                                 <div className="hoas-doc-upload-copy">
                                     <strong>Add Certificates files or Click Upload</strong>
@@ -1291,7 +1282,7 @@ const HOASettings = () => {
                                             ×
                                         </button>
                                         <div className="hoas-doc-file-icon" aria-hidden="true">
-                                            PDF
+                                            <img src={hoapdffile} alt="PDF Icon" />
                                         </div>
                                         <div className="hoas-doc-file-meta">
                                             <span className="hoas-doc-file-name">{file.name}</span>
@@ -1321,13 +1312,7 @@ const HOASettings = () => {
                                         <div className="hoas-social-connection-actions">
                                             <Toggle checked={Boolean(connection.active)} onChange={e => toggleSocialConnection(connection.id, e.target.checked)} />
                                             <button type="button" className="hoas-social-delete" aria-label={`Remove ${connection.name}`} onClick={() => removeSocialConnection(connection.id)}>
-                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                                                    <path d="M3 6h18" />
-                                                    <path d="M8 6V4h8v2" />
-                                                    <path d="M19 6l-1 13H6L5 6" />
-                                                    <path d="M10 11v6" />
-                                                    <path d="M14 11v6" />
-                                                </svg>
+                                                <img src={hoadelete} alt="Delete" />
                                             </button>
                                         </div>
                                     </div>
