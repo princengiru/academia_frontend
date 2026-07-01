@@ -20,6 +20,8 @@ import hoabankcards from '../../../assets/icons/hoabankcards.svg';
 import hoayoutube from '../../../assets/icons/hoayoutube2.svg';
 import hoaadd2 from '../../../assets/icons/hoaadd2.svg';
 import hoadelete from '../../../assets/icons/hoadelete.svg';
+import hoa2famessage from '../../../assets/icons/hoa2famessage.svg';
+import hoa2faotp from '../../../assets/icons/hoa2faotp.svg';
 
 // ─── Inline SVGs ──────────────────────────────────────────────────────────────
 const IconChecked = () => (
@@ -67,16 +69,11 @@ const IconTiktok = () => (
 );
 
 const IconSms = () => (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M4 5h16a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H9l-5 4v-4H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Z" />
-    </svg>
+    <img src={hoa2famessage} alt="SMS" />
 );
 
 const IconAuthenticator = () => (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M12 2 4 5v6c0 5.5 3.6 9.7 8 11 4.4-1.3 8-5.5 8-11V5l-8-3Z" />
-        <path d="M9.5 12.5 11 14l3.5-4" />
-    </svg>
+    <img src={hoa2faotp} alt="Authenticator" />
 );
 
 const IconDotsVertical = () => (
@@ -1301,7 +1298,7 @@ const HOASettings = () => {
                                 {socialConnections.map((connection) => (
                                     <div key={connection.id} className="hoas-social-connection-card">
                                         <div className="hoas-social-connection-main">
-                                            <div className="hoas-social-icon" style={{ background: connection.iconBg, color: connection.iconColor }}>
+                                            <div className="hoas-social-icon" >
                                                 {connection.icon}
                                             </div>
                                             <div className="hoas-social-connection-copy">

@@ -1921,9 +1921,9 @@
     justify-content: space-between;
     gap: 16px;
     padding: 14px 16px;
-    border: 1px solid #EEF1F6;
-    border-radius: 10px;
-    background: #FAFAFA;
+    border: 1px solid #F1F1F4;
+    border-radius: 12px;
+    background: #F9F9F933;
 }
 
 .hoas-2fa-option-main {
@@ -1986,9 +1986,9 @@
 .hoas-2fa-password-control input {
     width: 100%;
     padding: 10px 14px;
-    border: 1px solid #D5DCEE;
+    border: 1px solid #C4CADA;
     border-radius: 6px;
-    background: #FFFFFF;
+    background: #FCFCFC;
     font-size: 13px;
     color: #071437;
     font-family: inherit;
