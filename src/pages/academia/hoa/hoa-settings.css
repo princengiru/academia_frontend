@@ -410,6 +410,26 @@
     display: flex;
     align-items: center;
     gap: 10px;
+    width: 100%;
+}
+
+.hoas-section-header-menu {
+    margin-left: auto;
+    width: 30px;
+    height: 30px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: transparent;
+    color: #99A1B7;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.hoas-section-header-menu:hover {
+    background: #F7F8FC;
+    color: #6B7280;
 }
 
 .hoas-section-header h2 {
@@ -1329,6 +1349,383 @@
 /* =========================================
    PAYMENT GATEWAYS
    ========================================= */
+.hoas-2fa-options {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 18px;
+}
+
+.hoas-2fa-option-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 14px 16px;
+    border: 1px solid #EEF1F6;
+    border-radius: 10px;
+    background: #FAFAFA;
+}
+
+.hoas-2fa-option-main {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+    flex: 1;
+}
+
+.hoas-2fa-option-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    border: 1px solid #E6EAF2;
+    background: #FFFFFF;
+    color: #99A1B7;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.hoas-2fa-option-copy {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+}
+
+.hoas-2fa-option-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #071437;
+}
+
+.hoas-2fa-option-desc {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.45;
+    color: #7F889B;
+    max-width: 420px;
+}
+
+.hoas-2fa-password-row {
+    display: grid;
+    grid-template-columns: 120px minmax(0, 1fr);
+    gap: 16px;
+    align-items: start;
+    margin-top: 6px;
+}
+
+.hoas-2fa-password-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: #3F4254;
+    padding-top: 10px;
+}
+
+.hoas-2fa-password-control input {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid #D5DCEE;
+    border-radius: 6px;
+    background: #FFFFFF;
+    font-size: 13px;
+    color: #071437;
+    font-family: inherit;
+    outline: none;
+    box-sizing: border-box;
+}
+
+.hoas-2fa-password-control input:focus {
+    border-color: #450468;
+    box-shadow: 0 0 0 3px rgba(69, 4, 104, 0.08);
+}
+
+.hoas-2fa-password-control p {
+    margin: 8px 0 0;
+    font-size: 12px;
+    line-height: 1.5;
+    color: #6D4B97;
+}
+
+.hoas-2fa-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 18px;
+}
+
+.hoas-payment-step-label {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: #071437;
+    margin-bottom: 18px;
+}
+
+.hoas-payment-types {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 18px;
+    max-width: 560px;
+    margin: 0 auto 24px;
+}
+
+.hoas-payment-type-card {
+    position: relative;
+    min-height: 124px;
+    padding: 18px 14px 26px;
+    border: 1.5px dashed #E0E4ED;
+    border-radius: 10px;
+    background: #FFFFFF;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    cursor: pointer;
+    color: #071437;
+    font-family: inherit;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.hoas-payment-type-card:hover {
+    border-color: #C8B0E4;
+}
+
+.hoas-payment-type-card.active {
+    border-color: #450468;
+    box-shadow: 0 0 0 3px rgba(69, 4, 104, 0.08);
+    background: #FBF8FF;
+}
+
+.hoas-payment-type-icon {
+    width: 54px;
+    height: 54px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.hoas-payment-type-icon img {
+    height: 28px;
+    object-fit: contain;
+}
+
+.hoas-payment-type-card span {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #3F4254;
+    text-align: center;
+}
+
+.hoas-payment-type-active-line {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -14px;
+    height: 3px;
+    border-radius: 999px;
+    background: #450468;
+}
+
+.hoas-payment-subtitle {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: #071437;
+    margin: 6px 0 16px;
+}
+
+.hoas-payment-form {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.hoas-payment-field {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+}
+
+.hoas-payment-field-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    width: fit-content;
+}
+
+.hoas-payment-label-title {
+    font-size: 12.5px;
+    font-weight: 500;
+    color: #450468;
+}
+
+.hoas-info-hint {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 1px solid #D5DCEE;
+    color: #99A1B7;
+    background: #FFFFFF;
+    font-size: 10px;
+    font-weight: 700;
+    cursor: help;
+    flex-shrink: 0;
+}
+
+.hoas-info-hint:focus-visible {
+    outline: 2px solid rgba(69, 4, 104, 0.22);
+    outline-offset: 2px;
+}
+
+.hoas-info-tooltip {
+    position: absolute;
+    left: 50%;
+    bottom: calc(100% + 10px);
+    transform: translateX(-50%);
+    padding: 8px 10px;
+    min-width: 190px;
+    max-width: 250px;
+    background: #1F2937;
+    color: #FFFFFF;
+    font-size: 11px;
+    line-height: 1.4;
+    border-radius: 8px;
+    box-shadow: 0 12px 28px rgba(7, 20, 55, 0.18);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    z-index: 20;
+}
+
+.hoas-info-tooltip::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 100%;
+    width: 10px;
+    height: 10px;
+    background: #1F2937;
+    transform: translateX(-50%) rotate(45deg);
+}
+
+.hoas-info-hint:hover .hoas-info-tooltip,
+.hoas-info-hint:focus-visible .hoas-info-tooltip {
+    opacity: 1;
+    visibility: visible;
+}
+
+.hoas-payment-field label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 12.5px;
+    font-weight: 500;
+    color: #450468;
+}
+
+.hoas-required {
+    color: #F8285A;
+}
+
+.hoas-payment-field input {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid #D5DCEE;
+    border-radius: 6px;
+    background: #FFFFFF;
+    font-size: 13px;
+    color: #071437;
+    font-family: inherit;
+    outline: none;
+    box-sizing: border-box;
+}
+
+.hoas-payment-phone-field-input {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid #D5DCEE;
+    border-radius: 6px;
+    background: #FFFFFF;
+    font-size: 13px;
+    color: #071437;
+    font-family: inherit;
+    outline: none;
+    box-sizing: border-box;
+}
+
+.hoas-payment-phone-field-input:focus,
+.hoas-payment-field input:focus {
+    border-color: #450468;
+    box-shadow: 0 0 0 3px rgba(69, 4, 104, 0.08);
+}
+
+.hoas-payment-card-number {
+    position: relative;
+}
+
+.hoas-payment-card-number .hoas-card-icons {
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.hoas-payment-detected-brand {
+    margin: 6px 0 0;
+    font-size: 11.5px;
+    color: #6D4B97;
+}
+
+.hoas-payment-brand-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 44px;
+    height: 22px;
+    padding: 0 8px;
+    border-radius: 999px;
+    background: #F3EEFF;
+    color: #450468;
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+}
+
+.hoas-payment-expiry-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+}
+
+.hoas-payment-footer-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-top: 2px;
+}
+
+.hoas-payment-save-toggle {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.hoas-payment-footnote {
+    margin: 18px 0 0;
+    font-size: 12px;
+    line-height: 1.55;
+    color: #6D4B97;
+}
+
+.hoas-payment-form .hoas-payment-save-toggle .hoas-toggle-label {
+    font-size: 13px;
+    color: #450468;
+}
+
 .hoas-gateway-options {
     display: grid;
     grid-template-columns: repeat(3, 1fr);

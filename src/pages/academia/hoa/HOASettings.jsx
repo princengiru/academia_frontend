@@ -69,6 +69,27 @@ const IconTiktok = () => (
     </svg>
 );
 
+const IconSms = () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M4 5h16a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H9l-5 4v-4H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Z" />
+    </svg>
+);
+
+const IconAuthenticator = () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 2 4 5v6c0 5.5 3.6 9.7 8 11 4.4-1.3 8-5.5 8-11V5l-8-3Z" />
+        <path d="M9.5 12.5 11 14l3.5-4" />
+    </svg>
+);
+
+const IconDotsVertical = () => (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="5" r="1.2" fill="currentColor" stroke="none" />
+        <circle cx="12" cy="12" r="1.2" fill="currentColor" stroke="none" />
+        <circle cx="12" cy="19" r="1.2" fill="currentColor" stroke="none" />
+    </svg>
+);
+
 // ─── Nav sections definition ───────────────────────────────────────────────────
 const NAV_CATEGORIES = [
     {
@@ -105,6 +126,20 @@ const Toggle = ({ checked, onChange }) => (
         <input type="checkbox" checked={checked} onChange={onChange} />
         <span className="hoas-slider" />
     </label>
+);
+
+const InfoHint = ({ text }) => (
+    <span className="hoas-info-hint" tabIndex={0} aria-label={text}>
+        <span className="hoas-info-icon">i</span>
+        <span className="hoas-info-tooltip">{text}</span>
+    </span>
+);
+
+const PaymentFieldLabel = ({ children, hint }) => (
+    <div className="hoas-payment-field-label">
+        <span className="hoas-payment-label-title">{children}</span>
+        {hint && <InfoHint text={hint} />}
+    </div>
 );
 
 const DOCUMENT_FILES = [
@@ -147,6 +182,27 @@ const SOCIAL_CONNECT_ACTIONS = [
     },
 ];
 
+const TWO_FACTOR_OPTIONS = [
+    {
+        id: 'sms',
+        label: 'Text Message (SMS)',
+        description: 'Instant codes for secure account verification.',
+        icon: <IconSms />,
+    },
+    {
+        id: 'authenticator',
+        label: 'Authenticator App (TOTP)',
+        description: 'Elevate protection with an authenticator app for two-factor authentication.',
+        icon: <IconAuthenticator />,
+    },
+];
+
+const PAYMENT_TYPES = [
+    { id: 'mtn', label: 'MTN Mobile Money', icon: '/assets/icons/MTN-pay.svg', bg: '#FFF8DD' },
+    { id: 'airtel', label: 'Airtel Money', icon: '/assets/icons/AIR-pay.svg', bg: '#FFEEF3' },
+    { id: 'card', label: 'Bank Cards', icon: '/assets/icons/CARD-pay.svg', bg: '#F3EEFF' },
+];
+
 const INITIAL_SOCIAL_CONNECTIONS = [
     {
         id: 'ig',
@@ -174,6 +230,48 @@ const formatFileSize = (bytes) => {
     const unitIndex = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
     const value = bytes / (1024 ** unitIndex);
     return `${value >= 10 || unitIndex === 0 ? Math.round(value) : value.toFixed(1)} ${units[unitIndex]}`;
+};
+
+const formatRwandaPhoneNumber = (value) => {
+    const digits = value.replace(/\D/g, '').slice(0, 10);
+    if (!digits) return '';
+
+    let normalized = digits;
+    if (normalized.startsWith('7')) {
+        normalized = `0${normalized}`;
+    }
+    if (!normalized.startsWith('07')) {
+        normalized = `07${normalized.replace(/^0+/, '').slice(0, 8)}`;
+    }
+
+    normalized = normalized.slice(0, 10);
+    const parts = [normalized.slice(0, 4), normalized.slice(4, 7), normalized.slice(7, 10)].filter(Boolean);
+    return parts.join(' ');
+};
+
+const detectCardBrand = (value) => {
+    const digits = value.replace(/\D/g, '');
+    if (/^4/.test(digits)) return 'visa';
+    if (/^(5[1-5]|2[2-7])/.test(digits)) return 'mastercard';
+    if (/^3[47]/.test(digits)) return 'amex';
+    return 'unknown';
+};
+
+const formatCardNumber = (value, brand) => {
+    const digits = value.replace(/\D/g, '');
+    const groups = brand === 'amex' ? [4, 6, 5] : [4, 4, 4, 4];
+    const maxLength = groups.reduce((total, groupLength) => total + groupLength, 0);
+    const trimmedDigits = digits.slice(0, maxLength);
+    let cursor = 0;
+
+    return groups
+        .map((groupLength) => {
+            const chunk = trimmedDigits.slice(cursor, cursor + groupLength);
+            cursor += groupLength;
+            return chunk;
+        })
+        .filter(Boolean)
+        .join(' ');
 };
 
 // ─── Country Data (all world countries) ───────────────────────────────────────
@@ -510,7 +608,7 @@ const CustomDropdown = ({ value, onChange, options }) => {
 };
 
 // ─── Section Card (defined OUTSIDE HOASettings to prevent remount on re-render) ─
-const SectionCard = ({ id, title, children, saved, onSave, sectionRef, showDiscard = true }) => (
+const SectionCard = ({ id, title, children, saved, onSave, sectionRef, showDiscard = true, showFooter = true, headerAction = null }) => (
     <div
         className="hoas-section-card"
         id={id}
@@ -528,16 +626,19 @@ const SectionCard = ({ id, title, children, saved, onSave, sectionRef, showDisca
                         Saved
                     </span>
                 )}
+                {headerAction}
             </div>
         </div>
         <div className="hoas-section-body">
             {children}
-            <div className="hoas-section-footer">
-                {showDiscard && <button className="hoas-btn-discard">Discard</button>}
-                <button className="hoas-btn-save" onClick={onSave}>
-                    Save Changes
-                </button>
-            </div>
+            {showFooter && (
+                <div className="hoas-section-footer">
+                    {showDiscard && <button className="hoas-btn-discard">Discard</button>}
+                    <button className="hoas-btn-save" onClick={onSave}>
+                        Save Changes
+                    </button>
+                </div>
+            )}
         </div>
     </div>
 );
@@ -576,7 +677,6 @@ const HOASettings = () => {
 
     // Payment gateway
     const [selectedGateway, setSelectedGateway] = useState('card');
-    const [paymentActive, setPaymentActive] = useState(true);
 
     // Toggles
     const [publicProfile, setPublicProfile] = useState(true);
@@ -589,6 +689,21 @@ const HOASettings = () => {
     const [notifNewLearner, setNotifNewLearner] = useState(true);
     const [notifNewAssignment, setNotifNewAssignment] = useState(true);
     const [notifGrades, setNotifGrades] = useState(false);
+
+    // Two-factor authentication
+    const [twoFactorSMS, setTwoFactorSMS] = useState(true);
+    const [twoFactorAuthenticator, setTwoFactorAuthenticator] = useState(false);
+    const [twoFactorPassword, setTwoFactorPassword] = useState('');
+
+    // Payments
+    const [savePaymentMethod, setSavePaymentMethod] = useState(true);
+    const [paymentCardName, setPaymentCardName] = useState('');
+    const [paymentCardNumber, setPaymentCardNumber] = useState('');
+    const [paymentCardBrand, setPaymentCardBrand] = useState('unknown');
+    const [paymentExpiryMonth, setPaymentExpiryMonth] = useState('');
+    const [paymentExpiryYear, setPaymentExpiryYear] = useState('');
+    const [paymentCvv, setPaymentCvv] = useState('');
+    const [paymentPhoneNumber, setPaymentPhoneNumber] = useState('');
 
     const [socialConnections, setSocialConnections] = useState(INITIAL_SOCIAL_CONNECTIONS);
     const [socialPopover, setSocialPopover] = useState(null);
@@ -1187,7 +1302,174 @@ const HOASettings = () => {
                             </div>
                         </SectionCard>
 
-                        {/* ── 4. SEO & Metadata ── */}
+                        {/* ── 4. Two-Factor Authentication ── */}
+                        <SectionCard
+                            id="twofactor"
+                            title="Two-Factor authentication(2FA)"
+                            saved={saved['twofactor']}
+                            onSave={() => handleSave('twofactor')}
+                            sectionRef={el => sectionRefs.current['twofactor'] = el}
+                            showFooter={false}
+                            headerAction={(
+                                <button type="button" className="hoas-section-header-menu" aria-label="Two-factor actions">
+                                    <IconDotsVertical />
+                                </button>
+                            )}
+                        >
+                            <div className="hoas-2fa-options">
+                                {TWO_FACTOR_OPTIONS.map((option) => {
+                                    const checked = option.id === 'sms' ? twoFactorSMS : twoFactorAuthenticator;
+                                    const onChange = option.id === 'sms' ? setTwoFactorSMS : setTwoFactorAuthenticator;
+
+                                    return (
+                                        <div key={option.id} className="hoas-2fa-option-row">
+                                            <div className="hoas-2fa-option-main">
+                                                <div className="hoas-2fa-option-icon">
+                                                    {option.icon}
+                                                </div>
+                                                <div className="hoas-2fa-option-copy">
+                                                    <span className="hoas-2fa-option-title">{option.label}</span>
+                                                    <p className="hoas-2fa-option-desc">{option.description}</p>
+                                                </div>
+                                            </div>
+                                            <Toggle checked={checked} onChange={e => onChange(e.target.checked)} />
+                                        </div>
+                                    );
+                                })}
+                            </div>
+
+                            <div className="hoas-2fa-password-row">
+                                <label className="hoas-2fa-password-label">Password</label>
+                                <div className="hoas-2fa-password-control">
+                                    <input
+                                        type="password"
+                                        value={twoFactorPassword}
+                                        onChange={e => setTwoFactorPassword(e.target.value)}
+                                        placeholder="Enter password"
+                                    />
+                                    <p>Enter your password to setup Two-Factor authentication</p>
+                                </div>
+                            </div>
+
+                            <div className="hoas-2fa-actions">
+                                <button type="button" className="hoas-btn-save" onClick={() => handleSave('twofactor')}>Setup</button>
+                            </div>
+                        </SectionCard>
+
+                        {/* ── 5. Payment Methods ── */}
+                        <SectionCard
+                            id="payment"
+                            title="Payments Method"
+                            saved={saved['payment']}
+                            onSave={() => handleSave('payment')}
+                            sectionRef={el => sectionRefs.current['payment'] = el}
+                            showFooter={false}
+                        >
+                            <div className="hoas-payment-step-label">1. Payment Type</div>
+
+                            <div className="hoas-payment-types">
+                                {PAYMENT_TYPES.map((type) => (
+                                    <button
+                                        key={type.id}
+                                        type="button"
+                                        className={`hoas-payment-type-card ${selectedGateway === type.id ? 'active' : ''}`}
+                                        onClick={() => setSelectedGateway(type.id)}
+                                    >
+                                        <div className="hoas-payment-type-icon" style={{ background: type.bg }}>
+                                            <img src={type.icon} alt={type.label} />
+                                        </div>
+                                        <span>{type.label}</span>
+                                        {selectedGateway === type.id && <span className="hoas-payment-type-active-line" />}
+                                    </button>
+                                ))}
+                            </div>
+
+                            {selectedGateway === 'card' ? (
+                                <>
+                                    <div className="hoas-payment-subtitle">Add Bank Card</div>
+
+                                    <div className="hoas-payment-form">
+                                        <div className="hoas-payment-field">
+                                            <PaymentFieldLabel hint="Use the name exactly as it appears on the card.">Name On Card <span className="hoas-required">*</span></PaymentFieldLabel>
+                                            <input type="text" value={paymentCardName} onChange={e => setPaymentCardName(e.target.value)} placeholder="Max Smith" />
+                                        </div>
+
+                                        <div className="hoas-payment-field">
+                                            <PaymentFieldLabel hint="Card brand is detected automatically as you type.">Card Number <span className="hoas-required">*</span></PaymentFieldLabel>
+                                            <div className="hoas-input-with-icon-right hoas-payment-card-number">
+                                                <input
+                                                    type="text"
+                                                    inputMode="numeric"
+                                                    value={paymentCardNumber}
+                                                    onChange={e => {
+                                                        const nextBrand = detectCardBrand(e.target.value);
+                                                        setPaymentCardBrand(nextBrand);
+                                                        setPaymentCardNumber(formatCardNumber(e.target.value, nextBrand));
+                                                    }}
+                                                    placeholder="0000 0000 0000 0000"
+                                                />
+                                                <div className="hoas-card-icons">
+                                                    {(paymentCardBrand === 'visa' || paymentCardBrand === 'unknown') && <img src="/assets/icons/VISA-pay.svg" alt="Visa" height="18" />}
+                                                    {(paymentCardBrand === 'mastercard' || paymentCardBrand === 'unknown') && <img src="/assets/icons/MASTER-PAY.svg" alt="Mastercard" height="18" />}
+                                                    {paymentCardBrand === 'amex' && <span className="hoas-payment-brand-badge">Amex</span>}
+                                                </div>
+                                            </div>
+                                            {paymentCardBrand !== 'unknown' && (
+                                                <p className="hoas-payment-detected-brand">Detected card: {paymentCardBrand === 'mastercard' ? 'Mastercard' : paymentCardBrand === 'visa' ? 'Visa' : 'Amex'}</p>
+                                            )}
+                                        </div>
+
+                                        <div className="hoas-payment-field">
+                                            <PaymentFieldLabel hint="Enter the expiration month and year, plus the CVV security code.">Expiration Date</PaymentFieldLabel>
+                                            <div className="hoas-payment-expiry-grid">
+                                                <input type="text" value={paymentExpiryMonth} onChange={e => setPaymentExpiryMonth(e.target.value)} placeholder="03/07" />
+                                                <input type="text" value={paymentExpiryYear} onChange={e => setPaymentExpiryYear(e.target.value)} placeholder="2025" />
+                                                <input type="text" value={paymentCvv} onChange={e => setPaymentCvv(e.target.value)} placeholder="CVV" />
+                                            </div>
+                                        </div>
+
+                                        <div className="hoas-payment-footer-row">
+                                            <div className="hoas-payment-save-toggle">
+                                                <span className="hoas-toggle-label">Save for future use</span>
+                                                <Toggle checked={savePaymentMethod} onChange={e => setSavePaymentMethod(e.target.checked)} />
+                                            </div>
+                                            <button type="button" className="hoas-btn-save" onClick={() => handleSave('payment')}>Save Changes</button>
+                                        </div>
+                                    </div>
+                                </>
+                            ) : (
+                                <>
+                                    <div className="hoas-payment-subtitle">Add Phone Number</div>
+                                    <div className="hoas-payment-form">
+                                        <div className="hoas-payment-field hoas-payment-phone-field">
+                                            <PaymentFieldLabel hint="Rwanda mobile money numbers start with 07 and do not need a country selector.">Phone Number <span className="hoas-required">*</span></PaymentFieldLabel>
+                                            <input
+                                                type="tel"
+                                                inputMode="numeric"
+                                                value={paymentPhoneNumber}
+                                                onChange={e => setPaymentPhoneNumber(formatRwandaPhoneNumber(e.target.value))}
+                                                placeholder="07 88 123 456"
+                                                className="hoas-payment-phone-field-input"
+                                            />
+                                        </div>
+
+                                        <div className="hoas-payment-footer-row">
+                                            <div className="hoas-payment-save-toggle">
+                                                <span className="hoas-toggle-label">Save for future use</span>
+                                                <Toggle checked={savePaymentMethod} onChange={e => setSavePaymentMethod(e.target.checked)} />
+                                            </div>
+                                            <button type="button" className="hoas-btn-save" onClick={() => handleSave('payment')}>Save Changes</button>
+                                        </div>
+                                    </div>
+                                </>
+                            )}
+
+                            <p className="hoas-payment-footnote">
+                                Single Sign-On (SSO) authentication streamlines access across multiple platforms. Users log in once, gaining seamless entry to various systems without repetitive credentials.
+                            </p>
+                        </SectionCard>
+
+                        {/* ── 6. SEO & Metadata ── */}
                         <SectionCard id="seo" title="SEO and Metadata" saved={saved['seo']} onSave={() => handleSave('seo')} sectionRef={el => sectionRefs.current['seo'] = el}>
                             <div className="hoas-toggle-wrapper hoas-mb-20">
                                 <div>
@@ -1210,71 +1492,7 @@ const HOASettings = () => {
                             </div>
                         </SectionCard>
 
-                        {/* ── 5. Payment Methods ── */}
-                        <SectionCard id="payment" title="Payment Methods" saved={saved['payment']} onSave={() => handleSave('payment')} sectionRef={el => sectionRefs.current['payment'] = el}>
-                            <div className="hoas-form-group">
-                                <label>Gateway Type</label>
-                                <div className="hoas-gateway-options">
-                                    {[
-                                        { id: 'mtn', label: 'Mobile Money', icon: '/assets/icons/MTN-pay.svg', bg: '#FFF8DD', color: '#F6C000' },
-                                        { id: 'airtel', label: 'Airtel Money', icon: '/assets/icons/AIR-pay.svg', bg: '#FFEEF3', color: '#E40000' },
-                                        { id: 'card', label: 'Credit Card', icon: '/assets/icons/CARD-pay.svg', bg: '#F0F5FF', color: '#1B84FF' },
-                                    ].map(({ id, label, icon, bg, color }) => (
-                                        <div
-                                            key={id}
-                                            className={`hoas-gateway-box ${selectedGateway === id ? 'active' : ''}`}
-                                            onClick={() => setSelectedGateway(id)}
-                                        >
-                                            <div className="hoas-gateway-logo" style={{ background: bg }}>
-                                                <img src={icon} alt={label} />
-                                            </div>
-                                            <span>{label}</span>
-                                            {selectedGateway === id && (
-                                                <span className="hoas-gateway-radio-dot" />
-                                            )}
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-
-                            <div className="hoas-form-row">
-                                <div className="hoas-form-group">
-                                    <label>Account Name</label>
-                                    <input type="text" defaultValue="Gonaraza Ltd" />
-                                </div>
-                                <div className="hoas-form-group">
-                                    <label>API Gateway Key</label>
-                                    <div className="hoas-input-with-icon-right">
-                                        <input type="password" defaultValue="sk_live_••••••••••••••••••••" />
-                                        <div className="hoas-card-icons">
-                                            <img src="/assets/icons/VISA-pay.svg" alt="Visa" height="18" />
-                                            <img src="/assets/icons/MASTER-PAY.svg" alt="Mastercard" height="18" />
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="hoas-form-row">
-                                <div className="hoas-form-group">
-                                    <label>Transaction Fee (%)</label>
-                                    <input type="number" defaultValue="1.5" min="0" max="10" step="0.1" />
-                                </div>
-                                <div className="hoas-form-group">
-                                    <label>Minimum Payout (RWF)</label>
-                                    <input type="number" defaultValue="5000" />
-                                </div>
-                            </div>
-
-                            <div className="hoas-toggle-wrapper">
-                                <div>
-                                    <span className="hoas-toggle-label">Activate Payment Method</span>
-                                    <p className="hoas-toggle-desc">Enable live payment processing for this gateway</p>
-                                </div>
-                                <Toggle checked={paymentActive} onChange={e => setPaymentActive(e.target.checked)} />
-                            </div>
-                        </SectionCard>
-
-                        {/* ── 4. App Theme ── */}
+                        {/* ── 7. App Theme ── */}
                         <SectionCard id="theme" title="App Theme" saved={saved['theme']} onSave={() => handleSave('theme')} sectionRef={el => sectionRefs.current['theme'] = el}>
                             <p className="hoas-sub-label">Choose the look and feel of your dashboard.</p>
                             <div className="hoas-theme-grid">
