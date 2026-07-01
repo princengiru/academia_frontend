@@ -242,63 +242,75 @@ const HOASettings = () => {
                     {/* ── Main Content ── */}
                     <div className="hoas-content-area">
 
-                        {/* ── 1. General Settings ── */}
-                        <SectionCard id="general" title="General Settings">
-                            <div className="hoas-form-row">
-                                <div className="hoas-form-group">
-                                    <label>Platform Name</label>
-                                    <input type="text" defaultValue="Gonaraza Platform" />
+                        {/* ── 1. Basic Settings ── */}
+                        <SectionCard id="general" title="Basic Settings">
+                            <div className="hoas-form-horizontal-row">
+                                <label className="hoas-form-horizontal-label">Client ID</label>
+                                <div className="hoas-form-horizontal-control">
+                                    <input type="text" defaultValue="Head Of Academia" />
                                 </div>
-                                <div className="hoas-form-group">
-                                    <label>Phone Number</label>
-                                    <div className="hoas-input-with-avatar">
-                                        <input type="text" defaultValue="+250 788 123 456" />
-                                        <img src="/assets/imgs/default-profile.png" alt="Avatar" className="hoas-field-avatar" />
+                            </div>
+
+                            <div className="hoas-form-horizontal-row">
+                                <label className="hoas-form-horizontal-label">Photo</label>
+                                <div className="hoas-form-horizontal-control">
+                                    <div className="hoas-photo-upload-area">
+                                        <span className="hoas-photo-info">150×150px JPEG, PNG Image</span>
+                                        <div className="hoas-photo-preview">
+                                            <img src="/assets/imgs/default-profile.png" alt="Profile" />
+                                            <div className="hoas-photo-remove">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                                </svg>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                            <div className="hoas-form-row">
-                                <div className="hoas-form-group">
-                                    <label>Email Address</label>
-                                    <input type="email" defaultValue="hello@gonaraza.com" />
+
+                            <div className="hoas-form-horizontal-row">
+                                <label className="hoas-form-horizontal-label">Name</label>
+                                <div className="hoas-form-horizontal-control">
+                                    <input type="text" defaultValue="Jason Tatum" />
                                 </div>
-                                <div className="hoas-form-group">
-                                    <label>Country</label>
-                                    <div className="hoas-input-with-flag">
-                                        <img src={rwanda} alt="Rwanda" />
-                                        <select defaultValue="rwanda">
-                                            <option value="rwanda">Rwanda</option>
-                                            <option value="kenya">Kenya</option>
-                                            <option value="uganda">Uganda</option>
-                                            <option value="tanzania">Tanzania</option>
-                                        </select>
+                            </div>
+
+                            <div className="hoas-form-horizontal-row">
+                                <label className="hoas-form-horizontal-label">Role</label>
+                                <div className="hoas-form-horizontal-control">
+                                    <input type="text" defaultValue="UI/UX Designer" />
+                                </div>
+                            </div>
+
+                            <div className="hoas-form-horizontal-row">
+                                <label className="hoas-form-horizontal-label">Phone number</label>
+                                <div className="hoas-form-horizontal-control">
+                                    <div className="hoas-input-with-flag" style={{width: '100%'}}>
+                                        <img src={rwanda} alt="Rwanda" style={{left: '12px'}} />
+                                        <input type="text" defaultValue="+250 700 000 000" style={{paddingLeft: '40px'}} />
                                     </div>
                                 </div>
                             </div>
-                            <div className="hoas-form-row">
-                                <div className="hoas-form-group">
-                                    <label>Currency</label>
-                                    <select defaultValue="rwf">
-                                        <option value="rwf">RWF – Rwandan Franc</option>
-                                        <option value="usd">USD – US Dollar</option>
-                                        <option value="eur">EUR – Euro</option>
-                                    </select>
-                                </div>
-                                <div className="hoas-form-group">
-                                    <label>Language</label>
-                                    <select defaultValue="en">
-                                        <option value="en">English</option>
-                                        <option value="fr">French</option>
-                                        <option value="kn">Kinyarwanda</option>
+
+                            <div className="hoas-form-horizontal-row">
+                                <label className="hoas-form-horizontal-label">Visibility</label>
+                                <div className="hoas-form-horizontal-control">
+                                    <select defaultValue="public">
+                                        <option value="public">Public</option>
+                                        <option value="private">Private</option>
                                     </select>
                                 </div>
                             </div>
-                            <div className="hoas-toggle-wrapper">
-                                <div>
-                                    <span className="hoas-toggle-label">Public Profile</span>
-                                    <p className="hoas-toggle-desc">Allow users to find your platform publicly</p>
+
+                            <div className="hoas-form-horizontal-row">
+                                <label className="hoas-form-horizontal-label">Availability</label>
+                                <div className="hoas-form-horizontal-control">
+                                    <div className="hoas-availability-area">
+                                        <span className="hoas-availability-text">Available to hire</span>
+                                        <Toggle checked={publicProfile} onChange={e => setPublicProfile(e.target.checked)} />
+                                    </div>
                                 </div>
-                                <Toggle checked={publicProfile} onChange={e => setPublicProfile(e.target.checked)} />
                             </div>
                         </SectionCard>
 
