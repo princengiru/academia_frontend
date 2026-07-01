@@ -112,7 +112,42 @@ const DOCUMENT_FILES = [
     { name: 'Resume A0.pdf', size: '5.6 MB' },
 ];
 
-const SOCIAL_CONNECTIONS = [
+const SOCIAL_CONNECT_ACTIONS = [
+    {
+        id: 'x',
+        label: 'Connect X',
+        icon: <IconTwitter />,
+        name: 'X',
+        handle: 'x.com/gonaraza',
+        iconBg: '#F5F5F5',
+        iconColor: '#111111',
+    },
+    {
+        id: 'youtube',
+        label: 'Connect Youtube',
+        icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.6 3.6 12 3.6 12 3.6s-7.6 0-9.4.5A3 3 0 0 0 .5 6.2 31.5 31.5 0 0 0 0 12a31.5 31.5 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.8.5 9.4.5 9.4.5s7.6 0 9.4-.5a3 3 0 0 0 2.1-2.1A31.5 31.5 0 0 0 24 12a31.5 31.5 0 0 0-.5-5.8ZM9.6 15.5V8.5L15.7 12l-6.1 3.5Z"/></svg>,
+        name: 'YouTube',
+        handle: 'youtube.com/@gonaraza',
+        iconBg: '#FFF2F2',
+        iconColor: '#FF0000',
+    },
+    {
+        id: 'facebook',
+        label: 'Connect Facebook',
+        icon: <IconFacebook />,
+        name: 'Facebook',
+        handle: 'facebook.com/gonaraza',
+        iconBg: '#EFF4FF',
+        iconColor: '#1877F2',
+    },
+    {
+        id: 'more',
+        label: 'Add More',
+        icon: <span className="hoas-social-plus">+</span>,
+    },
+];
+
+const INITIAL_SOCIAL_CONNECTIONS = [
     {
         id: 'ig',
         name: 'Instagram',
@@ -120,6 +155,7 @@ const SOCIAL_CONNECTIONS = [
         icon: <IconInstagram />,
         iconBg: '#FFF0F6',
         iconColor: '#F8285A',
+        active: true,
     },
     {
         id: 'li',
@@ -128,14 +164,8 @@ const SOCIAL_CONNECTIONS = [
         icon: <IconLinkedIn />,
         iconBg: '#EFF6FF',
         iconColor: '#1B84FF',
+        active: false,
     },
-];
-
-const SOCIAL_CONNECT_ACTIONS = [
-    { id: 'x', label: 'Connect X', icon: <IconTwitter /> },
-    { id: 'youtube', label: 'Connect Youtube', icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.6 3.6 12 3.6 12 3.6s-7.6 0-9.4.5A3 3 0 0 0 .5 6.2 31.5 31.5 0 0 0 0 12a31.5 31.5 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.8.5 9.4.5 9.4.5s7.6 0 9.4-.5a3 3 0 0 0 2.1-2.1A31.5 31.5 0 0 0 24 12a31.5 31.5 0 0 0-.5-5.8ZM9.6 15.5V8.5L15.7 12l-6.1 3.5Z"/></svg> },
-    { id: 'facebook', label: 'Connect Facebook', icon: <IconFacebook /> },
-    { id: 'more', label: 'Add More', icon: <span className="hoas-social-plus">+</span> },
 ];
 
 const formatFileSize = (bytes) => {
@@ -518,6 +548,8 @@ const HOASettings = () => {
     const [activeSection, setActiveSection] = useState('general');
     const sectionRefs = useRef({});
     const documentInputRef = useRef(null);
+    const socialMoreRef = useRef(null);
+    const socialPopoverRef = useRef(null);
 
     const [uploadedPhoto, setUploadedPhoto] = useState(null);
     const [uploadError, setUploadError] = useState('');
@@ -558,12 +590,8 @@ const HOASettings = () => {
     const [notifNewAssignment, setNotifNewAssignment] = useState(true);
     const [notifGrades, setNotifGrades] = useState(false);
 
-    // Social toggles
-    const [socialIG, setSocialIG] = useState(true);
-    const [socialLI, setSocialLI] = useState(true);
-    const [socialFB, setSocialFB] = useState(false);
-    const [socialTW, setSocialTW] = useState(true);
-    const [socialTK, setSocialTK] = useState(false);
+    const [socialConnections, setSocialConnections] = useState(INITIAL_SOCIAL_CONNECTIONS);
+    const [socialPopover, setSocialPopover] = useState(null);
 
     const handleSave = useCallback((sectionId) => {
         setSaved(prev => ({ ...prev, [sectionId]: true }));
@@ -615,6 +643,152 @@ const HOASettings = () => {
     const openDocumentPicker = useCallback(() => {
         documentInputRef.current?.click();
     }, []);
+
+    const closeSocialPopover = useCallback(() => {
+        setSocialPopover(null);
+    }, []);
+
+    const openSocialPopover = useCallback((action, event) => {
+        const triggerRect = event.currentTarget.getBoundingClientRect();
+        const popoverWidth = 320;
+        const estimatedPopoverHeight = action.id === 'more' ? 288 : 236;
+        const viewportPadding = 16;
+        const centerX = triggerRect.left + (triggerRect.width / 2);
+        const clampedCenterX = Math.min(
+            window.innerWidth - viewportPadding - (popoverWidth / 2),
+            Math.max(viewportPadding + (popoverWidth / 2), centerX)
+        );
+
+        const topAbove = triggerRect.top - estimatedPopoverHeight - 12;
+        const topBelow = triggerRect.bottom + 12;
+        const canOpenAbove = topAbove >= viewportPadding;
+        const top = canOpenAbove
+            ? topAbove
+            : Math.min(topBelow, window.innerHeight - viewportPadding - estimatedPopoverHeight);
+
+        setSocialPopover({
+            id: action.id,
+            mode: action.id === 'more' ? 'custom' : 'connect',
+            title: action.id === 'more' ? 'Add social media account' : action.label,
+            label: action.id === 'more' ? 'Social media name' : 'Social media link',
+            name: action.name || '',
+            link: action.handle || '',
+            icon: action.icon,
+            iconBg: action.iconBg || '#F6F7FB',
+            iconColor: action.iconColor || '#6B7280',
+            left: clampedCenterX,
+            top,
+            placement: canOpenAbove ? 'top' : 'bottom',
+            nameValue: action.id === 'more' ? '' : action.name || '',
+            linkValue: action.handle || '',
+            error: '',
+        });
+    }, []);
+
+    const submitSocialPopover = useCallback((event) => {
+        event.preventDefault();
+
+        if (!socialPopover) return;
+
+        const linkValue = socialPopover.linkValue.trim();
+        const nameValue = socialPopover.mode === 'custom' ? socialPopover.nameValue.trim() : socialPopover.name;
+
+        if (!nameValue || !linkValue) {
+            setSocialPopover((currentPopover) => (
+                currentPopover
+                    ? { ...currentPopover, error: 'Both fields are required.' }
+                    : currentPopover
+            ));
+            return;
+        }
+
+        if (socialPopover.mode === 'connect') {
+            setSocialConnections((currentConnections) => {
+                const existingConnection = currentConnections.find((connection) => connection.id === socialPopover.id);
+                const nextConnection = {
+                    id: socialPopover.id,
+                    name: socialPopover.name,
+                    handle: linkValue,
+                    icon: socialPopover.icon,
+                    iconBg: socialPopover.iconBg,
+                    iconColor: socialPopover.iconColor,
+                    active: true,
+                };
+
+                if (existingConnection) {
+                    return currentConnections.map((connection) => (
+                        connection.id === socialPopover.id ? nextConnection : connection
+                    ));
+                }
+
+                return [...currentConnections, nextConnection];
+            });
+        } else {
+            const normalizedId = nameValue.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+            setSocialConnections((currentConnections) => {
+                const alreadyExists = currentConnections.some((connection) => connection.id === normalizedId || connection.name.toLowerCase() === nameValue.toLowerCase());
+
+                if (alreadyExists) {
+                    return currentConnections.map((connection) => (
+                        connection.id === normalizedId || connection.name.toLowerCase() === nameValue.toLowerCase()
+                            ? { ...connection, name: nameValue, handle: linkValue, active: true }
+                            : connection
+                    ));
+                }
+
+                return [
+                    ...currentConnections,
+                    {
+                        id: normalizedId || `custom-${Date.now()}`,
+                        name: nameValue,
+                        handle: linkValue,
+                        icon: <span className="hoas-social-plus">+</span>,
+                        iconBg: '#F6F7FB',
+                        iconColor: '#6B7280',
+                        active: true,
+                    },
+                ];
+            });
+        }
+
+        setSaved((currentSaved) => ({ ...currentSaved, social: true }));
+        closeSocialPopover();
+    }, [closeSocialPopover, socialPopover]);
+
+    const toggleSocialConnection = useCallback((connectionId, checked) => {
+        setSocialConnections((currentConnections) => currentConnections.map((connection) => (
+            connection.id === connectionId
+                ? { ...connection, active: checked }
+                : connection
+        )));
+        setSaved((currentSaved) => ({ ...currentSaved, social: true }));
+    }, []);
+
+    const removeSocialConnection = useCallback((connectionId) => {
+        setSocialConnections((currentConnections) => currentConnections.filter((connection) => connection.id !== connectionId));
+        setSaved((currentSaved) => ({ ...currentSaved, social: true }));
+    }, []);
+
+    useEffect(() => {
+        if (!socialPopover) return undefined;
+
+        const handlePointerDown = (event) => {
+            if (socialPopoverRef.current && socialPopoverRef.current.contains(event.target)) return;
+            closeSocialPopover();
+        };
+
+        const handleKeyDown = (event) => {
+            if (event.key === 'Escape') closeSocialPopover();
+        };
+
+        document.addEventListener('mousedown', handlePointerDown);
+        document.addEventListener('keydown', handleKeyDown);
+
+        return () => {
+            document.removeEventListener('mousedown', handlePointerDown);
+            document.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [closeSocialPopover, socialPopover]);
 
     const scrollToSection = (id) => {
         sectionRefs.current[id]?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -923,44 +1097,88 @@ const HOASettings = () => {
                         {/* ── 3. Social Media Links ── */}
                         <SectionCard id="social" title="Social Media Links" saved={saved['social']} onSave={() => handleSave('social')} sectionRef={el => sectionRefs.current['social'] = el}>
                             <div className="hoas-social-card-list">
-                                {SOCIAL_CONNECTIONS.map((connection) => {
-                                    const checked = connection.id === 'ig' ? socialIG : socialLI;
-                                    const onChange = connection.id === 'ig' ? setSocialIG : setSocialLI;
-
-                                    return (
-                                        <div key={connection.id} className="hoas-social-connection-card">
-                                            <div className="hoas-social-connection-main">
-                                                <div className="hoas-social-icon" style={{ background: connection.iconBg, color: connection.iconColor }}>
-                                                    {connection.icon}
-                                                </div>
-                                                <div className="hoas-social-connection-copy">
-                                                    <span className="hoas-social-connection-name">{connection.name}</span>
-                                                    <span className="hoas-social-connection-handle">{connection.handle}</span>
-                                                </div>
+                                {socialConnections.map((connection) => (
+                                    <div key={connection.id} className="hoas-social-connection-card">
+                                        <div className="hoas-social-connection-main">
+                                            <div className="hoas-social-icon" style={{ background: connection.iconBg, color: connection.iconColor }}>
+                                                {connection.icon}
                                             </div>
-                                            <div className="hoas-social-connection-actions">
-                                                <Toggle checked={checked} onChange={e => onChange(e.target.checked)} />
-                                                <button type="button" className="hoas-social-delete" aria-label={`Remove ${connection.name}`}>
-                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                                                        <path d="M3 6h18" />
-                                                        <path d="M8 6V4h8v2" />
-                                                        <path d="M19 6l-1 13H6L5 6" />
-                                                        <path d="M10 11v6" />
-                                                        <path d="M14 11v6" />
-                                                    </svg>
-                                                </button>
+                                            <div className="hoas-social-connection-copy">
+                                                <span className="hoas-social-connection-name">{connection.name}</span>
+                                                <span className="hoas-social-connection-handle">{connection.handle}</span>
                                             </div>
                                         </div>
-                                    );
-                                })}
+                                        <div className="hoas-social-connection-actions">
+                                            <Toggle checked={Boolean(connection.active)} onChange={e => toggleSocialConnection(connection.id, e.target.checked)} />
+                                            <button type="button" className="hoas-social-delete" aria-label={`Remove ${connection.name}`} onClick={() => removeSocialConnection(connection.id)}>
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                                                    <path d="M3 6h18" />
+                                                    <path d="M8 6V4h8v2" />
+                                                    <path d="M19 6l-1 13H6L5 6" />
+                                                    <path d="M10 11v6" />
+                                                    <path d="M14 11v6" />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
 
-                            <div className="hoas-social-more">
+                            <div className="hoas-social-more" ref={socialMoreRef}>
+                                {socialPopover && (
+                                    <div
+                                        ref={socialPopoverRef}
+                                        className={`hoas-social-popover ${socialPopover.placement === 'bottom' ? 'is-below' : ''}`}
+                                        style={{ left: `${socialPopover.left}px`, top: `${socialPopover.top}px` }}
+                                    >
+                                        <div className="hoas-social-popover-header">
+                                            <div className="hoas-social-popover-icon" style={{ background: socialPopover.iconBg, color: socialPopover.iconColor }}>
+                                                {socialPopover.icon}
+                                            </div>
+                                            <div>
+                                                <h4>{socialPopover.title}</h4>
+                                                <p>{socialPopover.mode === 'custom' ? 'Enter a new social profile and link.' : 'Paste the profile link before connecting.'}</p>
+                                            </div>
+                                        </div>
+
+                                        <form className="hoas-social-popover-form" onSubmit={submitSocialPopover}>
+                                            {socialPopover.mode === 'custom' && (
+                                                <label className="hoas-social-popover-field">
+                                                    <span>Social media name</span>
+                                                    <input
+                                                        type="text"
+                                                        value={socialPopover.nameValue}
+                                                        onChange={(event) => setSocialPopover((currentPopover) => currentPopover ? { ...currentPopover, nameValue: event.target.value, error: '' } : currentPopover)}
+                                                        placeholder="Instagram, TikTok, etc."
+                                                    />
+                                                </label>
+                                            )}
+
+                                            <label className="hoas-social-popover-field">
+                                                <span>{socialPopover.label}</span>
+                                                <input
+                                                    type="text"
+                                                    value={socialPopover.linkValue}
+                                                    onChange={(event) => setSocialPopover((currentPopover) => currentPopover ? { ...currentPopover, linkValue: event.target.value, error: '' } : currentPopover)}
+                                                    placeholder="https://..."
+                                                />
+                                            </label>
+
+                                            {socialPopover.error && <p className="hoas-social-popover-error">{socialPopover.error}</p>}
+
+                                            <div className="hoas-social-popover-actions">
+                                                <button type="button" className="hoas-social-popover-cancel" onClick={closeSocialPopover}>Cancel</button>
+                                                <button type="submit" className="hoas-social-popover-submit">Add</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                )}
+
                                 <div className="hoas-social-more-title">More Social connections options</div>
                                 <p className="hoas-social-more-text">Effortless access awaits! Connect seamlessly with your preferred social account.</p>
                                 <div className="hoas-social-actions-row">
-                                    {SOCIAL_CONNECT_ACTIONS.map((action) => (
-                                        <button key={action.id} type="button" className="hoas-social-action-btn">
+                                    {SOCIAL_CONNECT_ACTIONS.filter((action) => action.id === 'more' || !socialConnections.some((connection) => connection.id === action.id)).map((action) => (
+                                        <button key={action.id} type="button" className="hoas-social-action-btn" onClick={(event) => openSocialPopover(action, event)}>
                                             <span className="hoas-social-action-icon">{action.icon}</span>
                                             <span>{action.label}</span>
                                         </button>

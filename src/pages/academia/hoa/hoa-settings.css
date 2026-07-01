@@ -1121,6 +1121,7 @@
 
 .hoas-social-more {
     margin-top: 16px;
+    position: relative;
 }
 
 .hoas-social-more-title {
@@ -1181,6 +1182,148 @@
     line-height: 1;
     color: #7B879C;
     font-weight: 400;
+}
+
+.hoas-social-popover {
+    position: fixed;
+    width: 320px;
+    padding: 14px;
+    border: 1px solid #E5E9F2;
+    border-radius: 12px;
+    background: #FFFFFF;
+    box-shadow: 0 18px 40px rgba(7, 20, 55, 0.14);
+    z-index: 20;
+    transform: translateX(-50%);
+}
+
+.hoas-social-popover::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    bottom: -8px;
+    width: 14px;
+    height: 14px;
+    background: #FFFFFF;
+    border-right: 1px solid #E5E9F2;
+    border-bottom: 1px solid #E5E9F2;
+    transform: translateX(-50%) rotate(45deg);
+}
+
+.hoas-social-popover.is-below::after {
+    top: -8px;
+    bottom: auto;
+    border-right: none;
+    border-bottom: none;
+    border-left: 1px solid #E5E9F2;
+    border-top: 1px solid #E5E9F2;
+}
+
+.hoas-social-popover-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.hoas-social-popover-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.hoas-social-popover-header h4 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 700;
+    color: #071437;
+}
+
+.hoas-social-popover-header p {
+    margin: 2px 0 0;
+    font-size: 11.5px;
+    color: #99A1B7;
+    line-height: 1.45;
+}
+
+.hoas-social-popover-form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.hoas-social-popover-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.hoas-social-popover-field span {
+    font-size: 11px;
+    font-weight: 600;
+    color: #3F4254;
+}
+
+.hoas-social-popover-field input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #E1E6EF;
+    border-radius: 8px;
+    background: #FFFFFF;
+    color: #071437;
+    font: inherit;
+    font-size: 13px;
+    outline: none;
+    box-sizing: border-box;
+}
+
+.hoas-social-popover-field input:focus {
+    border-color: #450468;
+    box-shadow: 0 0 0 3px rgba(69, 4, 104, 0.08);
+}
+
+.hoas-social-popover-error {
+    margin: 0;
+    font-size: 11.5px;
+    color: #F8285A;
+}
+
+.hoas-social-popover-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding-top: 4px;
+}
+
+.hoas-social-popover-cancel,
+.hoas-social-popover-submit {
+    min-width: 74px;
+    height: 34px;
+    padding: 0 12px;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.hoas-social-popover-cancel {
+    border: 1px solid #E1E6EF;
+    background: #FFFFFF;
+    color: #5E6278;
+}
+
+.hoas-social-popover-submit {
+    border: none;
+    background: #450468;
+    color: #FFFFFF;
+}
+
+.hoas-social-popover-submit:hover {
+    background: #3a0358;
 }
 
 /* =========================================
