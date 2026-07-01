@@ -1,0 +1,524 @@
+.hoas-page-wrapper {
+    font-family: 'Inter', sans-serif;
+    color: #071437;
+    height: 100%;
+}
+
+/* Utilities */
+.hoas-mt-24 { margin-top: 24px; }
+.hoas-bg-pink { background: #FFEEF3; color: #F8285A; }
+.hoas-bg-blue { background: #F0F5FF; color: #1B84FF; }
+.hoas-bg-yellow { background: #FFF8DD; }
+.hoas-bg-red { background: #FFEEF3; }
+
+/* Base Buttons */
+.hoas-page-wrapper button {
+    cursor: pointer;
+    font-family: inherit;
+}
+
+/* =========================================
+   PAGE HEADER
+========================================= */
+.hoas-page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+}
+
+.hoas-page-header h1 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 700;
+    color: #000000;
+}
+
+.hoas-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.hoas-update-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    color: #64748B;
+    border: 1px solid #DBDFE9;
+    padding: 6px 14px;
+    border-radius: 4px;
+    background: #FCFCFC;
+    height: 40px;
+}
+
+.hoas-update-status .hoas-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #17C653;
+}
+
+.hoas-btn-primary {
+    background: #450468;
+    color: #FFFFFF;
+    border: none;
+    padding: 0 18px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    height: 40px;
+}
+
+/* =========================================
+   LAYOUT
+========================================= */
+.hoas-layout-container {
+    display: flex;
+    align-items: flex-start;
+    gap: 32px;
+}
+
+.hoas-sidebar {
+    width: 240px;
+    flex-shrink: 0;
+    position: sticky;
+    top: 24px;
+}
+
+.hoas-nav-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.hoas-nav-btn {
+    width: 100%;
+    text-align: left;
+    background: transparent;
+    border: none;
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #4B5675;
+    transition: all 0.2s ease;
+}
+
+.hoas-nav-btn:hover {
+    background: #F8FAFC;
+    color: #450468;
+}
+
+.hoas-nav-btn.active {
+    background: #F8F5FF;
+    color: #450468;
+    font-weight: 600;
+}
+
+.hoas-content-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    padding-bottom: 60px;
+}
+
+/* =========================================
+   SECTION CARDS
+========================================= */
+.hoas-section-card {
+    background: #FFFFFF;
+    border: 1px solid #EEF1F6;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.hoas-section-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid #EEF1F6;
+}
+
+.hoas-section-header h2 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #071437;
+}
+
+.hoas-section-body {
+    padding: 24px;
+}
+
+.hoas-section-footer {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 24px;
+}
+
+.hoas-btn-save {
+    background: #450468;
+    color: #FFFFFF;
+    border: none;
+    padding: 10px 24px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    transition: background 0.2s;
+}
+
+.hoas-btn-save:hover {
+    background: #3a0358;
+}
+
+/* =========================================
+   FORMS & INPUTS
+========================================= */
+.hoas-form-row {
+    display: flex;
+    gap: 24px;
+    margin-bottom: 20px;
+}
+
+.hoas-form-row > .hoas-form-group {
+    flex: 1;
+    margin-bottom: 0;
+}
+
+.hoas-form-group {
+    margin-bottom: 20px;
+}
+
+.hoas-form-group label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: #071437;
+    margin-bottom: 8px;
+}
+
+.hoas-sub-label {
+    font-size: 12px;
+    color: #A1A5B7;
+    margin: 0 0 12px 0;
+}
+
+.hoas-form-group input[type="text"],
+.hoas-form-group input[type="email"],
+.hoas-form-group input[type="password"],
+.hoas-form-group select,
+.hoas-form-group textarea {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid #EEF1F6;
+    border-radius: 6px;
+    font-size: 13px;
+    color: #4B5675;
+    outline: none;
+    box-sizing: border-box;
+    font-family: inherit;
+    background: #FFFFFF;
+    transition: border-color 0.2s;
+}
+
+.hoas-form-group input:focus,
+.hoas-form-group select:focus,
+.hoas-form-group textarea:focus {
+    border-color: #DBDFE9;
+}
+
+.hoas-input-with-avatar,
+.hoas-input-with-flag,
+.hoas-input-with-icon-right {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.hoas-input-with-avatar input {
+    padding-right: 48px;
+}
+
+.hoas-field-avatar {
+    position: absolute;
+    right: 12px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.hoas-input-with-flag select {
+    padding-left: 40px;
+}
+
+.hoas-input-with-flag img {
+    position: absolute;
+    left: 16px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    object-fit: cover;
+    pointer-events: none;
+}
+
+.hoas-input-with-icon-right input {
+    padding-right: 60px;
+}
+
+.hoas-card-icons {
+    position: absolute;
+    right: 16px;
+    display: flex;
+    align-items: center;
+}
+
+/* =========================================
+   TOGGLES (SWITCHES)
+========================================= */
+.hoas-toggle-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #FAFAFA;
+    padding: 12px 16px;
+    border-radius: 6px;
+    border: 1px solid #EEF1F6;
+}
+
+.hoas-toggle-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: #071437;
+}
+
+.hoas-switch {
+    position: relative;
+    display: inline-block;
+    width: 36px;
+    height: 20px;
+}
+
+.hoas-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.hoas-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #E2E8F0;
+    transition: .3s;
+    border-radius: 20px;
+}
+
+.hoas-slider:before {
+    position: absolute;
+    content: "";
+    height: 16px;
+    width: 16px;
+    left: 2px;
+    bottom: 2px;
+    background-color: white;
+    transition: .3s;
+    border-radius: 50%;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.hoas-switch input:checked + .hoas-slider {
+    background-color: #450468;
+}
+
+.hoas-switch input:checked + .hoas-slider:before {
+    transform: translateX(16px);
+}
+
+/* =========================================
+   CUSTOM SECTIONS
+========================================= */
+
+/* File Upload Grid */
+.hoas-upload-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.hoas-upload-box {
+    border: 1px dashed #DBDFE9;
+    border-radius: 8px;
+    padding: 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: #FCFCFC;
+    cursor: pointer;
+    transition: border-color 0.2s;
+}
+
+.hoas-upload-box:hover {
+    border-color: #450468;
+}
+
+.hoas-upload-icon-wrapper {
+    width: 40px;
+    height: 40px;
+    background: #F8F5FF;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.hoas-upload-text {
+    display: flex;
+    flex-direction: column;
+}
+
+.hoas-upload-text strong {
+    font-size: 13px;
+    color: #071437;
+}
+
+.hoas-upload-text span {
+    font-size: 12px;
+    color: #A1A5B7;
+}
+
+/* Social Media Row */
+.hoas-social-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 16px;
+    padding: 16px;
+    border: 1px solid #EEF1F6;
+    border-radius: 8px;
+}
+
+.hoas-social-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.hoas-social-input {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.hoas-social-input label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #071437;
+    margin: 0;
+}
+
+.hoas-social-input input {
+    width: 100%;
+    border: none;
+    outline: none;
+    font-size: 13px;
+    color: #4B5675;
+    background: transparent;
+}
+
+/* Payment Gateway Boxes */
+.hoas-gateway-options {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.hoas-gateway-box {
+    flex: 1;
+    border: 1px solid #EEF1F6;
+    border-radius: 8px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.hoas-gateway-box.active {
+    border: 2px solid #450468;
+    background: #F8F5FF;
+}
+
+.hoas-gateway-circle {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+}
+
+.hoas-gateway-box span {
+    font-size: 13px;
+    font-weight: 600;
+    color: #071437;
+}
+
+/* App Theme Grid */
+.hoas-theme-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+}
+
+.hoas-theme-box {
+    border: 1px solid #EEF1F6;
+    border-radius: 8px;
+    padding: 8px;
+    cursor: pointer;
+    transition: border-color 0.2s;
+}
+
+.hoas-theme-box.active {
+    border-color: #450468;
+    box-shadow: 0 0 0 1px #450468;
+}
+
+.hoas-theme-box img {
+    width: 100%;
+    height: 120px;
+    object-fit: cover;
+    border-radius: 4px;
+    margin-bottom: 12px;
+    border: 1px solid #F1F1F4;
+    background: #FAFAFA;
+}
+
+.hoas-theme-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #071437;
+    padding: 0 8px 8px 8px;
+}
+
+.hoas-theme-label input[type="radio"] {
+    accent-color: #450468;
+    width: 16px;
+    height: 16px;
+}
