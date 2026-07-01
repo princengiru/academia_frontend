@@ -76,6 +76,7 @@ const NAV_CATEGORIES = [
         items: [
             { id: 'general', label: 'General Settings' },
             { id: 'email', label: 'Email' },
+            { id: 'documents', label: 'Documents & Files' },
             { id: 'layout', label: 'Layout' },
             { id: 'social', label: 'Social Media Links' },
             { id: 'seo', label: 'SEO and Metadata' },
@@ -105,6 +106,19 @@ const Toggle = ({ checked, onChange }) => (
         <span className="hoas-slider" />
     </label>
 );
+
+const DOCUMENT_FILES = [
+    { name: 'MyCV.pdf', size: '5.6 MB' },
+    { name: 'Resume A0.pdf', size: '5.6 MB' },
+];
+
+const formatFileSize = (bytes) => {
+    if (bytes === 0) return '0 B';
+    const units = ['B', 'KB', 'MB', 'GB'];
+    const unitIndex = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
+    const value = bytes / (1024 ** unitIndex);
+    return `${value >= 10 || unitIndex === 0 ? Math.round(value) : value.toFixed(1)} ${units[unitIndex]}`;
+};
 
 // ─── Country Data (all world countries) ───────────────────────────────────────
 const COUNTRIES = [
@@ -440,7 +454,7 @@ const CustomDropdown = ({ value, onChange, options }) => {
 };
 
 // ─── Section Card (defined OUTSIDE HOASettings to prevent remount on re-render) ─
-const SectionCard = ({ id, title, children, saved, onSave, sectionRef }) => (
+const SectionCard = ({ id, title, children, saved, onSave, sectionRef, showDiscard = true }) => (
     <div
         className="hoas-section-card"
         id={id}
@@ -463,7 +477,7 @@ const SectionCard = ({ id, title, children, saved, onSave, sectionRef }) => (
         <div className="hoas-section-body">
             {children}
             <div className="hoas-section-footer">
-                <button className="hoas-btn-discard">Discard</button>
+                {showDiscard && <button className="hoas-btn-discard">Discard</button>}
                 <button className="hoas-btn-save" onClick={onSave}>
                     Save Changes
                 </button>
@@ -477,9 +491,17 @@ const HOASettings = () => {
     const [saved, setSaved] = useState({});
     const [activeSection, setActiveSection] = useState('general');
     const sectionRefs = useRef({});
+    const documentInputRef = useRef(null);
 
     const [uploadedPhoto, setUploadedPhoto] = useState(null);
     const [uploadError, setUploadError] = useState('');
+    const [documentFiles, setDocumentFiles] = useState(
+        DOCUMENT_FILES.map((file) => ({
+            ...file,
+            id: `${file.name}-${file.size}`,
+        }))
+    );
+    const [documentDropActive, setDocumentDropActive] = useState(false);
 
     // Phone & Visibility
     const [phoneNumber, setPhoneNumber] = useState('700 000 000');
@@ -519,6 +541,53 @@ const HOASettings = () => {
 
     const handleSave = useCallback((sectionId) => {
         setSaved(prev => ({ ...prev, [sectionId]: true }));
+    }, []);
+
+    const addDocumentFiles = useCallback((files) => {
+        const nextFiles = Array.from(files)
+            .filter((file) => file && file.name)
+            .map((file) => ({
+                id: `${file.name}-${file.lastModified}-${file.size}-${Math.random().toString(36).slice(2, 8)}`,
+                name: file.name,
+                size: formatFileSize(file.size),
+            }));
+
+        if (nextFiles.length === 0) return;
+
+        setDocumentFiles((currentFiles) => [...currentFiles, ...nextFiles]);
+        setSaved((currentSaved) => ({ ...currentSaved, documents: true }));
+    }, []);
+
+    const handleDocumentInputChange = useCallback((event) => {
+        addDocumentFiles(event.target.files || []);
+        event.target.value = '';
+    }, [addDocumentFiles]);
+
+    const handleDocumentDrop = useCallback((event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        setDocumentDropActive(false);
+        addDocumentFiles(event.dataTransfer.files || []);
+    }, [addDocumentFiles]);
+
+    const handleDocumentDragOver = useCallback((event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        setDocumentDropActive(true);
+    }, []);
+
+    const handleDocumentDragLeave = useCallback((event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        setDocumentDropActive(false);
+    }, []);
+
+    const removeDocumentFile = useCallback((fileId) => {
+        setDocumentFiles((currentFiles) => currentFiles.filter((file) => file.id !== fileId));
+    }, []);
+
+    const openDocumentPicker = useCallback(() => {
+        documentInputRef.current?.click();
     }, []);
 
     const scrollToSection = (id) => {
@@ -736,7 +805,55 @@ const HOASettings = () => {
                             </div>
                         </SectionCard>
 
-                        {/* ── 2. Layout ── */}
+                        {/* ── 2. Documents and Files ── */}
+                        <SectionCard id="documents" title="Documents and Files" saved={saved['documents']} onSave={() => handleSave('documents')} sectionRef={el => sectionRefs.current['documents'] = el} showDiscard={false}>
+                            <input
+                                ref={documentInputRef}
+                                type="file"
+                                className="hoas-doc-upload-input"
+                                multiple
+                                onChange={handleDocumentInputChange}
+                            />
+
+                            <button
+                                type="button"
+                                className={`hoas-doc-upload-zone ${documentDropActive ? 'is-active' : ''}`}
+                                onClick={openDocumentPicker}
+                                onDragOver={handleDocumentDragOver}
+                                onDragLeave={handleDocumentDragLeave}
+                                onDrop={handleDocumentDrop}
+                            >
+                                <div className="hoas-doc-upload-icon">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M12 19V6" />
+                                        <path d="M7 11l5-5 5 5" />
+                                    </svg>
+                                </div>
+                                <div className="hoas-doc-upload-copy">
+                                    <strong>Add Certificates files or Click Upload</strong>
+                                    <span>Upload case files, if any.</span>
+                                </div>
+                            </button>
+
+                            <div className="hoas-doc-file-grid">
+                                {documentFiles.map((file) => (
+                                    <div key={file.id} className="hoas-doc-file-card">
+                                        <button type="button" className="hoas-doc-file-remove" aria-label={`Remove ${file.name}`} onClick={() => removeDocumentFile(file.id)}>
+                                            ×
+                                        </button>
+                                        <div className="hoas-doc-file-icon" aria-hidden="true">
+                                            PDF
+                                        </div>
+                                        <div className="hoas-doc-file-meta">
+                                            <span className="hoas-doc-file-name">{file.name}</span>
+                                            <span className="hoas-doc-file-size">{file.size}</span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </SectionCard>
+
+                        {/* ── 3. Layout ── */}
                         <SectionCard id="layout" title="Layout" saved={saved['layout']} onSave={() => handleSave('layout')} sectionRef={el => sectionRefs.current['layout'] = el}>
                             <div className="hoas-form-group">
                                 <label>Logo</label>
@@ -886,7 +1003,7 @@ const HOASettings = () => {
                             </div>
                         </SectionCard>
 
-                        {/* ── 6. App Theme ── */}
+                        {/* ── 4. App Theme ── */}
                         <SectionCard id="theme" title="App Theme" saved={saved['theme']} onSave={() => handleSave('theme')} sectionRef={el => sectionRefs.current['theme'] = el}>
                             <p className="hoas-sub-label">Choose the look and feel of your dashboard.</p>
                             <div className="hoas-theme-grid">
@@ -929,7 +1046,7 @@ const HOASettings = () => {
                             </div>
                         </SectionCard>
 
-                        {/* ── 7. Notifications ── */}
+                        {/* ── 5. Notifications ── */}
                         <SectionCard id="notifications" title="Notifications" saved={saved['notifications']} onSave={() => handleSave('notifications')} sectionRef={el => sectionRefs.current['notifications'] = el}>
                             <p className="hoas-sub-label">Configure how and when you receive notifications.</p>
 
@@ -968,7 +1085,7 @@ const HOASettings = () => {
                             </div>
                         </SectionCard>
 
-                        {/* ── 8. Address ── */}
+                        {/* ── 6. Address ── */}
                         <SectionCard id="address" title="Address" saved={saved['address']} onSave={() => handleSave('address')} sectionRef={el => sectionRefs.current['address'] = el}>
                             <div className="hoas-form-row">
                                 <div className="hoas-form-group">
