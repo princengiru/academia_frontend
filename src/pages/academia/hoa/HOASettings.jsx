@@ -112,6 +112,32 @@ const DOCUMENT_FILES = [
     { name: 'Resume A0.pdf', size: '5.6 MB' },
 ];
 
+const SOCIAL_CONNECTIONS = [
+    {
+        id: 'ig',
+        name: 'Instagram',
+        handle: 'jasontatum@gonaraza.com',
+        icon: <IconInstagram />,
+        iconBg: '#FFF0F6',
+        iconColor: '#F8285A',
+    },
+    {
+        id: 'li',
+        name: 'LinkedIn',
+        handle: 'jasont@keenthemes.co',
+        icon: <IconLinkedIn />,
+        iconBg: '#EFF6FF',
+        iconColor: '#1B84FF',
+    },
+];
+
+const SOCIAL_CONNECT_ACTIONS = [
+    { id: 'x', label: 'Connect X', icon: <IconTwitter /> },
+    { id: 'youtube', label: 'Connect Youtube', icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.6 3.6 12 3.6 12 3.6s-7.6 0-9.4.5A3 3 0 0 0 .5 6.2 31.5 31.5 0 0 0 0 12a31.5 31.5 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.8.5 9.4.5 9.4.5s7.6 0 9.4-.5a3 3 0 0 0 2.1-2.1A31.5 31.5 0 0 0 24 12a31.5 31.5 0 0 0-.5-5.8ZM9.6 15.5V8.5L15.7 12l-6.1 3.5Z"/></svg> },
+    { id: 'facebook', label: 'Connect Facebook', icon: <IconFacebook /> },
+    { id: 'more', label: 'Add More', icon: <span className="hoas-social-plus">+</span> },
+];
+
 const formatFileSize = (bytes) => {
     if (bytes === 0) return '0 B';
     const units = ['B', 'KB', 'MB', 'GB'];
@@ -896,24 +922,51 @@ const HOASettings = () => {
 
                         {/* ── 3. Social Media Links ── */}
                         <SectionCard id="social" title="Social Media Links" saved={saved['social']} onSave={() => handleSave('social')} sectionRef={el => sectionRefs.current['social'] = el}>
-                            {[
-                                { id: 'ig', icon: <IconInstagram />, label: 'Instagram', placeholder: 'instagram.com/gonaraza', bg: '#FFEEF3', color: '#F8285A', checked: socialIG, onChange: e => setSocialIG(e.target.checked) },
-                                { id: 'li', icon: <IconLinkedIn />, label: 'LinkedIn', placeholder: 'linkedin.com/company/gonaraza', bg: '#F0F5FF', color: '#1B84FF', checked: socialLI, onChange: e => setSocialLI(e.target.checked) },
-                                { id: 'fb', icon: <IconFacebook />, label: 'Facebook', placeholder: 'facebook.com/gonaraza', bg: '#EFF4FF', color: '#1877F2', checked: socialFB, onChange: e => setSocialFB(e.target.checked) },
-                                { id: 'tw', icon: <IconTwitter />, label: 'Twitter / X', placeholder: 'twitter.com/gonaraza', bg: '#F5F5F5', color: '#000000', checked: socialTW, onChange: e => setSocialTW(e.target.checked) },
-                                { id: 'tk', icon: <IconTiktok />, label: 'TikTok', placeholder: 'tiktok.com/@gonaraza', bg: '#F5F0FF', color: '#69C9D0', checked: socialTK, onChange: e => setSocialTK(e.target.checked) },
-                            ].map(({ id, icon, label, placeholder, bg, color, checked, onChange }) => (
-                                <div key={id} className="hoas-social-row">
-                                    <div className="hoas-social-icon" style={{ background: bg, color }}>
-                                        {icon}
-                                    </div>
-                                    <div className="hoas-social-input">
-                                        <label>{label}</label>
-                                        <input type="text" defaultValue={placeholder} />
-                                    </div>
-                                    <Toggle checked={checked} onChange={onChange} />
+                            <div className="hoas-social-card-list">
+                                {SOCIAL_CONNECTIONS.map((connection) => {
+                                    const checked = connection.id === 'ig' ? socialIG : socialLI;
+                                    const onChange = connection.id === 'ig' ? setSocialIG : setSocialLI;
+
+                                    return (
+                                        <div key={connection.id} className="hoas-social-connection-card">
+                                            <div className="hoas-social-connection-main">
+                                                <div className="hoas-social-icon" style={{ background: connection.iconBg, color: connection.iconColor }}>
+                                                    {connection.icon}
+                                                </div>
+                                                <div className="hoas-social-connection-copy">
+                                                    <span className="hoas-social-connection-name">{connection.name}</span>
+                                                    <span className="hoas-social-connection-handle">{connection.handle}</span>
+                                                </div>
+                                            </div>
+                                            <div className="hoas-social-connection-actions">
+                                                <Toggle checked={checked} onChange={e => onChange(e.target.checked)} />
+                                                <button type="button" className="hoas-social-delete" aria-label={`Remove ${connection.name}`}>
+                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                                                        <path d="M3 6h18" />
+                                                        <path d="M8 6V4h8v2" />
+                                                        <path d="M19 6l-1 13H6L5 6" />
+                                                        <path d="M10 11v6" />
+                                                        <path d="M14 11v6" />
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+
+                            <div className="hoas-social-more">
+                                <div className="hoas-social-more-title">More Social connections options</div>
+                                <p className="hoas-social-more-text">Effortless access awaits! Connect seamlessly with your preferred social account.</p>
+                                <div className="hoas-social-actions-row">
+                                    {SOCIAL_CONNECT_ACTIONS.map((action) => (
+                                        <button key={action.id} type="button" className="hoas-social-action-btn">
+                                            <span className="hoas-social-action-icon">{action.icon}</span>
+                                            <span>{action.label}</span>
+                                        </button>
+                                    ))}
                                 </div>
-                            ))}
+                            </div>
                         </SectionCard>
 
                         {/* ── 4. SEO & Metadata ── */}
