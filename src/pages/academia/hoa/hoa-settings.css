@@ -16,6 +16,16 @@
 .hoas-mb-20  { margin-bottom: 20px; }
 .hoas-page-wrapper button { cursor: pointer; font-family: inherit; }
 
+.hoas-photo-error {
+    color: #F8285A;
+    font-size: 11.5px;
+    font-weight: 500;
+    margin-top: 6px;
+    margin-bottom: 0;
+    text-align: right;
+    white-space: nowrap;
+}
+
 /* =========================================
    PAGE HEADER
    ========================================= */
@@ -318,6 +328,12 @@
 .hoas-form-row > .hoas-form-group {
     flex: 1;
     margin-bottom: 0;
+}
+
+.hoas-photo-error {
+    color: #F8285A;
+    font-size: 11.5px;
+    margin-top: 8px;
 }
 
 .hoas-form-group {

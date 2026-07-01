@@ -16,7 +16,7 @@ const IconChecked = () => (
 
 const IconCamera = () => (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
-        <path d="M4 4h3l2-2h6l2 2h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm8 13a5 5 0 1 0 0-10 5 5 0 0 0 0 10zm0-2a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/>
+        <path d="M4 4h3l2-2h6l2 2h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm8 13a5 5 0 1 0 0-10 5 5 0 0 0 0 10zm0-2a3 3 0 1 1 0-6 3 3 0 0 1 0 6z" />
     </svg>
 );
 
@@ -112,6 +112,7 @@ const HOASettings = () => {
     const sectionRefs = useRef({});
 
     const [uploadedPhoto, setUploadedPhoto] = useState(null);
+    const [uploadError, setUploadError] = useState('');
 
     // Theme selection
     const [selectedTheme, setSelectedTheme] = useState('light');
@@ -262,34 +263,43 @@ const HOASettings = () => {
                             <div className="hoas-form-horizontal-row">
                                 <label className="hoas-form-horizontal-label">Photo</label>
                                 <div className="hoas-form-horizontal-control">
-                                    <div className="hoas-photo-upload-area">
-                                        <span className="hoas-photo-info">150×150px JPEG, PNG Image</span>
-                                        <div className="hoas-photo-preview">
-                                            <div className="hoas-photo-inner">
-                                                <img src={uploadedPhoto || "/assets/imgs/default-profile.png"} alt="Profile" />
-                                                <label className="hoas-photo-camera-overlay">
-                                                    <IconCamera />
-                                                    <input 
-                                                        type="file" 
-                                                        accept="image/png, image/jpeg" 
-                                                        style={{display: 'none'}} 
-                                                        onChange={(e) => {
-                                                            if (e.target.files && e.target.files[0]) {
-                                                                setUploadedPhoto(URL.createObjectURL(e.target.files[0]));
-                                                            }
-                                                        }} 
-                                                    />
-                                                </label>
-                                            </div>
-                                            {uploadedPhoto && (
-                                                <div className="hoas-photo-remove" onClick={() => setUploadedPhoto(null)}>
-                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                                                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                                                        <line x1="6" y1="6" x2="18" y2="18"></line>
-                                                    </svg>
+                                    <div style={{ width: '100%' }}>
+                                        <div className="hoas-photo-upload-area">
+                                            <span className="hoas-photo-info">150×150px JPEG, PNG Image</span>
+                                            <div className="hoas-photo-preview">
+                                                <div className="hoas-photo-inner">
+                                                    <img src={uploadedPhoto || "/assets/imgs/default-profile.png"} alt="Profile" />
+                                                    <label className="hoas-photo-camera-overlay">
+                                                        <IconCamera />
+                                                        <input
+                                                            type="file"
+                                                            accept="image/png, image/jpeg"
+                                                            style={{ display: 'none' }}
+                                                            onChange={(e) => {
+                                                                const file = e.target.files && e.target.files[0];
+                                                                if (file) {
+                                                                    if (file.size > 1048576) {
+                                                                        setUploadError('File size exceeds 1MB. Please choose a smaller image.');
+                                                                        return;
+                                                                    }
+                                                                    setUploadError('');
+                                                                    setUploadedPhoto(URL.createObjectURL(file));
+                                                                }
+                                                            }}
+                                                        />
+                                                    </label>
                                                 </div>
-                                            )}
+                                                {uploadedPhoto && (
+                                                    <div className="hoas-photo-remove" onClick={() => setUploadedPhoto(null)}>
+                                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                                                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                                                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                                                        </svg>
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
+                                        {uploadError && <p className="hoas-photo-error">{uploadError}</p>}
                                     </div>
                                 </div>
                             </div>
@@ -311,9 +321,9 @@ const HOASettings = () => {
                             <div className="hoas-form-horizontal-row">
                                 <label className="hoas-form-horizontal-label">Phone number</label>
                                 <div className="hoas-form-horizontal-control">
-                                    <div className="hoas-input-with-flag" style={{width: '100%'}}>
-                                        <img src={rwanda} alt="Rwanda" style={{left: '12px'}} />
-                                        <input type="text" defaultValue="+250 700 000 000" style={{paddingLeft: '40px'}} />
+                                    <div className="hoas-input-with-flag" style={{ width: '100%' }}>
+                                        <img src={rwanda} alt="Rwanda" style={{ left: '12px' }} />
+                                        <input type="text" defaultValue="+250 700 000 000" style={{ paddingLeft: '40px' }} />
                                     </div>
                                 </div>
                             </div>
