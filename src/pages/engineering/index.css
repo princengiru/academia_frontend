@@ -1,0 +1,40 @@
+.engineering-page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 48px 24px;
+  background: linear-gradient(135deg, #0f172a 0%, #111827 45%, #1f2937 100%);
+  color: #f8fafc;
+}
+
+.engineering-hero {
+  max-width: 720px;
+  width: 100%;
+  padding: 40px;
+  border-radius: 24px;
+  background: rgba(15, 23, 42, 0.72);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  box-shadow: 0 24px 80px rgba(15, 23, 42, 0.35);
+  backdrop-filter: blur(14px);
+}
+
+.engineering-kicker {
+  margin: 0 0 12px;
+  font-size: 0.85rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #93c5fd;
+}
+
+.engineering-hero h1 {
+  margin: 0 0 16px;
+  font-size: clamp(2rem, 4vw, 3.5rem);
+  line-height: 1.05;
+}
+
+.engineering-hero p {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.7;
+  color: #cbd5e1;
+}
