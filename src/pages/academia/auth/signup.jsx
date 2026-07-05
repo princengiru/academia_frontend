@@ -86,8 +86,12 @@ function AcademiaSignUp() {
       }
 
       // Redirect based on selected role
+      const redirectAfterLogin = sessionStorage.getItem('redirectAfterLogin');
       setTimeout(() => {
-        if (role === 'student') {
+        if (redirectAfterLogin) {
+          sessionStorage.removeItem('redirectAfterLogin');
+          navigate(redirectAfterLogin, { replace: true });
+        } else if (role === 'student') {
           navigate('/academia/learner/settings', { replace: true });
         } else {
           // If they are an instructor (is_active: 0), you might want to route them 

@@ -3,7 +3,7 @@ import { useLocation, useSearchParams, useNavigate } from 'react-router-dom';
 
 // Assets (kept as imports so bundler resolves them)
 import acOn from '../../../assets/imgs/ac-on.jpg';
-import profImg from '../../../assets/imgs/prof.jpg';
+import defaultProfile from '../../../assets/imgs/default-profile.png';
 import fe1 from '../../../assets/icons/fe1.svg';
 import fe2 from '../../../assets/icons/fe2.svg';
 import fe3 from '../../../assets/icons/fe3.svg';
@@ -13,7 +13,7 @@ import acCal from '../../../assets/icons/ac-cal.svg';
 import acLe from '../../../assets/icons/ac-le.svg';
 import acUs from '../../../assets/icons/ac-us.svg';
 import acBook from '../../../assets/icons/ac-book.svg';
-import leTec from '../../../assets/icons/le-tec.svg';
+import hoabasics from '../../../assets/icons/hoabasics.svg';
 import arrowUpRight from '../../../assets/icons/arrow-up-right.svg';
 import playIcon from '../../../assets/icons/play.svg';
 import jo1 from '../../../assets/icons/jo1.svg';
@@ -37,12 +37,10 @@ function CoursePart() {
   const [course, setCourse] = useState(null);
   const [chapters, setChapters] = useState([]);
   const [weeks, setWeeks] = useState([]);
-  const [activeWeekIndex, setActiveWeekIndex] = useState(0);
   const [error, setError] = useState(null);
   const [isEnrolled, setIsEnrolled] = useState(false);
   const [isEnrolling, setIsEnrolling] = useState(false);
   const [toast, setToast] = useState({ message: '', visible: false, tone: 'success' });
-  const [expandedChapters, setExpandedChapters] = useState({});
   const [isSummaryExpanded, setIsSummaryExpanded] = useState(false);
 
   const resolveAssetUrl = (value) => {
@@ -102,6 +100,14 @@ function CoursePart() {
       }, 1500);
       return;
     }
+
+    // Role check validation to prevent admins and instructors from enrolling
+    const userObj = JSON.parse(localStorage.getItem('user') || '{}');
+    const userRole = (userObj.role || '').toLowerCase().trim();
+    if (userRole && userRole !== 'student') {
+      showToast("Only student accounts can enroll in courses.", "warning");
+      return;
+    }
     
     setIsEnrolling(true);
     try {
@@ -149,7 +155,7 @@ function CoursePart() {
           id: courseData.id,
           title: courseData.title,
           author: courseData.instructor_name || courseData.author,
-          authorImage: profImg,
+          authorImage: defaultProfile,
           authorRole: 'Author',
           publishedOn: courseData.created_at,
           headline: courseData.subtitle || courseData.title,
@@ -242,13 +248,11 @@ function CoursePart() {
     { label: 'subscription', value: course?.price || '—', icon: acBook },
   ];
 
-  const activeWeek = weeks[activeWeekIndex];
-  const activeChapters = activeWeek ? (activeWeek.chapters || []) : [];
-
-  const hasSyllabus = Array.isArray(weeks) && weeks.length > 0;
+  const breakdownWeeks = Array.isArray(weeks) ? weeks : [];
+  const hasBreakdown = breakdownWeeks.length > 0;
   const hasOutcomes = !!course?.objectives;
   const hasAudience = !!course?.audience;
-  const showContentSections = !loading && (hasSyllabus || hasOutcomes || hasAudience);
+  const showContentSections = !loading && (hasBreakdown || hasOutcomes || hasAudience);
 
   return (
     <section className="learners-course-part-page">
@@ -352,188 +356,84 @@ function CoursePart() {
                   </p>
                 </section>
 
-                {hasSyllabus && (
+                {hasBreakdown && (
                   <section className="learners-course-specific-section learners-course-specific-syllabus-wrap">
-                    <h3>Syllabus</h3>
-
-                    <div className="learners-course-specific-syllabus-grid">
-                      <div className="learners-course-specific-weeks">
-                        {loading ? (
-                          Array.from({ length: 3 }).map((_, i) => (
-                            <button key={`wk-loading-${i}`} type="button" className={`learners-course-week learners-loading`}>
-                              <span>Loading…</span>
-                            </button>
-                          ))
-                        ) : weeks.length === 0 ? (
-                          <div className="learners-empty">No weeks available for this course.</div>
-                        ) : (
-                          weeks.map((week, wi) => (
-                            <button
-                              key={week.id || wi}
-                              type="button"
-                              className={`learners-course-week${wi === activeWeekIndex ? ' active' : ''}`}
-                              onClick={() => setActiveWeekIndex(wi)}
-                            >
-                              <span>Week {week.week_number || (wi + 1)}</span>
-                              {wi === activeWeekIndex && <img src={arrowUpRight} alt="Current" />}
-                            </button>
-                          ))
-                        )}
-                      </div>
-
-                      <div className="learners-course-specific-syllabus-list">
-                        <div className="learners-course-specific-syllabus-intro">
-                          <div className="learners-course-specific-step active">
-                            <span className="learners-course-specific-step-icon" aria-hidden>
-                              <img src={leTec} alt="" />
-                            </span>
-                          </div>
-                          <div>
-                            {course?.syllabus_intro_title ? <h4>{course.syllabus_intro_title}</h4> : null}
-                            {course?.syllabus_intro ? <p>{course.syllabus_intro}</p> : null}
-                          </div>
-                        </div>
-
-                        {loading ? (
-                          Array.from({ length: 4 }).map((_, i) => (
-                            <article key={`sy-loading-${i}`} className="learners-course-specific-syllabus-item learners-loading-card">
-                              <div className="learners-course-specific-step">&nbsp;</div>
-                              <div className="learners-course-specific-syllabus-thumb learners-loading-thumb">&nbsp;</div>
-                              <div className="learners-course-specific-syllabus-copy">
-                                <h4>Loading…</h4>
-                                <p>&nbsp;</p>
-                              </div>
-                            </article>
-                          ))
-                        ) : activeChapters.length === 0 ? (
-                          <div className="learners-empty">No chapters available for this week.</div>
-                        ) : (
-                          <div style={{ position: 'relative' }}>
-                            <div className={!isEnrolled ? "blur-locked-syllabus" : ""} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                              {activeChapters.map((ch, idx) => {
-                                const isExpanded = !!expandedChapters[ch.id];
-                                const needsTruncation = ch.intro_message && ch.intro_message.length > 120;
-                                const displayText = needsTruncation && !isExpanded 
-                                  ? `${ch.intro_message.slice(0, 120)}...` 
-                                  : ch.intro_message || '';
-                                return (
-                                  <article 
-                                    key={ch.id} 
-                                    className="learners-course-specific-syllabus-item"
-                                    style={{ cursor: isEnrolled ? 'pointer' : 'default' }}
-                                    onClick={() => {
-                                      if (isEnrolled) {
-                                        navigate('/academia/learner/read-contents', { state: { courseId: course?.id, chapterId: ch.id } });
-                                      }
-                                    }}
-                                  >
-                                    <div className="learners-course-specific-step">
-                                      {!isEnrolled ? (
-                                        <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                                            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                                          </svg>
-                                        </span>
-                                      ) : (
-                                        <span>{idx + 1}</span>
-                                      )}
-                                    </div>
-                                    <div className="learners-course-specific-syllabus-thumb">
-                                      <img src={ch.thumbnail ? resolveAssetUrl(ch.thumbnail) : acOn} alt={ch.title} />
-                                    </div>
-                                    <div className="learners-course-specific-syllabus-copy">
-                                      <h4>{ch.title}</h4>
-                                      <p>
-                                        {displayText}
-                                        {needsTruncation && (
-                                          <button 
-                                            type="button" 
-                                            onClick={(e) => {
-                                              e.preventDefault();
-                                              e.stopPropagation();
-                                              setExpandedChapters(prev => ({ ...prev, [ch.id]: !isExpanded }));
-                                            }}
-                                            style={{
-                                              background: 'none',
-                                              border: 'none',
-                                              color: '#5B0A86',
-                                              fontWeight: 600,
-                                              marginLeft: '6px',
-                                              padding: 0,
-                                              fontSize: '11px',
-                                              cursor: 'pointer',
-                                              textDecoration: 'underline'
-                                            }}
-                                          >
-                                            {isExpanded ? 'Read less' : 'Read more'}
-                                          </button>
-                                        )}
-                                      </p>
-                                    </div>
-                                  </article>
-                                );
-                              })}
+                    <h3 className="oc-section-title">Course Breakdown</h3>
+                    <div className="oc-breakdown-list">
+                      {breakdownWeeks.length > 0 ? (
+                        breakdownWeeks.map((week, wIdx) => (
+                          <div className="oc-bd-week-group" key={week.id || wIdx}>
+                            <div className="oc-bd-week-col">
+                              <div className="oc-bd-week">{week.title || `Week ${week.week_number || wIdx + 1}`}</div>
                             </div>
-                            
-                            {!isEnrolled && (
-                              <div className="learners-syllabus-lock-overlay" style={{
-                                position: 'absolute',
-                                inset: 0,
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                background: 'rgba(255, 255, 255, 0.4)',
-                                backdropFilter: 'blur(1px)',
-                                borderRadius: '12px',
-                                zIndex: 5,
-                                padding: '24px',
-                                textAlign: 'center'
-                              }}>
-                                <div style={{
-                                  background: '#fff',
-                                  border: '1px solid #E2E8F0',
-                                  borderRadius: '12px',
-                                  padding: '24px 32px',
-                                  maxWidth: '400px',
-                                  boxShadow: '0 10px 15px -3px rgba(15, 23, 42, 0.08)',
-                                  display: 'flex',
-                                  flexDirection: 'column',
-                                  alignItems: 'center'
-                                }}>
-                                  <div style={{
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    width: '40px',
-                                    height: '40px',
-                                    borderRadius: '50%',
-                                    background: 'rgba(121, 40, 202, 0.08)',
-                                    color: '#450468',
-                                    marginBottom: '16px'
+                            <div className="oc-bd-items-col">
+                              <div className="oc-bd-item">
+                                <div className="oc-bd-icon-col">
+                                  <div className="oc-bd-icon"><img src={hoabasics} alt="" /></div>
+                                  {week.chapters && week.chapters.length > 0 && <div className="oc-bd-line"></div>}
+                                </div>
+                                <div className="oc-bd-content" style={{ paddingBottom: 24 }}>
+                                  <h4 style={{
+                                    margin: '0 0 4px 0',
+                                    fontSize: 14,
+                                    color: '#071437',
+                                    fontWeight: 600,
+                                    display: '-webkit-box',
+                                    WebkitLineClamp: '2',
+                                    WebkitBoxOrient: 'vertical',
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis'
                                   }}>
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                                      <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                                    </svg>
-                                  </div>
-                                  <h4 style={{ fontSize: '16px', fontWeight: 700, margin: '0 0 8px 0', color: '#0F172A', fontFamily: 'Inter, sans-serif' }}>Curriculum Content Locked</h4>
-                                  <p style={{ fontSize: '13px', color: '#64748B', margin: '0 0 16px 0', lineHeight: 1.4, fontFamily: 'Inter, sans-serif' }}>Enroll in the course to unlock chapters, reading contents, exercise questions, and assessments.</p>
-                                  <button 
-                                    type="button" 
-                                    className="learners-btn learners-btn-primary" 
-                                    style={{ width: '100%', padding: '10px 16px', fontSize: '13px' }}
-                                    onClick={handleJoinToday}
-                                    disabled={isEnrolling}
-                                  >
-                                    <span>{isEnrolling ? 'Joining...' : 'Unlock Content'}</span>
-                                  </button>
+                                    {week.description || 'Weekly study plan & objectives'}
+                                  </h4>
+                                  <p style={{
+                                    margin: 0,
+                                    fontSize: 13,
+                                    color: '#4B5675',
+                                    display: '-webkit-box',
+                                    WebkitLineClamp: '3',
+                                    WebkitBoxOrient: 'vertical',
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis'
+                                  }}>
+                                    {week.learning_objectives ? week.learning_objectives.replace(/"/g, '') : 'Learn new skills, pursue your interests or advance your career.'}
+                                  </p>
                                 </div>
                               </div>
-                            )}
+
+                              {week.chapters && week.chapters.map((chap, cIdx) => (
+                                <div className="oc-bd-item" key={chap.id || cIdx}>
+                                  <div className="oc-bd-icon-col">
+                                    <div className="oc-bd-icon" style={{ color: '#450468', fontSize: 12, fontWeight: 700 }}>
+                                      {cIdx + 1}
+                                    </div>
+                                    {cIdx !== week.chapters.length - 1 && <div className="oc-bd-line"></div>}
+                                  </div>
+                                  <div className="oc-bd-content" style={{ display: 'flex', alignItems: 'center', gap: 16, paddingBottom: cIdx !== week.chapters.length - 1 ? 24 : 0, cursor: isEnrolled ? 'pointer' : 'default' }} onClick={() => {
+                                    if (isEnrolled) {
+                                      navigate('/academia/learner/read-contents', { state: { courseId: course?.id, chapterId: chap.id } });
+                                    }
+                                  }}>
+                                    {chap.thumbnail ? (
+                                      <img src={resolveAssetUrl(chap.thumbnail)} alt="thumb" style={{ width: 80, height: 60, borderRadius: 4, objectFit: 'cover' }} />
+                                    ) : (
+                                      <div style={{ width: 80, height: 60, borderRadius: 4, background: '#F3F4F6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', color: '#9CA3AF' }}>No Video</div>
+                                    )}
+                                    <div>
+                                      <h4 style={{ margin: '0 0 4px 0', fontSize: 14, color: '#071437', fontWeight: 600 }}>{chap.title}</h4>
+                                      <p style={{ margin: 0, fontSize: 11, color: '#A1A5B7' }}>
+                                        {chap.subtitle || 'Chapter lecture'} • {chap.duration ? `${chap.duration} mins` : 'Video content'}
+                                      </p>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
                           </div>
-                        )}
-                      </div>
+                        ))
+                      ) : (
+                        <p style={{ fontSize: '13px', color: '#78829D' }}>No breakdown structure uploaded for this course yet.</p>
+                      )}
                     </div>
                   </section>
                 )}
@@ -555,7 +455,7 @@ function CoursePart() {
             ) : (
               <div className="learners-card learners-empty-state learners-empty-state--compact">
                 <h3>No content published</h3>
-                <p className="visually-hidden">No syllabus or outcomes available for this course.</p>
+                <p className="visually-hidden">No course breakdown or outcomes available for this course.</p>
                 <div>
                   <button className="learners-btn learners-btn-primary" disabled>Browse courses</button>
                   <button className="learners-btn learners-btn-secondary" disabled>Contact author</button>
@@ -577,7 +477,7 @@ function CoursePart() {
                 ))}
               </div>
 
-              {hasSyllabus ? (
+              {hasBreakdown ? (
                 <a 
                   className="learners-course-specific-cta learners-course-specific-cta-secondary" 
                   href="/academia/learner/read-contents" 
@@ -590,12 +490,12 @@ function CoursePart() {
                     }
                   }}
                 >
-                  <span>Course contents</span>
+                  <span>Course breakdown</span>
                   <img src={playIcon} alt="Course contents" />
                 </a>
               ) : (
                 <div className="learners-course-specific-no-contents">
-                  <small>No contents published yet</small>
+                  <small>No breakdown published yet</small>
                 </div>
               )}
 
@@ -617,7 +517,7 @@ function CoursePart() {
         <section className="learners-course-specific-author-card" aria-label="Course author">
           <div className="learners-course-specific-author-card-inner">
             <div className="learners-course-specific-author-avatar">
-              <img src={course?.authorImage || profImg} alt={course?.author || 'Author'} />
+              <img src={course?.authorImage || defaultProfile} alt={course?.author || 'Author'} />
             </div>
 
             <div className="learners-course-specific-author-copy">

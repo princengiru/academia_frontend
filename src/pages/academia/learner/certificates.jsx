@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import LearnersPageShell from './LearnersPageShell';
 
 // Icons & Images
-import profImg from '../../../assets/imgs/prof.jpg';
+import defaultProfile from '../../../assets/imgs/default-profile.png';
 import badge1 from '../../../assets/icons/badge-1.svg';
 import searchIcon from '../../../assets/icons/search.svg';
 import drop1 from '../../../assets/icons/drop1.svg';
@@ -234,7 +234,7 @@ function LearnersCertificates() {
     name: firstCertificate?.student?.name || 'My Certificates',
     role: 'Learner',
     email: firstCertificate?.student?.email || 'Authenticated certificate record',
-    avatar: normalizeAssetUrl(firstCertificate?.student?.avatar) || profImg,
+    avatar: normalizeAssetUrl(firstCertificate?.student?.avatar) || defaultProfile,
     status: loading ? 'loading...' : certificates.length ? 'Active' : 'empty',
     projects: formatNumber(certificates.length),
   };

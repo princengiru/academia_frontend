@@ -42,7 +42,7 @@ import acaImg from '../../../assets/imgs/aca.png';
 import jrImg from '../../../assets/imgs/jr.jpg';
 import acOnImg from '../../../assets/imgs/ac-on.jpg';
 import acStrImg from '../../../assets/imgs/ac-str.jpg';
-import profImg from '../../../assets/imgs/prof.jpg';
+import defaultProfile from '../../../assets/imgs/default-profile.png';
 import glImage from '../../../assets/imgs/gl.jpg';
 import itemImage from '../../../assets/imgs/item.jpg';
 
@@ -455,7 +455,7 @@ function AcademiaIndex() {
 
           {!dataLoading && popularData && popularData.length > 0 && (
             popularData.slice(0, 4).map((course, i) => (
-              <div key={course.id || course._id || i} className="osc-item" onClick={() => navigate('/academia/learner/course-part', { state: { courseId: course.id } })} style={{ cursor: 'pointer' }}>
+              <div key={course.id || course._id || i} className="osc-item" onClick={() => navigate(`/academia/course-details?id=${course.id}`)} style={{ cursor: 'pointer' }}>
                 <div className="osc-item-img">
                   <img src={course.thumbnail ? resolveStoryImage(course.thumbnail) : acOnImg} alt={course.title} />
                 </div>
@@ -472,7 +472,7 @@ function AcademiaIndex() {
                   </div>
                   <div>
                     <small>{course.starts_on || course.startsAt || 'Self-paced'}</small>
-                    <button type="button" onClick={(e) => { e.stopPropagation(); navigate('/academia/learner/course-part', { state: { courseId: course.id } }); }}>
+                    <button type="button" onClick={(e) => { e.stopPropagation(); navigate(`/academia/course-details?id=${course.id}`); }}>
                       <img src={acEnIcon} alt="Enroll" />
                     </button>
                   </div>
@@ -482,7 +482,7 @@ function AcademiaIndex() {
           )}
         </div>
         <div className="sec-CTA">
-          <button type="button" onClick={() => navigate('/academia/learner/courses?filter=All')}>
+          <button type="button" onClick={() => navigate('/academia/courses?filter=All')}>
             <span>View More</span>
             <img src={acNextIcon} alt="Next" />
           </button>
@@ -507,7 +507,7 @@ function AcademiaIndex() {
 
           {!dataLoading && freeData && freeData.length > 0 && (
             freeData.map((course, i) => (
-              <div key={course.id || course._id || i} className="fsc-item" onClick={() => navigate('/academia/learner/course-part', { state: { courseId: course.id } })} style={{ cursor: 'pointer' }}>
+              <div key={course.id || course._id || i} className="fsc-item" onClick={() => navigate(`/academia/course-details?id=${course.id}`)} style={{ cursor: 'pointer' }}>
                 <div className="fsc-item-img">
                   <img src={course.thumbnail ? resolveStoryImage(course.thumbnail) : acOnImg} alt="Free Course" />
                 </div>
@@ -673,7 +673,7 @@ function AcademiaIndex() {
                 <div key={i} className="swiper-slide tsc-card">
                   <div className="tsc-card-h">
                     <div className="tsc-card-h-l">
-                      <img src={profImg} alt="User" />
+                      <img src={defaultProfile} alt="User" />
                     </div>
                     <div className="tsc-card-h-r">
                       <h5>Roger Scott</h5>

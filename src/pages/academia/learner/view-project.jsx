@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import LearnersPageShell from './LearnersPageShell';
 
 // Icons & Images
-import profImg from '../../../assets/imgs/prof.jpg';
+import defaultProfile from '../../../assets/imgs/default-profile.png';
 import acJrImg from '../../../assets/imgs/ac-jr.jpg';
 import acOnImg from '../../../assets/imgs/ac-on.jpg';
 import d1Img from '../../../assets/imgs/d1.jpg';
@@ -311,7 +311,7 @@ function LearnersViewProject() {
   const genesisCollaborators = useMemo(() => {
     return activeProject?.collaborators?.map((item) => ({
       name: typeof item === 'string' ? item : item?.name || item?.label || 'Collaborator',
-      avatar: profImg,
+      avatar: defaultProfile,
     })) || [];
   }, [activeProject]);
 
@@ -425,10 +425,10 @@ function LearnersViewProject() {
     name: project.user_name || 'Unknown',
     role: project.user_role || 'Learner',
     email: project.user_email || '',
-    avatar: normalizeAssetUrl(project.user_avatar) || profImg,
+    avatar: normalizeAssetUrl(project.user_avatar) || defaultProfile,
     status: project.approval_status || 'Active',
     projects: project.user_projects_count || '1',
-  } : { name: 'loading...', role: '', email: '', avatar: profImg, status: 'loading...', projects: '0' };
+  } : { name: 'loading...', role: '', email: '', avatar: defaultProfile, status: 'loading...', projects: '0' };
 
   const zenithProject = project ? {
     title: project.title,
@@ -696,7 +696,7 @@ function LearnersViewProject() {
                         className="learners-upload-modal__search-item"
                         onClick={() => handleSelectCollaborator(user)}
                       >
-                        <img src={normalizeAssetUrl(user.avatar) || profImg} alt={user.name} />
+                        <img src={normalizeAssetUrl(user.avatar) || defaultProfile} alt={user.name} />
                         <div>
                           <strong>{user.name || 'Anonymous'}</strong>
                           <span>{user.email}</span>
@@ -711,7 +711,7 @@ function LearnersViewProject() {
             <div className="learners-upload-modal__chips">
               {collaborators.map((item, index) => (
                 <div key={`${item.name || item}-${index}`} className="learners-upload-modal__chip">
-                  <img src={normalizeAssetUrl(item.avatar) || profImg} alt={item.name || item} />
+                  <img src={normalizeAssetUrl(item.avatar) || defaultProfile} alt={item.name || item} />
                   <span>{item.name || item}</span>
                   <button type="button" onClick={() => removeCollaborator(item)} aria-label={`Remove ${item.name || item}`}>
                     <img src={popupClose} alt="Remove" />

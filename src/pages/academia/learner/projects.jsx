@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import LearnersPageShell from './LearnersPageShell';
 
 // Icons & Images
-import profImg from '../../../assets/imgs/prof.jpg';
+import defaultProfile from '../../../assets/imgs/default-profile.png';
 import d1Img from '../../../assets/imgs/d1.jpg';
 import acOnImg from '../../../assets/imgs/ac-on.jpg';
 import acJrImg from '../../../assets/imgs/ac-jr.jpg';
@@ -190,7 +190,7 @@ function LearnersProjects() {
   const totalCollaborators = useMemo(() => projects.reduce((sum, project) => sum + (Array.isArray(project.collaborators) ? project.collaborators.length : 0), 0), [projects]);
   const approvedProjects = useMemo(() => projects.filter((project) => project.approval_status === 'approved').length, [projects]);
   const profileName = activeProject?.user_name || 'My Projects';
-  const profileAvatar = normalizeAssetUrl(activeProject?.user_avatar) || profImg;
+  const profileAvatar = normalizeAssetUrl(activeProject?.user_avatar) || defaultProfile;
   const profileStatus = loadingProjects ? 'loading...' : projects.length ? 'Active' : 'empty';
   const profileMetaLeft = projects.length ? projectLabel(projects.length, 'project', 'projects') : 'No projects yet';
   const profileMetaRight = totalImages ? projectLabel(totalImages, 'file', 'files') : 'No files uploaded';
@@ -753,7 +753,7 @@ function LearnersProjects() {
                         className="learners-upload-modal__search-item"
                         onClick={() => handleSelectCollaborator(user)}
                       >
-                        <img src={normalizeAssetUrl(user.avatar) || profImg} alt={user.name} />
+                        <img src={normalizeAssetUrl(user.avatar) || defaultProfile} alt={user.name} />
                         <div>
                           <strong>{user.name || 'Anonymous'}</strong>
                           <span>{user.email}</span>
@@ -768,7 +768,7 @@ function LearnersProjects() {
             <div className="learners-upload-modal__chips">
               {collaborators.map((item, index) => (
                 <div key={`${item.name || item}-${index}`} className="learners-upload-modal__chip">
-                  <img src={normalizeAssetUrl(item.avatar) || profImg} alt={item.name || item} />
+                  <img src={normalizeAssetUrl(item.avatar) || defaultProfile} alt={item.name || item} />
                   <span>{item.name || item}</span>
                   <button type="button" onClick={() => removeCollaborator(item)} aria-label={`Remove ${item.name || item}`}>
                     <img src={popupClose} alt="Remove" />

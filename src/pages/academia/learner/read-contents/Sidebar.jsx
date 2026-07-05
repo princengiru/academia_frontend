@@ -134,7 +134,7 @@ const Sidebar = ({
               <div className="learners-read-week-rail" aria-hidden="true">
                 <img 
                   className="learners-read-week-status" 
-                  src={((activeChapterId === 'assessment' && isAssessmentComplete) || (completedChapters && completedChapters.includes('assessment'))) ? checkCircle : noCheckCircle} 
+                  src={(completedChapters && completedChapters.includes('assessment')) ? checkCircle : noCheckCircle} 
                   alt="Status" 
                 />
               </div>

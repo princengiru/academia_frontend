@@ -23,7 +23,7 @@ const Projects = () => {
 
   // --- Profile State ---
   const [profile, setProfile] = useState({
-    name: '', role: '', email: '', avatar: '/assets/imgs/prof.jpg', 
+    name: '', role: '', email: '', avatar: '/assets/imgs/default-profile.png', 
     status: 'Active', availability: 'Available now', location: '', bio: '', stats: [], skills: []
   });
 
@@ -418,7 +418,7 @@ const Projects = () => {
         <section className="learners-projects-profile-strip">
           <div className="learners-projects-profile-strip-main">
             <div className="learners-projects-profile-avatar">
-              <img src={normalizeAssetUrl(profile.avatar) || '/assets/imgs/prof.jpg'} alt={profile.name} />
+              <img src={normalizeAssetUrl(profile.avatar) || '/assets/imgs/default-profile.png'} alt={profile.name} />
             </div>
 
             <div className="learners-projects-profile-copy">
@@ -676,7 +676,7 @@ const Projects = () => {
                         className="learners-upload-modal__search-item"
                         onClick={() => handleSelectCollaborator(user)}
                       >
-                        <img src={normalizeAssetUrl(user.avatar) || '/assets/imgs/prof.jpg'} alt={user.name} />
+                        <img src={normalizeAssetUrl(user.avatar) || '/assets/imgs/default-profile.png'} alt={user.name} />
                         <div>
                           <strong>{user.name || 'Anonymous'}</strong>
                           <span>{user.email}</span>
@@ -691,7 +691,7 @@ const Projects = () => {
             <div className="learners-upload-modal__chips">
               {collaborators.map((item, index) => (
                 <div key={index} className="learners-upload-modal__chip">
-                  <img src={normalizeAssetUrl(item.avatar) || '/assets/imgs/prof.jpg'} alt={item.name || item} />
+                  <img src={normalizeAssetUrl(item.avatar) || '/assets/imgs/default-profile.png'} alt={item.name || item} />
                   <span>{item.name || item}</span>
                   <button type="button" onClick={() => removeCollaborator(item)}>
                     <img src="/assets/icons/popup-close.svg" alt="Remove" />

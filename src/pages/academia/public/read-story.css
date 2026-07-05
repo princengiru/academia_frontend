@@ -317,7 +317,7 @@
 
 .academia-read-story-page .sticky-sidebar-content {
     position: sticky;
-    top: 30px;
+    top: 100px;
     display: flex;
     flex-direction: column;
     gap: 24px;

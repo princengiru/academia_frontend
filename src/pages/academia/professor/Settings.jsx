@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ProfessorLayout from '../../../components/layouts/ProfessorLayout/ProfessorLayout';
 
-import profImg from '../../../assets/imgs/prof.jpg';
+import defaultProfile from '../../../assets/imgs/default-profile.png';
 import badge1 from '../../../assets/icons/badge-1.svg';
 import bPencil from '../../../assets/icons/b-pencil.svg';
 import leUe from '../../../assets/icons/le-ue.svg';
@@ -40,7 +40,7 @@ const currencyOptions = [
 const activityFilters = ['This week', 'Last week', 'This month', 'All time'];
 
 function resolveAssetUrl(value) {
-  if (!value) return profImg;
+  if (!value) return defaultProfile;
   if (value.startsWith('http://') || value.startsWith('https://') || value.startsWith('data:')) return value;
   if (value.startsWith('/')) return `${API_BASE_URL}${value}`;
   return `${API_BASE_URL}/${value}`;
@@ -119,7 +119,7 @@ const ProfessorSettings = () => {
     phone: '',
     role: 'instructor', // Defaulted to instructor
     visibility: 'public',
-    avatar: profImg,
+    avatar: defaultProfile,
     bio: '',
     location: '',
     availableToHire: false,

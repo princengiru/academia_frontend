@@ -11,7 +11,7 @@ import acSav from '../../../assets/icons/ac-sav.svg';
 import wExitRight from '../../../assets/icons/w-exit-right.svg';
 import acLe from '../../../assets/icons/ac-le.svg';
 import acOnImg from '../../../assets/imgs/ac-on.jpg';
-import profImg from '../../../assets/imgs/prof.jpg';
+import defaultProfile from '../../../assets/imgs/default-profile.png';
 import accMinus from '../../../assets/icons/acc-minus.svg';
 import checkCircle from '../../../assets/icons/check-circle.svg';
 import noCheckCircle from '../../../assets/icons/no-check-circle.svg';
@@ -36,7 +36,7 @@ import './read-contents.css';
 const apexCourseMeta = {
   title: '',
   author: '',
-  authorImage: profImg,
+  authorImage: defaultProfile,
   authorRole: '',
   publishedOn: '',
   headline: '',
@@ -630,6 +630,12 @@ function LearnersReadContents() {
           setCurrentAttemptId(attemptId);
           setAttemptNumber(latestAttempt.attemptNumber || 1);
           setIsAssessmentComplete(true);
+
+          // Mark as completed on frontend state as well to prevent icon toggling
+          setCompletedChapters((prev) => {
+            if (prev.includes('assessment')) return prev;
+            return [...prev, 'assessment'];
+          });
 
           if (token) {
             try {
@@ -1935,8 +1941,10 @@ function LearnersReadContents() {
 
       // Mark completed on sidebar/course reader backend
       if (currentAssessmentDetails.type === 'summative') {
-        if (passed) {
-          issueCertificate(scorePct).catch(() => {});
+        if (passed || !hasAttemptsLeft) {
+          if (passed) {
+            issueCertificate(scorePct).catch(() => {});
+          }
           setCompletedChapters((prev) => {
             if (prev.includes('assessment')) return prev;
             return [...prev, 'assessment'];
