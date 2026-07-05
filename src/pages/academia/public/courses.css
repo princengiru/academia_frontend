@@ -1,0 +1,648 @@
+/* Public Courses Directory Styles */
+
+.public-courses-directory-page {
+  font-family: "Inter", sans-serif;
+  color: #071437;
+  background-color: #FFFFFF;
+  min-height: 100vh;
+  padding: 0 0 50px 0;
+  box-sizing: border-box;
+}
+
+/* Hero Banner */
+.public-courses-directory-page .public-courses-hero {
+  background-color: #1A0826;
+  color: #FFFFFF;
+  padding: 60px 5%;
+  text-align: left;
+  border-bottom: 1px solid #F1F1F4;
+}
+
+.public-courses-directory-page .hero-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.public-courses-directory-page .hero-inner h1 {
+  font-size: 32px;
+  font-weight: 700;
+  margin: 0 0 12px 0;
+  color: #FFFFFF;
+}
+
+.public-courses-directory-page .hero-inner p {
+  font-size: 15px;
+  color: #B5B7C8;
+  margin: 0;
+  max-width: 700px;
+  line-height: 1.5;
+}
+
+/* Container */
+.public-courses-directory-page .public-courses-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 24px;
+}
+
+/* Custom Filter Dropdowns and search bar */
+.public-courses-directory-page .courses-filter-div-h {
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    gap: 20px;
+    padding: 0 0 20px;
+    align-items: center;
+}
+
+.public-courses-directory-page .div-h-r {
+    display: flex;
+    width: 100%;
+}
+
+.public-courses-directory-page .div-h-r-s {
+    height: 45px;
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    gap: 16px;
+    width: 100%;
+    border: 1px solid #DBDFE9;
+    border-radius: 6px;
+    background: #FFFFFF;
+}
+
+.public-courses-directory-page .div-h-r-s input {
+    height: 100%;
+    width: 100%;
+    border: none;
+    outline: none;
+    font-family: Inter, sans-serif;
+    font-weight: 500;
+    font-size: 13px;
+    color: #071437;
+    background: transparent;
+    padding: 0;
+}
+
+.public-courses-directory-page .div-h-r-s-f {
+    display: flex;
+    align-items: center;
+}
+
+.public-courses-directory-page .div-h-r-s-f-f {
+    border-left: 1px solid #DBDFE9;
+    padding-left: 16px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+}
+
+.public-courses-directory-page .div-h-r-s-f-f .dropdown {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.public-courses-directory-page .div-h-r-s-f-f .dropdown-toggle {
+    background: transparent;
+    border: none;
+    font-family: Inter, sans-serif;
+    font-weight: 500;
+    font-size: 13px;
+    color: #4B5675;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    padding: 0;
+}
+
+.public-courses-directory-page .courses-filter-div-h .dropdown {
+    position: relative;
+    width: 100%;
+    height: 45px;
+    display: flex;
+    align-items: center;
+}
+
+.public-courses-directory-page .courses-filter-div-h .filter-drop button {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-family: Inter, sans-serif;
+    font-weight: 500;
+    font-size: 13px;
+    color: #071437;
+    padding: 0 16px;
+    border-radius: 6px;
+    background-color: #FFFFFF;
+    border: 1px solid #DBDFE9;
+    cursor: pointer;
+}
+
+.public-courses-directory-page .courses-filter-div-h .dropdown button div {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.public-courses-directory-page .courses-filter-div-h .dropdown button div img {
+    width: 14px;
+    height: 14px;
+}
+
+/* Dropdown Menu & Overrides for Default Bootstrap Blue styling */
+.public-courses-directory-page .courses-filter-div-h .dropdown-menu {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    z-index: 1000;
+    min-width: 10rem;
+    padding: 8px 0;
+    margin-top: 6px;
+    background-color: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 8px;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.public-courses-directory-page .courses-filter-div-h .dropdown-menu.show {
+    display: block;
+}
+
+.public-courses-directory-page .courses-filter-div-h .dropdown-menu .dropdown-item {
+    font-family: Inter, sans-serif;
+    font-weight: 500;
+    font-size: 13px;
+    color: #4B5675;
+    padding: 10px 16px;
+    cursor: pointer;
+    background: transparent;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.public-courses-directory-page .courses-filter-div-h .dropdown-menu .dropdown-item:hover {
+    background-color: #F8FAFC;
+    color: #450468;
+}
+
+.public-courses-directory-page .courses-filter-div-h .dropdown-menu .dropdown-item.active {
+    background-color: #F3ECF8 !important;
+    color: #450468 !important;
+    font-weight: 600;
+}
+
+/* Custom caret indicator */
+.public-courses-directory-page .courses-filter-div-h .dropdown-toggle::after {
+    content: "";
+    display: inline-block;
+    margin-left: 8px;
+    vertical-align: middle;
+    border-top: 4px solid #78829D;
+    border-right: 4px solid transparent;
+    border-left: 4px solid transparent;
+}
+
+/* Category tags row (.best-links) styled exactly like projects/journals */
+.public-courses-directory-page .best-links {
+    display: flex;
+    align-content: center;
+    justify-content: space-between;
+    margin-bottom: 30px;
+    border-bottom: 1px solid #F1F1F4;
+    height: 50px;
+}
+
+.public-courses-directory-page .best-links-body {
+    width: 100%;
+    display: flex;
+    flex-wrap: nowrap;
+    overflow: hidden;
+    overflow-x: auto;
+    gap: 20px;
+    padding: 0 20px;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    height: 50px;
+}
+
+.public-courses-directory-page .best-links-body::-webkit-scrollbar {
+    display: none;
+}
+
+.public-courses-directory-page .best-links-body button {
+    white-space: nowrap;
+    background-color: transparent;
+    border: none;
+    font-family: Inter, sans-serif;
+    font-weight: 500;
+    font-size: 14px;
+    color: #252F4A;
+    height: 100%;
+    position: relative;
+    padding: 0 2px;
+    cursor: pointer;
+    text-transform: capitalize;
+    display: flex;
+    align-items: center;
+}
+
+.public-courses-directory-page .best-links-body button.active {
+    color: #450468;
+    font-weight: 600;
+}
+
+.public-courses-directory-page .best-links-body button.active::after {
+    content: "";
+    height: 2px;
+    width: 100%;
+    background-color: #450468;
+    position: absolute;
+    left: 0;
+    bottom: 0;
+}
+
+/* Grid Layout */
+.public-courses-directory-page .courses-main-grid {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: 30px;
+  align-items: start;
+}
+
+.public-courses-directory-page .courses-list-col {
+  min-width: 0;
+}
+
+/* Cards Catalog */
+.public-courses-directory-page .courses-catalog-cards {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
+}
+
+.public-courses-directory-page .public-course-card {
+  background: #FFFFFF;
+  border: 1px solid #E7EAF0;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.public-courses-directory-page .public-course-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+}
+
+.public-courses-directory-page .card-thumb-wrap {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: #F3F4F6;
+  position: relative;
+}
+
+.public-courses-directory-page .card-thumb-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.public-courses-directory-page .price-badge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  background: #450468;
+  color: white;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.public-courses-directory-page .card-body {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.public-courses-directory-page .card-top-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #78829D;
+  margin-bottom: 8px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.public-courses-directory-page .card-category {
+  color: #450468;
+}
+
+.public-courses-directory-page .public-course-card h3 {
+  font-size: 15px;
+  font-weight: 600;
+  color: #071437;
+  margin: 0 0 6px 0;
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  height: 40px;
+}
+
+.public-courses-directory-page .card-instructor {
+  font-size: 12px;
+  color: #78829D;
+  margin: 0 0 12px 0;
+}
+
+.public-courses-directory-page .card-instructor strong {
+  color: #4B5675;
+}
+
+.public-courses-directory-page .card-description {
+  font-size: 13px;
+  color: #4B5675;
+  line-height: 1.5;
+  margin: 0 0 20px 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  height: 58px;
+}
+
+.public-courses-directory-page .card-action-bar {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid #F1F1F4;
+  padding-top: 14px;
+}
+
+.public-courses-directory-page .starts-meta {
+  font-size: 11px;
+  color: #78829D;
+  font-weight: 500;
+}
+
+.public-courses-directory-page .enroll-arrow-btn {
+  background: #F3ECF8;
+  border: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.public-courses-directory-page .enroll-arrow-btn:hover {
+  background: #E8DCF3;
+}
+
+.public-courses-directory-page .enroll-arrow-btn img {
+  width: 12px;
+  height: 12px;
+}
+
+/* Pagination */
+.public-courses-directory-page .catalog-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 40px;
+}
+
+.public-courses-directory-page .pag-nav-btn {
+  background: white;
+  border: 1px solid #DBDFE9;
+  border-radius: 6px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.public-courses-directory-page .pag-nav-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.public-courses-directory-page .pag-nav-btn img {
+  width: 12px;
+  height: 12px;
+}
+
+.public-courses-directory-page .pag-num-btn {
+  background: white;
+  border: 1px solid #DBDFE9;
+  border-radius: 6px;
+  width: 32px;
+  height: 32px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #4B5675;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.public-courses-directory-page .pag-num-btn:hover {
+  background: #F8FAFC;
+  color: #071437;
+}
+
+.public-courses-directory-page .pag-num-btn.active {
+  background: #450468;
+  border-color: #450468;
+  color: white;
+}
+
+/* Sidebar catalog card */
+.public-courses-directory-page .courses-sidebar-col {
+  position: sticky;
+  top: 100px;
+}
+
+.public-courses-directory-page .sidebar-catalog-card {
+  background: #FFFFFF;
+  border: 1px solid #E7EAF0;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
+}
+
+.public-courses-directory-page .sidebar-catalog-card h3 {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 0 0 6px 0;
+  color: #071437;
+}
+
+.public-courses-directory-page .sidebar-catalog-card p {
+  font-size: 12px;
+  color: #78829D;
+  margin: 0 0 20px 0;
+  line-height: 1.4;
+}
+
+.public-courses-directory-page .syllabus-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.public-courses-directory-page .syllabus-item-row {
+  display: flex;
+  gap: 12px;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  transition: background-color 0.2s ease;
+}
+
+.public-courses-directory-page .syllabus-item-row:hover {
+  background-color: #F8FAFC;
+}
+
+.public-courses-directory-page .item-icon-circle {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #F3ECF8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.public-courses-directory-page .item-icon-circle img {
+  width: 12px;
+  height: 12px;
+}
+
+.public-courses-directory-page .item-copy {
+  min-width: 0;
+}
+
+.public-courses-directory-page .item-copy h4 {
+  font-size: 13px;
+  font-weight: 600;
+  color: #071437;
+  margin: 0 0 4px 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.public-courses-directory-page .item-meta {
+  display: flex;
+  gap: 6px;
+  font-size: 11px;
+  color: #78829D;
+}
+
+/* Empty State */
+.public-courses-directory-page .empty-courses-state {
+  text-align: center;
+  padding: 60px 40px;
+  border: 1px dashed #DBDFE9;
+  border-radius: 12px;
+  background: #FCFCFC;
+}
+
+.public-courses-directory-page .empty-icon {
+  width: 48px;
+  height: 48px;
+  margin-bottom: 16px;
+  opacity: 0.8;
+}
+
+.public-courses-directory-page .empty-courses-state h3 {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0 0 8px 0;
+}
+
+.public-courses-directory-page .empty-courses-state p {
+  font-size: 13px;
+  color: #78829D;
+  margin: 0 0 20px 0;
+}
+
+.public-courses-directory-page .empty-courses-state button {
+  background: #450468;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.public-courses-directory-page .empty-courses-state button:hover {
+  background-color: #350352;
+}
+
+/* Spinner loading */
+.courses-loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px;
+  gap: 16px;
+}
+
+/* Responsiveness */
+@media (max-width: 991px) {
+  .public-courses-directory-page .courses-main-grid {
+    grid-template-columns: 1fr;
+    gap: 30px;
+  }
+  
+  .public-courses-directory-page .courses-sidebar-col {
+    position: static;
+  }
+}
+
+@media (max-width: 768px) {
+  .public-courses-directory-page .courses-catalog-cards {
+    grid-template-columns: 1fr;
+  }
+  
+  .public-courses-directory-page .courses-filter-div-h {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  
+  .public-courses-directory-page .div-h-r-s {
+    flex-direction: column;
+    align-items: stretch;
+    height: auto;
+    padding: 12px;
+  }
+  
+  .public-courses-directory-page .div-h-r-s input {
+    padding: 8px 12px;
+    width: 100%;
+  }
+}
