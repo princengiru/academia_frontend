@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
+import { User, LogOut } from 'lucide-react';
 import logoIcon from '../assets/icons/logo.svg';
 import follow1Icon from '../assets/icons/follow1.svg';
 import follow2Icon from '../assets/icons/follow2.svg';
@@ -24,6 +25,7 @@ import bblIcon from '../assets/icons/bbl.svg';
 import casttIcon from '../assets/icons/castt.svg';
 import bannerVideo from '../assets/vids/banner1.mp4';
 import './Header.css';
+import defaultProfile from '../assets/imgs/default-profile.png';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
@@ -33,6 +35,55 @@ function Header() {
   const [activeCourseGroup, setActiveCourseGroup] = useState(0);
   const [fetchedCategories, setFetchedCategories] = useState([]);
   const navigate = useNavigate();
+  const [user, setUser] = useState(null);
+  const token = localStorage.getItem('token');
+
+  // Load and refresh user profile details
+  useEffect(() => {
+    if (!token) {
+      setUser(null);
+      return;
+    }
+
+    try {
+      const storedUser = localStorage.getItem('user');
+      if (storedUser) {
+        setUser(JSON.parse(storedUser));
+      }
+    } catch (e) {}
+
+    const fetchProfile = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/profile`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        if (response.ok) {
+          const body = await response.json();
+          if (body?.data?.user) {
+            setUser(body.data.user);
+            localStorage.setItem('user', JSON.stringify(body.data.user));
+          }
+        } else if (response.status === 401 || response.status === 403) {
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          setUser(null);
+        }
+      } catch (err) {
+        console.error('Error fetching header profile:', err);
+      }
+    };
+    fetchProfile();
+  }, [token]);
+
+  const resolveProfileAvatar = (avatarVal) => {
+    if (!avatarVal) return null;
+    if (avatarVal.startsWith('http://') || avatarVal.startsWith('https://') || avatarVal.startsWith('data:')) {
+      return avatarVal;
+    }
+    return `${API_BASE_URL}${avatarVal.startsWith('/') ? '' : '/'}${avatarVal}`;
+  };
 
   // Load real categories from the database
   useEffect(() => {
@@ -89,11 +140,11 @@ function Header() {
 
   const handleItemClick = (group, item) => {
     if (item === 'Browse all Courses') {
-      navigate('/academia/learner/courses?filter=All');
+      navigate('/academia/courses?filter=All');
       return;
     }
     const filterVal = group.filter || 'All';
-    navigate(`/academia/learner/courses?filter=${filterVal}&category=${encodeURIComponent(item)}`);
+    navigate(`/academia/courses?filter=${filterVal}&category=${encodeURIComponent(item)}`);
   };
 
   return (
@@ -218,9 +269,76 @@ function Header() {
               </ul>
             </div>
 
-            <Link className="second-part-h-link user-h" to="/academia/auth/signin" aria-label="Sign in">
-              <img src={accountIcon} alt="" />
-            </Link>
+            {user ? (
+              <div className="dropdown custom-header-select-dropdown d-flex align-items-center">
+                <button className="center header-action header-account-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" style={{ background: 'transparent', border: 'none', padding: 0 }}>
+                  <img 
+                    src={resolveProfileAvatar(user.avatar) || defaultProfile} 
+                    alt="" 
+                    style={{ width: '22px', height: '22px', borderRadius: '50%', objectFit: 'cover' }} 
+                    onError={(e) => { e.target.src = accountIcon; }}
+                  />
+                </button>
+                <ul className="dropdown-menu shadow header-language-menu dropdown-menu-end header-account-menu" style={{ right: 0, left: 'auto', minWidth: '180px' }}>
+                  <li className="dropdown-header text-start" style={{ padding: '8px 16px', borderBottom: '1px solid #F1F1F4', marginBottom: '4px' }}>
+                    <div style={{ fontWeight: '600', color: '#071437', fontSize: '13px' }}>{user.name || 'User'}</div>
+                    <div style={{ color: '#7E8299', fontSize: '11px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.email}</div>
+                  </li>
+                  <li>
+                    <button 
+                      type="button" 
+                      className="dropdown-item d-flex align-items-center gap-2" 
+                      onClick={() => {
+                        const role = (user.role || '').toLowerCase().trim();
+                        if (role === 'instructor') {
+                          navigate('/academia/professor');
+                        } else if (role === 'student') {
+                          navigate('/academia/learner/');
+                        } else if (role === 'admin') {
+                          navigate('/academia/hoa');
+                        } else {
+                          navigate('/academia/index');
+                        }
+                      }}
+                      style={{ fontSize: '13px', color: '#4B5675' }}
+                    >
+                      <User size={14} style={{ color: '#8B5CF6' }} />
+                      <span>Profile</span>
+                    </button>
+                  </li>
+                  <li><hr className="dropdown-divider" /></li>
+                  <li>
+                    <button 
+                      type="button" 
+                      className="dropdown-item d-flex align-items-center gap-2 text-danger" 
+                      onClick={() => {
+                        localStorage.removeItem('token');
+                        localStorage.removeItem('user');
+                        setUser(null);
+                        navigate('/academia/auth/signin');
+                      }}
+                      style={{ fontSize: '13px' }}
+                    >
+                      <LogOut size={14} />
+                      <span>Logout</span>
+                    </button>
+                  </li>
+                </ul>
+              </div>
+            ) : (
+              <button 
+                type="button"
+                className="second-part-h-link user-h" 
+                onClick={() => {
+                  sessionStorage.setItem('redirectAfterLogin', window.location.pathname + window.location.search);
+                  navigate('/academia/auth/signin');
+                }}
+                style={{ background: 'transparent', border: 'none', padding: 0, cursor: 'pointer' }}
+                aria-label="Sign in"
+              >
+                <img src={accountIcon} alt="Sign In" />
+              </button>
+            )}
 
             <div className="second-part-h-link open-cat" role="button" tabIndex={0} data-bs-toggle="offcanvas" data-bs-target="#offcanvasExample" aria-controls="offcanvasExample">
               <img src={ccIcon} alt="" />
@@ -346,12 +464,55 @@ function Header() {
             <div className="offcanvas-header-logo">
               <img src={logoIcon} alt="" />
             </div>
-            <button type="button" onClick={() => navigate('/academia/auth/signin')}>
-              <img src={opIcon} alt="" />
-              <span>Sign In</span>
-            </button>
+            {user ? (
+              <div className="d-flex align-items-center gap-2">
+                <span style={{ fontSize: '13px', fontWeight: '600', color: '#071437' }}>{user.name || 'User'}</span>
+                <button 
+                  type="button" 
+                  onClick={() => {
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('user');
+                    setUser(null);
+                    navigate('/academia/auth/signin');
+                  }}
+                  style={{ background: 'transparent', border: 'none', color: '#EF4444', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '4px' }}
+                >
+                  <img src={opIcon} alt="" />
+                  <span>Sign Out</span>
+                </button>
+              </div>
+            ) : (
+              <button 
+                type="button" 
+                onClick={() => {
+                  sessionStorage.setItem('redirectAfterLogin', window.location.pathname + window.location.search);
+                  navigate('/academia/auth/signin');
+                }}
+              >
+                <img src={opIcon} alt="" />
+                <span>Sign In</span>
+              </button>
+            )}
           </div>
           <div className="offcanvas-body">
+            {user && (
+              <div style={{ padding: '10px 0', borderBottom: '1px solid #F1F1F4', marginBottom: '10px' }}>
+                <a 
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    const role = (user.role || '').toLowerCase().trim();
+                    if (role === 'instructor') navigate('/academia/professor');
+                    else if (role === 'student') navigate('/academia/learner/');
+                    else if (role === 'admin') navigate('/academia/hoa');
+                    else navigate('/academia/index');
+                  }}
+                  style={{ fontWeight: '600', color: '#450468', display: 'block', padding: '10px 0' }}
+                >
+                  My Dashboard
+                </a>
+              </div>
+            )}
             <a href="https://gonaraza.com">Digital Marketing</a>
             <a href="https://gonaraza.com/news">News</a>
             <a href="#">Magazine</a>
