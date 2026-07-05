@@ -1082,7 +1082,7 @@ body[data-role="learners"] .right-container {
    MEDIA QUERIES (MOBILE)
 ========================================= */
 @media(max-width: 768px) {
-  body {
+  body[data-role="learners"] {
     max-width: unset;
     min-width: 10px;
     margin: 0 auto;
