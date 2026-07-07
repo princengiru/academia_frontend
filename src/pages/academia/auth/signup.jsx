@@ -443,7 +443,11 @@ function AcademiaSignUp() {
             )}
 
             <div className="signin-social">
-              <button type="button" className="social-btn google">
+              <button
+                type="button"
+                className="social-btn google"
+                onClick={() => { window.location.href = `${API_BASE_URL}/api/auth/google`; }}
+              >
                 <span className="btn-icon"><img src={googleIcon} alt="Google" style={{ width: '16px' }} /></span>
                 Use Google
               </button>
