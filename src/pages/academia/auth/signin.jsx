@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 // Assets (Update paths to match your React project structure)
@@ -20,6 +20,35 @@ function AcademiaSignIn() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(location.state?.error || new URLSearchParams(location.search).get('error') || '');
 
+  // --- Auto-redirect if already logged in ---
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    const userStr = localStorage.getItem('user');
+    
+    if (token && userStr) {
+      try {
+        const user = JSON.parse(userStr);
+        const userRole = (user.role || '').toLowerCase().trim();
+        const redirectAfterLogin = sessionStorage.getItem('redirectAfterLogin');
+
+        if (redirectAfterLogin) {
+          sessionStorage.removeItem('redirectAfterLogin');
+          navigate(redirectAfterLogin, { replace: true });
+        } else if (userRole === 'instructor') {
+          navigate('/academia/professor', { replace: true });
+        } else if (userRole === 'student') {
+          navigate('/academia/learner/', { replace: true });
+        } else if (userRole === 'admin') {
+          navigate('/academia/hoa', { replace: true });
+        } else {
+          navigate('/academia/index', { replace: true });
+        }
+      } catch (e) {
+        // Handle parse error silently
+      }
+    }
+  }, [navigate]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -34,6 +63,7 @@ function AcademiaSignIn() {
         body: JSON.stringify({
           email,
           password,
+          rememberMe,
         }),
       });
 
