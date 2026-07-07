@@ -15,17 +15,37 @@ function AcademiaVerify() {
   const [nexusTimer, setNexusTimer] = useState(37);
   const zenithRefs = useRef([]);
   const [titanLoading, setTitanLoading] = useState(false);
+  const [isResending, setIsResending] = useState(false);
   const [vortexError, setVortexError] = useState('');
-  const [userEmail, setUserEmail] = useState('');
-
-  // Get email from localStorage on mount
-  useEffect(() => {
+  const [successMessage, setSuccessMessage] = useState('');
+  const [userEmail, setUserEmail] = useState(() => {
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
-      const user = JSON.parse(storedUser);
-      setUserEmail(user.email || '');
+      try {
+        const user = JSON.parse(storedUser);
+        return user.email || '';
+      } catch (e) {
+        return '';
+      }
     }
-  }, []);
+    return '';
+  });
+
+  const getMaskedEmail = (email) => {
+    if (!email) return '';
+    const [name, domain] = email.split('@');
+    if (!name || !domain) return email;
+    if (name.length <= 3) return `${name[0]}***@${domain}`;
+    return `${name[0]}*****${name.slice(-3)}@${domain}`;
+  };
+
+  // Protect route from direct access
+  useEffect(() => {
+    const verifyEndpoint = localStorage.getItem('verifyEndpoint');
+    if (!verifyEndpoint || !userEmail) {
+      navigate('/academia/auth/signin', { replace: true });
+    }
+  }, [navigate, userEmail]);
 
   // Countdown timer logic
   useEffect(() => {
@@ -71,7 +91,8 @@ function AcademiaVerify() {
     setTitanLoading(true);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/verify-login-otp`, {
+      const endpoint = localStorage.getItem('verifyEndpoint') || '/api/auth/verify-login-otp';
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -90,13 +111,35 @@ function AcademiaVerify() {
         return;
       }
 
-      // Store token and redirect
+      // Store token and user data
       localStorage.setItem('token', data.data.token);
       localStorage.setItem('user', JSON.stringify(data.data.user));
 
-      setTimeout(() => {
-        navigate('/academia/learner/courses', { replace: true });
-      }, 500);
+      const userRole = (data.data.user?.role || '').toLowerCase().trim();
+
+      if (endpoint === '/api/auth/verify-registration-otp') {
+        setSuccessMessage('Verification successful. Redirecting to your dashboard...');
+        setVortexError('');
+        setTimeout(() => {
+          if (userRole === 'instructor') {
+            navigate('/academia/professor/dashboard', { replace: true });
+          } else if (userRole === 'admin') {
+            navigate('/admin/dashboard', { replace: true });
+          } else {
+            navigate('/academia/learner/courses', { replace: true });
+          }
+        }, 2000);
+      } else {
+        setTimeout(() => {
+          if (userRole === 'instructor') {
+            navigate('/academia/professor/dashboard', { replace: true });
+          } else if (userRole === 'admin') {
+            navigate('/admin/dashboard', { replace: true });
+          } else {
+            navigate('/academia/learner/courses', { replace: true });
+          }
+        }, 500);
+      }
     } catch (error) {
       console.error('OTP verification error:', error);
       setVortexError(error.message || 'An error occurred');
@@ -124,12 +167,33 @@ function AcademiaVerify() {
     }
   };
 
-  const handleResend = (e) => {
+  const handleResend = async (e) => {
     e.preventDefault();
     if (nexusTimer === 0) {
-      setNexusTimer(37);
-      setVortexError('');
-      console.log('OTP Resent to:', userEmail);
+      try {
+        setIsResending(true);
+        const response = await fetch(`${API_BASE_URL}/api/auth/resend-otp`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: userEmail }),
+        });
+        const data = await response.json();
+        setIsResending(false);
+
+        if (!response.ok) {
+          setVortexError(data.error?.message || data.message || 'Failed to resend OTP');
+          return;
+        }
+
+        setNexusTimer(37);
+        setVortexError('');
+        setSuccessMessage('New code sent to your email.');
+        setTimeout(() => setSuccessMessage(''), 5000);
+      } catch (error) {
+        console.error('OTP Resend error:', error);
+        setVortexError('An error occurred while resending.');
+        setIsResending(false);
+      }
     }
   };
 
@@ -360,6 +424,11 @@ function AcademiaVerify() {
             font-size: 17px;
           }
         }
+        @keyframes spin {
+          100% {
+            transform: rotate(360deg);
+          }
+        }
       `}</style>
 
       <main className="verify-wrapper">
@@ -370,9 +439,9 @@ function AcademiaVerify() {
               src={smartphoneIcon} 
               alt="Smartphone" 
             />
-            <h1 className="signin-title">Verify your phone</h1>
+            <h1 className="signin-title">Verify your email</h1>
             <p className="signin-subtitle">Enter the verification code we sent to</p>
-            <div className="phone-mask">******7859</div>
+            <div className="phone-mask">{getMaskedEmail(userEmail)}</div>
 
             {vortexError && (
               <div style={{
@@ -386,6 +455,21 @@ function AcademiaVerify() {
                 fontFamily: 'Inter',
               }}>
                 {vortexError}
+              </div>
+            )}
+
+            {successMessage && (
+              <div style={{
+                marginTop: '12px',
+                padding: '12px',
+                backgroundColor: '#ECFDF5',
+                border: '1px solid #6EE7B7',
+                borderRadius: '6px',
+                color: '#059669',
+                fontSize: '13px',
+                fontFamily: 'Inter',
+              }}>
+                {successMessage}
               </div>
             )}
 
@@ -414,22 +498,31 @@ function AcademiaVerify() {
               <button 
                 type="button" 
                 onClick={handleResend} 
-                disabled={nexusTimer > 0}
+                disabled={nexusTimer > 0 || isResending}
+                style={{ opacity: (nexusTimer > 0 || isResending) ? 0.5 : 1 }}
               >
-                Resend
+                {isResending ? 'Sending...' : 'Resend'}
               </button>
             </div>
 
             <button 
               className="submit-btn" 
               type="submit"
-              disabled={titanLoading}
+              disabled={titanLoading || apexOtp.join('').length !== 6}
               style={{
-                opacity: titanLoading ? 0.7 : 1,
-                cursor: titanLoading ? 'not-allowed' : 'pointer',
+                opacity: (titanLoading || apexOtp.join('').length !== 6) ? 0.7 : 1,
+                cursor: (titanLoading || apexOtp.join('').length !== 6) ? 'not-allowed' : 'pointer',
+                marginTop: '15px'
               }}
             >
-              {titanLoading ? 'Verifying...' : 'Continue'}
+              {titanLoading ? (
+                <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                  <svg className="spinner" viewBox="0 0 50 50" style={{ width: '20px', height: '20px', animation: 'spin 1s linear infinite' }}>
+                    <circle className="path" cx="25" cy="25" r="20" fill="none" strokeWidth="5" stroke="#ffffff" strokeLinecap="round" style={{ strokeDasharray: '90, 150', strokeDashoffset: '0' }}></circle>
+                  </svg>
+                  Verifying...
+                </span>
+              ) : 'Verify'}
             </button>
           </form>
         </section>

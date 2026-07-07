@@ -22,6 +22,7 @@ function AcademiaSignUp() {
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [role, setRole] = useState('student');
   const [roleOpen, setRoleOpen] = useState(false);
 
@@ -39,6 +40,7 @@ function AcademiaSignUp() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setSuccess('');
     
     // Client-side Validation
     if (password.length < 6) {
@@ -78,7 +80,19 @@ function AcademiaSignUp() {
         return;
       }
 
-      // Store token and user data
+      // Handle Registration OTP Verification Flow
+      if (data?.data?.requiresOTPVerification) {
+        setSuccess('Registration successful. Redirecting to verification...');
+        localStorage.removeItem('token');
+        localStorage.setItem('user', JSON.stringify({ email: data?.data?.email || email }));
+        localStorage.setItem('verifyEndpoint', '/api/auth/verify-registration-otp');
+        setTimeout(() => {
+          navigate('/academia/auth/verify', { replace: true });
+        }, 1500); // 1.5 second delay to show the message
+        return;
+      }
+
+      // Fallback for when registration doesn't require OTP
       localStorage.setItem('token', data.data.token);
       localStorage.setItem('user', JSON.stringify(data.data.user));
       if (data.data.profileCompleted !== undefined) {
@@ -406,6 +420,21 @@ function AcademiaSignUp() {
                 fontWeight: '500'
               }}>
                 {error}
+              </div>
+            )}
+
+            {success && (
+              <div style={{
+                marginTop: '16px',
+                padding: '12px',
+                backgroundColor: '#ECFDF5',
+                border: '1px solid #6EE7B7',
+                borderRadius: '8px',
+                color: '#059669',
+                fontSize: '13px',
+                fontWeight: '500'
+              }}>
+                {success}
               </div>
             )}
 

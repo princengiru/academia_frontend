@@ -49,6 +49,7 @@ function AcademiaSignIn() {
       if (data?.data?.requiresOTPVerification) {
         localStorage.removeItem('token');
         localStorage.setItem('user', JSON.stringify({ email: data?.data?.email || email }));
+        localStorage.setItem('verifyEndpoint', '/api/auth/verify-login-otp');
         setTimeout(() => {
           navigate('/academia/auth/verify', { replace: true });
         }, 300);
