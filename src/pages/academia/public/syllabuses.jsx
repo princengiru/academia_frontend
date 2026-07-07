@@ -57,6 +57,7 @@ function AcademiaSyllabuses() {
 
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [selectedSubcategories, setSelectedSubcategories] = useState([]); // subcategory IDs
   const [expandedCategories, setExpandedCategories] = useState({}); // categoryId -> boolean
 
@@ -296,9 +297,17 @@ function AcademiaSyllabuses() {
       <section className="main-content">
 
         {/* Filters Header (Top Bar) */}
-        <div className="div-h" style={{ display: 'flex', justifyContent: 'space-between', gap: '20px', padding: '0 0 30px', alignItems: 'center' }}>
-          <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+        <div className="div-h" style={{ display: 'flex', gap: '20px', padding: '0 0 30px', alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center', justifyContent: 'space-between', width: '100%', flexWrap: 'wrap' }}>
             <span style={{ fontSize: '13px', fontWeight: '600', color: '#64748B', fontFamily: 'Inter, sans-serif' }}>Syllabus Filters</span>
+            <button 
+              type="button" 
+              className="mobile-filter-toggle-btn"
+              onClick={() => setShowMobileFilters(!showMobileFilters)}
+            >
+              <img src={acFiltersIcon} alt="" />
+              <span>{showMobileFilters ? 'Hide Filters' : 'Show Filters'}</span>
+            </button>
           </div>
 
           <div className="div-h-r" style={{ flex: 1, display: 'flex', justifyContent: 'flex-end' }}>
@@ -323,7 +332,7 @@ function AcademiaSyllabuses() {
         <div className="filters-grid">
 
           {/* Left Sidebar - Filters */}
-          <div className="filters" style={{ borderRight: '1px solid #E2E8F0', paddingRight: '20px' }}>
+          <div className={`filters${showMobileFilters ? ' show-mobile-filters' : ''}`}>
             <div className="filters-sidebar-head" style={{ marginBottom: '15px', padding: '0 5px' }}>
               <h3 style={{ fontSize: '15px', fontWeight: '700', color: '#071437', fontFamily: 'Outfit, sans-serif' }}>Taxonomy Tree</h3>
               <button type="button" onClick={clearFilters} style={{ fontSize: '12px', color: '#8B5CF6', background: 'none', border: 'none', fontWeight: '600', cursor: 'pointer' }}>Reset all</button>
@@ -429,16 +438,16 @@ function AcademiaSyllabuses() {
             </div>
 
             {/* Topics List Grid */}
-            <div className="filters-grid-b-list" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px', padding: '20px 0' }}>
+            <div className="filters-grid-b-list">
               {treeLoading ? (
-                <div className="fgbl-item fgbl-empty" style={{ gridColumn: 'span 3', textAlign: 'center', padding: '40px' }}>
+                <div className="fgbl-item fgbl-empty" style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '40px' }}>
                   <div className="fgbl-item-l">
                     <h4>Loading syllabus tree…</h4>
                     <p>Fetching categories, subcategories, and topics from database.</p>
                   </div>
                 </div>
               ) : treeError ? (
-                <div className="fgbl-item fgbl-empty" style={{ gridColumn: 'span 3', textAlign: 'center', padding: '40px', color: '#EF4444' }}>
+                <div className="fgbl-item fgbl-empty" style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '40px', color: '#EF4444' }}>
                   <div className="fgbl-item-l">
                     <h4>Error loading syllabus data</h4>
                     <p>{treeError}</p>
@@ -542,7 +551,7 @@ function AcademiaSyllabuses() {
                   </div>
                 ))
               ) : (
-                <div className="fgbl-item fgbl-empty" style={{ gridColumn: 'span 3', textAlign: 'center', padding: '40px', background: '#F8FAFC', borderRadius: '12px', border: '1px dashed #CBD5E1' }}>
+                <div className="fgbl-item fgbl-empty" style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '40px', background: '#F8FAFC', borderRadius: '12px', border: '1px dashed #CBD5E1' }}>
                   <div className="fgbl-item-l" style={{ width: '100%' }}>
                     <h4>No topics found</h4>
                     <p>Try clearing your filters or broadening your search keywords.</p>

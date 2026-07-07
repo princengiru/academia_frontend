@@ -10,6 +10,8 @@ import AcademiaReadStory from '../../../pages/academia/public/read-story';
 import AcademiaWatch from '../../../pages/academia/public/watch';
 import AcademiaAuthor from '../../../pages/academia/public/author';
 import AcademiaRewards from '../../../pages/academia/public/rewards';
+import AcademiaCourseDetails from '../../../pages/academia/public/course-details';
+import AcademiaCourses from '../../../pages/academia/public/courses';
 
 export default function AcademiaPublicRoutes() {
   return (
@@ -25,6 +27,8 @@ export default function AcademiaPublicRoutes() {
       <Route path="watch" element={<AcademiaWatch />} />
       <Route path="author" element={<AcademiaAuthor />} />
       <Route path="rewards" element={<AcademiaRewards />} />
+      <Route path="course-details" element={<AcademiaCourseDetails />} />
+      <Route path="courses" element={<AcademiaCourses />} />
     </>
   );
 }

@@ -2056,10 +2056,10 @@ const Assignments = () => {
                           <td style={{ padding: '12px 8px' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                               <img 
-                                src={sub.student?.avatar ? `${API_BASE_URL}${sub.student.avatar}` : '/assets/imgs/prof.jpg'} 
+                                src={sub.student?.avatar ? `${API_BASE_URL}${sub.student.avatar}` : '/assets/imgs/default-profile.png'} 
                                 alt="" 
                                 style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover' }}
-                                onError={(e) => { e.target.src = '/assets/imgs/prof.jpg'; }}
+                                onError={(e) => { e.target.src = '/assets/imgs/default-profile.png'; }}
                               />
                               <div>
                                 <h5 style={{ margin: 0, fontSize: '13px', fontWeight: '600', color: '#071437' }}>{sub.student?.name}</h5>

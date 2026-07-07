@@ -57,7 +57,7 @@ const ViewProject = () => {
 
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [collaborators, setCollaborators] = useState([
-    { id: 1, name: 'Sheilah MUGABEKAZI', avatar: '/assets/imgs/prof.jpg' },
+    { id: 1, name: 'Sheilah MUGABEKAZI', avatar: '/assets/imgs/default-profile.png' },
     { id: 2, name: 'Landry Perly', avatar: '/assets/imgs/ac-on.jpg' },
   ]);
 
@@ -224,10 +224,10 @@ const ViewProject = () => {
     name: project.user_name || 'Unknown',
     role: project.user_role || 'Professor',
     email: project.user_email || '',
-    avatar: normalizeAssetUrl(project.user_avatar) || '/assets/imgs/prof.jpg',
+    avatar: normalizeAssetUrl(project.user_avatar) || '/assets/imgs/default-profile.png',
     status: project.approval_status || 'Active',
     projects: project.user_projects_count || '1',
-  } : { name: 'loading...', role: '', email: '', avatar: '/assets/imgs/prof.jpg', status: 'loading...', projects: '0' };
+  } : { name: 'loading...', role: '', email: '', avatar: '/assets/imgs/default-profile.png', status: 'loading...', projects: '0' };
 
   const zenithProject = project ? {
     title: project.title,
@@ -257,7 +257,7 @@ const ViewProject = () => {
   const displayComments = commentsList.map(item => ({
     id: item.id,
     name: item.user_name || 'Anonymous',
-    avatar: normalizeAssetUrl(item.user_avatar) || '/assets/imgs/prof.jpg',
+    avatar: normalizeAssetUrl(item.user_avatar) || '/assets/imgs/default-profile.png',
     time: timeAgo(item.created_at),
     message: item.content,
     posted: new Date(item.created_at).toLocaleDateString()

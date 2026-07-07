@@ -66,9 +66,13 @@ function AcademiaSignIn() {
 
       // Route based on exact role matching
       const userRole = (data.data.user?.role || '').toLowerCase().trim();
+      const redirectAfterLogin = sessionStorage.getItem('redirectAfterLogin');
 
       setTimeout(() => {
-        if (userRole === 'instructor') {
+        if (redirectAfterLogin) {
+          sessionStorage.removeItem('redirectAfterLogin');
+          navigate(redirectAfterLogin, { replace: true });
+        } else if (userRole === 'instructor') {
           navigate('/academia/professor', { replace: true });
         } else if (userRole === 'student') {
           navigate('/academia/learner/', { replace: true });
