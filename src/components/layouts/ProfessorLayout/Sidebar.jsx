@@ -106,9 +106,6 @@ const Sidebar = ({ currentPage, profileLoading, profileSummary, profileCompletio
           </div>
         </div>
         <div className="prof-sidebar-profile-right">
-          <Link to="/academia/professor/settings" className="prof-icon-btn" aria-label="Settings">
-            <img src="/assets/icons/setting-2.svg" alt="Settings" />
-          </Link>
           <button type="button" className="prof-icon-btn" aria-label="Logout" onClick={onLogout || preventDefault}>
             <img src="/assets/icons/exit-right.svg" alt="Logout" />
           </button>

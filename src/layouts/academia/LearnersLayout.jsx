@@ -259,9 +259,6 @@ function LearnersLayout() {
             </div>
           </NavLink>
           <div className="learners-sidebar-profile-right">
-            <NavLink to="/academia/learner/settings" className="learners-icon-btn" aria-label="Settings">
-              <img src={learnersSettingsIcon} alt="Settings" />
-            </NavLink>
             <button type="button" className="learners-icon-btn" aria-label="Logout" onClick={openLogoutModal}>
               <img src={learnersLogoutIcon} alt="Logout" />
             </button>
