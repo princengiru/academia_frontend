@@ -25,6 +25,8 @@ function AcademiaSignUp() {
   const [success, setSuccess] = useState('');
   const [role, setRole] = useState('student');
   const [roleOpen, setRoleOpen] = useState(false);
+  const [showGoogleRoleModal, setShowGoogleRoleModal] = useState(false);
+  const [googleRole, setGoogleRole] = useState('student');
 
   // --- Click Outside to Close Dropdown ---
   useEffect(() => {
@@ -446,7 +448,7 @@ function AcademiaSignUp() {
               <button
                 type="button"
                 className="social-btn google"
-                onClick={() => { window.location.href = `${API_BASE_URL}/api/auth/google`; }}
+                onClick={() => setShowGoogleRoleModal(true)}
               >
                 <span className="btn-icon"><img src={googleIcon} alt="Google" style={{ width: '16px' }} /></span>
                 Use Google
@@ -586,6 +588,82 @@ function AcademiaSignUp() {
           <img src={bgVisual} alt="Academia Learning Platform Signup" draggable="false" />
         </section>
       </main>
+
+      {showGoogleRoleModal && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
+          backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          zIndex: 1000, padding: '20px', backdropFilter: 'blur(4px)'
+        }}>
+          <div style={{
+            background: '#fff', borderRadius: '16px', padding: '40px', width: '100%', maxWidth: '540px',
+            boxShadow: '0 20px 40px rgba(0,0,0,0.15)'
+          }}>
+            <h3 style={{ marginBottom: '12px', fontSize: '24px', fontWeight: '700', color: '#111827', textAlign: 'center' }}>Choose your role</h3>
+            <p style={{ marginBottom: '32px', fontSize: '15px', color: '#6B7280', textAlign: 'center' }}>
+              How do you want to use the platform?
+            </p>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '32px' }}>
+              <label style={{
+                display: 'flex', alignItems: 'center', padding: '14px 18px', border: `2px solid ${googleRole === 'student' ? '#450468' : '#E5E7EB'}`,
+                borderRadius: '12px', cursor: 'pointer', transition: 'all 0.2s', backgroundColor: googleRole === 'student' ? 'rgba(69, 4, 104, 0.05)' : '#fff'
+              }}>
+                <input
+                  type="radio"
+                  name="googleRole"
+                  value="student"
+                  checked={googleRole === 'student'}
+                  onChange={(e) => setGoogleRole(e.target.value)}
+                  style={{ marginRight: '16px', accentColor: '#450468', transform: 'scale(1.3)' }}
+                />
+                <div>
+                  <span style={{ fontWeight: '600', color: '#111827', display: 'block', fontSize: '15px' }}>Student / Learner</span>
+                  <span style={{ fontSize: '13px', color: '#6B7280', marginTop: '2px', display: 'block' }}>I want to learn and take courses</span>
+                </div>
+              </label>
+
+              <label style={{
+                display: 'flex', alignItems: 'center', padding: '14px 18px', border: `2px solid ${googleRole === 'instructor' ? '#450468' : '#E5E7EB'}`,
+                borderRadius: '12px', cursor: 'pointer', transition: 'all 0.2s', backgroundColor: googleRole === 'instructor' ? 'rgba(69, 4, 104, 0.05)' : '#fff'
+              }}>
+                <input
+                  type="radio"
+                  name="googleRole"
+                  value="instructor"
+                  checked={googleRole === 'instructor'}
+                  onChange={(e) => setGoogleRole(e.target.value)}
+                  style={{ marginRight: '16px', accentColor: '#450468', transform: 'scale(1.3)' }}
+                />
+                <div>
+                  <span style={{ fontWeight: '600', color: '#111827', display: 'block', fontSize: '15px' }}>Instructor / Professor</span>
+                  <span style={{ fontSize: '13px', color: '#6B7280', marginTop: '2px', display: 'block' }}>I want to teach and manage students</span>
+                </div>
+              </label>
+            </div>
+
+            <div style={{ display: 'flex', gap: '16px' }}>
+              <button
+                onClick={() => setShowGoogleRoleModal(false)}
+                style={{ flex: 1, padding: '14px', border: '1px solid #D1D5DB', borderRadius: '10px', background: '#fff', color: '#374151', fontWeight: '600', cursor: 'pointer', transition: 'all 0.2s', fontSize: '15px' }}
+                onMouseOver={(e) => e.target.style.background = '#F3F4F6'}
+                onMouseOut={(e) => e.target.style.background = '#fff'}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => { window.location.href = `${API_BASE_URL}/api/auth/google?role=${googleRole}`; }}
+                style={{ flex: 1, padding: '14px', border: 'none', borderRadius: '10px', background: '#450468', color: '#fff', fontWeight: '600', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', transition: 'all 0.2s', fontSize: '15px' }}
+                onMouseOver={(e) => e.target.style.opacity = '0.9'}
+                onMouseOut={(e) => e.target.style.opacity = '1'}
+              >
+                <img src={googleIcon} alt="Google" style={{ width: '18px', filter: 'brightness(0) invert(1)' }} />
+                Continue
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
