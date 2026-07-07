@@ -517,9 +517,14 @@ function AcademiaVerify() {
             >
               {titanLoading ? (
                 <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-                  <svg className="spinner" viewBox="0 0 50 50" style={{ width: '20px', height: '20px', animation: 'spin 1s linear infinite' }}>
-                    <circle className="path" cx="25" cy="25" r="20" fill="none" strokeWidth="5" stroke="#ffffff" strokeLinecap="round" style={{ strokeDasharray: '90, 150', strokeDashoffset: '0' }}></circle>
-                  </svg>
+                  <div style={{
+                    width: '18px',
+                    height: '18px',
+                    border: '2px solid rgba(255, 255, 255, 0.3)',
+                    borderTop: '2px solid #ffffff',
+                    borderRadius: '50%',
+                    animation: 'spin 0.8s linear infinite'
+                  }}></div>
                   Verifying...
                 </span>
               ) : 'Verify'}
