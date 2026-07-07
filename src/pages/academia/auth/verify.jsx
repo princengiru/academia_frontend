@@ -116,27 +116,34 @@ function AcademiaVerify() {
       localStorage.setItem('user', JSON.stringify(data.data.user));
 
       const userRole = (data.data.user?.role || '').toLowerCase().trim();
+      const redirectAfterLogin = sessionStorage.getItem('redirectAfterLogin');
 
       if (endpoint === '/api/auth/verify-registration-otp') {
         setSuccessMessage('Verification successful. Redirecting to your dashboard...');
         setVortexError('');
         setTimeout(() => {
-          if (userRole === 'instructor') {
-            navigate('/academia/professor/dashboard', { replace: true });
+          if (redirectAfterLogin) {
+            sessionStorage.removeItem('redirectAfterLogin');
+            navigate(redirectAfterLogin, { replace: true });
+          } else if (userRole === 'instructor') {
+            navigate('/academia/professor', { replace: true });
           } else if (userRole === 'admin') {
             navigate('/admin/dashboard', { replace: true });
           } else {
-            navigate('/academia/learner/courses', { replace: true });
+            navigate('/academia/learner/', { replace: true });
           }
         }, 2000);
       } else {
         setTimeout(() => {
-          if (userRole === 'instructor') {
-            navigate('/academia/professor/dashboard', { replace: true });
+          if (redirectAfterLogin) {
+            sessionStorage.removeItem('redirectAfterLogin');
+            navigate(redirectAfterLogin, { replace: true });
+          } else if (userRole === 'instructor') {
+            navigate('/academia/professor', { replace: true });
           } else if (userRole === 'admin') {
             navigate('/admin/dashboard', { replace: true });
           } else {
-            navigate('/academia/learner/courses', { replace: true });
+            navigate('/academia/learner/', { replace: true });
           }
         }, 500);
       }
