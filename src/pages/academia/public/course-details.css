@@ -74,6 +74,7 @@
 }
 
 .public-course-details-page .course-hero-content h1 {
+  font-family: Montserrat, sans-serif;
   font-size: 32px;
   font-weight: 700;
   margin: 0 0 16px 0;
@@ -120,6 +121,7 @@
 }
 
 .public-course-details-page .course-intro-banner h2 {
+  font-family: Montserrat, sans-serif;
   font-size: 20px;
   font-weight: 600;
   color: #071437;
@@ -214,6 +216,7 @@
 }
 
 .public-course-details-page .course-section-block h3 {
+  font-family: Montserrat, sans-serif;
   font-size: 18px;
   font-weight: 600;
   color: #071437;
@@ -317,6 +320,7 @@
 }
 
 .public-course-details-page .timeline-details h4 {
+  font-family: Montserrat, sans-serif;
   font-size: 14px;
   font-weight: 600;
   color: #071437;
@@ -382,6 +386,7 @@
 }
 
 .public-course-details-page .chapter-meta h5 {
+  font-family: Montserrat, sans-serif;
   font-size: 13px;
   font-weight: 600;
   color: #071437;
@@ -423,6 +428,7 @@
 }
 
 .public-course-details-page .empty-course-fallback h3 {
+  font-family: Montserrat, sans-serif;
   font-size: 16px;
   font-weight: 600;
   color: #071437;
@@ -467,6 +473,7 @@
 }
 
 .public-course-details-page .instructor-bio-text h4 {
+  font-family: Montserrat, sans-serif;
   font-size: 15px;
   font-weight: 600;
   color: #071437;

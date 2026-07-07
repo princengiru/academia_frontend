@@ -132,13 +132,12 @@ const Assignments = () => {
   const [submissionsList, setSubmissionsList] = useState([]);
   const [submissionsLoading, setSubmissionsLoading] = useState(false);
   const [submissionsError, setSubmissionsError] = useState('');
-  const [isSubmissionsModalOpen, setIsSubmissionsModalOpen] = useState(false);
+  const [workspaceTab, setWorkspaceTab] = useState('overview'); // 'overview' or 'submissions'
 
   const [selectedAttemptId, setSelectedAttemptId] = useState(null);
   const [attemptDetails, setAttemptDetails] = useState(null);
   const [attemptLoading, setAttemptLoading] = useState(false);
   const [attemptError, setAttemptError] = useState('');
-  const [isAttemptModalOpen, setIsAttemptModalOpen] = useState(false);
 
   const [manualGrades, setManualGrades] = useState({});
   const [attemptFeedback, setAttemptFeedback] = useState('');
@@ -148,7 +147,7 @@ const Assignments = () => {
   // --- Submissions Actions ---
   const handleOpenSubmissions = async (row) => {
     setSubmissionsAssessment(row);
-    setIsSubmissionsModalOpen(true);
+    setWorkspaceTab('submissions');
     setSubmissionsLoading(true);
     setSubmissionsError('');
     setSubmissionsList([]);
@@ -178,7 +177,6 @@ const Assignments = () => {
 
   const handleOpenAttemptDetails = async (attemptId, category) => {
     setSelectedAttemptId(attemptId);
-    setIsAttemptModalOpen(true);
     setAttemptLoading(true);
     setAttemptError('');
     setAttemptDetails(null);
@@ -250,7 +248,8 @@ const Assignments = () => {
       const body = await response.json();
       if (response.ok) {
         showToast('Grades submitted successfully!', 'success');
-        setIsAttemptModalOpen(false);
+        setAttemptDetails(null);
+        setSelectedAttemptId(null);
         handleOpenSubmissions(submissionsAssessment);
         setRefreshTrigger(prev => prev + 1);
       } else {
@@ -1000,6 +999,15 @@ const Assignments = () => {
     [assessmentRows]
   );
 
+  const workspaceStats = useMemo(() => {
+    const total = normalizedRows.length;
+    const formative = normalizedRows.filter(r => r.category === 'formative').length;
+    const summative = normalizedRows.filter(r => r.category === 'summative').length;
+    const submissions = normalizedRows.reduce((sum, r) => sum + (r.studentsAttempts || 0), 0);
+    const published = total > 0 ? Math.round((normalizedRows.filter(r => r.is_published).length / total) * 100) : 0;
+    return { total, formative, summative, submissions, published };
+  }, [normalizedRows]);
+
   const filteredRows = useMemo(() => {
     const normalizedSearch = debouncedSearch.trim().toLowerCase();
     return normalizedRows.filter((row) => {
@@ -1186,6 +1194,32 @@ const Assignments = () => {
           </div>
         </section>
 
+        {/* Top Mini Stats Container */}
+        <div className="prof-dashboard-stats-container" style={{ margin: '14px 0 6px 0' }}>
+          <div className="prof-card prof-secondary-stats-row" style={{ display: 'flex', gap: '20px', background: '#FFFFFF', border: '1px solid #EEF1F6', borderRadius: '12px', padding: '16px 20px', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.03)' }}>
+            <div className="sub-stat" style={{ flex: 1, borderRight: '1px solid #EEF1F6', paddingRight: '16px' }}>
+              <h4 style={{ fontSize: '20px', fontWeight: 700, color: '#450468', margin: '0 0 4px 0' }}>{workspaceStats.total}</h4>
+              <p style={{ margin: 0, fontSize: '11px', color: '#7E8299', fontWeight: 600 }}>Total Tests</p>
+            </div>
+            <div className="sub-stat" style={{ flex: 1, borderRight: '1px solid #EEF1F6', paddingRight: '16px' }}>
+              <h4 style={{ fontSize: '20px', fontWeight: 700, color: '#450468', margin: '0 0 4px 0' }}>{workspaceStats.formative}</h4>
+              <p style={{ margin: 0, fontSize: '11px', color: '#7E8299', fontWeight: 600 }}>Formative Quizzes</p>
+            </div>
+            <div className="sub-stat" style={{ flex: 1, borderRight: '1px solid #EEF1F6', paddingRight: '16px' }}>
+              <h4 style={{ fontSize: '20px', fontWeight: 700, color: '#450468', margin: '0 0 4px 0' }}>{workspaceStats.summative}</h4>
+              <p style={{ margin: 0, fontSize: '11px', color: '#7E8299', fontWeight: 600 }}>Summative Exams</p>
+            </div>
+            <div className="sub-stat" style={{ flex: 1, borderRight: '1px solid #EEF1F6', paddingRight: '16px' }}>
+              <h4 style={{ fontSize: '20px', fontWeight: 700, color: '#450468', margin: '0 0 4px 0' }}>{workspaceStats.submissions}</h4>
+              <p style={{ margin: 0, fontSize: '11px', color: '#7E8299', fontWeight: 600 }}>Student Submissions</p>
+            </div>
+            <div className="sub-stat" style={{ flex: 1 }}>
+              <h4 style={{ fontSize: '20px', fontWeight: 700, color: '#450468', margin: '0 0 4px 0' }}>{workspaceStats.published}%</h4>
+              <p style={{ margin: 0, fontSize: '11px', color: '#7E8299', fontWeight: 600 }}>Published Rate</p>
+            </div>
+          </div>
+        </div>
+
         {selectedRowIds.size > 0 && (
           <div className="prof-bulk-actions-bar animate-fade-in">
             <span className="selected-count">{selectedRowIds.size} assessment(s) selected</span>
@@ -1278,7 +1312,7 @@ const Assignments = () => {
                   currentRows.map((row, index) => (
                     <tr 
                       key={row.id}
-                      onClick={() => handleEditRow(row)}
+                      onClick={() => { setSubmissionsAssessment(row); setWorkspaceTab('overview'); }}
                       style={{ cursor: 'pointer' }}
                       className={selectedRowIds.has(String(row.id)) ? 'is-selected' : ''}
                     >
@@ -2012,333 +2046,370 @@ const Assignments = () => {
         </div>
       )}
 
-      {/* --- SUBMISSIONS LIST MODAL --- */}
-      {isSubmissionsModalOpen && (
-        <div className="assessments-modal is-open" style={{ zIndex: 1200 }}>
-          <div className="assessments-modal__backdrop" onClick={() => setIsSubmissionsModalOpen(false)}></div>
-          <div className="assessments-modal__dialog" role="dialog" aria-modal="true" style={{ width: 'min(780px, calc(100vw - 32px))', maxHeight: '85vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-            <div className="assessments-modal__header" style={{ flexShrink: 0 }}>
-              <h2>Submissions: {submissionsAssessment?.title}</h2>
-              <button type="button" className="assessments-modal__close" onClick={() => setIsSubmissionsModalOpen(false)} aria-label="Close modal">
-                <img src="/assets/icons/popup-close.svg" alt="" />
-              </button>
-            </div>
-            <div className="assessments-modal__body" style={{ flexGrow: 1, overflowY: 'auto', padding: '24px 30px' }}>
-              {submissionsLoading ? (
-                <div style={{ textAlign: 'center', padding: '40px', color: '#5B0A86', fontWeight: '500' }}>
-                  Loading student submissions...
-                </div>
-              ) : submissionsError ? (
-                <div className="assessments-modal-error" role="alert">
-                  {submissionsError}
-                </div>
-              ) : submissionsList.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '40px', color: '#64748B' }}>
-                  No student submissions found for this assessment yet.
-                </div>
-              ) : (
-                <div className="table-responsive">
-                  <table className="assessments-table" style={{ width: '100%' }}>
-                    <thead>
-                      <tr>
-                        <th>Student</th>
-                        <th>Attempt No.</th>
-                        <th>Score</th>
-                        <th>Percentage</th>
-                        <th>Status</th>
-                        <th>Submitted At</th>
-                        <th>Action</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {submissionsList.map((sub) => (
-                        <tr key={sub.id} style={{ borderBottom: '1px solid #F1F1F4' }}>
-                          <td style={{ padding: '12px 8px' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                              <img 
-                                src={sub.student?.avatar ? `${API_BASE_URL}${sub.student.avatar}` : '/assets/imgs/default-profile.png'} 
-                                alt="" 
-                                style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover' }}
-                                onError={(e) => { e.target.src = '/assets/imgs/default-profile.png'; }}
-                              />
-                              <div>
-                                <h5 style={{ margin: 0, fontSize: '13px', fontWeight: '600', color: '#071437' }}>{sub.student?.name}</h5>
-                                <p style={{ margin: 0, fontSize: '11px', color: '#7E8299' }}>{sub.student?.email}</p>
-                              </div>
-                            </div>
-                          </td>
-                          <td style={{ padding: '12px 8px', fontSize: '13px', color: '#4B5675' }}>{sub.attempt_number}</td>
-                          <td style={{ padding: '12px 8px', fontSize: '13px', color: '#4B5675' }}>{sub.score} / {sub.total_points}</td>
-                          <td style={{ padding: '12px 8px', fontSize: '13px', fontWeight: '600', color: sub.is_passed ? '#10B981' : '#EF4444' }}>
-                            {sub.percentage}%
-                          </td>
-                          <td style={{ padding: '12px 8px' }}>
-                            <span className={`status-pill ${
-                              sub.status === 'graded' ? 'pill-green' : sub.status === 'submitted' ? 'pill-blue' : 'pill-gray'
-                            }`}>
-                              {sub.status}
-                            </span>
-                          </td>
-                          <td style={{ padding: '12px 8px', fontSize: '12px', color: '#7E8299' }}>
-                            {new Date(sub.created_at || sub.start_time).toLocaleString()}
-                          </td>
-                           <td style={{ padding: '12px 8px' }}>
-                             <div style={{ display: 'flex', gap: '8px' }}>
-                               <button
-                                 type="button"
-                                 className="assessments-modal-next"
-                                 style={{ height: '28px', fontSize: '12px', padding: '0 12px', margin: 0 }}
-                                 onClick={() => handleOpenAttemptDetails(sub.id, submissionsAssessment.category)}
-                                >
-                                  View Answers
-                               </button>
-                               <button
-                                 type="button"
-                                 className="assessments-modal-back"
-                                 style={{ height: '28px', fontSize: '12px', padding: '0 12px', margin: 0, color: '#EF4444', borderColor: '#EF4444', backgroundColor: 'transparent' }}
-                                 onClick={() => handleDeleteAttempt(sub.id)}
-                                >
-                                  Delete
-                               </button>
-                             </div>
-                           </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-            <div className="assessments-modal__header" style={{ borderTop: '1px solid #E4E6EF', padding: '15px 30px', flexShrink: 0, justifyContent: 'flex-end' }}>
-              <button 
-                type="button" 
-                className="assessments-modal-back" 
-                onClick={() => setIsSubmissionsModalOpen(false)}
-                style={{ height: '36px', padding: '0 16px', fontSize: '13px', margin: 0 }}
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* --- SLIDING PREVIEW DRAWER WORKSPACE --- */}
+      <div className={`assessments-drawer-overlay ${submissionsAssessment ? 'open' : ''}`} onClick={() => { setSubmissionsAssessment(null); setAttemptDetails(null); setSelectedAttemptId(null); }}>
+        <div className="assessments-drawer" onClick={(e) => e.stopPropagation()}>
+          {submissionsAssessment && (
+            <>
+              {/* Drawer Header */}
+              <div className="assessments-drawer-header">
+                <button 
+                  type="button"
+                  className="assessments-drawer-close" 
+                  onClick={() => { setSubmissionsAssessment(null); setAttemptDetails(null); setSelectedAttemptId(null); }}
+                  aria-label="Close drawer"
+                >
+                  &times;
+                </button>
+                <h2>{attemptDetails ? `Grading: ${submissionsAssessment.title}` : `Workspace: ${submissionsAssessment.title}`}</h2>
 
-      {/* --- STUDENT ATTEMPT DETAIL MODAL --- */}
-      {isAttemptModalOpen && (
-        <div className="assessments-modal is-open" style={{ zIndex: 1250 }}>
-          <div className="assessments-modal__backdrop" onClick={() => setIsAttemptModalOpen(false)}></div>
-          <div className="assessments-modal__dialog" role="dialog" aria-modal="true" style={{ width: 'min(820px, calc(100vw - 32px))', maxHeight: '88vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-            <div className="assessments-modal__header" style={{ flexShrink: 0 }}>
-              <div>
-                <h2 style={{ margin: 0 }}>Attempt Details - Attempt #{attemptDetails?.attempt?.attempt_number}</h2>
-                <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: '#7E8299' }}>
-                  Student: <strong>{attemptDetails?.user?.name}</strong> | Score: <strong>{attemptDetails?.attempt?.score}/{attemptDetails?.attempt?.total_points} ({attemptDetails?.attempt?.percentage}%)</strong>
-                </p>
+                <span className="oc-update-status" style={{ border: '1px solid #EEF1F6', marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', padding: '4px 8px', borderRadius: '4px', background: '#FCFCFD' }}>
+                  <span className="dot" style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#17C653', display: 'inline-block' }}></span>
+                  Live DB Sync
+                </span>
               </div>
-              <button type="button" className="assessments-modal__close" onClick={() => setIsAttemptModalOpen(false)} aria-label="Close modal">
-                <img src="/assets/icons/popup-close.svg" alt="" />
-              </button>
-            </div>
-            <div className="assessments-modal__body" style={{ flexGrow: 1, overflowY: 'auto', padding: '24px 30px', backgroundColor: '#F9F9F9' }}>
-              {attemptLoading ? (
-                <div style={{ textAlign: 'center', padding: '40px', color: '#5B0A86', fontWeight: '500' }}>
-                  Loading attempt answers...
-                </div>
-              ) : attemptError ? (
-                <div className="assessments-modal-error" role="alert">
-                  {attemptError}
-                </div>
-              ) : !attemptDetails ? (
-                <div style={{ textAlign: 'center', padding: '40px', color: '#64748B' }}>
-                  No details found for this attempt.
-                </div>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                  
-                  {/* KPI Bar */}
-                  <div className="attempt-details-kpi-bar" style={{ display: 'flex', gap: '16px', backgroundColor: '#FFF', padding: '16px', borderRadius: '8px', border: '1px solid #E4E6EF' }}>
-                    <div style={{ flex: 1, textAlign: 'center' }}>
-                      <span style={{ display: 'block', fontSize: '11px', color: '#7E8299', textTransform: 'uppercase', fontWeight: '600' }}>Duration</span>
-                      <strong style={{ display: 'block', fontSize: '15px', color: '#071437', marginTop: '4px' }}>{attemptDetails.attempt.time_taken?.display || '---'}</strong>
-                    </div>
-                    <div style={{ flex: 1, borderLeft: '1px solid #E4E6EF', textAlign: 'center' }}>
-                      <span style={{ display: 'block', fontSize: '11px', color: '#7E8299', textTransform: 'uppercase', fontWeight: '600' }}>Result</span>
-                      <strong style={{ display: 'block', fontSize: '15px', color: attemptDetails.attempt.is_passed ? '#10B981' : '#EF4444', marginTop: '4px' }}>
-                        {attemptDetails.attempt.is_passed ? 'Passed' : 'Failed'}
-                      </strong>
-                    </div>
-                    <div style={{ flex: 1, borderLeft: '1px solid #E4E6EF', textAlign: 'center' }}>
-                      <span style={{ display: 'block', fontSize: '11px', color: '#7E8299', textTransform: 'uppercase', fontWeight: '600' }}>Status</span>
-                      <strong style={{ display: 'block', fontSize: '15px', color: '#071437', marginTop: '4px', textTransform: 'capitalize' }}>{attemptDetails.attempt.status}</strong>
-                    </div>
-                  </div>
 
-                  {/* Questions Review */}
+              {/* Drawer Body */}
+              <div className="assessments-drawer-body">
+                {attemptDetails ? (
+                  /* ========================================================
+                     STUDENT ATTEMPT DETAILS / GRADING PANEL
+                     ======================================================== */
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                    <h3 style={{ fontSize: '15px', fontWeight: '600', color: '#071437', margin: '10px 0 0 0' }}>Student Responses Breakdown</h3>
-                    
-                    {attemptDetails.questions.map((q, idx) => {
-                      const isCorrect = q.is_correct;
-                      const hasAnswered = q.student_answer !== null && q.student_answer !== undefined;
-                      const isTextQ = q.question_type === 'short_answer' || q.question_type === 'essay';
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid #EEF1F6', paddingBottom: '12px' }}>
+                      <button
+                        type="button"
+                        onClick={() => { setAttemptDetails(null); setSelectedAttemptId(null); }}
+                        style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: '#450468', fontSize: '13px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '4px', padding: 0 }}
+                      >
+                        ← Back to Submissions
+                      </button>
+                    </div>
 
-                      return (
-                        <div key={q.id} style={{ backgroundColor: '#FFF', borderRadius: '8px', border: '1px solid #E4E6EF', padding: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
-                            <div style={{ display: 'flex', gap: '8px' }}>
-                              <strong style={{ color: '#071437', fontSize: '14px' }}>Q{idx + 1}.</strong>
-                              <span style={{ color: '#071437', fontSize: '14px', lineHeight: '1.5', fontWeight: '500' }}>{stripHtml(q.question_text)}</span>
-                            </div>
-                            <span style={{ flexShrink: 0, padding: '4px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: '600', backgroundColor: isCorrect ? '#E8F5E9' : '#FFEBEE', color: isCorrect ? '#2E7D32' : '#C62828' }}>
-                              {q.points_earned} / {q.points} pts
-                            </span>
-                          </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <h3 style={{ fontSize: '15px', fontWeight: '700', color: '#071437', margin: '0 0 4px 0' }}>
+                          Attempt #{attemptDetails.attempt?.attempt_number || 1}
+                        </h3>
+                        <p style={{ margin: 0, fontSize: '12px', color: '#64748B' }}>
+                          Student: <strong>{attemptDetails.user?.name || attemptDetails.user?.email || 'Student'}</strong>
+                        </p>
+                        <p style={{ margin: '2px 0 0 0', fontSize: '12px', color: '#64748B' }}>
+                          Submitted: <strong>{attemptDetails.attempt?.created_at ? new Date(attemptDetails.attempt.created_at).toLocaleString() : 'Recently'}</strong>
+                        </p>
+                      </div>
 
-                          {/* Render choices/options if MCQ or True/False */}
-                          {!isTextQ && Array.isArray(q.options) && (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginLeft: '26px' }}>
-                              {q.options.map((opt, optIdx) => {
-                                const optionLabel = typeof opt === 'object' ? (opt.label || opt.text || opt.value) : opt;
-                                const cleanOptionLabel = String(optionLabel).trim().toLowerCase();
-                                
-                                // Determine if this is the student's selected option
-                                let isSelected = false;
-                                if (hasAnswered) {
-                                  const studentAnswers = String(q.student_answer).split(',').map(s => s.trim().toLowerCase());
-                                  isSelected = studentAnswers.includes(cleanOptionLabel);
-                                }
+                      <div style={{ textAlign: 'right' }}>
+                        <span className={`status-pill pill-${attemptDetails.attempt?.status === 'graded' ? 'green' : 'blue'}`}>
+                          {attemptDetails.attempt?.status}
+                        </span>
+                        <h4 style={{ margin: '8px 0 0 0', fontSize: '18px', fontWeight: '800', color: '#450468' }}>
+                          Score: {attemptDetails.attempt?.score ?? '---'} / {submissionsAssessment.totalPoints}
+                        </h4>
+                      </div>
+                    </div>
 
-                                // Determine if this option is the correct answer
-                                let isCorrectOpt = false;
-                                const correctCol = q.correct_answer;
-                                if (typeof opt === 'object' && opt.is_correct) {
-                                  isCorrectOpt = true;
-                                } else if (correctCol) {
-                                  const correctAnswersList = String(correctCol).split(',').map(s => s.trim().toLowerCase());
-                                  isCorrectOpt = correctAnswersList.includes(cleanOptionLabel);
-                                }
+                    {attemptLoading ? (
+                      <div style={{ padding: '40px 0', textAlign: 'center', color: '#64748B' }}>Loading attempt details...</div>
+                    ) : attemptError ? (
+                      <div className="assessments-modal-error">{attemptError}</div>
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                        {/* Questions Grading list */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                          {(attemptDetails.questions || []).map((q, idx) => {
+                            const isMC = q.question_type === 'multiple_choice';
+                            const isTF = q.question_type === 'true_false';
+                            const isShort = q.question_type === 'short_answer';
+                            const isEssay = q.question_type === 'essay';
+                            const isTextQ = isShort || isEssay;
+                            const isCorrect = q.is_correct;
 
-                                let optBg = '#F9F9F9';
-                                let optBorder = '1px solid #E4E6EF';
-                                let optColor = '#4B5675';
+                            return (
+                              <div key={q.id} style={{ border: '1px solid #EEF1F6', borderRadius: '8px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px', background: '#FCFCFD' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px' }}>
+                                  <span style={{ fontSize: '13px', fontWeight: '700', color: '#071437' }}>
+                                    Q{idx + 1}. {stripHtml(q.question_text)}
+                                  </span>
+                                  <span style={{ fontSize: '11px', color: isCorrect ? '#2E7D32' : '#C62828', background: isCorrect ? '#E8F5E9' : '#FFEBEE', padding: '2px 6px', borderRadius: '4px', whiteSpace: 'nowrap', fontWeight: '600' }}>
+                                    {q.points_earned ?? 0} / {q.points} pts
+                                  </span>
+                                </div>
 
-                                if (isSelected) {
-                                  optBg = isCorrectOpt ? '#E8F5E9' : '#FFEBEE';
-                                  optBorder = isCorrectOpt ? '1px solid #A5D6A7' : '1px solid #EF9A9A';
-                                  optColor = isCorrectOpt ? '#1B5E20' : '#B71C1C';
-                                } else if (isCorrectOpt) {
-                                  optBg = '#E8F5E9';
-                                  optBorder = '1px solid #A5D6A7';
-                                  optColor = '#1B5E20';
-                                }
+                                {/* Render options for MC / TF */}
+                                {(isMC || isTF) && (
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginLeft: '12px' }}>
+                                    {(q.options || []).map((opt, optIdx) => {
+                                      const optionLabel = typeof opt === 'object' ? (opt.label || opt.text || opt.value) : opt;
+                                      const cleanOptionLabel = String(optionLabel).trim().toLowerCase();
+                                      
+                                      const studentAnswers = String(q.student_answer || '').split(',').map(s => s.trim().toLowerCase());
+                                      const isSelected = studentAnswers.includes(cleanOptionLabel);
 
-                                return (
-                                  <div key={optIdx} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px', borderRadius: '6px', backgroundColor: optBg, border: optBorder, color: optColor, fontSize: '13px' }}>
-                                    <div style={{ width: '16px', height: '16px', borderRadius: '50%', border: '2px solid currentColor', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                      {isSelected && <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'currentColor' }}></div>}
-                                    </div>
-                                    <span style={{ fontWeight: isSelected || isCorrectOpt ? '600' : 'normal' }}>{stripHtml(optionLabel)}</span>
-                                    {isCorrectOpt && <span style={{ marginLeft: 'auto', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase' }}>(Correct)</span>}
-                                    {isSelected && !isCorrectOpt && <span style={{ marginLeft: 'auto', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase' }}>(Selected)</span>}
+                                      const correctAnswersList = String(q.correct_answer || '').split(',').map(s => s.trim().toLowerCase());
+                                      const isCorrectOpt = correctAnswersList.includes(cleanOptionLabel);
+
+                                      let optBg = '#FFFFFF';
+                                      let optBorder = '1px solid #E4E6EF';
+                                      let optColor = '#4B5675';
+
+                                      if (isSelected) {
+                                        optBg = isCorrectOpt ? '#E8FFF3' : '#FFF5F5';
+                                        optBorder = isCorrectOpt ? '1px solid #50CD89' : '1px solid #F1416C';
+                                        optColor = isCorrectOpt ? '#10B981' : '#F1416C';
+                                      } else if (isCorrectOpt) {
+                                        optBg = '#E8FFF3';
+                                        optBorder = '1px solid #50CD89';
+                                        optColor = '#10B981';
+                                      }
+
+                                      return (
+                                        <div key={optIdx} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 12px', borderRadius: '6px', backgroundColor: optBg, border: optBorder, color: optColor, fontSize: '12px' }}>
+                                          <div style={{ width: '14px', height: '14px', borderRadius: '50%', border: '2px solid currentColor', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                            {isSelected && <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'currentColor' }}></div>}
+                                          </div>
+                                          <span style={{ fontWeight: isSelected || isCorrectOpt ? '600' : 'normal' }}>{stripHtml(optionLabel)}</span>
+                                          {isCorrectOpt && <span style={{ marginLeft: 'auto', fontSize: '10px', fontWeight: '700' }}>(Correct)</span>}
+                                          {isSelected && !isCorrectOpt && <span style={{ marginLeft: 'auto', fontSize: '10px', fontWeight: '700' }}>(Selected)</span>}
+                                        </div>
+                                      );
+                                    })}
                                   </div>
-                                );
-                              })}
-                            </div>
-                          )}
+                                )}
 
-                          {/* Render written answers for short answer / essay */}
-                          {isTextQ && (
-                            <div style={{ marginLeft: '26px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                              <div style={{ padding: '12px 16px', borderRadius: '6px', backgroundColor: '#F5F8FA', border: '1px solid #E4E6EF' }}>
-                                <span style={{ display: 'block', fontSize: '11px', color: '#7E8299', fontWeight: '600', textTransform: 'uppercase', marginBottom: '4px' }}>Student Answer</span>
-                                <p style={{ margin: 0, fontSize: '13px', color: '#071437', whiteSpace: 'pre-wrap', lineHeight: '1.5' }}>
-                                  {q.student_answer || <em>No answer submitted</em>}
-                                </p>
+                                {/* Render text answers */}
+                                {isTextQ && (
+                                  <div style={{ marginLeft: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                    <div style={{ padding: '10px 14px', borderRadius: '6px', backgroundColor: '#FFFFFF', border: '1px solid #E4E6EF' }}>
+                                      <span style={{ display: 'block', fontSize: '10px', color: '#7E8299', fontWeight: '700', textTransform: 'uppercase', marginBottom: '4px' }}>Student Answer</span>
+                                      <p style={{ margin: 0, fontSize: '12.5px', color: '#071437', whiteSpace: 'pre-wrap' }}>
+                                        {q.student_answer || <em>No answer submitted</em>}
+                                      </p>
+                                    </div>
+                                    {q.correct_answer && (
+                                      <div style={{ padding: '10px 14px', borderRadius: '6px', backgroundColor: '#E8FFF3', border: '1px solid #50CD89', color: '#10B981' }}>
+                                        <span style={{ display: 'block', fontSize: '10px', color: '#10B981', fontWeight: '700', textTransform: 'uppercase', marginBottom: '4px' }}>Expected Correct Answer</span>
+                                        <p style={{ margin: 0, fontSize: '12.5px', fontWeight: '600', whiteSpace: 'pre-wrap' }}>
+                                          {q.correct_answer}
+                                        </p>
+                                      </div>
+                                    )}
+                                    {isEssay && (
+                                      <div style={{ marginTop: '4px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <span style={{ fontSize: '12px', fontWeight: '600', color: '#4B5675' }}>Award Grade:</span>
+                                        <input
+                                          type="number"
+                                          min="0"
+                                          max={q.points}
+                                          step="0.5"
+                                          value={manualGrades[q.id] ?? ''}
+                                          onChange={(e) => {
+                                            const val = e.target.value === '' ? '' : Math.min(q.points, Math.max(0, parseFloat(e.target.value) || 0));
+                                            setManualGrades(prev => ({ ...prev, [q.id]: val }));
+                                          }}
+                                          style={{ width: '80px', height: '32px', padding: '0 8px', borderRadius: '4px', border: '1px solid #E4E6EF', fontSize: '13px' }}
+                                          placeholder="Points"
+                                        />
+                                        <span style={{ fontSize: '12px', color: '#7E8299' }}>/ {q.points} pts</span>
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
                               </div>
-                              {q.correct_answer && (
-                                <div style={{ padding: '12px 16px', borderRadius: '6px', backgroundColor: '#E8F5E9', border: '1px solid #A5D6A7', color: '#1B5E20' }}>
-                                  <span style={{ display: 'block', fontSize: '11px', color: '#2E7D32', fontWeight: '600', textTransform: 'uppercase', marginBottom: '4px' }}>Expected Correct Answer</span>
-                                  <p style={{ margin: 0, fontSize: '13px', fontWeight: '600', whiteSpace: 'pre-wrap', lineHeight: '1.5' }}>
-                                    {q.correct_answer}
+                            );
+                          })}
+                        </div>
+
+                        {/* Overall feedback */}
+                        <div style={{ background: '#FFFFFF', borderRadius: '8px', border: '1px solid #EEF1F6', padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                          <h4 style={{ fontSize: '13px', fontWeight: '600', color: '#071437', margin: 0 }}>Overall Attempt Feedback</h4>
+                          <textarea
+                            value={attemptFeedback}
+                            onChange={(e) => setAttemptFeedback(e.target.value)}
+                            placeholder="Provide overall feedback on this student's attempt..."
+                            rows="3"
+                            style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #E4E6EF', fontSize: '12.5px', resize: 'vertical' }}
+                          />
+                        </div>
+
+                        {gradingError && (
+                          <div className="assessments-modal-error" style={{ margin: 0 }}>{gradingError}</div>
+                        )}
+
+                        <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '8px', borderTop: '1px solid #EEF1F6', paddingTop: '16px' }}>
+                          <button
+                            type="button"
+                            className="assessments-modal-back"
+                            onClick={() => { setAttemptDetails(null); setSelectedAttemptId(null); }}
+                            style={{ height: '36px', padding: '0 16px', fontSize: '12px', margin: 0 }}
+                          >
+                            Back
+                          </button>
+                          <button
+                            type="button"
+                            className="assessments-modal-next"
+                            onClick={handleSubmitGrade}
+                            disabled={submittingGrade}
+                            style={{ height: '36px', padding: '0 16px', fontSize: '12px', margin: 0, minWidth: '120px' }}
+                          >
+                            {submittingGrade ? 'Saving...' : 'Submit Grades'}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  /* ========================================================
+                     DRAWER WORKSPACE TABS (OVERVIEW / SUBMISSIONS)
+                     ======================================================== */
+                  <>
+                    <div className="assessments-drawer-tabs">
+                      <button
+                        type="button"
+                        className={`assessments-drawer-tab-btn ${workspaceTab === 'overview' ? 'active' : ''}`}
+                        onClick={() => setWorkspaceTab('overview')}
+                      >
+                        Overview
+                      </button>
+                      <button
+                        type="button"
+                        className={`assessments-drawer-tab-btn ${workspaceTab === 'submissions' ? 'active' : ''}`}
+                        onClick={() => {
+                          setWorkspaceTab('submissions');
+                          handleOpenSubmissions(submissionsAssessment);
+                        }}
+                      >
+                        Submissions ({submissionsAssessment.studentsAttempts})
+                      </button>
+                    </div>
+
+                    {workspaceTab === 'overview' ? (
+                      /* OVERVIEW TAB CONTENT */
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                        <div className="assessments-drawer-stats-row">
+                          <div className="assessments-drawer-stat-item">
+                            <h3>{submissionsAssessment.totalPoints}</h3>
+                            <p>Total Points</p>
+                          </div>
+                          <div className="assessments-drawer-stat-item">
+                            <h3>{submissionsAssessment.passingScore}</h3>
+                            <p>Passing Score</p>
+                          </div>
+                          <div className="assessments-drawer-stat-item">
+                            <h3>{submissionsAssessment.durationMinutes || '---'}</h3>
+                            <p>Duration (Min)</p>
+                          </div>
+                          <div className="assessments-drawer-stat-item">
+                            <h3>{submissionsAssessment.attemptLimit}</h3>
+                            <p>Attempt Limit</p>
+                          </div>
+                        </div>
+
+                        <div>
+                          <h4 style={{ fontSize: '13px', fontWeight: '700', color: '#071437', margin: '0 0 6px 0' }}>Assessment Details</h4>
+                          <p style={{ margin: '0 0 12px 0', fontSize: '12.5px', color: '#64748B', lineHeight: '1.6' }}>
+                            Course: <strong>{submissionsAssessment.courseName}</strong> <br />
+                            Category: <strong style={{ textTransform: 'capitalize' }}>{submissionsAssessment.category}</strong> • Type: <strong>{submissionsAssessment.assessmentType}</strong> <br />
+                            Published: <strong>{submissionsAssessment.is_published ? 'Yes' : 'No'}</strong>
+                          </p>
+                        </div>
+
+                        {submissionsAssessment.description && (
+                          <div>
+                            <h4 style={{ fontSize: '13px', fontWeight: '700', color: '#071437', margin: '0 0 6px 0' }}>Description</h4>
+                            <p style={{ margin: 0, fontSize: '12.5px', color: '#64748B', lineHeight: '1.6' }}>
+                              {stripHtml(submissionsAssessment.description)}
+                            </p>
+                          </div>
+                        )}
+
+                        <div style={{ display: 'flex', gap: '8px', borderTop: '1px solid #EEF1F6', paddingTop: '20px', marginTop: '10px' }}>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSubmissionsAssessment(null);
+                              handleEditRow(submissionsAssessment);
+                            }}
+                            style={{ padding: '8px 16px', borderRadius: '8px', background: '#F3E8FF', border: '1px solid rgba(69, 4, 104, 0.2)', color: '#450468', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}
+                          >
+                            Edit Builder
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSubmissionsAssessment(null);
+                              handleDeleteRow(submissionsAssessment.id, submissionsAssessment.category);
+                            }}
+                            style={{ padding: '8px 16px', borderRadius: '8px', background: '#FFF5F5', border: '1px solid #FEE2E2', color: '#EF4444', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}
+                          >
+                            Delete Assessment
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      /* SUBMISSIONS TAB CONTENT */
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                        {submissionsLoading ? (
+                          <div style={{ padding: '40px 0', textAlign: 'center', color: '#64748B' }}>Loading submissions...</div>
+                        ) : submissionsError ? (
+                          <div className="assessments-modal-error">{submissionsError}</div>
+                        ) : submissionsList.length === 0 ? (
+                          <div style={{ padding: '40px 0', textAlign: 'center', color: '#64748B', fontSize: '13px' }}>
+                            No submissions have been made for this assessment yet.
+                          </div>
+                        ) : (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                            {submissionsList.map((sub) => (
+                              <div key={sub.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid #EEF1F6', borderRadius: '8px', padding: '12px 16px', background: '#FCFCFD' }}>
+                                <div>
+                                  <h4 style={{ fontSize: '13px', fontWeight: '700', color: '#071437', margin: '0 0 2px 0' }}>
+                                    {sub.student?.name || sub.student?.email || 'Student'}
+                                  </h4>
+                                  <p style={{ margin: 0, fontSize: '11px', color: '#7E8299' }}>
+                                    Submitted: {new Date(sub.created_at || sub.start_time).toLocaleDateString()}
                                   </p>
                                 </div>
-                              )}
-                              {q.question_type === 'essay' && (
-                                <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                  <span style={{ fontSize: '12px', fontWeight: '600', color: '#4B5675' }}>Award Grade:</span>
-                                  <input
-                                    type="number"
-                                    min="0"
-                                    max={q.points}
-                                    step="0.5"
-                                    value={manualGrades[q.id] ?? ''}
-                                    onChange={(e) => {
-                                      const val = e.target.value === '' ? '' : Math.min(q.points, Math.max(0, parseFloat(e.target.value) || 0));
-                                      setManualGrades(prev => ({ ...prev, [q.id]: val }));
-                                    }}
-                                    style={{ width: '80px', height: '32px', padding: '0 8px', borderRadius: '4px', border: '1px solid #E4E6EF', fontSize: '13px' }}
-                                    placeholder="Points"
-                                  />
-                                  <span style={{ fontSize: '12px', color: '#7E8299' }}>/ {q.points} pts</span>
+
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                                  <div style={{ textAlign: 'right' }}>
+                                    <span style={{ fontSize: '13px', fontWeight: '700', color: '#450468', display: 'block' }}>
+                                      Score: {sub.score ?? '---'} / {submissionsAssessment.totalPoints}
+                                    </span>
+                                    <span className={`status-pill pill-${sub.status === 'graded' ? 'green' : 'blue'}`} style={{ fontSize: '9px', padding: '2px 6px', transform: 'scale(0.85)', transformOrigin: 'right center', marginTop: '2px' }}>
+                                      {sub.status}
+                                    </span>
+                                  </div>
+
+                                  <div style={{ display: 'flex', gap: '4px' }}>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleOpenAttemptDetails(sub.id, submissionsAssessment.category)}
+                                      style={{ padding: '6px 12px', border: '1px solid #DBDFE9', borderRadius: '6px', background: '#FFFFFF', color: '#4B5675', fontSize: '11px', fontWeight: 600, cursor: 'pointer' }}
+                                    >
+                                      Grade
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleDeleteAttempt(sub.id)}
+                                      style={{ padding: '6px 12px', border: '1px solid #FEE2E2', borderRadius: '6px', background: '#FFF5F5', color: '#EF4444', fontSize: '11px', fontWeight: 600, cursor: 'pointer' }}
+                                    >
+                                      Delete
+                                    </button>
+                                  </div>
                                 </div>
-                              )}
-                            </div>
-                          )}
-
-                          {/* Explanation */}
-                          {q.explanation && (
-                            <div style={{ marginLeft: '26px', padding: '10px 14px', borderRadius: '6px', backgroundColor: '#FFF9C4', border: '1px solid #FFF59D', color: '#F57F17', fontSize: '12px', lineHeight: '1.5' }}>
-                              <strong>Explanation:</strong> {q.explanation}
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  {/* Feedback Textbox */}
-                  <div style={{ backgroundColor: '#FFF', borderRadius: '8px', border: '1px solid #E4E6EF', padding: '20px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    <h4 style={{ fontSize: '14px', fontWeight: '600', color: '#071437', margin: 0 }}>Overall Attempt Feedback</h4>
-                    <textarea
-                      value={attemptFeedback}
-                      onChange={(e) => setAttemptFeedback(e.target.value)}
-                      placeholder="Provide overall feedback on this student's attempt..."
-                      rows="3"
-                      style={{ width: '100%', padding: '12px', borderRadius: '6px', border: '1px solid #E4E6EF', fontSize: '13px', resize: 'vertical' }}
-                    />
-                  </div>
-
-                  {gradingError && (
-                    <div className="assessments-modal-error" role="alert" style={{ margin: 0 }}>
-                      {gradingError}
-                    </div>
-                  )}
-
-                </div>
-              )}
-            </div>
-            <div className="assessments-modal__header" style={{ borderTop: '1px solid #E4E6EF', padding: '15px 30px', flexShrink: 0, justifyContent: 'flex-end', gap: '12px' }}>
-              <button 
-                type="button" 
-                className="assessments-modal-back" 
-                onClick={() => setIsAttemptModalOpen(false)}
-                style={{ height: '36px', padding: '0 16px', fontSize: '13px', margin: 0 }}
-              >
-                Back to Submissions
-              </button>
-              <button 
-                type="button" 
-                className="assessments-modal-next" 
-                onClick={handleSubmitGrade}
-                disabled={submittingGrade}
-                style={{ height: '36px', padding: '0 16px', fontSize: '13px', margin: 0, minWidth: '120px' }}
-              >
-                {submittingGrade ? 'Saving...' : 'Submit Grades'}
-              </button>
-            </div>
-          </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            </>
+          )}
         </div>
-      )}
+      </div>
     </ProfessorLayout>
   );
 };

@@ -286,26 +286,17 @@ function Header() {
                   </li>
                   <li>
                     <button 
-                      type="button" 
-                      className="dropdown-item d-flex align-items-center gap-2" 
-                      onClick={() => {
-                        const role = (user.role || '').toLowerCase().trim();
-                        if (role === 'instructor') {
-                          navigate('/academia/professor');
-                        } else if (role === 'student') {
-                          navigate('/academia/learner/');
-                        } else if (role === 'admin') {
-                          navigate('/academia/hoa');
-                        } else {
-                          navigate('/academia/index');
-                        }
-                      }}
-                      style={{ fontSize: '13px', color: '#4B5675' }}
-                    >
-                      <User size={14} style={{ color: '#8B5CF6' }} />
-                      <span>Profile</span>
-                    </button>
-                  </li>
+                       type="button" 
+                       className="dropdown-item d-flex align-items-center gap-2" 
+                       onClick={() => {
+                         navigate('/academia/journals');
+                       }}
+                       style={{ fontSize: '13px', color: '#4B5675' }}
+                     >
+                       <User size={14} style={{ color: '#8B5CF6' }} />
+                       <span>Profile</span>
+                     </button>
+                   </li>
                   <li><hr className="dropdown-divider" /></li>
                   <li>
                     <button 
