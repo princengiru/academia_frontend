@@ -26,6 +26,7 @@ const ProfessorLayout = ({ children, currentPage }) => {
   const [profileCompletion, setProfileCompletion] = useState(0);
   const [profileError, setProfileError] = useState('');
   const [isSuspended, setIsSuspended] = useState(false);
+  const [projectsCount, setProjectsCount] = useState(0);
 
   const openLogoutModal = (event) => {
     if (event && event.preventDefault) event.preventDefault();
@@ -135,6 +136,22 @@ const ProfessorLayout = ({ children, currentPage }) => {
         if (mounted) {
           setProfileError(error.message || 'Failed to load profile');
         }
+      }
+
+      // Load Projects count
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/projects/my`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        const data = await response.json();
+        if (response.ok && mounted) {
+          const list = Array.isArray(data?.data) ? data.data : [];
+          setProjectsCount(list.length);
+        }
+      } catch (error) {
+        console.error('Failed to load projects count:', error);
       } finally {
         if (mounted) {
           setProfileLoading(false);
@@ -211,6 +228,7 @@ const ProfessorLayout = ({ children, currentPage }) => {
         profileCompletion={profileCompletion}
         profileError={profileError}
         onLogout={openLogoutModal}
+        projectsCount={projectsCount}
       />
       
       <section className="right-container">

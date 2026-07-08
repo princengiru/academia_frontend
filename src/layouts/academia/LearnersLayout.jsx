@@ -32,6 +32,7 @@ function LearnersLayout() {
   });
   const [profileCompletion, setProfileCompletion] = useState(0);
   const [profileError, setProfileError] = useState('');
+  const [projectsCount, setProjectsCount] = useState(0);
 
   const openLogoutModal = (event) => {
     if (event && event.preventDefault) event.preventDefault();
@@ -125,6 +126,22 @@ function LearnersLayout() {
         setProfileError('');
       } catch (error) {
         setProfileError(error.message || 'Failed to load profile');
+      }
+
+      // Fetch Projects count
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/projects/my`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        const data = await response.json();
+        if (response.ok) {
+          const list = Array.isArray(data?.data) ? data.data : [];
+          setProjectsCount(list.length);
+        }
+      } catch (error) {
+        console.error('Failed to load projects count:', error);
       } finally {
         setProfileLoading(false);
       }
@@ -215,7 +232,9 @@ function LearnersLayout() {
           <NavLink to="/academia/learner/projects" className={linkClassName}>
             <img src={learnersProjectsIcon} alt="My Projects" />
             <span>My Projects</span>
-            <span className="learners-sidebar-badge" aria-label="4 notifications">4</span>
+            <span className="learners-sidebar-badge" aria-label={`${projectsCount} notifications`}>
+              {projectsCount >= 9 ? '9+' : projectsCount}
+            </span>
           </NavLink>
 
           <NavLink to="/academia/learner/certificates" className={linkClassName}>

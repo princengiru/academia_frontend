@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
-const Sidebar = ({ currentPage, profileLoading, profileSummary, profileCompletion, profileError, onLogout }) => {
+const Sidebar = ({ currentPage, profileLoading, profileSummary, profileCompletion, profileError, onLogout, projectsCount = 0 }) => {
   const navigate = useNavigate();
   const checkActive = (slug) => (currentPage === slug ? 'active-menu' : '');
   const preventDefault = (e) => e.preventDefault();
@@ -36,7 +36,7 @@ const Sidebar = ({ currentPage, profileLoading, profileSummary, profileCompletio
         <Link to="/academia/professor/projects" className={checkActive('projects')}>
           <img src="/assets/icons/pi1.svg" alt="My Projects" />
           <span>My Projects</span>
-          <span className="prof-sidebar-badge">4</span>
+          <span className="prof-sidebar-badge">{projectsCount >= 9 ? '9+' : projectsCount}</span>
         </Link>
         <Link to="/academia/professor/performance" className={checkActive('performance')}>
           <img src="/assets/icons/pi2.svg" alt="Performance" />
