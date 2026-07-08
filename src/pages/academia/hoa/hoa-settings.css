@@ -367,7 +367,8 @@
     align-items: center;
     gap: 8px;
     font-size: 12.5px;
-    color: #3F4254;
+    color: #51296b;
+    font-weight: 500;
     cursor: pointer;
     user-select: none;
 }
@@ -379,19 +380,18 @@
 }
 
 .hoas-notification-radio-dot {
-    width: 12px;
-    height: 12px;
+    width: 16px;
+    height: 16px;
     border-radius: 50%;
-    border: 1.5px solid #D5DCEE;
+    border: 1px solid #D5DCEE;
     background: #FFFFFF;
     flex-shrink: 0;
-    box-shadow: inset 0 0 0 2px #FFFFFF;
+    box-sizing: border-box;
 }
 
 .hoas-notification-radio-item input:checked + .hoas-notification-radio-dot {
-    border-color: #450468;
-    background: #450468;
-    box-shadow: inset 0 0 0 2px #FFFFFF;
+    border: 4.5px solid #450468;
+    background: #FFFFFF;
 }
 
 .hoas-notification-checkbox {
@@ -401,7 +401,8 @@
     cursor: pointer;
     user-select: none;
     font-size: 12.5px;
-    color: #3F4254;
+    color: #51296b;
+    font-weight: 500;
 }
 
 .hoas-notification-checkbox input {
@@ -411,13 +412,43 @@
 }
 
 .hoas-notification-checkbox-box {
-    width: 18px;
-    height: 18px;
+    width: 16px;
+    height: 16px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    color: #450468;
     flex-shrink: 0;
+    border: 1px solid #D5DCEE;
+    border-radius: 4px;
+    background: #FFFFFF;
+    position: relative;
+    box-sizing: border-box;
+}
+
+.hoas-notification-checkbox-box svg {
+    display: none;
+}
+
+.hoas-notification-checkbox-box::after {
+    content: '';
+    position: absolute;
+    width: 4px;
+    height: 8px;
+    border: solid #FFFFFF;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+    opacity: 0;
+    top: 2px;
+    left: 5px;
+}
+
+.hoas-notification-checkbox input:checked + .hoas-notification-checkbox-box {
+    background: #A07DB3;
+    border-color: #A07DB3;
+}
+
+.hoas-notification-checkbox input:checked + .hoas-notification-checkbox-box::after {
+    opacity: 1;
 }
 
 /* =========================================

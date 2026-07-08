@@ -1731,7 +1731,7 @@ const HOASettings = () => {
                             <div className="hoas-notification-group">
                                 <div className="hoas-notification-group-title">Subscriptions</div>
                                 <label className="hoas-notification-checkbox">
-                                    <input type="checkbox" checked={autoSubscribeTasks} onChange={e => setAutoSubscribeTasks(e.target.checked)} />
+                                    <input type="checkbox" checked={true} disabled />
                                     <span className="hoas-notification-checkbox-box">
                                         <IconCheckSquare />
                                     </span>
