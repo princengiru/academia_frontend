@@ -2083,9 +2083,6 @@
 }
 
 .hoas-payment-type-icon {
-    width: 54px;
-    height: 54px;
-    border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -2157,9 +2154,11 @@
 }
 
 .hoas-payment-field {
-    display: flex;
-    flex-direction: column;
-    gap: 7px;
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    align-items: center;
+    column-gap: 24px;
+    row-gap: 8px;
 }
 
 .hoas-payment-field-label {
@@ -2288,6 +2287,7 @@
 }
 
 .hoas-payment-detected-brand {
+    grid-column: 2;
     margin: 6px 0 0;
     font-size: 11.5px;
     color: #6D4B97;

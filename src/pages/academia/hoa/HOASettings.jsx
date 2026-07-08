@@ -1442,9 +1442,9 @@ const HOASettings = () => {
                             {/* Tab switcher */}
                             <div className="hoas-payment-types">
                                 {[
-                                    { id: 'mtn',    label: 'MTN Mobile Money', icon: '/assets/icons/MTN-pay.svg',    bg: '#FFF8DD' },
-                                    { id: 'airtel', label: 'Airtel Money',      icon: '/assets/icons/AIR-pay.svg',    bg: '#FFEEF3' },
-                                    { id: 'card',   label: 'Bank Cards',        icon: '/assets/icons/CARD-pay.svg',   bg: '#F3EEFF' },
+                                    { id: 'mtn',    label: 'MTN Mobile Money', icon: '/assets/icons/MTN-pay.svg'},
+                                    { id: 'airtel', label: 'Airtel Money',      icon: '/assets/icons/AIR-pay.svg'},
+                                    { id: 'card',   label: 'Bank Cards',        icon: '/assets/icons/CARD-pay.svg'},
                                 ].map((type) => (
                                     <button
                                         key={type.id}
@@ -1452,7 +1452,7 @@ const HOASettings = () => {
                                         className={`hoas-payment-type-card ${selectedGateway === type.id ? 'active' : ''}`}
                                         onClick={() => { setSelectedGateway(type.id); setActiveSection('payment-' + type.id); }}
                                     >
-                                        <div className="hoas-payment-type-icon" style={{ background: type.bg }}>
+                                        <div className="hoas-payment-type-icon" >
                                             <img src={type.icon} alt={type.label} />
                                         </div>
                                         <span>{type.label}</span>
