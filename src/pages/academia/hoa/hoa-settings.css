@@ -1155,7 +1155,6 @@
     background: #FFFFFF;
     height: 36px;
     transition: border-color 0.2s, box-shadow 0.2s;
-    overflow: hidden;
 }
 
 .hoas-addr-country-select:focus-within {

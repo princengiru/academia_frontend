@@ -686,6 +686,71 @@ const CustomDropdown = ({ value, onChange, options }) => {
     );
 };
 
+// ─── Address Country Select ───────────────────────────────────────────────────
+const AddressCountrySelect = ({ value, onChange }) => {
+    const [open, setOpen] = useState(false);
+    const [search, setSearch] = useState('');
+    const ref = useRef(null);
+
+    const country = COUNTRIES.find(c => c.code === value) || COUNTRIES[0];
+
+    const filtered = COUNTRIES.filter(c =>
+        c.name.toLowerCase().includes(search.toLowerCase())
+    );
+
+    useEffect(() => {
+        const handler = (e) => {
+            if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+        };
+        document.addEventListener('mousedown', handler);
+        return () => document.removeEventListener('mousedown', handler);
+    }, []);
+
+    const selectCountry = (c) => {
+        onChange(c.code);
+        setOpen(false);
+        setSearch('');
+    };
+
+    return (
+        <div className="hoas-addr-country-select" ref={ref} onClick={(e) => { if (!e.target.closest('.hoas-phone-dropdown')) setOpen(o => !o); }} style={{ cursor: 'pointer' }}>
+            <span className="hoas-addr-country-flag">{country.flag}</span>
+            <div className="hoas-addr-select" style={{ display: 'flex', alignItems: 'center' }}>
+                {country.name}
+            </div>
+            <svg className="hoas-addr-select-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <polyline points="6 9 12 15 18 9" />
+            </svg>
+            
+            {open && (
+                <div className="hoas-phone-dropdown" onClick={(e) => e.stopPropagation()} style={{ width: '100%', top: 'calc(100% + 4px)', left: 0 }}>
+                    <div className="hoas-phone-search">
+                        <input
+                            autoFocus
+                            type="text"
+                            placeholder="Search country..."
+                            value={search}
+                            onChange={e => setSearch(e.target.value)}
+                        />
+                    </div>
+                    <ul>
+                        {filtered.map(c => (
+                            <li
+                                key={c.code}
+                                className={c.code === value ? 'selected' : ''}
+                                onClick={() => selectCountry(c)}
+                            >
+                                <span>{c.flag}</span>
+                                <span className="hoas-phone-country-name">{c.name}</span>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            )}
+        </div>
+    );
+};
+
 // ─── Section Card (defined OUTSIDE HOASettings to prevent remount on re-render) ─
 const SectionCard = ({ id, title, children, saved, onSave, sectionRef, showDiscard = true, showFooter = true, headerAction = null }) => (
     <div
@@ -1774,23 +1839,10 @@ const HOASettings = () => {
                                 <div className="hoas-address-row">
                                     <label className="hoas-address-label">Country</label>
                                     <div className="hoas-address-control">
-                                        <div className="hoas-addr-country-select">
-                                            <span className="hoas-addr-country-flag">
-                                                {COUNTRIES.find(c => c.code === addrCountry)?.flag || '🌍'}
-                                            </span>
-                                            <select
-                                                value={addrCountry}
-                                                onChange={e => setAddrCountry(e.target.value)}
-                                                className="hoas-addr-select"
-                                            >
-                                                {COUNTRIES.map(c => (
-                                                    <option key={c.code} value={c.code}>{c.name}</option>
-                                                ))}
-                                            </select>
-                                            <svg className="hoas-addr-select-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                                                <polyline points="6 9 12 15 18 9" />
-                                            </svg>
-                                        </div>
+                                        <AddressCountrySelect
+                                            value={addrCountry}
+                                            onChange={setAddrCountry}
+                                        />
                                     </div>
                                 </div>
 
