@@ -7,10 +7,8 @@ const HOAFooter = () => {
         <img src="/assets/icons/Favicon.svg" alt="Gonaraza" />
         <div className="brand-text">
           <h6>Gonaraza.com</h6>
-          <p>All in one digital marketing</p>
         </div>
       </div>
-      
       <div className="hoa-footer-links">
         <span>© Copyright {new Date().getFullYear()} All Right Reserved By Naraza Group Ltd</span>
         <span className="sep">|</span>
