@@ -323,7 +323,7 @@ h6 {
     align-items: center;
 }
 
-.second-part-h-links .dropdown button::after {
+.second-part-h-links .dropdown > button::after {
     content: "";
     display: inline-block;
     width: 12px;
@@ -1706,4 +1706,10 @@ body.body-scroll-lock {
 .second-part-h-links .header-account-menu .dropdown-item.text-danger:hover {
     background-color: #FEF2F2 !important;
     color: #EF4444 !important;
+}
+
+/* Deep override to remove caret arrows from inner dropdown menu buttons */
+.second-part-h-links .dropdown-menu button::after {
+    display: none !important;
+    content: none !important;
 }

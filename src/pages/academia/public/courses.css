@@ -24,6 +24,7 @@
 }
 
 .public-courses-directory-page .hero-inner h1 {
+  font-family: Montserrat, sans-serif;
   font-size: 32px;
   font-weight: 700;
   margin: 0 0 12px 0;
@@ -347,6 +348,7 @@
 }
 
 .public-courses-directory-page .public-course-card h3 {
+  font-family: Montserrat, sans-serif;
   font-size: 15px;
   font-weight: 600;
   color: #071437;
@@ -489,6 +491,7 @@
 }
 
 .public-courses-directory-page .sidebar-catalog-card h3 {
+  font-family: Montserrat, sans-serif;
   font-size: 15px;
   font-weight: 600;
   margin: 0 0 6px 0;
@@ -542,6 +545,7 @@
 }
 
 .public-courses-directory-page .item-copy h4 {
+  font-family: Montserrat, sans-serif;
   font-size: 13px;
   font-weight: 600;
   color: #071437;
@@ -575,6 +579,7 @@
 }
 
 .public-courses-directory-page .empty-courses-state h3 {
+  font-family: Montserrat, sans-serif;
   font-size: 16px;
   font-weight: 600;
   margin: 0 0 8px 0;

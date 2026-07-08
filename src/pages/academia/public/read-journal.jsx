@@ -43,12 +43,25 @@ const normalizeProject = (project) => {
     return null;
   }
 
+  let parsedImages = [];
+  if (project.images) {
+    try {
+      parsedImages = typeof project.images === 'string' ? JSON.parse(project.images) : project.images;
+    } catch (e) {
+      parsedImages = Array.isArray(project.images) ? project.images : [project.images];
+    }
+  }
+  if (!Array.isArray(parsedImages)) {
+    parsedImages = [];
+  }
+
   return {
     ...project,
     id: project.id || project._id || project.project_id,
     title: project.title || project.name || 'Project',
     abstract: project.abstract || project.description || '',
     thumbnail_url: project.thumbnail_url || project.thumbnail || project.image || null,
+    images: parsedImages,
     file_url: project.file_url || project.document_url || project.project_file || null,
     user_name: project.user_name || project.author_name || project.author || 'Author',
     user_avatar: project.user_avatar || project.author_avatar || project.avatar || null,
@@ -112,14 +125,24 @@ function AcademiaReadJournal() {
         })
       : null;
 
+    return () => {
+      moreFromSwiper?.destroy();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (loading || !projectData) {
+      return;
+    }
+
     const resizeGridItem = (item) => {
       const grid = document.querySelector('.main-content-grid-r');
       if (!grid || !item) {
         return;
       }
 
-      const rowHeight = parseInt(window.getComputedStyle(grid).getPropertyValue('grid-auto-rows'));
-      const rowGap = parseInt(window.getComputedStyle(grid).getPropertyValue('gap'));
+      const rowHeight = parseInt(window.getComputedStyle(grid).getPropertyValue('grid-auto-rows')) || 10;
+      const rowGap = parseInt(window.getComputedStyle(grid).getPropertyValue('gap')) || 12;
 
       const img = item.querySelector('img');
       if (!img) {
@@ -127,6 +150,14 @@ function AcademiaReadJournal() {
       }
 
       const height = img.getBoundingClientRect().height;
+      if (height === 0) {
+        img.addEventListener('load', () => {
+          const freshHeight = img.getBoundingClientRect().height;
+          const rowSpan = Math.ceil((freshHeight + rowGap) / (rowHeight + rowGap));
+          item.style.gridRowEnd = `span ${rowSpan}`;
+        });
+        return;
+      }
 
       const rowSpan = Math.ceil((height + rowGap) / (rowHeight + rowGap));
       item.style.gridRowEnd = `span ${rowSpan}`;
@@ -136,20 +167,19 @@ function AcademiaReadJournal() {
       document.querySelectorAll('.mcgr-item').forEach((item) => resizeGridItem(item));
     };
 
-    window.addEventListener('load', resizeAll);
     window.addEventListener('resize', resizeAll);
+
+    const timer = setTimeout(resizeAll, 100);
+
     document.querySelectorAll('.main-content-grid-r img').forEach((img) => {
       img.addEventListener('load', () => resizeGridItem(img.parentElement));
     });
 
-    resizeAll();
-
     return () => {
-      window.removeEventListener('load', resizeAll);
       window.removeEventListener('resize', resizeAll);
-      moreFromSwiper?.destroy();
+      clearTimeout(timer);
     };
-  }, []);
+  }, [loading, projectData, relatedProjects]);
 
   useEffect(() => {
     let mounted = true;
@@ -549,11 +579,17 @@ function AcademiaReadJournal() {
               </div>
             </div>
 
-            {relatedProjects.map((item) => (
-              <div key={item.id} className="mcgr-item">
-                <img src={item.thumbnail_url ? (item.thumbnail_url.startsWith('http') ? item.thumbnail_url : `${API_BASE_URL}${item.thumbnail_url}`) : journalImage} alt={item.title || 'Project'} />
+            {projectData?.images && projectData.images.length > 0 ? (
+              projectData.images.map((imgUrl, index) => (
+                <div key={index} className="mcgr-item">
+                  <img src={resolveProjectImage(imgUrl, journalImage)} alt={`${projectTitle} - ${index + 1}`} />
+                </div>
+              ))
+            ) : (
+              <div className="mcgr-item">
+                <img src={resolveProjectImage(projectData?.thumbnail_url, journalImage)} alt={projectTitle} />
               </div>
-            ))}
+            )}
           </div>
         </div>
       </section>
