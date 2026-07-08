@@ -408,6 +408,7 @@ body[data-role="hoa"] .hoa-topbar {
   display: flex;
   align-items: center;
   gap: 10px;
+  flex-shrink: 0;
 }
 
 .hoa-user-avatar img {
@@ -416,16 +417,28 @@ body[data-role="hoa"] .hoa-topbar {
   border-radius: 50%;
 }
 
+.hoa-user-info {
+  max-width: 120px;
+  display: flex;
+  flex-direction: column;
+}
+
 .hoa-user-info h6 {
   margin: 0;
   font-size: 13px;
   font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .hoa-user-info p {
   margin: 0;
   font-size: 11px;
   color: #A1A5B7;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Content Area - Fixed height issue causing layout overflow */
