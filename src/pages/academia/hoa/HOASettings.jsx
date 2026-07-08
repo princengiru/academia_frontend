@@ -251,15 +251,15 @@ const PREFERENCE_LANGUAGE_OPTIONS = [
 ];
 
 const PREFERENCE_TIMEZONE_OPTIONS = [
-    { value: 'gmt-5-est', label: 'GMT -5:00 - Eastern Time(US & Canada)', icon: <IconClock /> },
-    { value: 'gmt+2-east-africa', label: 'GMT +2:00 - East Africa Time', icon: <IconClock /> },
-    { value: 'gmt+1-cet', label: 'GMT +1:00 - Central European Time', icon: <IconClock /> },
+    { value: 'gmt-5-est', label: <><span style={{ color: '#99A1B7' }}>GMT -5:00 -</span> Eastern Time(US & Canada)</> },
+    { value: 'gmt+2-east-africa', label: <><span style={{ color: '#99A1B7' }}>GMT +2:00 -</span> East Africa Time</> },
+    { value: 'gmt+1-cet', label: <><span style={{ color: '#99A1B7' }}>GMT +1:00 -</span> Central European Time</> },
 ];
 
 const PREFERENCE_CURRENCY_OPTIONS = [
-    { value: 'usd', label: 'United States Dollar (USD)', icon: <IconCurrency /> },
-    { value: 'rwf', label: 'Rwandan Franc (RWF)', icon: <IconCurrency /> },
-    { value: 'eur', label: 'Euro (EUR)', icon: <IconCurrency /> },
+    { value: 'usd', label: 'United States Dollar (USD)', icon: <span style={{ color: '#99A1B7', fontSize: '12px', fontWeight: 600 }}>USD</span> },
+    { value: 'rwf', label: 'Rwandan Franc (RWF)', icon: <span style={{ color: '#99A1B7', fontSize: '12px', fontWeight: 600 }}>RWF</span> },
+    { value: 'eur', label: 'Euro (EUR)', icon: <span style={{ color: '#99A1B7', fontSize: '12px', fontWeight: 600 }}>EUR</span> },
 ];
 
 const PROJECT_NOTIFICATION_OPTIONS = [
