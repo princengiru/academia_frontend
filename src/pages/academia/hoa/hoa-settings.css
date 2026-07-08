@@ -320,16 +320,10 @@
 }
 
 .hoas-notification-channel-icon {
-    width: 42px;
-    height: 42px;
-    border-radius: 12px;
-    border: 1px solid #E6EAF2;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #99A1B7;
     flex-shrink: 0;
-    background: #FFFFFF;
 }
 
 .hoas-notification-channel-title {

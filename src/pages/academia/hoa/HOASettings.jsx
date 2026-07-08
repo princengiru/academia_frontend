@@ -22,6 +22,8 @@ import hoaadd2 from '../../../assets/icons/hoaadd2.svg';
 import hoadelete from '../../../assets/icons/hoadelete.svg';
 import hoa2famessage from '../../../assets/icons/hoa2famessage.svg';
 import hoa2faotp from '../../../assets/icons/hoa2faotp.svg';
+import hoasmsnotifications from '../../../assets/icons/hoasmsnotifications.svg';
+import hoaemailnotifications from '../../../assets/icons/hoaemailnotifications.svg';
 
 // ─── Inline SVGs ──────────────────────────────────────────────────────────────
 const IconChecked = () => (
@@ -109,16 +111,11 @@ const IconCurrency = () => (
 );
 
 const IconMail = () => (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <rect x="3" y="5" width="18" height="14" rx="3" />
-        <path d="M4 7.5 12 13l8-5.5" />
-    </svg>
+    <img src={hoaemailnotifications} alt="Mail" />
 );
 
 const IconMessage = () => (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M4 5h16a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H9l-5 4v-4H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Z" />
-    </svg>
+    <img src={hoasmsnotifications} alt="Message" /> 
 );
 
 const IconCheckSquare = () => (
