@@ -66,7 +66,7 @@ const HOASidebar = ({ currentPage, onLogout }) => {
         {/* --- Left Column: Primary Icons --- */}
         <div className="first-links">
           <div className="sidebar-body">
-            <NavLink to="/academia/hoa" end className={getDashboardIconClassName}>
+            <NavLink to="/academia/hoa" className={getDashboardIconClassName}>
               <button type="button" aria-label="Dashboard">
                 <img src="/assets/icons/home-2.svg" alt="Dashboard" />
               </button>
@@ -83,19 +83,14 @@ const HOASidebar = ({ currentPage, onLogout }) => {
             </NavLink>
             <NavLink to="/academia/hoa/events-planning" className={getPlanningIconClassName}>
               <button aria-label="Plannings">
-                <img src="/assets/icons/briefcase2.svg" alt="Plannings" />
+                <img src="/assets/icons/mouse-square.svg" alt="Plannings" />
               </button>
             </NavLink>
-            <a href="#reports" onClick={preventDefault}>
-              <button type="button" aria-label="Reports">
-                <img src="/assets/icons/agent2.svg" alt="Reports" />
+            <NavLink to="/academia/hoa/account" className={getDashboardIconClassName}>
+              <button type="button" aria-label="Account">
+                <img src="/assets/icons/ss1.svg" alt="Account" />
               </button>
-            </a>
-            <a href="#chat" onClick={preventDefault}>
-              <button type="button" aria-label="Chat">
-                <img src="/assets/icons/tsidebar2-1.svg" alt="Chat" />
-              </button>
-            </a>
+            </NavLink>
           </div>
 
           <div className="sidebar-footer">
@@ -104,11 +99,6 @@ const HOASidebar = ({ currentPage, onLogout }) => {
                 <img src="/assets/icons/tsidebar7-1.svg" alt="Help" />
               </button>
             </a>
-            <NavLink to="/academia/hoa/settings" className={getDashboardIconClassName}>
-              <button type="button" aria-label="Settings">
-                <img src="/assets/icons/ss1.svg" alt="Settings" />
-              </button>
-            </NavLink>
             <button 
               type="button" 
               className="js-logout-btn no-logout-text" 

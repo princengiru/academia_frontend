@@ -146,21 +146,19 @@ body[data-role="hoa"] .first-links {
   transition: all 0.2s ease;
 }
 
-.first-links .sidebar-body button img,
-.first-links .sidebar-footer button img {
-  width: 22px;
-  height: 22px;
-}
+
 
 .first-links .sidebar-body .selected button,
 .first-links .sidebar-footer .selected button {
   background-color: white;
   border: 1px solid #DBDFE9;
+  width: 32px;
+  height: 32px;
 }
 
 .first-links .sidebar-body .selected button img,
 .first-links .sidebar-footer .selected button img {
-  filter: invert(15%) sepia(85%) saturate(7400%) hue-rotate(277deg) brightness(85%) contrast(110%);
+  filter: brightness(0) saturate(100%) invert(9%) sepia(85%) saturate(3755%) hue-rotate(276deg) brightness(85%) contrast(106%);
 }
 
 /* --- Right Column: Second Links --- */
@@ -245,7 +243,7 @@ body[data-role="hoa"] .links-list a:hover {
 
 body[data-role="hoa"] .links-list a.active img {
   opacity: 1;
-  filter: invert(15%) sepia(85%) saturate(7400%) hue-rotate(277deg) brightness(85%) contrast(110%);
+  filter: brightness(0) saturate(100%) invert(9%) sepia(85%) saturate(3755%) hue-rotate(276deg) brightness(85%) contrast(106%);
 }
 
 /* =========================================

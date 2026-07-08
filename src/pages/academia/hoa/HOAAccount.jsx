@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import HOALayout from '../../../components/layouts/HOALayout/HOALayout';
-import './hoa-settings.css';
+import './hoa-account.css';
 
 import hoarefresh from '../../../assets/icons/hoarefresh.svg';
 import hoagoto from '../../../assets/icons/hoagoto.svg';
