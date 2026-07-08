@@ -131,29 +131,51 @@ body[data-role="hoa"] .first-links {
   text-decoration: none;
 }
 
-.first-links .sidebar-body button,
-.first-links .sidebar-footer button {
+/* 1. Reset all NavLinks (a tags) in the left column to be completely transparent for all states */
+body[data-role="hoa"] .first-links a,
+body[data-role="hoa"] .first-links a:hover,
+body[data-role="hoa"] .first-links a:focus,
+body[data-role="hoa"] .first-links a:active,
+body[data-role="hoa"] .first-links a.active,
+body[data-role="hoa"] .first-links a.active:hover {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+/* 2. Reset all buttons in the left column to be transparent for all states by default */
+body[data-role="hoa"] .first-links button,
+body[data-role="hoa"] .first-links button:hover,
+body[data-role="hoa"] .first-links button:focus,
+body[data-role="hoa"] .first-links button:active,
+body[data-role="hoa"] .first-links a:hover button {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: 1px solid transparent !important;
+  box-shadow: none !important;
+  outline: none !important;
   width: 44px;
   height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
-  outline: none;
-  background-color: transparent;
-  border: 1px solid transparent;
   cursor: pointer;
-  border-radius: 10px;
+  border-radius: 6px;
   transition: all 0.2s ease;
 }
 
-
-
-.first-links .sidebar-body .selected button,
-.first-links .sidebar-footer .selected button {
-  background-color: white;
-  border: 1px solid #DBDFE9;
-  width: 32px;
-  height: 32px;
+/* 3. Apply the white background and border ONLY to the selected category buttons (both normal and hover) */
+body[data-role="hoa"] .first-links .selected button,
+body[data-role="hoa"] .first-links .selected button:hover,
+body[data-role="hoa"] .first-links .selected:hover button {
+  background: #FFFFFF !important;
+  background-color: #FFFFFF !important;
+  border: 1px solid #E2E8F0 !important;
+  width: 32px !important;
+  height: 32px !important;
+  box-shadow: none !important;
 }
 
 .first-links .sidebar-body .selected button img,

@@ -30,6 +30,7 @@ const HOASidebar = ({ currentPage, onLogout }) => {
   const getManagementIconClassName = () => (managementPages.includes(currentPage) ? 'selected' : '');
   const getUploadIconClassName = () => (uploadPages.includes(currentPage) ? 'selected' : '');
   const getPlanningIconClassName = () => (planningPages.includes(currentPage) ? 'selected' : '');
+  const getAccountIconClassName = () => (currentPage === 'account' ? 'selected' : '');
 
   const getSidebarLinkClassName = ({ isActive }) => (isActive ? 'active' : '');
 
@@ -86,7 +87,7 @@ const HOASidebar = ({ currentPage, onLogout }) => {
                 <img src="/assets/icons/mouse-square.svg" alt="Plannings" />
               </button>
             </NavLink>
-            <NavLink to="/academia/hoa/account" className={getDashboardIconClassName}>
+            <NavLink to="/academia/hoa/account" className={getAccountIconClassName}>
               <button type="button" aria-label="Account">
                 <img src="/assets/icons/ss1.svg" alt="Account" />
               </button>
