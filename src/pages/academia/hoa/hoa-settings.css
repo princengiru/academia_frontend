@@ -1368,6 +1368,18 @@
     box-shadow: 0 0 0 3px rgba(23, 198, 83, 0.14);
 }
 
+.hoas-appearance-preview-check::after {
+    content: '';
+    position: absolute;
+    width: 4px;
+    height: 7px;
+    border: solid #111111;
+    border-width: 0 1.5px 1.5px 0;
+    transform: rotate(45deg);
+    top: 2.5px;
+    left: 5px;
+}
+
 .hoas-appearance-toggle-row {
     display: grid;
     grid-template-columns: 172px 130px minmax(0, 1fr);
