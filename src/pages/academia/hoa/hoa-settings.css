@@ -250,14 +250,44 @@
 }
 
 .hoas-preference-checkbox-box {
-    width: 18px;
-    height: 18px;
+    width: 16px;
+    height: 16px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    color: #450468;
+    border: 1px solid #D5DCEE;
+    border-radius: 4px;
+    background: #FFFFFF;
+    position: relative;
+    box-sizing: border-box;
     margin-top: 1px;
+}
+
+.hoas-preference-checkbox-box svg {
+    display: none;
+}
+
+.hoas-preference-checkbox-box::after {
+    content: '';
+    position: absolute;
+    width: 5px;
+    height: 10px;
+    border: solid #FFFFFF;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+    opacity: 0;
+    top: 1px;
+    left: 5px;
+}
+
+.hoas-preference-checkbox input:checked + .hoas-preference-checkbox-box {
+    background: #51296b;
+    border-color: #51296b;
+}
+
+.hoas-preference-checkbox input:checked + .hoas-preference-checkbox-box::after {
+    opacity: 1;
 }
 
 .hoas-preference-checkbox-copy {
@@ -2310,7 +2340,7 @@
 
 .hoas-payment-expiry-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-columns: 1fr 1fr;
     gap: 12px;
 }
 
