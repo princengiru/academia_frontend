@@ -1,2408 +1,1959 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { AtSign, BriefcaseBusiness, Camera, MessageCircle, PlayCircle } from 'lucide-react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import './account.css';
-import learnersProfileImage from '../../../assets/imgs/default-profile.png';
-import checkCircle from '../../../assets/icons/check-circle.svg';
-import noCheckCircle from '../../../assets/icons/no-check-circle.svg';
-import bPencil from '../../../assets/icons/b-pencil.svg';
-import acSav from '../../../assets/icons/ac-sav.svg';
-import fileIcon from '../../../assets/icons/file.svg';
-import pdfIcon from '../../../assets/icons/pdf1.svg';
+import LearnersPageShell from './LearnersPageShell';
 
-import trashIcon from '../../../assets/icons/trash.svg';
-import xIcon from '../../../assets/icons/hoacancel.svg';
-import plusIcon from '../../../assets/icons/plus1.svg';
+import hoarefresh from '../../../assets/icons/hoarefresh.svg';
+import hoagoto from '../../../assets/icons/hoagoto.svg';
+import rwanda from '../../../assets/icons/rwanda.svg';
+import light_theme from '../../../assets/imgs/light_theme.png';
+import dark_theme from '../../../assets/imgs/dark_theme.png';
+import system_default_theme from '../../../assets/imgs/system_default_theme.png';
+import hoadraganddrop from '../../../assets/icons/hoadraganddrop.svg';
+import hoapdffile from '../../../assets/icons/hoapdffile.svg';
+import hoafacebook2 from '../../../assets/icons/hoafacebook2.svg';
+import hoainstagram2 from '../../../assets/icons/hoainstagram2.svg';
+import hoalinkedin2 from '../../../assets/icons/hoalinkedin2.svg';
+import hoax2 from '../../../assets/icons/hoax2.svg';
+import hoaairtel from '../../../assets/icons/hoaairtel.svg';
+import hoamtn from '../../../assets/icons/hoamtn.svg';
+import hoabankcards from '../../../assets/icons/hoabankcards.svg';
+import hoayoutube from '../../../assets/icons/hoayoutube2.svg';
+import hoaadd2 from '../../../assets/icons/hoaadd2.svg';
+import hoadelete from '../../../assets/icons/hoadelete.svg';
+import hoa2famessage from '../../../assets/icons/hoa2famessage.svg';
+import hoa2faotp from '../../../assets/icons/hoa2faotp.svg';
+import hoasmsnotifications from '../../../assets/icons/hoasmsnotifications.svg';
+import hoaemailnotifications from '../../../assets/icons/hoaemailnotifications.svg';
 
-import twoFa1Icon from '../../../assets/icons/2fa1.svg';
-import twoFa2Icon from '../../../assets/icons/2fa2.svg';
+// ─── Inline SVGs ──────────────────────────────────────────────────────────────
+const IconChecked = () => (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+        <circle cx="8" cy="8" r="8" fill="#450468" />
+        <path d="M4.5 8L7 10.5L11.5 5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+);
 
-import mtnPayIcon from '../../../assets/icons/MTN-pay.svg';
-import airtelPayIcon from '../../../assets/icons/AIR-pay.svg';
-import bankCardIcon from '../../../assets/icons/CARD-pay.svg';
-import infoGrayIcon from '../../../assets/icons/Info.svg';
-import visaIcon from '../../../assets/icons/VISA-pay.svg';
-import mastercardIcon from '../../../assets/icons/mastercard1.svg';
-import amexIcon from '../../../assets/icons/card3.svg';
-import cvvIcon from '../../../assets/icons/credit-cart.svg';
+const IconCamera = () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
+        <path d="M4 4h3l2-2h6l2 2h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm8 13a5 5 0 1 0 0-10 5 5 0 0 0 0 10zm0-2a3 3 0 1 1 0-6 3 3 0 0 1 0 6z" />
+    </svg>
+);
 
-import themeDarkImg from '../../../assets/imgs/app1.png';
-import themeLightImg from '../../../assets/imgs/app2.png';
-import themeSystemImg from '../../../assets/imgs/app3.png';
+const IconUnchecked = () => (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+        <circle cx="8" cy="8" r="8" fill="#E4E6EF" />
+        <path d="M4.5 8L7 10.5L11.5 5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+);
 
-import nott1Icon from '../../../assets/icons/nott1.svg';
-import nott2Icon from '../../../assets/icons/nott2.svg';
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const IconUpload = () => (
+<img src={hoadraganddrop} alt="Upload" />
+);
 
-const languageOptions = [
-  { value: 'en', label: 'American English', icon: '🇺🇸' },
-  { value: 'en-uk', label: 'British English', icon: '🇬🇧' },
-  { value: 'fr', label: 'French', icon: '🇫🇷' },
-];
+const IconInstagram = () => (
+    <img src={hoainstagram2} alt="Instagram" />
+);
 
-const timezoneOptions = [
-  { value: 'GMT -5:00 - Eastern Time(US & Canada)', label: 'GMT -5:00 - Eastern Time(US & Canada)' },
-  { value: 'GMT +2:00 - Central Africa Time', label: 'GMT +2:00 - Central Africa Time' },
-];
+const IconLinkedIn = () => (
+    <img src={hoalinkedin2} alt="LinkedIn" />
+);
 
-const currencyOptions = [
-  { value: 'USD', label: 'United States Dollar (USD)', icon: '$' },
-  { value: 'RWF', label: 'Rwandan Franc (RWF)', icon: 'RF' },
-];
+const IconFacebook = () => (
+    <img src={hoafacebook2} alt="Facebook" />
+);
 
-const resolveAssetUrl = (value) => {
-  if (!value) {
-    return learnersProfileImage;
-  }
+const IconTwitter = () => (
+    <img src={hoax2} alt="Twitter" style={{ width: '12px', height: '12px' }} />
+);
 
-  if (value.startsWith('http://') || value.startsWith('https://') || value.startsWith('data:')) {
-    return value;
-  }
+const IconTiktok = () => (
+    <img src={hoax2} alt="Tiktok" />
+);
 
-  if (value.startsWith('/')) {
-    return `${API_BASE_URL}${value}`;
-  }
+const IconSms = () => (
+    <img src={hoa2famessage} alt="SMS" />
+);
 
-  return value;
-};
+const IconAuthenticator = () => (
+    <img src={hoa2faotp} alt="Authenticator" />
+);
 
-const buildSidebarSections = ({ completionStatus, documents, paymentMethods, basicProfile, addressProfile, preferencesState, twoFactorEnabled }) => {
-  const hasText = (value) => typeof value === 'string' && value.trim().length > 0;
-  const profileCompletion = completionStatus || {};
+const IconDotsVertical = () => (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="5" r="1.2" fill="currentColor" stroke="none" />
+        <circle cx="12" cy="12" r="1.2" fill="currentColor" stroke="none" />
+        <circle cx="12" cy="19" r="1.2" fill="currentColor" stroke="none" />
+    </svg>
+);
 
-  return [
+const IconGlobe = () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="9" />
+        <path d="M3 12h18" />
+        <path d="M12 3a15 15 0 0 1 0 18" />
+        <path d="M12 3a15 15 0 0 0 0 18" />
+    </svg>
+);
+
+const IconClock = () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="9" />
+        <path d="M12 7v5l3 2" />
+    </svg>
+);
+
+const IconCurrency = () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="9" />
+        <path d="M12 7v10" />
+        <path d="M15 9.5c0-1.38-1.34-2.5-3-2.5s-3 1.12-3 2.5S10.34 12 12 12s3 1.12 3 2.5S13.66 17 12 17s-3-1.12-3-2.5" />
+    </svg>
+);
+
+const IconMail = () => (
+    <img src={hoaemailnotifications} alt="Mail" />
+);
+
+const IconMessage = () => (
+    <img src={hoasmsnotifications} alt="Message" /> 
+);
+
+const IconCheckSquare = () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="4" y="4" width="16" height="16" rx="3" />
+        <path d="m8 12 2.5 2.5L16 9" />
+    </svg>
+);
+
+const IconSquare = () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="4" y="4" width="16" height="16" rx="3" />
+    </svg>
+);
+
+// ─── Nav sections definition ───────────────────────────────────────────────────
+const NAV_CATEGORIES = [
     {
-      title: 'Authentication',
-      items: [
-        {
-          label: 'Basic Settings',
-          completed: Boolean(
-            profileCompletion.name_completed
-            && profileCompletion.phone_completed
-            && profileCompletion.role_completed
-            && profileCompletion.visibility_completed
-            && hasText(basicProfile.name)
-            && hasText(basicProfile.phone)
-            && hasText(basicProfile.role)
-            && hasText(basicProfile.visibility),
-          ),
-        },
-        { label: 'Email', completed: hasText(basicProfile.email) },
-        { label: 'Documents and Files', completed: Boolean(profileCompletion.documents_completed || documents.some((document) => document.isPersisted)) },
-        { label: 'Social Connection', completed: false },
-        { label: 'Two-Factor auth(2FA)', completed: Boolean(twoFactorEnabled) },
-      ],
+        title: 'Basic Setup',
+        items: [
+            { id: 'general', label: 'General Settings' },
+            { id: 'email', label: 'Email' },
+            { id: 'documents', label: 'Documents & Files' },
+            { id: 'social', label: 'Social Media Links' },
+        ]
     },
     {
-      title: 'Payments Methods',
-      items: [
-        { label: 'Airtel Money', completed: Boolean(paymentMethods.some((method) => method.paymentType === 'airtel_money')) },
-        { label: 'Mobile Money', completed: Boolean(paymentMethods.some((method) => method.paymentType === 'mobile_money')) },
-        { label: 'Bank Cards', completed: Boolean(profileCompletion.payment_method_completed || paymentMethods.some((method) => method.paymentType === 'bank_card')) },
-      ],
+        title: 'Payments',
+        items: [
+            { id: 'payment-mtn', label: 'MTN Mobile Money' },
+            { id: 'payment-airtel', label: 'Airtel Money' },
+            { id: 'payment-card', label: 'Bank Cards' },
+        ]
     },
     {
-      title: 'Advanced Settings',
-      items: [
-        {
-          label: 'Preferences',
-          completed: Boolean(
-            profileCompletion.preferences_completed
-            || (hasText(preferencesState.language) && hasText(preferencesState.timezone) && hasText(preferencesState.currency)),
-          ),
-        },
-        { label: 'Notifications', completed: false },
-        {
-          label: 'Address',
-          completed: Boolean(
-            profileCompletion.address_completed
-            || (hasText(addressProfile.address) && hasText(addressProfile.country) && hasText(addressProfile.city) && hasText(addressProfile.postcode)),
-          ),
-        },
-        { label: 'Appearance', completed: false },
-      ],
+        title: 'Advanced Settings',
+        items: [
+            { id: 'preferences', label: 'Preferences' },
+            { id: 'notifications', label: 'Notifications' },
+            { id: 'address', label: 'Address' },
+            { id: 'appearance', label: 'Appearance' },
+        ]
+    }
+];
+
+// ─── Toggle Switch ─────────────────────────────────────────────────────────────
+const Toggle = ({ checked, onChange }) => (
+    <label className="hoas-switch">
+        <input type="checkbox" checked={checked} onChange={onChange} />
+        <span className="hoas-slider" />
+    </label>
+);
+
+const InfoHint = ({ text }) => (
+    <span className="hoas-info-hint" tabIndex={0} aria-label={text}>
+        <span className="hoas-info-icon">i</span>
+        <span className="hoas-info-tooltip">{text}</span>
+    </span>
+);
+
+const PaymentFieldLabel = ({ children, hint }) => (
+    <div className="hoas-payment-field-label">
+        <span className="hoas-payment-label-title">{children}</span>
+        {hint && <InfoHint text={hint} />}
+    </div>
+);
+
+const DOCUMENT_FILES = [
+    { name: 'MyCV.pdf', size: '5.6 MB' },
+    { name: 'Resume A0.pdf', size: '5.6 MB' },
+];
+
+const SOCIAL_CONNECT_ACTIONS = [
+    {
+        id: 'x',
+        label: 'Connect X',
+        icon: <IconTwitter />,
+        name: 'X',
+        handle: 'x.com/gonaraza',
+        iconBg: '#F5F5F5',
+        iconColor: '#111111',
     },
-  ];
+    {
+        id: 'youtube',
+        label: 'Connect Youtube',
+        icon: <img src={hoayoutube} alt="Youtube" />,
+        name: 'YouTube',
+        handle: 'youtube.com/@gonaraza',
+        iconBg: '#FFF2F2',
+        iconColor: '#FF0000',
+    },
+    {
+        id: 'facebook',
+        label: 'Connect Facebook',
+        icon: <IconFacebook />,
+        name: 'Facebook',
+        handle: 'facebook.com/gonaraza',
+        iconBg: '#EFF4FF',
+        iconColor: '#1877F2',
+    },
+    {
+        id: 'more',
+        label: 'Add More',
+        icon: <img src={hoaadd2} alt="Add" />,
+    },
+];
+
+const TWO_FACTOR_OPTIONS = [
+    {
+        id: 'sms',
+        label: 'Text Message (SMS)',
+        description: 'Instant codes for secure account verification.',
+        icon: <IconSms />,
+    },
+    {
+        id: 'authenticator',
+        label: 'Authenticator App (TOTP)',
+        description: 'Elevate protection with an authenticator app for two-factor authentication.',
+        icon: <IconAuthenticator />,
+    },
+];
+
+const PAYMENT_TYPES = [
+    { id: 'mtn', label: 'MTN Mobile Money', icon: '/assets/icons/MTN-pay.svg', bg: '#FFF8DD' },
+    { id: 'airtel', label: 'Airtel Money', icon: '/assets/icons/AIR-pay.svg', bg: '#FFEEF3' },
+    { id: 'card', label: 'Bank Cards', icon: '/assets/icons/CARD-pay.svg', bg: '#F3EEFF' },
+];
+
+const PREFERENCE_LANGUAGE_OPTIONS = [
+    { value: 'en-us', label: 'American English', icon: '🇺🇸' },
+    { value: 'en-gb', label: 'British English', icon: '🇬🇧' },
+    { value: 'fr-fr', label: 'French', icon: '🇫🇷' },
+];
+
+const PREFERENCE_TIMEZONE_OPTIONS = [
+    { value: 'gmt-5-est', label: <><span style={{ color: '#99A1B7' }}>GMT -5:00 -</span> Eastern Time(US & Canada)</> },
+    { value: 'gmt+2-east-africa', label: <><span style={{ color: '#99A1B7' }}>GMT +2:00 -</span> East Africa Time</> },
+    { value: 'gmt+1-cet', label: <><span style={{ color: '#99A1B7' }}>GMT +1:00 -</span> Central European Time</> },
+];
+
+const PREFERENCE_CURRENCY_OPTIONS = [
+    { value: 'usd', label: 'United States Dollar (USD)', icon: <span style={{ color: '#99A1B7', fontSize: '12px', fontWeight: 600 }}>USD</span> },
+    { value: 'rwf', label: 'Rwandan Franc (RWF)', icon: <span style={{ color: '#99A1B7', fontSize: '12px', fontWeight: 600 }}>RWF</span> },
+    { value: 'eur', label: 'Euro (EUR)', icon: <span style={{ color: '#99A1B7', fontSize: '12px', fontWeight: 600 }}>EUR</span> },
+];
+
+const PROJECT_NOTIFICATION_OPTIONS = [
+    { value: 'all', label: 'All new messages (Recommended)' },
+    { value: 'mentions-hiring', label: 'Direct @mentions & Hiring' },
+    { value: 'mentions', label: 'Only Direct @mentions' },
+    { value: 'hiring', label: 'Only Hiring' },
+    { value: 'disabled', label: 'Disabled' },
+];
+
+const EMAIL_NOTIFICATION_OPTIONS = [
+    { value: 'all-statuses', label: 'All new messages and statuses' },
+    { value: 'unread-statuses', label: 'Unread messages and statuses ( Recommended )' },
+    { value: 'disabled', label: 'Disabled' },
+];
+
+const INITIAL_SOCIAL_CONNECTIONS = [
+    {
+        id: 'ig',
+        name: 'Instagram',
+        handle: 'jasontatum@gonaraza.com',
+        icon: <IconInstagram />,
+        iconBg: '#FFF0F6',
+        iconColor: '#F8285A',
+        active: true,
+    },
+    {
+        id: 'li',
+        name: 'LinkedIn',
+        handle: 'jasont@keenthemes.co',
+        icon: <IconLinkedIn />,
+        iconBg: '#EFF6FF',
+        iconColor: '#1B84FF',
+        active: false,
+    },
+];
+
+const formatFileSize = (bytes) => {
+    if (bytes === 0) return '0 B';
+    const units = ['B', 'KB', 'MB', 'GB'];
+    const unitIndex = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
+    const value = bytes / (1024 ** unitIndex);
+    return `${value >= 10 || unitIndex === 0 ? Math.round(value) : value.toFixed(1)} ${units[unitIndex]}`;
 };
 
-const navTargetByLabel = {
-  'Basic Settings': 'basic-settings',
-  'Email': 'email',
-  'Documents and Files': 'documents-and-files',
-  'Social Connection': 'social-connection',
-  'Two-Factor auth(2FA)': 'two-factor-auth',
-  'Airtel Money': 'payments-method',
-  'Mobile Money': 'payments-method',
-  'Bank Cards': 'payments-method',
-  'Preferences': 'preferences',
-  'Notifications': 'notifications',
-  'Address': 'address',
-  'Appearance': 'appearance',
+const formatRwandaPhoneNumber = (value) => {
+    const digits = value.replace(/\D/g, '').slice(0, 10);
+    if (!digits) return '';
+
+    let normalized = digits;
+    if (normalized.startsWith('7')) {
+        normalized = `0${normalized}`;
+    }
+    if (!normalized.startsWith('07')) {
+        normalized = `07${normalized.replace(/^0+/, '').slice(0, 8)}`;
+    }
+
+    normalized = normalized.slice(0, 10);
+    const parts = [normalized.slice(0, 4), normalized.slice(4, 7), normalized.slice(7, 10)].filter(Boolean);
+    return parts.join(' ');
 };
 
-const navLabelBySection = {
-  'basic-settings': 'Basic Settings',
-  'email': 'Email',
-  'documents-and-files': 'Documents and Files',
-  'social-connection': 'Social Connection',
-  'two-factor-auth': 'Two-Factor auth(2FA)',
-  'payments-method': 'Bank Cards',
-  'preferences': 'Preferences',
-  'notifications': 'Notifications',
-  'address': 'Address',
-  'appearance': 'Appearance',
+const detectCardBrand = (value) => {
+    const digits = value.replace(/\D/g, '');
+    if (/^4/.test(digits)) return 'visa';
+    if (/^(5[1-5]|2[2-7])/.test(digits)) return 'mastercard';
+    if (/^3[47]/.test(digits)) return 'amex';
+    return 'unknown';
 };
 
-export default function Account() {
-  const sectionRefs = useRef({});
-  const photoInputRef = useRef(null);
-  const documentInputRef = useRef(null);
-  const feedbackTimerRef = useRef(null);
-  const [activeNavLabel, setActiveNavLabel] = useState('Basic Settings');
-  const [basicProfile, setBasicProfile] = useState({
-    id: '',
-    email: '',
-    name: '',
-    phone: '',
-    role: 'student',
-    visibility: 'public',
-    avatar: learnersProfileImage,
-  });
-  const [basicRoleOpen, setBasicRoleOpen] = useState(false);
-  const [basicVisibilityOpen, setBasicVisibilityOpen] = useState(false);
-  const [profileLoading, setProfileLoading] = useState(true);
-  const [profileSaving, setProfileSaving] = useState(false);
-  const [emailSaving, setEmailSaving] = useState(false);
-  const [photoUploading, setPhotoUploading] = useState(false);
-  const [documentsSaving, setDocumentsSaving] = useState(false);
-  const [documentsLoading, setDocumentsLoading] = useState(true);
-  const [profileError, setProfileError] = useState('');
-  const [profileSuccess, setProfileSuccess] = useState('');
-  const [profileCompletionStatus, setProfileCompletionStatus] = useState(null);
-  const [documents, setDocuments] = useState([]);
-  const [isDocumentDragging, setIsDocumentDragging] = useState(false);
-  const [socialConnections, setSocialConnections] = useState([]);
-  const [socialSaving, setSocialSaving] = useState(false);
-  const [preferencesSaving, setPreferencesSaving] = useState(false);
-  const [preferencesState, setPreferencesState] = useState({
-    language: 'en',
-    timezone: timezoneOptions[0].value,
-    currency: 'USD',
-    showListNames: false,
-    showLinkedTaskNames: true,
-    emailVisibility: false,
-  });
-  const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
-  const [twoFactorLoading, setTwoFactorLoading] = useState(true);
-  const [twoFactorProcessing, setTwoFactorProcessing] = useState(false);
-  const [twoFactorOtp, setTwoFactorOtp] = useState('');
-  const [twoFactorStage, setTwoFactorStage] = useState('idle');
-  const [addressSaving, setAddressSaving] = useState(false);
-  const [addressProfile, setAddressProfile] = useState({
-    address: '',
-    country: '',
-    state: '',
-    city: '',
-    postcode: '',
-  });
-  const [paymentMethods, setPaymentMethods] = useState([]);
-  const [paymentMethodsLoading, setPaymentMethodsLoading] = useState(true);
-  const [paymentMethodsSaving, setPaymentMethodsSaving] = useState(false);
-  const [paymentMethodTab, setPaymentMethodTab] = useState('bank_card');
-  const [paymentMethodForm, setPaymentMethodForm] = useState({
-    paymentProvider: '',
-    accountHolderName: '',
-    accountNumber: '',
-    phoneNumber: '',
-    cardNumber: '',
-    expiryMonth: '',
-    expiryYear: '',
-    isPrimary: true,
-  });
+const formatCardNumber = (value, brand) => {
+    const digits = value.replace(/\D/g, '');
+    const groups = brand === 'amex' ? [4, 6, 5] : [4, 4, 4, 4];
+    const maxLength = groups.reduce((total, groupLength) => total + groupLength, 0);
+    const trimmedDigits = digits.slice(0, maxLength);
+    let cursor = 0;
 
-  const normalizePaymentMethods = (methods) => {
-    if (!Array.isArray(methods)) {
-      return [];
+    return groups
+        .map((groupLength) => {
+            const chunk = trimmedDigits.slice(cursor, cursor + groupLength);
+            cursor += groupLength;
+            return chunk;
+        })
+        .filter(Boolean)
+        .join(' ');
+};
+
+// ─── Country Data (all world countries) ───────────────────────────────────────
+const COUNTRIES = [
+    { code:'AF',name:'Afghanistan',dial:'+93',flag:'🇦🇫',pattern:'## ### ####'},
+    { code:'AL',name:'Albania',dial:'+355',flag:'🇦🇱',pattern:'### ### ###'},
+    { code:'DZ',name:'Algeria',dial:'+213',flag:'🇩🇿',pattern:'### ## ## ##'},
+    { code:'AD',name:'Andorra',dial:'+376',flag:'🇦🇩',pattern:'### ###'},
+    { code:'AO',name:'Angola',dial:'+244',flag:'🇦🇴',pattern:'### ### ###'},
+    { code:'AG',name:'Antigua and Barbuda',dial:'+1268',flag:'🇦🇬',pattern:'### ####'},
+    { code:'AR',name:'Argentina',dial:'+54',flag:'🇦🇷',pattern:'## #### ####'},
+    { code:'AM',name:'Armenia',dial:'+374',flag:'🇦🇲',pattern:'## ######'},
+    { code:'AU',name:'Australia',dial:'+61',flag:'🇦🇺',pattern:'#### ### ###'},
+    { code:'AT',name:'Austria',dial:'+43',flag:'🇦🇹',pattern:'### ######'},
+    { code:'AZ',name:'Azerbaijan',dial:'+994',flag:'🇦🇿',pattern:'## ### ## ##'},
+    { code:'BS',name:'Bahamas',dial:'+1242',flag:'🇧🇸',pattern:'### ####'},
+    { code:'BH',name:'Bahrain',dial:'+973',flag:'🇧🇭',pattern:'#### ####'},
+    { code:'BD',name:'Bangladesh',dial:'+880',flag:'🇧🇩',pattern:'### ### ###'},
+    { code:'BB',name:'Barbados',dial:'+1246',flag:'🇧🇧',pattern:'### ####'},
+    { code:'BY',name:'Belarus',dial:'+375',flag:'🇧🇾',pattern:'## ### ## ##'},
+    { code:'BE',name:'Belgium',dial:'+32',flag:'🇧🇪',pattern:'### ## ## ##'},
+    { code:'BZ',name:'Belize',dial:'+501',flag:'🇧🇿',pattern:'### ####'},
+    { code:'BJ',name:'Benin',dial:'+229',flag:'🇧🇯',pattern:'## ## ## ##'},
+    { code:'BT',name:'Bhutan',dial:'+975',flag:'🇧🇹',pattern:'## ### ###'},
+    { code:'BO',name:'Bolivia',dial:'+591',flag:'🇧🇴',pattern:'## ### ####'},
+    { code:'BA',name:'Bosnia and Herzegovina',dial:'+387',flag:'🇧🇦',pattern:'## ### ###'},
+    { code:'BW',name:'Botswana',dial:'+267',flag:'🇧🇼',pattern:'## ### ###'},
+    { code:'BR',name:'Brazil',dial:'+55',flag:'🇧🇷',pattern:'## ##### ####'},
+    { code:'BN',name:'Brunei',dial:'+673',flag:'🇧🇳',pattern:'### ####'},
+    { code:'BG',name:'Bulgaria',dial:'+359',flag:'🇧🇬',pattern:'### ### ###'},
+    { code:'BF',name:'Burkina Faso',dial:'+226',flag:'🇧🇫',pattern:'## ## ## ##'},
+    { code:'BI',name:'Burundi',dial:'+257',flag:'🇧🇮',pattern:'## ## ## ##'},
+    { code:'CV',name:'Cabo Verde',dial:'+238',flag:'🇨🇻',pattern:'### ## ##'},
+    { code:'KH',name:'Cambodia',dial:'+855',flag:'🇰🇭',pattern:'## ### ###'},
+    { code:'CM',name:'Cameroon',dial:'+237',flag:'🇨🇲',pattern:'#### ## ## ##'},
+    { code:'CA',name:'Canada',dial:'+1',flag:'🇨🇦',pattern:'(###) ###-####'},
+    { code:'CF',name:'Central African Republic',dial:'+236',flag:'🇨🇫',pattern:'## ## ## ##'},
+    { code:'TD',name:'Chad',dial:'+235',flag:'🇹🇩',pattern:'## ## ## ##'},
+    { code:'CL',name:'Chile',dial:'+56',flag:'🇨🇱',pattern:'# #### ####'},
+    { code:'CN',name:'China',dial:'+86',flag:'🇨🇳',pattern:'### #### ####'},
+    { code:'CO',name:'Colombia',dial:'+57',flag:'🇨🇴',pattern:'### ### ####'},
+    { code:'KM',name:'Comoros',dial:'+269',flag:'🇰🇲',pattern:'### ## ##'},
+    { code:'CD',name:'Congo (DRC)',dial:'+243',flag:'🇨🇩',pattern:'### ### ###'},
+    { code:'CG',name:'Congo (Republic)',dial:'+242',flag:'🇨🇬',pattern:'## ### ####'},
+    { code:'CR',name:'Costa Rica',dial:'+506',flag:'🇨🇷',pattern:'#### ####'},
+    { code:'CI',name:"Côte d'Ivoire",dial:'+225',flag:'🇨🇮',pattern:'## ## ## ##'},
+    { code:'HR',name:'Croatia',dial:'+385',flag:'🇭🇷',pattern:'## ### ####'},
+    { code:'CU',name:'Cuba',dial:'+53',flag:'🇨🇺',pattern:'# ### ####'},
+    { code:'CY',name:'Cyprus',dial:'+357',flag:'🇨🇾',pattern:'## ### ###'},
+    { code:'CZ',name:'Czech Republic',dial:'+420',flag:'🇨🇿',pattern:'### ### ###'},
+    { code:'DK',name:'Denmark',dial:'+45',flag:'🇩🇰',pattern:'## ## ## ##'},
+    { code:'DJ',name:'Djibouti',dial:'+253',flag:'🇩🇯',pattern:'## ## ## ##'},
+    { code:'DM',name:'Dominica',dial:'+1767',flag:'🇩🇲',pattern:'### ####'},
+    { code:'DO',name:'Dominican Republic',dial:'+1809',flag:'🇩🇴',pattern:'### ####'},
+    { code:'EC',name:'Ecuador',dial:'+593',flag:'🇪🇨',pattern:'## ### ####'},
+    { code:'EG',name:'Egypt',dial:'+20',flag:'🇪🇬',pattern:'### ### ####'},
+    { code:'SV',name:'El Salvador',dial:'+503',flag:'🇸🇻',pattern:'#### ####'},
+    { code:'GQ',name:'Equatorial Guinea',dial:'+240',flag:'🇬🇶',pattern:'### ### ###'},
+    { code:'ER',name:'Eritrea',dial:'+291',flag:'🇪🇷',pattern:'# ### ###'},
+    { code:'EE',name:'Estonia',dial:'+372',flag:'🇪🇪',pattern:'#### ####'},
+    { code:'SZ',name:'Eswatini',dial:'+268',flag:'🇸🇿',pattern:'#### ####'},
+    { code:'ET',name:'Ethiopia',dial:'+251',flag:'🇪🇹',pattern:'## ### ####'},
+    { code:'FJ',name:'Fiji',dial:'+679',flag:'🇫🇯',pattern:'### ####'},
+    { code:'FI',name:'Finland',dial:'+358',flag:'🇫🇮',pattern:'## ### ## ##'},
+    { code:'FR',name:'France',dial:'+33',flag:'🇫🇷',pattern:'# ## ## ## ##'},
+    { code:'GA',name:'Gabon',dial:'+241',flag:'🇬🇦',pattern:'# ## ## ##'},
+    { code:'GM',name:'Gambia',dial:'+220',flag:'🇬🇲',pattern:'### ####'},
+    { code:'GE',name:'Georgia',dial:'+995',flag:'🇬🇪',pattern:'### ## ## ##'},
+    { code:'DE',name:'Germany',dial:'+49',flag:'🇩🇪',pattern:'#### #######'},
+    { code:'GH',name:'Ghana',dial:'+233',flag:'🇬🇭',pattern:'## ### ####'},
+    { code:'GR',name:'Greece',dial:'+30',flag:'🇬🇷',pattern:'### ### ####'},
+    { code:'GD',name:'Grenada',dial:'+1473',flag:'🇬🇩',pattern:'### ####'},
+    { code:'GT',name:'Guatemala',dial:'+502',flag:'🇬🇹',pattern:'#### ####'},
+    { code:'GN',name:'Guinea',dial:'+224',flag:'🇬🇳',pattern:'### ### ###'},
+    { code:'GW',name:'Guinea-Bissau',dial:'+245',flag:'🇬🇼',pattern:'### ####'},
+    { code:'GY',name:'Guyana',dial:'+592',flag:'🇬🇾',pattern:'### ####'},
+    { code:'HT',name:'Haiti',dial:'+509',flag:'🇭🇹',pattern:'## ## ####'},
+    { code:'HN',name:'Honduras',dial:'+504',flag:'🇭🇳',pattern:'#### ####'},
+    { code:'HU',name:'Hungary',dial:'+36',flag:'🇭🇺',pattern:'## ### ####'},
+    { code:'IS',name:'Iceland',dial:'+354',flag:'🇮🇸',pattern:'### ####'},
+    { code:'IN',name:'India',dial:'+91',flag:'🇮🇳',pattern:'##### #####'},
+    { code:'ID',name:'Indonesia',dial:'+62',flag:'🇮🇩',pattern:'### #### ####'},
+    { code:'IR',name:'Iran',dial:'+98',flag:'🇮🇷',pattern:'### ### ####'},
+    { code:'IQ',name:'Iraq',dial:'+964',flag:'🇮🇶',pattern:'### ### ####'},
+    { code:'IE',name:'Ireland',dial:'+353',flag:'🇮🇪',pattern:'## ### ####'},
+    { code:'IL',name:'Israel',dial:'+972',flag:'🇮🇱',pattern:'## ### ####'},
+    { code:'IT',name:'Italy',dial:'+39',flag:'🇮🇹',pattern:'### ### ####'},
+    { code:'JM',name:'Jamaica',dial:'+1876',flag:'🇯🇲',pattern:'### ####'},
+    { code:'JP',name:'Japan',dial:'+81',flag:'🇯🇵',pattern:'## #### ####'},
+    { code:'JO',name:'Jordan',dial:'+962',flag:'🇯🇴',pattern:'# #### ####'},
+    { code:'KZ',name:'Kazakhstan',dial:'+7',flag:'🇰🇿',pattern:'### ### ## ##'},
+    { code:'KE',name:'Kenya',dial:'+254',flag:'🇰🇪',pattern:'### ### ###'},
+    { code:'KI',name:'Kiribati',dial:'+686',flag:'🇰🇮',pattern:'## ###'},
+    { code:'KW',name:'Kuwait',dial:'+965',flag:'🇰🇼',pattern:'#### ####'},
+    { code:'KG',name:'Kyrgyzstan',dial:'+996',flag:'🇰🇬',pattern:'### ### ###'},
+    { code:'LA',name:'Laos',dial:'+856',flag:'🇱🇦',pattern:'## ## ### ###'},
+    { code:'LV',name:'Latvia',dial:'+371',flag:'🇱🇻',pattern:'## ### ###'},
+    { code:'LB',name:'Lebanon',dial:'+961',flag:'🇱🇧',pattern:'## ### ###'},
+    { code:'LS',name:'Lesotho',dial:'+266',flag:'🇱🇸',pattern:'#### ####'},
+    { code:'LR',name:'Liberia',dial:'+231',flag:'🇱🇷',pattern:'### ### ###'},
+    { code:'LY',name:'Libya',dial:'+218',flag:'🇱🇾',pattern:'## ### ####'},
+    { code:'LI',name:'Liechtenstein',dial:'+423',flag:'🇱🇮',pattern:'### ####'},
+    { code:'LT',name:'Lithuania',dial:'+370',flag:'🇱🇹',pattern:'### ## ###'},
+    { code:'LU',name:'Luxembourg',dial:'+352',flag:'🇱🇺',pattern:'### ### ###'},
+    { code:'MG',name:'Madagascar',dial:'+261',flag:'🇲🇬',pattern:'## ## ### ##'},
+    { code:'MW',name:'Malawi',dial:'+265',flag:'🇲🇼',pattern:'### ## ## ##'},
+    { code:'MY',name:'Malaysia',dial:'+60',flag:'🇲🇾',pattern:'## #### ####'},
+    { code:'MV',name:'Maldives',dial:'+960',flag:'🇲🇻',pattern:'### ####'},
+    { code:'ML',name:'Mali',dial:'+223',flag:'🇲🇱',pattern:'## ## ## ##'},
+    { code:'MT',name:'Malta',dial:'+356',flag:'🇲🇹',pattern:'#### ####'},
+    { code:'MH',name:'Marshall Islands',dial:'+692',flag:'🇲🇭',pattern:'### ####'},
+    { code:'MR',name:'Mauritania',dial:'+222',flag:'🇲🇷',pattern:'## ## ## ##'},
+    { code:'MU',name:'Mauritius',dial:'+230',flag:'🇲🇺',pattern:'#### ####'},
+    { code:'MX',name:'Mexico',dial:'+52',flag:'🇲🇽',pattern:'## #### ####'},
+    { code:'FM',name:'Micronesia',dial:'+691',flag:'🇫🇲',pattern:'### ####'},
+    { code:'MD',name:'Moldova',dial:'+373',flag:'🇲🇩',pattern:'### ## ###'},
+    { code:'MC',name:'Monaco',dial:'+377',flag:'🇲🇨',pattern:'## ## ## ##'},
+    { code:'MN',name:'Mongolia',dial:'+976',flag:'🇲🇳',pattern:'#### ####'},
+    { code:'ME',name:'Montenegro',dial:'+382',flag:'🇲🇪',pattern:'## ### ###'},
+    { code:'MA',name:'Morocco',dial:'+212',flag:'🇲🇦',pattern:'## ## ## ## ##'},
+    { code:'MZ',name:'Mozambique',dial:'+258',flag:'🇲🇿',pattern:'## ### ####'},
+    { code:'MM',name:'Myanmar',dial:'+95',flag:'🇲🇲',pattern:'## ### ###'},
+    { code:'NA',name:'Namibia',dial:'+264',flag:'🇳🇦',pattern:'## ### ####'},
+    { code:'NR',name:'Nauru',dial:'+674',flag:'🇳🇷',pattern:'### ####'},
+    { code:'NP',name:'Nepal',dial:'+977',flag:'🇳🇵',pattern:'### ### ###'},
+    { code:'NL',name:'Netherlands',dial:'+31',flag:'🇳🇱',pattern:'## ### ####'},
+    { code:'NZ',name:'New Zealand',dial:'+64',flag:'🇳🇿',pattern:'## ### ####'},
+    { code:'NI',name:'Nicaragua',dial:'+505',flag:'🇳🇮',pattern:'#### ####'},
+    { code:'NE',name:'Niger',dial:'+227',flag:'🇳🇪',pattern:'## ## ## ##'},
+    { code:'NG',name:'Nigeria',dial:'+234',flag:'🇳🇬',pattern:'### ### ####'},
+    { code:'NO',name:'Norway',dial:'+47',flag:'🇳🇴',pattern:'### ## ###'},
+    { code:'OM',name:'Oman',dial:'+968',flag:'🇴🇲',pattern:'#### ####'},
+    { code:'PK',name:'Pakistan',dial:'+92',flag:'🇵🇰',pattern:'### ### ####'},
+    { code:'PW',name:'Palau',dial:'+680',flag:'🇵🇼',pattern:'### ####'},
+    { code:'PA',name:'Panama',dial:'+507',flag:'🇵🇦',pattern:'#### ####'},
+    { code:'PG',name:'Papua New Guinea',dial:'+675',flag:'🇵🇬',pattern:'### ####'},
+    { code:'PY',name:'Paraguay',dial:'+595',flag:'🇵🇾',pattern:'### ### ###'},
+    { code:'PE',name:'Peru',dial:'+51',flag:'🇵🇪',pattern:'### ### ###'},
+    { code:'PH',name:'Philippines',dial:'+63',flag:'🇵🇭',pattern:'### ### ####'},
+    { code:'PL',name:'Poland',dial:'+48',flag:'🇵🇱',pattern:'### ### ###'},
+    { code:'PT',name:'Portugal',dial:'+351',flag:'🇵🇹',pattern:'### ### ###'},
+    { code:'QA',name:'Qatar',dial:'+974',flag:'🇶🇦',pattern:'#### ####'},
+    { code:'RO',name:'Romania',dial:'+40',flag:'🇷🇴',pattern:'### ### ###'},
+    { code:'RU',name:'Russia',dial:'+7',flag:'🇷🇺',pattern:'### ### ## ##'},
+    { code:'RW',name:'Rwanda',dial:'+250',flag:'🇷🇼',pattern:'### ### ###'},
+    { code:'KN',name:'Saint Kitts and Nevis',dial:'+1869',flag:'🇰🇳',pattern:'### ####'},
+    { code:'LC',name:'Saint Lucia',dial:'+1758',flag:'🇱🇨',pattern:'### ####'},
+    { code:'VC',name:'Saint Vincent',dial:'+1784',flag:'🇻🇨',pattern:'### ####'},
+    { code:'WS',name:'Samoa',dial:'+685',flag:'🇼🇸',pattern:'## ####'},
+    { code:'SM',name:'San Marino',dial:'+378',flag:'🇸🇲',pattern:'#### ######'},
+    { code:'ST',name:'São Tomé and Príncipe',dial:'+239',flag:'🇸🇹',pattern:'### ####'},
+    { code:'SA',name:'Saudi Arabia',dial:'+966',flag:'🇸🇦',pattern:'## ### ####'},
+    { code:'SN',name:'Senegal',dial:'+221',flag:'🇸🇳',pattern:'## ### ## ##'},
+    { code:'RS',name:'Serbia',dial:'+381',flag:'🇷🇸',pattern:'## ### ####'},
+    { code:'SC',name:'Seychelles',dial:'+248',flag:'🇸🇨',pattern:'# ### ###'},
+    { code:'SL',name:'Sierra Leone',dial:'+232',flag:'🇸🇱',pattern:'## ######'},
+    { code:'SG',name:'Singapore',dial:'+65',flag:'🇸🇬',pattern:'#### ####'},
+    { code:'SK',name:'Slovakia',dial:'+421',flag:'🇸🇰',pattern:'### ### ###'},
+    { code:'SI',name:'Slovenia',dial:'+386',flag:'🇸🇮',pattern:'## ### ###'},
+    { code:'SB',name:'Solomon Islands',dial:'+677',flag:'🇸🇧',pattern:'## ###'},
+    { code:'SO',name:'Somalia',dial:'+252',flag:'🇸🇴',pattern:'## ### ###'},
+    { code:'ZA',name:'South Africa',dial:'+27',flag:'🇿🇦',pattern:'## ### ####'},
+    { code:'SS',name:'South Sudan',dial:'+211',flag:'🇸🇸',pattern:'## ### ####'},
+    { code:'ES',name:'Spain',dial:'+34',flag:'🇪🇸',pattern:'### ### ###'},
+    { code:'LK',name:'Sri Lanka',dial:'+94',flag:'🇱🇰',pattern:'## ### ####'},
+    { code:'SD',name:'Sudan',dial:'+249',flag:'🇸🇩',pattern:'## ### ####'},
+    { code:'SR',name:'Suriname',dial:'+597',flag:'🇸🇷',pattern:'### ####'},
+    { code:'SE',name:'Sweden',dial:'+46',flag:'🇸🇪',pattern:'## ### ## ##'},
+    { code:'CH',name:'Switzerland',dial:'+41',flag:'🇨🇭',pattern:'## ### ## ##'},
+    { code:'SY',name:'Syria',dial:'+963',flag:'🇸🇾',pattern:'### ### ###'},
+    { code:'TW',name:'Taiwan',dial:'+886',flag:'🇹🇼',pattern:'#### ### ###'},
+    { code:'TJ',name:'Tajikistan',dial:'+992',flag:'🇹🇯',pattern:'## ### ####'},
+    { code:'TZ',name:'Tanzania',dial:'+255',flag:'🇹🇿',pattern:'### ### ###'},
+    { code:'TH',name:'Thailand',dial:'+66',flag:'🇹🇭',pattern:'## ### ####'},
+    { code:'TL',name:'Timor-Leste',dial:'+670',flag:'🇹🇱',pattern:'#### ####'},
+    { code:'TG',name:'Togo',dial:'+228',flag:'🇹🇬',pattern:'## ## ## ##'},
+    { code:'TO',name:'Tonga',dial:'+676',flag:'🇹🇴',pattern:'### ####'},
+    { code:'TT',name:'Trinidad and Tobago',dial:'+1868',flag:'🇹🇹',pattern:'### ####'},
+    { code:'TN',name:'Tunisia',dial:'+216',flag:'🇹🇳',pattern:'## ### ###'},
+    { code:'TR',name:'Turkey',dial:'+90',flag:'🇹🇷',pattern:'### ### ## ##'},
+    { code:'TM',name:'Turkmenistan',dial:'+993',flag:'🇹🇲',pattern:'## ## ## ##'},
+    { code:'TV',name:'Tuvalu',dial:'+688',flag:'🇹🇻',pattern:'## ###'},
+    { code:'UG',name:'Uganda',dial:'+256',flag:'🇺🇬',pattern:'### ### ###'},
+    { code:'UA',name:'Ukraine',dial:'+380',flag:'🇺🇦',pattern:'## ### ## ##'},
+    { code:'AE',name:'United Arab Emirates',dial:'+971',flag:'🇦🇪',pattern:'## ### ####'},
+    { code:'GB',name:'United Kingdom',dial:'+44',flag:'🇬🇧',pattern:'#### ######'},
+    { code:'US',name:'United States',dial:'+1',flag:'🇺🇸',pattern:'(###) ###-####'},
+    { code:'UY',name:'Uruguay',dial:'+598',flag:'🇺🇾',pattern:'#### ####'},
+    { code:'UZ',name:'Uzbekistan',dial:'+998',flag:'🇺🇿',pattern:'## ### ## ##'},
+    { code:'VU',name:'Vanuatu',dial:'+678',flag:'🇻🇺',pattern:'### ####'},
+    { code:'VE',name:'Venezuela',dial:'+58',flag:'🇻🇪',pattern:'### ### ####'},
+    { code:'VN',name:'Vietnam',dial:'+84',flag:'🇻🇳',pattern:'### #### ###'},
+    { code:'YE',name:'Yemen',dial:'+967',flag:'🇾🇪',pattern:'### ### ###'},
+    { code:'ZM',name:'Zambia',dial:'+260',flag:'🇿🇲',pattern:'## ### ####'},
+    { code:'ZW',name:'Zimbabwe',dial:'+263',flag:'🇿🇼',pattern:'## ### ####'},
+];
+
+const formatPhone = (raw, pattern) => {
+    const digits = raw.replace(/\D/g, '');
+    let result = '';
+    let di = 0;
+    for (let i = 0; i < pattern.length && di < digits.length; i++) {
+        if (pattern[i] === '#') { result += digits[di++]; }
+        else { result += pattern[i]; }
     }
+    return result;
+};
 
-    return methods.map((method) => ({
-      id: method?.id ?? method?._id ?? `${method?.paymentType || 'payment'}-${Date.now()}`,
-      paymentType: method?.paymentType || method?.payment_type || 'other',
-      paymentProvider: method?.paymentProvider || method?.payment_provider || '',
-      accountHolderName: method?.accountHolderName || method?.account_holder_name || 'Saved payment method',
-      accountNumber: method?.accountNumber || method?.account_number || null,
-      phoneNumber: method?.phoneNumber || method?.phone_number || null,
-      cardLastFour: method?.cardLastFour || method?.card_last_four || null,
-      expiryDate: method?.expiryDate || method?.expiry_date || null,
-      isPrimary: Boolean(method?.isPrimary ?? method?.is_primary),
-      isActive: Boolean(method?.isActive ?? method?.is_active),
-    }));
-  };
+// ─── Phone Input Component ─────────────────────────────────────────────────────
+// NOTE: number state is kept internally so parent re-renders don't steal focus
+const PhoneInput = () => {
+    const [country, setCountry] = useState(COUNTRIES.find(c => c.code === 'RW'));
+    const [open, setOpen] = useState(false);
+    const [search, setSearch] = useState('');
+    const [number, setNumber] = useState('700 000 000');
+    const ref = useRef(null);
+    const inputRef = useRef(null);
 
-  const pushFeedback = (message, type = 'success') => {
-    if (feedbackTimerRef.current) {
-      window.clearTimeout(feedbackTimerRef.current);
-    }
-
-    if (type === 'error') {
-      setProfileError(message);
-      setProfileSuccess('');
-    } else {
-      setProfileSuccess(message);
-      setProfileError('');
-    }
-
-    feedbackTimerRef.current = window.setTimeout(() => {
-      setProfileError('');
-      setProfileSuccess('');
-      feedbackTimerRef.current = null;
-    }, 3500);
-  };
-  const [switchState, setSwitchState] = useState({
-    availability: true,
-    emailSystemUpdates: true,
-    emailPrimary: false,
-    socialInstagram: true,
-    socialLinkedin: false,
-    twoFaSms: false,
-    twoFaTotp: false,
-    saveForFutureUse: true,
-    prefEmailVisible: true,
-    notifEmail: true,
-    notifMessages: true,
-    notifSubscribe: true,
-    appearanceSidebar: true,
-  });
-
-  useEffect(() => () => {
-    if (feedbackTimerRef.current) {
-      window.clearTimeout(feedbackTimerRef.current);
-    }
-  }, []);
-
-  useEffect(() => {
-    const loadDocuments = async () => {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        setDocumentsLoading(false);
-        return;
-      }
-
-      try {
-        const response = await fetch(`${API_BASE_URL}/api/profile/documents`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        const data = await response.json();
-        if (!response.ok) {
-          throw new Error(data.message || 'Failed to load documents');
-        }
-
-        const loadedDocuments = Array.isArray(data?.data?.documents)
-          ? data.data.documents.map((document) => ({
-              id: String(document.id),
-              serverId: document.id,
-              name: document.document_name,
-              size: formatFileSize(document.file_size),
-              filePath: document.file_path,
-              fileType: document.file_type,
-              isPublic: Boolean(document.is_public),
-              createdAt: document.created_at,
-              isPersisted: true,
-            }))
-          : [];
-
-        setDocuments(loadedDocuments);
-      } catch (error) {
-        setProfileError(error.message || 'Failed to load documents');
-      } finally {
-        setDocumentsLoading(false);
-      }
-    };
-
-    loadDocuments();
-  }, []);
-
-  useEffect(() => {
-    const loadPaymentMethods = async () => {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        setPaymentMethodsLoading(false);
-        return;
-      }
-
-      try {
-        const response = await fetch(`${API_BASE_URL}/api/profile/payment-methods`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        const data = await response.json();
-        if (!response.ok) {
-          throw new Error(data.message || 'Failed to load payment methods');
-        }
-
-        setPaymentMethods(normalizePaymentMethods(data?.data?.paymentMethods));
-      } catch (error) {
-        setProfileError(error.message || 'Failed to load payment methods');
-      } finally {
-        setPaymentMethodsLoading(false);
-      }
-    };
-
-    loadPaymentMethods();
-  }, []);
-
-  useEffect(() => {
-    const loadProfile = async () => {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        setProfileError('Please sign in again to load your account details.');
-        setProfileLoading(false);
-        return;
-      }
-
-      try {
-        const response = await fetch(`${API_BASE_URL}/api/profile`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        const data = await response.json();
-        if (!response.ok) {
-          throw new Error(data.message || 'Failed to load profile');
-        }
-
-        const user = data?.data?.user || {};
-        setProfileCompletionStatus(data?.data?.completionStatus || null);
-        setBasicProfile({
-          id: user.id || '',
-          email: user.email || '',
-          name: user.name || '',
-          phone: user.phone || '',
-          role: user.role || 'student',
-          visibility: user.visibility || 'public',
-          avatar: resolveAssetUrl(user.avatar),
-        });
-        setAddressProfile({
-          address: user.address || '',
-          country: user.country || '',
-          state: user.state || '',
-          city: user.city || '',
-          postcode: user.postcode || '',
-        });
-        setSwitchState((currentState) => ({
-          ...currentState,
-          availability: Boolean(user.available_to_hire),
-          emailSystemUpdates: Boolean(user.email_notifications),
-          prefEmailVisible: Boolean(user.email_visibility),
-        }));
-        setPreferencesState({
-          language: user.language || 'en',
-          timezone: user.timezone || timezoneOptions[0].value,
-          currency: user.currency || 'USD',
-          showListNames: Boolean(user.show_list_names),
-          showLinkedTaskNames: user.show_linked_task_names !== false,
-          emailVisibility: Boolean(user.email_visibility),
-        });
-      } catch (error) {
-        setProfileError(error.message || 'Failed to load profile');
-      } finally {
-        setProfileLoading(false);
-      }
-    };
-
-    loadProfile();
-  }, []);
-
-  useEffect(() => {
-    const loadTwoFactorStatus = async () => {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        setTwoFactorLoading(false);
-        return;
-      }
-
-      try {
-        const response = await fetch(`${API_BASE_URL}/api/auth/account-status`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        const data = await response.json();
-        if (!response.ok) {
-          throw new Error(data.message || 'Failed to load 2FA status');
-        }
-
-        const isEnabled = Boolean(data?.data?.twoFactorEnabled);
-        setTwoFactorEnabled(isEnabled);
-        setSwitchState((currentState) => ({
-          ...currentState,
-          twoFaSms: isEnabled,
-          twoFaTotp: false,
-        }));
-      } catch (error) {
-        pushFeedback(error.message || 'Failed to load 2FA status', 'error');
-      } finally {
-        setTwoFactorLoading(false);
-      }
-    };
-
-    loadTwoFactorStatus();
-  }, []);
-
-  useEffect(() => {
-    const sectionElements = Object.values(sectionRefs.current).filter(Boolean);
-    if (!sectionElements.length) {
-      return undefined;
-    }
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const visible = entries
-          .filter((entry) => entry.isIntersecting)
-          .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
-
-        if (!visible.length) {
-          return;
-        }
-
-        const sectionKey = visible[0].target.getAttribute('data-section-key');
-        if (sectionKey && navLabelBySection[sectionKey]) {
-          setActiveNavLabel(navLabelBySection[sectionKey]);
-        }
-      },
-      {
-        threshold: [0.2, 0.35, 0.5, 0.65],
-        rootMargin: '-18% 0px -48% 0px',
-      },
+    const filtered = COUNTRIES.filter(c =>
+        c.name.toLowerCase().includes(search.toLowerCase()) ||
+        c.dial.includes(search)
     );
 
-    sectionElements.forEach((element) => observer.observe(element));
+    useEffect(() => {
+        const handler = (e) => {
+            if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+        };
+        document.addEventListener('mousedown', handler);
+        return () => document.removeEventListener('mousedown', handler);
+    }, []);
 
-    return () => {
-      observer.disconnect();
-    };
-  }, []);
-
-  const handleSidebarClick = (label) => {
-    const sectionKey = navTargetByLabel[label];
-    const element = sectionRefs.current[sectionKey];
-    if (!element) {
-      return;
-    }
-
-    setActiveNavLabel(label);
-    element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  };
-
-  const sidebarSections = buildSidebarSections({
-    completionStatus: profileCompletionStatus,
-    documents,
-    paymentMethods,
-    basicProfile,
-    addressProfile,
-    preferencesState,
-    twoFactorEnabled,
-  });
-
-  const toggleSwitch = (key) => {
-    setSwitchState((currentState) => ({
-      ...currentState,
-      [key]: !currentState[key],
-    }));
-  };
-
-  const handleCheckboxChange = (key) => (event) => {
-    setSwitchState((currentState) => ({
-      ...currentState,
-      [key]: event.target.checked,
-    }));
-  };
-
-  const handleBasicSave = async () => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      setProfileError('Please sign in again to save your account details.');
-      return;
-    }
-
-    setProfileError('');
-    setProfileSuccess('');
-    setProfileSaving(true);
-
-    try {
-      const nameResponse = await fetch(`${API_BASE_URL}/api/auth/profile`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ name: basicProfile.name }),
-      });
-
-      const nameData = await nameResponse.json();
-      if (!nameResponse.ok) {
-        throw new Error(nameData.message || 'Failed to save name');
-      }
-
-      const nameUser = nameData?.data || {};
-      setBasicProfile((currentState) => ({
-        ...currentState,
-        name: nameUser.name || currentState.name,
-        avatar: nameUser.avatar ? resolveAssetUrl(nameUser.avatar) : currentState.avatar,
-      }));
-
-      const hasRequiredProfileFields = Boolean(basicProfile.phone && basicProfile.role && basicProfile.visibility);
-      if (hasRequiredProfileFields) {
-        const response = await fetch(`${API_BASE_URL}/api/profile/complete`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            name: basicProfile.name,
-            phone: basicProfile.phone,
-            role: basicProfile.role,
-            visibility: basicProfile.visibility,
-            availableToHire: switchState.availability,
-            emailNotifications: switchState.emailSystemUpdates,
-          }),
-        });
-
-        const data = await response.json();
-        if (!response.ok) {
-          throw new Error(data.message || 'Failed to save profile');
-        }
-
-        const user = data?.data?.user || {};
-        setBasicProfile((currentState) => ({
-          ...currentState,
-          name: user.name || currentState.name,
-          phone: user.phone || currentState.phone,
-          role: user.role || currentState.role,
-          visibility: user.visibility || currentState.visibility,
-          avatar: user.avatar ? resolveAssetUrl(user.avatar) : currentState.avatar,
-        }));
-      }
-
-      pushFeedback('Basic settings saved successfully.');
-    } catch (error) {
-      pushFeedback(error.message || 'Failed to save profile', 'error');
-    } finally {
-      setProfileSaving(false);
-    }
-  };
-  const handleEmailSave = async () => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      setProfileError('Please sign in again to save your email settings.');
-      return;
-    }
-
-    setProfileError('');
-    setProfileSuccess('');
-    setEmailSaving(true);
-
-    try {
-      const [emailResponse, preferenceResponse] = await Promise.all([
-        fetch(`${API_BASE_URL}/api/auth/profile`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ email: basicProfile.email }),
-        }),
-        fetch(`${API_BASE_URL}/api/profile/complete`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            name: basicProfile.name,
-            phone: basicProfile.phone,
-            role: basicProfile.role,
-            visibility: basicProfile.visibility,
-            availableToHire: switchState.availability,
-            emailNotifications: switchState.emailSystemUpdates,
-          }),
-        }),
-      ]);
-
-      const emailData = await emailResponse.json();
-      const preferenceData = await preferenceResponse.json();
-
-      if (!emailResponse.ok) {
-        throw new Error(emailData.message || 'Failed to update email');
-      }
-
-      if (!preferenceResponse.ok) {
-        throw new Error(preferenceData.message || 'Failed to update email preferences');
-      }
-
-      pushFeedback('Email settings saved successfully.');
-    } catch (error) {
-      pushFeedback(error.message || 'Failed to save email settings', 'error');
-    } finally {
-      setEmailSaving(false);
-    }
-  };
-
-  const handlePhotoSelect = async (event) => {
-    const file = event.target.files?.[0];
-    if (!file) {
-      return;
-    }
-
-    const token = localStorage.getItem('token');
-    if (!token) {
-      setProfileError('Please sign in again to upload a photo.');
-      return;
-    }
-
-    setProfileError('');
-    setProfileSuccess('');
-    setPhotoUploading(true);
-
-    try {
-      const formData = new FormData();
-      formData.append('photo', file);
-
-      const response = await fetch(`${API_BASE_URL}/api/profile/photo`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        body: formData,
-      });
-
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to upload photo');
-      }
-
-      const nextAvatar = data?.data?.photoUrl || data?.data?.user?.avatar;
-      setBasicProfile((currentState) => ({
-        ...currentState,
-        avatar: nextAvatar ? resolveAssetUrl(nextAvatar) : currentState.avatar,
-      }));
-      pushFeedback('Photo uploaded successfully.');
-    } catch (error) {
-      pushFeedback(error.message || 'Failed to upload photo', 'error');
-    } finally {
-      setPhotoUploading(false);
-      event.target.value = '';
-    }
-  };
-
-  const handlePhotoRemove = () => {
-    // Try to delete photo on backend, fallback to client-side reset
-    (async () => {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        setBasicProfile((currentState) => ({ ...currentState, avatar: learnersProfileImage }));
-        pushFeedback('Photo reset to default.');
-        return;
-      }
-
-      setPhotoUploading(true);
-      try {
-        const response = await fetch(`${API_BASE_URL}/api/profile/photo`, {
-          method: 'DELETE',
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        const data = await response.json();
-        if (!response.ok) {
-          throw new Error(data.message || 'Failed to reset photo');
-        }
-
-        const nextAvatar = data?.data?.photoUrl || data?.data?.user?.avatar;
-        setBasicProfile((currentState) => ({
-          ...currentState,
-          avatar: nextAvatar ? resolveAssetUrl(nextAvatar) : learnersProfileImage,
-        }));
-        pushFeedback('Photo reset to default.');
-      } catch (err) {
-        // on error revert client-side and show message
-        setBasicProfile((currentState) => ({ ...currentState, avatar: learnersProfileImage }));
-        pushFeedback(err.message || 'Failed to reset photo', 'error');
-      } finally {
-        setPhotoUploading(false);
-      }
-    })();
-  };
-
-  const formatFileSize = (bytes) => {
-    if (!Number.isFinite(bytes) || bytes <= 0) {
-      return '0 KB';
-    }
-
-    const units = ['B', 'KB', 'MB', 'GB'];
-    let size = bytes;
-    let unitIndex = 0;
-
-    while (size >= 1024 && unitIndex < units.length - 1) {
-      size /= 1024;
-      unitIndex += 1;
-    }
-
-    return `${size >= 10 || unitIndex === 0 ? size.toFixed(0) : size.toFixed(1)} ${units[unitIndex]}`;
-  };
-
-  const handleDocumentsSelect = (event) => {
-    const selectedFiles = Array.from(event.target.files || []);
-
-    if (!selectedFiles.length) {
-      return;
-    }
-
-    const nextDocuments = selectedFiles.map((file, index) => ({
-      id: `${file.name}-${file.size}-${Date.now()}-${index}`,
-      name: file.name,
-      size: formatFileSize(file.size),
-      file,
-      isPersisted: false,
-    }));
-
-    setDocuments((currentDocuments) => [...currentDocuments, ...nextDocuments]);
-    event.target.value = '';
-  };
-
-  const handleDocumentDrop = (event) => {
-    event.preventDefault();
-    event.stopPropagation();
-    setIsDocumentDragging(false);
-
-    const droppedFiles = Array.from(event.dataTransfer?.files || []);
-    if (!droppedFiles.length) {
-      return;
-    }
-
-    const nextDocuments = droppedFiles.map((file, index) => ({
-      id: `${file.name}-${file.size}-${Date.now()}-${index}`,
-      name: file.name,
-      size: formatFileSize(file.size),
-      file,
-      isPersisted: false,
-    }));
-
-    setDocuments((currentDocuments) => [...currentDocuments, ...nextDocuments]);
-  };
-
-  const handleDocumentDragOver = (event) => {
-    event.preventDefault();
-    event.stopPropagation();
-    if (!isDocumentDragging) {
-      setIsDocumentDragging(true);
-    }
-  };
-
-  const handleDocumentDragLeave = (event) => {
-    event.preventDefault();
-    event.stopPropagation();
-    setIsDocumentDragging(false);
-  };
-
-  const removeDocument = async (documentId) => {
-    const targetDocument = documents.find((document) => document.id === documentId);
-
-    if (targetDocument?.serverId && targetDocument.isPersisted) {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        pushFeedback('Please sign in again to remove documents.', 'error');
-        return;
-      }
-
-      try {
-        const response = await fetch(`${API_BASE_URL}/api/profile/documents/${targetDocument.serverId}`, {
-          method: 'DELETE',
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        const data = await response.json();
-        if (!response.ok) {
-          throw new Error(data.message || 'Failed to remove document');
-        }
-
-        const updatedDocuments = Array.isArray(data?.data?.documents)
-          ? data.data.documents.map((document) => ({
-              id: String(document.id),
-              serverId: document.id,
-              name: document.document_name,
-              size: formatFileSize(document.file_size),
-              filePath: document.file_path,
-              fileType: document.file_type,
-              isPublic: Boolean(document.is_public),
-              createdAt: document.created_at,
-              isPersisted: true,
-            }))
-          : documents.filter((document) => document.id !== documentId);
-
-        setDocuments(updatedDocuments);
-        pushFeedback('Document removed successfully.');
-      } catch (error) {
-        pushFeedback(error.message || 'Failed to remove document', 'error');
-      }
-      return;
-    }
-
-    setDocuments((currentDocuments) => currentDocuments.filter((document) => document.id !== documentId));
-  };
-
-  const openDocumentPicker = () => {
-    documentInputRef.current?.click();
-  };
-
-  const handleDocumentsSave = () => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      pushFeedback('Please sign in again to save your documents.', 'error');
-      return;
-    }
-
-    const uploadPendingDocuments = async () => {
-      const pendingDocuments = documents.filter((document) => document.file && !document.isPersisted);
-
-      if (!pendingDocuments.length) {
-        pushFeedback('No new documents to save.');
-        return;
-      }
-
-      setDocumentsSaving(true);
-      try {
-        let latestDocuments = documents.filter((document) => document.isPersisted);
-
-        for (const document of pendingDocuments) {
-          const formData = new FormData();
-          formData.append('document', document.file);
-
-          const response = await fetch(`${API_BASE_URL}/api/profile/documents`, {
-            method: 'POST',
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-            body: formData,
-          });
-
-          const data = await response.json();
-          if (!response.ok) {
-            throw new Error(data.message || `Failed to upload ${document.name}`);
-          }
-
-          latestDocuments = Array.isArray(data?.data?.documents)
-            ? data.data.documents.map((item) => ({
-                id: String(item.id),
-                serverId: item.id,
-                name: item.document_name,
-                size: formatFileSize(item.file_size),
-                filePath: item.file_path,
-                fileType: item.file_type,
-                isPublic: Boolean(item.is_public),
-                createdAt: item.created_at,
-                isPersisted: true,
-              }))
-            : latestDocuments;
-        }
-
-        setDocuments(latestDocuments);
-        pushFeedback('Documents saved successfully.');
-      } catch (error) {
-        pushFeedback(error.message || 'Failed to save documents', 'error');
-      } finally {
-        setDocumentsSaving(false);
-      }
+    const handleNumber = (e) => {
+        const formatted = formatPhone(e.target.value, country.pattern);
+        setNumber(formatted);
     };
 
-    uploadPendingDocuments();
-  };
+    const selectCountry = (c) => {
+        setCountry(c);
+        setOpen(false);
+        setSearch('');
+        setNumber('');
+        // restore focus to number input after dropdown closes
+        setTimeout(() => inputRef.current?.focus(), 0);
+    };
 
-  const handlePreferencesSave = async () => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      pushFeedback('Please sign in again to save preferences.', 'error');
-      return;
-    }
-
-    setPreferencesSaving(true);
-    setProfileError('');
-    setProfileSuccess('');
-
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/profile/preferences`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          language: preferencesState.language,
-          timezone: preferencesState.timezone,
-          currency: preferencesState.currency,
-          showListNames: preferencesState.showListNames,
-          showLinkedTaskNames: preferencesState.showLinkedTaskNames,
-          emailVisibility: preferencesState.emailVisibility,
-        }),
-      });
-
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to save preferences');
-      }
-
-      const user = data?.data?.user || {};
-      setPreferencesState((currentState) => ({
-        ...currentState,
-        language: user.language || currentState.language,
-        timezone: user.timezone || currentState.timezone,
-        currency: user.currency || currentState.currency,
-        showListNames: Boolean(user.show_list_names),
-        showLinkedTaskNames: user.show_linked_task_names !== false,
-        emailVisibility: Boolean(user.email_visibility),
-      }));
-      setSwitchState((currentState) => ({
-        ...currentState,
-        prefEmailVisible: Boolean(user.email_visibility),
-      }));
-      pushFeedback('Preferences saved successfully.');
-    } catch (error) {
-      pushFeedback(error.message || 'Failed to save preferences', 'error');
-    } finally {
-      setPreferencesSaving(false);
-    }
-  };
-
-  const handlePaymentMethodTabChange = (paymentType) => {
-    setPaymentMethodTab(paymentType);
-  };
-
-  const handlePaymentMethodSave = async () => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      pushFeedback('Please sign in again to save payment methods.', 'error');
-      return;
-    }
-
-    if (!paymentMethodForm.accountHolderName.trim()) {
-      pushFeedback('Account holder name is required.', 'error');
-      return;
-    }
-
-    if (paymentMethodTab === 'bank_card') {
-      const cardDigits = paymentMethodForm.cardNumber.replace(/\D/g, '');
-      if (cardDigits.length < 4 || !paymentMethodForm.expiryMonth.trim() || !paymentMethodForm.expiryYear.trim()) {
-        pushFeedback('Card number and expiry date are required for bank cards.', 'error');
-        return;
-      }
-    }
-
-    if (['mobile_money', 'airtel_money'].includes(paymentMethodTab)) {
-      if (!paymentMethodForm.accountNumber.trim() || !paymentMethodForm.phoneNumber.trim()) {
-        pushFeedback('Account number and phone number are required for mobile money.', 'error');
-        return;
-      }
-    }
-
-    setPaymentMethodsSaving(true);
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/profile/payment-methods`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          paymentType: paymentMethodTab,
-          paymentProvider: paymentMethodForm.paymentProvider.trim() || null,
-          accountHolderName: paymentMethodForm.accountHolderName.trim(),
-          accountNumber: paymentMethodForm.accountNumber.trim() || null,
-          phoneNumber: paymentMethodForm.phoneNumber.trim() || null,
-          cardLastFour: paymentMethodForm.cardNumber.replace(/\D/g, '').slice(-4) || null,
-          expiryDate: paymentMethodForm.expiryMonth && paymentMethodForm.expiryYear
-            ? `${paymentMethodForm.expiryMonth}/${paymentMethodForm.expiryYear}`
-            : null,
-          isPrimary: Boolean(paymentMethodForm.isPrimary),
-        }),
-      });
-
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to save payment method');
-      }
-
-      setPaymentMethods(normalizePaymentMethods(data?.data?.paymentMethods));
-      setPaymentMethodForm((currentState) => ({
-        ...currentState,
-        paymentProvider: '',
-        accountHolderName: '',
-        accountNumber: '',
-        phoneNumber: '',
-        cardNumber: '',
-        expiryMonth: '',
-        expiryYear: '',
-        isPrimary: true,
-      }));
-      pushFeedback('Payment method saved successfully.');
-    } catch (error) {
-      pushFeedback(error.message || 'Failed to save payment method', 'error');
-    } finally {
-      setPaymentMethodsSaving(false);
-    }
-  };
-
-  const handlePrimaryPaymentMethod = async (paymentMethodId) => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      pushFeedback('Please sign in again to update payment methods.', 'error');
-      return;
-    }
-
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/profile/payment-methods/${paymentMethodId}/primary`, {
-        method: 'PUT',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to update primary payment method');
-      }
-
-      setPaymentMethods(normalizePaymentMethods(data?.data?.paymentMethods));
-      pushFeedback('Primary payment method updated.');
-    } catch (error) {
-      pushFeedback(error.message || 'Failed to update payment method', 'error');
-    }
-  };
-
-  const handleDeletePaymentMethod = async (paymentMethodId) => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      pushFeedback('Please sign in again to update payment methods.', 'error');
-      return;
-    }
-
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/profile/payment-methods/${paymentMethodId}`, {
-        method: 'DELETE',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to delete payment method');
-      }
-
-      setPaymentMethods(normalizePaymentMethods(data?.data?.paymentMethods));
-      pushFeedback('Payment method deleted.');
-    } catch (error) {
-      pushFeedback(error.message || 'Failed to delete payment method', 'error');
-    }
-  };
-
-  const handleAddressSave = async () => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      pushFeedback('Please sign in again to save your address.', 'error');
-      return;
-    }
-
-    if (!basicProfile.name || !basicProfile.phone || !basicProfile.role) {
-      pushFeedback('Please complete the basic profile fields first.', 'error');
-      return;
-    }
-
-    setAddressSaving(true);
-
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/profile/complete`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          name: basicProfile.name,
-          phone: basicProfile.phone,
-          role: basicProfile.role,
-          visibility: basicProfile.visibility,
-          availableToHire: switchState.availability,
-          emailNotifications: switchState.emailSystemUpdates,
-          address: addressProfile.address,
-          country: addressProfile.country,
-          state: addressProfile.state,
-          city: addressProfile.city,
-          postcode: addressProfile.postcode,
-          language: preferencesState.language,
-          timezone: preferencesState.timezone,
-          currency: preferencesState.currency,
-          showListNames: preferencesState.showListNames,
-          showLinkedTaskNames: preferencesState.showLinkedTaskNames,
-          emailVisibility: preferencesState.emailVisibility,
-        }),
-      });
-
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to save address');
-      }
-
-      const user = data?.data?.user || {};
-      setAddressProfile({
-        address: user.address || addressProfile.address,
-        country: user.country || addressProfile.country,
-        state: user.state || addressProfile.state,
-        city: user.city || addressProfile.city,
-        postcode: user.postcode || addressProfile.postcode,
-      });
-      pushFeedback('Address saved successfully.');
-    } catch (error) {
-      pushFeedback(error.message || 'Failed to save address', 'error');
-    } finally {
-      setAddressSaving(false);
-    }
-  };
-
-  const startEnableTwoFactor = async () => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      pushFeedback('Please sign in again to manage 2FA.', 'error');
-      return;
-    }
-
-    setTwoFactorProcessing(true);
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/enable-2fa`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to send 2FA OTP');
-      }
-
-      setTwoFactorStage('enable-pending');
-      setTwoFactorOtp('');
-      pushFeedback(data.message || 'OTP sent. Verify it to enable 2FA.');
-    } catch (error) {
-      pushFeedback(error.message || 'Failed to start 2FA setup', 'error');
-    } finally {
-      setTwoFactorProcessing(false);
-    }
-  };
-
-  const verifyEnableTwoFactor = async () => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      pushFeedback('Please sign in again to verify 2FA.', 'error');
-      return;
-    }
-
-    if (!twoFactorOtp.trim()) {
-      pushFeedback('Please enter the OTP code from your email.', 'error');
-      return;
-    }
-
-    setTwoFactorProcessing(true);
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/verify-otp-enable-2fa`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ otp: twoFactorOtp.trim() }),
-      });
-
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to verify OTP');
-      }
-
-      setTwoFactorEnabled(true);
-      setTwoFactorStage('idle');
-      setTwoFactorOtp('');
-      setSwitchState((currentState) => ({
-        ...currentState,
-        twoFaSms: true,
-      }));
-      pushFeedback(data.message || '2FA enabled successfully.');
-    } catch (error) {
-      pushFeedback(error.message || 'Failed to enable 2FA', 'error');
-    } finally {
-      setTwoFactorProcessing(false);
-    }
-  };
-
-  const startDisableTwoFactor = async () => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      pushFeedback('Please sign in again to manage 2FA.', 'error');
-      return;
-    }
-
-    setTwoFactorProcessing(true);
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/disable-2fa`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to send disable OTP');
-      }
-
-      setTwoFactorStage('disable-pending');
-      setTwoFactorOtp('');
-      pushFeedback(data.message || 'OTP sent. Verify it to disable 2FA.');
-    } catch (error) {
-      pushFeedback(error.message || 'Failed to start 2FA disable flow', 'error');
-    } finally {
-      setTwoFactorProcessing(false);
-    }
-  };
-
-  const verifyDisableTwoFactor = async () => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      pushFeedback('Please sign in again to verify 2FA.', 'error');
-      return;
-    }
-
-    if (!twoFactorOtp.trim()) {
-      pushFeedback('Please enter the OTP code from your email.', 'error');
-      return;
-    }
-
-    setTwoFactorProcessing(true);
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/disable-2fa`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ otp: twoFactorOtp.trim() }),
-      });
-
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to verify OTP');
-      }
-
-      setTwoFactorEnabled(false);
-      setTwoFactorStage('idle');
-      setTwoFactorOtp('');
-      setSwitchState((currentState) => ({
-        ...currentState,
-        twoFaSms: false,
-      }));
-      pushFeedback(data.message || '2FA disabled successfully.');
-    } catch (error) {
-      pushFeedback(error.message || 'Failed to disable 2FA', 'error');
-    } finally {
-      setTwoFactorProcessing(false);
-    }
-  };
-
-  const cancelTwoFactorFlow = () => {
-    setTwoFactorStage('idle');
-    setTwoFactorOtp('');
-  };
-
-  const getSwitchClassName = (key) => {
-    const isOn = Boolean(switchState[key]);
-    return `learners-account-switch${isOn ? ' is-on' : ''}`;
-  };
-
-  return (
-    <section className="learners-account-page">
-      <aside className="learners-account-nav" aria-label="Account sections">
-        {sidebarSections.map((section) => (
-          <section key={section.title} className="learners-account-nav-group">
-            <h2>{section.title}</h2>
-            <ul>
-              {section.items.map((item) => (
-                <li key={item.label}>
-                  <button
-                    type="button"
-                    className={`${item.completed ? 'is-completed' : ''} ${activeNavLabel === item.label ? 'is-active' : ''}`.trim()}
-                    onClick={() => handleSidebarClick(item.label)}
-                    aria-current={activeNavLabel === item.label ? 'true' : undefined}
-                  >
-                    <img
-                      src={item.completed ? checkCircle : noCheckCircle}
-                      alt={item.completed ? 'Completed' : 'Not completed'}
-                      className="learners-account-nav-icon"
-                    />
-                    <span>{item.label}</span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </section>
-        ))}
-      </aside>
-
-      <div className="learners-account-panel">
-        {(profileError || profileSuccess) && (
-          <div className={`learners-account-feedback learners-account-feedback-floating ${profileError ? 'is-error' : 'is-success'}`}>
-            {profileError || profileSuccess}
-          </div>
-        )}
-        
-        {/* Basic Settings */}
-        <section
-          className="learners-account-section"
-          data-section-key="basic-settings"
-          ref={(element) => {
-            sectionRefs.current['basic-settings'] = element;
-          }}
-        >
-          <header>
-            <h2>Basic Settings</h2>
-            <button type="button" className="section-edit-btn">
-              <img src={bPencil} alt="Edit" />
+    return (
+        <div className="hoas-phone-input" ref={ref}>
+            <button type="button" className="hoas-phone-dial" onClick={() => setOpen(o => !o)}>
+                <span className="hoas-phone-flag">{country.flag}</span>
+                <span className="hoas-phone-code">{country.dial}</span>
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <polyline points="6 9 12 15 18 9" />
+                </svg>
             </button>
-          </header>
-
-          <div className="learners-account-section-body">
-            <div className="learners-account-field-row">
-              <label>Client ID</label>
-              <div className="learners-account-field-control">
-                <input type="text" value={basicProfile.id || 'Loading...'} readOnly aria-label="Client ID" />
-              </div>
-            </div>
-
-            <div className="learners-account-field-row">
-              <label>Photo</label>
-              <div className="learners-account-field-control">
-                <div className="learners-account-avatar-row">
-                  <p>Profile photo loaded from your account record</p>
-                  <div className="learners-account-avatar-wrap">
-                    <img
-                      src={basicProfile.avatar}
-                      alt="Learner profile"
-                      className="learners-account-avatar-image"
-                      onClick={() => photoInputRef.current?.click()}
-                      role="button"
-                      tabIndex={0}
-                      onKeyDown={(event) => {
-                        if (event.key === 'Enter' || event.key === ' ') {
-                          event.preventDefault();
-                          photoInputRef.current?.click();
-                        }
-                      }}
-                    />
-                    <button type="button" className="learners-account-avatar-remove" aria-label="Remove photo" onClick={handlePhotoRemove}>
-                      <img src={xIcon} alt="Remove photo" />
-                    </button>
-                  </div>
-                  <input ref={photoInputRef} type="file" accept="image/*" hidden onChange={handlePhotoSelect} />
-                </div>
-              </div>
-            </div>
-
-            <div className="learners-account-field-row">
-              <label>Name</label>
-              <div className="learners-account-field-control">
-                <input
-                  type="text"
-                  value={basicProfile.name}
-                  onChange={(event) => setBasicProfile((currentState) => ({ ...currentState, name: event.target.value }))}
-                  aria-label="Name"
-                  disabled={profileLoading}
-                />
-              </div>
-            </div>
-
-            <div className="learners-account-field-row">
-              <label>Role</label>
-              <div className="learners-account-field-control">
-                <div className="dropdown learners-account-dropdown" style={{ position: 'relative' }}>
-                  <button
-                    className="learners-account-dropdown-btn dropdown-toggle"
-                    type="button"
-                    aria-expanded={basicRoleOpen}
-                    onClick={() => setBasicRoleOpen((currentState) => !currentState)}
-                  >
-                    {basicProfile.role === 'instructor' ? 'Instructor' : 'Student'}
-                  </button>
-                  {basicRoleOpen && (
-                    <ul className="dropdown-menu learners-account-dropdown-menu show">
-                      <li><button className="dropdown-item" type="button" onClick={() => { setBasicProfile((currentState) => ({ ...currentState, role: 'student' })); setBasicRoleOpen(false); }}>Student</button></li>
-                      <li><button className="dropdown-item" type="button" onClick={() => { setBasicProfile((currentState) => ({ ...currentState, role: 'instructor' })); setBasicRoleOpen(false); }}>Instructor</button></li>
+            <input
+                ref={inputRef}
+                type="tel"
+                className="hoas-phone-number"
+                value={number}
+                onChange={handleNumber}
+                placeholder={country.pattern.replace(/#/g, '0')}
+            />
+            {open && (
+                <div className="hoas-phone-dropdown">
+                    <div className="hoas-phone-search">
+                        <input
+                            autoFocus
+                            type="text"
+                            placeholder="Search country..."
+                            value={search}
+                            onChange={e => setSearch(e.target.value)}
+                        />
+                    </div>
+                    <ul>
+                        {filtered.map(c => (
+                            <li
+                                key={c.code}
+                                className={c.code === country.code ? 'selected' : ''}
+                                onClick={() => selectCountry(c)}
+                            >
+                                <span>{c.flag}</span>
+                                <span className="hoas-phone-country-name">{c.name}</span>
+                                <span className="hoas-phone-country-dial">{c.dial}</span>
+                            </li>
+                        ))}
                     </ul>
-                  )}
                 </div>
-              </div>
-            </div>
+            )}
+        </div>
+    );
+};
 
-            <div className="learners-account-field-row">
-              <label>Phone number</label>
-              <div className="learners-account-field-control">
-                <div className="learners-account-phone">
-                  <span className="learners-account-phone-prefix">+250</span>
-                  <span className="learners-account-phone-sep">|</span>
-                  <input
-                    type="tel"
-                    value={basicProfile.phone}
-                    onChange={(event) => setBasicProfile((currentState) => ({ ...currentState, phone: event.target.value }))}
-                    aria-label="Phone number"
-                    disabled={profileLoading}
-                  />
-                </div>
-              </div>
-            </div>
+// ─── Custom Dropdown Component ─────────────────────────────────────────────────
+const CustomDropdown = ({ value, onChange, options }) => {
+    const [open, setOpen] = useState(false);
+    const ref = useRef(null);
 
-            <div className="learners-account-field-row">
-              <label>Visibility</label>
-              <div className="learners-account-field-control">
-                <div className="dropdown learners-account-dropdown" style={{ position: 'relative' }}>
-                  <button
-                    className="learners-account-dropdown-btn dropdown-toggle"
-                    type="button"
-                    aria-expanded={basicVisibilityOpen}
-                    onClick={() => setBasicVisibilityOpen((currentState) => !currentState)}
-                  >
-                    {basicProfile.visibility === 'private' ? 'Private' : 'Public'}
-                  </button>
-                  {basicVisibilityOpen && (
-                    <ul className="dropdown-menu learners-account-dropdown-menu show">
-                      <li><button className="dropdown-item" type="button" onClick={() => { setBasicProfile((currentState) => ({ ...currentState, visibility: 'public' })); setBasicVisibilityOpen(false); }}>Public</button></li>
-                      <li><button className="dropdown-item" type="button" onClick={() => { setBasicProfile((currentState) => ({ ...currentState, visibility: 'private' })); setBasicVisibilityOpen(false); }}>Private</button></li>
+    useEffect(() => {
+        const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+        document.addEventListener('mousedown', handler);
+        return () => document.removeEventListener('mousedown', handler);
+    }, []);
+
+    const selected = options.find(o => o.value === value) || options[0];
+
+    return (
+        <div className="hoas-custom-dropdown" ref={ref}>
+            <button type="button" className="hoas-custom-dropdown-btn" onClick={() => setOpen(o => !o)}>
+                <span className="hoas-custom-dropdown-selected">
+                    {selected.icon && <span className="hoas-custom-dropdown-icon">{selected.icon}</span>}
+                    <span>{selected.label}</span>
+                </span>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <polyline points="6 9 12 15 18 9" />
+                </svg>
+            </button>
+            {open && (
+                <ul className="hoas-custom-dropdown-list">
+                    {options.map(opt => (
+                        <li
+                            key={opt.value}
+                            className={opt.value === value ? 'selected' : ''}
+                            onClick={() => { onChange(opt.value); setOpen(false); }}
+                        >
+                            <span className="hoas-custom-dropdown-option">
+                                {opt.icon && <span className="hoas-custom-dropdown-icon">{opt.icon}</span>}
+                                <span>{opt.label}</span>
+                            </span>
+                            {opt.value === value && (
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#450468" strokeWidth="2.5">
+                                    <polyline points="20 6 9 17 4 12" />
+                                </svg>
+                            )}
+                        </li>
+                    ))}
+                </ul>
+            )}
+        </div>
+    );
+};
+
+// ─── Address Country Select ───────────────────────────────────────────────────
+const AddressCountrySelect = ({ value, onChange }) => {
+    const [open, setOpen] = useState(false);
+    const [search, setSearch] = useState('');
+    const ref = useRef(null);
+
+    const country = COUNTRIES.find(c => c.code === value) || COUNTRIES[0];
+
+    const filtered = COUNTRIES.filter(c =>
+        c.name.toLowerCase().includes(search.toLowerCase())
+    );
+
+    useEffect(() => {
+        const handler = (e) => {
+            if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+        };
+        document.addEventListener('mousedown', handler);
+        return () => document.removeEventListener('mousedown', handler);
+    }, []);
+
+    const selectCountry = (c) => {
+        onChange(c.code);
+        setOpen(false);
+        setSearch('');
+    };
+
+    return (
+        <div className="hoas-addr-country-select" ref={ref} onClick={(e) => { if (!e.target.closest('.hoas-phone-dropdown')) setOpen(o => !o); }} style={{ cursor: 'pointer' }}>
+            <span className="hoas-addr-country-flag">{country.flag}</span>
+            <div className="hoas-addr-select" style={{ display: 'flex', alignItems: 'center' }}>
+                {country.name}
+            </div>
+            <svg className="hoas-addr-select-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <polyline points="6 9 12 15 18 9" />
+            </svg>
+            
+            {open && (
+                <div className="hoas-phone-dropdown" onClick={(e) => e.stopPropagation()} style={{ width: '100%', top: 'calc(100% + 4px)', left: 0 }}>
+                    <div className="hoas-phone-search">
+                        <input
+                            autoFocus
+                            type="text"
+                            placeholder="Search country..."
+                            value={search}
+                            onChange={e => setSearch(e.target.value)}
+                        />
+                    </div>
+                    <ul>
+                        {filtered.map(c => (
+                            <li
+                                key={c.code}
+                                className={c.code === value ? 'selected' : ''}
+                                onClick={() => selectCountry(c)}
+                            >
+                                <span>{c.flag}</span>
+                                <span className="hoas-phone-country-name">{c.name}</span>
+                            </li>
+                        ))}
                     </ul>
-                  )}
                 </div>
-              </div>
-            </div>
-
-            <div className="learners-account-toggle-row">
-              <label>Availability</label>
-              <div className="learners-account-toggle-copy">
-                <span>Available to hire</span>
-                <button type="button" className={getSwitchClassName('availability')} aria-pressed={switchState.availability} aria-label="Availability toggle" onClick={() => toggleSwitch('availability')}>
-                  <span />
-                </button>
-              </div>
-            </div>
-
-            <div className="learners-account-section-actions">
-              <button
-                type="button"
-                className="learners-account-save-btn"
-                onClick={handleBasicSave}
-                disabled={profileSaving || profileLoading}
-              >
-                {profileSaving ? 'Saving...' : 'Save Changes'}
-              </button>
-            </div>
-          </div>
-        </section>
-
-        {/* Email */}
-        <section
-          className="learners-account-section"
-          data-section-key="email"
-          ref={(element) => {
-            sectionRefs.current.email = element;
-          }}
-        >
-        <header>
-            <h2>Email</h2>
-        </header>
-        <div className="learners-account-section-body">
-            
-            {/* Notice the added 'align-top' class here */}
-            <div className="learners-account-field-row align-top">
-            <label>Email</label>
-            
-            <div className="learners-account-field-control">
-                <input
-                  type="email"
-                  value={basicProfile.email}
-                  onChange={(event) => setBasicProfile((currentState) => ({ ...currentState, email: event.target.value }))}
-                  disabled={profileLoading}
-                />
-                
-                <div className="learners-account-email-toggles">
-                <span className="email-toggle-text">System Updates</span>
-                <button type="button" className={getSwitchClassName('emailSystemUpdates')} aria-pressed={switchState.emailSystemUpdates} onClick={() => toggleSwitch('emailSystemUpdates')}>
-                    <span />
-                </button>
-                
-                <span className="email-toggle-text">Primary</span>
-                <button type="button" className={getSwitchClassName('emailPrimary')} aria-pressed={switchState.emailPrimary} onClick={() => toggleSwitch('emailPrimary')}>
-                    <span />
-                </button>
-                </div>
-
-                <p className="learners-account-muted">
-                Input your email, designate as primary for priority updates. Toggle to seamlessly customize your communication preferences
-                </p>
-            </div>
-            </div>
-
-            <div className="learners-account-section-actions">
-            {/* Removed the save icon to match the screenshot exactly */}
-            <button
-              type="button"
-              className="learners-account-save-btn"
-              onClick={handleEmailSave}
-              disabled={emailSaving || profileLoading}
-            >
-              {emailSaving ? 'Saving...' : 'Save Changes'}
-            </button>
-            </div>
-        </div>
-        </section>
-
-        {/* Documents and Files */}
-        <section
-          className="learners-account-section"
-          data-section-key="documents-and-files"
-          ref={(element) => {
-            sectionRefs.current['documents-and-files'] = element;
-          }}
-        >
-        <header>
-            <h2>Documents and Files</h2>
-        </header>
-        <div className="learners-account-section-body">
-            
-            <div
-              className={`learners-account-dropzone${isDocumentDragging ? ' is-dragging' : ''}`}
-              role="button"
-              tabIndex={0}
-              onClick={openDocumentPicker}
-              onDrop={handleDocumentDrop}
-              onDragOver={handleDocumentDragOver}
-              onDragEnter={handleDocumentDragOver}
-              onDragLeave={handleDocumentDragLeave}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter' || event.key === ' ') {
-                  event.preventDefault();
-                  openDocumentPicker();
-                }
-              }}
-            >
-              <img src={fileIcon} alt="Upload" className="dropzone-icon" />
-              <div className="learners-account-dropzone-content">
-                <strong>Add certificates files or click upload</strong>
-                <p className="learners-account-muted">Drop files here or use the picker to add them.</p>
-              </div>
-            </div>
-
-            <input ref={documentInputRef} type="file" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg" multiple hidden onChange={handleDocumentsSelect} />
-
-            {documentsLoading ? (
-              <div className="learners-account-empty-docs">
-                <div className="learners-account-empty-docs-copy">
-                  <strong>Loading documents...</strong>
-                  <p>Please wait while we fetch your saved files.</p>
-                </div>
-              </div>
-            ) : documents.length > 0 ? (
-              <div className="learners-account-file-grid">
-                {documents.map((document) => (
-                  <div key={document.id} className="learners-account-file-card">
-                    <img src={pdfIcon} alt="File" className="file-type-icon" />
-                    <div className="file-meta">
-                      <strong>{document.name}</strong>
-                      <small>{document.size}</small>
-                    </div>
-                    <button
-                      type="button"
-                      className="file-remove-badge"
-                      aria-label={`Remove ${document.name}`}
-                      onClick={() => removeDocument(document.id)}
-                    >
-                      &times;
-                    </button>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="learners-account-empty-docs">
-                <div className="learners-account-empty-docs-copy">
-                  <strong>No documents yet</strong>
-                  <p>Upload certificates, resumes, or supporting files to display them here.</p>
-                </div>
-              </div>
             )}
-
-            <div className="learners-account-section-actions">
-              <button type="button" className="learners-account-save-btn" onClick={handleDocumentsSave} disabled={documentsSaving || documentsLoading}>
-                {documentsSaving ? 'Saving...' : 'Save Changes'}
-              </button>
-            </div>
         </div>
-        </section>
+    );
+};
 
-        {/* Social Connection */}
-        <section
-          className="learners-account-section"
-          data-section-key="social-connection"
-          ref={(element) => {
-            sectionRefs.current['social-connection'] = element;
-          }}
-        >
-        <header>
-            <h2>Social Media Connection</h2>
-        </header>
-        <div className="learners-account-section-body">
-            
-            <div className="social-empty-state">
-              <h3>No social connections yet</h3>
-              <p className="learners-account-muted">Social connections backend is not available yet, so this area starts empty.</p>
-            </div>
-
-            {/* More Options */}
-            <div className="social-more-options">
-            <h3>More Social connections options</h3>
-            <p className="learners-account-muted">
-                Effortless access awaits! Connect seamlessly with your preferred social account.
-            </p>
-
-            <div className="social-buttons-wrapper">
-              <button type="button" className="social-connect-btn" onClick={() => pushFeedback('Social backend is not available yet.', 'error')}>
-              <AtSign className="social-connect-icon" aria-hidden="true" /> Connect X
-                </button>
-              <button type="button" className="social-connect-btn" onClick={() => pushFeedback('Social backend is not available yet.', 'error')}>
-              <PlayCircle className="social-connect-icon" aria-hidden="true" /> Connect Youtube
-                </button>
-              <button type="button" className="social-connect-btn" onClick={() => pushFeedback('Social backend is not available yet.', 'error')}>
-              <MessageCircle className="social-connect-icon" aria-hidden="true" /> Connect Facebook
-                </button>
-              <button type="button" className="social-connect-btn" onClick={() => pushFeedback('Social backend is not available yet.', 'error')}>
-                <img src={plusIcon} alt="" /> Add More
-                </button>
-            </div>
-            </div>
-
-            <div className="learners-account-section-actions">
-            <button type="button" className="learners-account-save-btn" disabled>
-              Save Changes
-            </button>
-            </div>
-        </div>
-        </section>
-
-        {/* Two-Factor Authentication (2FA) */}
-        <section
-          className="learners-account-section"
-          data-section-key="two-factor-auth"
-          ref={(element) => {
-            sectionRefs.current['two-factor-auth'] = element;
-          }}
-        >
-        <header>
-            <h2>Two-Factor authentication(2FA)</h2>
-            <button type="button" className="section-menu-btn" aria-label="More options">
-            &#8942; {/* Vertical ellipsis character for the 3 dots */}
-            </button>
-        </header>
-        <div className="learners-account-section-body">
-            
-            <div className="two-fa-cards-wrapper">
-            {/* SMS Card */}
-            <div className="two-fa-card">
-                <div className="two-fa-icon-wrap">
-                <img src={twoFa1Icon} alt="SMS Icon" />
-                </div>
-                <div className="two-fa-info">
-                <strong>Email OTP (Database-backed)</strong>
-                <span>{twoFactorEnabled ? '2FA is enabled for your account.' : 'Enable 2FA with one-time codes sent to your email.'}</span>
-                </div>
-                <button
-                  type="button"
-                  className={getSwitchClassName('twoFaSms')}
-                  aria-pressed={switchState.twoFaSms}
-                  onClick={twoFactorEnabled ? startDisableTwoFactor : startEnableTwoFactor}
-                  disabled={twoFactorProcessing || twoFactorLoading}
-                >
-                <span />
-                </button>
-            </div>
-
-            {/* Authenticator Card */}
-            <div className="two-fa-card">
-                <div className="two-fa-icon-wrap">
-                <img src={twoFa2Icon} alt="Authenticator Icon" />
-                </div>
-                <div className="two-fa-info">
-                <strong>Authenticator App (TOTP)</strong>
-                <span>Not available from current backend APIs yet.</span>
-                </div>
-                <button type="button" className={getSwitchClassName('twoFaTotp')} aria-pressed={false} disabled>
-                <span />
-                </button>
-            </div>
-            </div>
-
-            {twoFactorStage !== 'idle' && (
-              <div className="learners-account-field-row align-top" style={{ marginTop: '24px' }}>
-                <label>OTP Code</label>
-                <div className="learners-account-field-control">
-                  <input
-                    type="text"
-                    value={twoFactorOtp}
-                    onChange={(event) => setTwoFactorOtp(event.target.value.replace(/\D/g, '').slice(0, 6))}
-                    placeholder="Enter 6-digit OTP"
-                    inputMode="numeric"
-                    maxLength={6}
-                  />
-                  <p className="learners-account-muted">
-                    {twoFactorStage === 'enable-pending'
-                      ? 'Check your email, then enter the OTP to enable 2FA.'
-                      : 'Check your email, then enter the OTP to disable 2FA.'}
-                  </p>
-                </div>
-              </div>
-            )}
-
-            <div className="learners-account-section-actions">
-              {twoFactorStage === 'enable-pending' ? (
-                <>
-                  <button type="button" className="learners-account-save-btn" onClick={verifyEnableTwoFactor} disabled={twoFactorProcessing || twoFactorOtp.length !== 6}>
-                    {twoFactorProcessing ? 'Verifying...' : 'Verify & Enable'}
-                  </button>
-                  <button type="button" className="learners-account-save-btn" onClick={cancelTwoFactorFlow} disabled={twoFactorProcessing}>
-                    Cancel
-                  </button>
-                </>
-              ) : twoFactorStage === 'disable-pending' ? (
-                <>
-                  <button type="button" className="learners-account-save-btn" onClick={verifyDisableTwoFactor} disabled={twoFactorProcessing || twoFactorOtp.length !== 6}>
-                    {twoFactorProcessing ? 'Verifying...' : 'Verify & Disable'}
-                  </button>
-                  <button type="button" className="learners-account-save-btn" onClick={cancelTwoFactorFlow} disabled={twoFactorProcessing}>
-                    Cancel
-                  </button>
-                </>
-              ) : (
-                <button
-                  type="button"
-                  className="learners-account-save-btn"
-                  onClick={twoFactorEnabled ? startDisableTwoFactor : startEnableTwoFactor}
-                  disabled={twoFactorProcessing || twoFactorLoading}
-                >
-                  {twoFactorLoading
-                    ? 'Loading...'
-                    : twoFactorProcessing
-                      ? 'Please wait...'
-                      : twoFactorEnabled
-                        ? 'Disable 2FA'
-                        : 'Enable 2FA'}
-                </button>
-              )}
-            </div>
-        </div>
-        </section>
-
-        {/* Payments Method */}
-        <section
-          className="learners-account-section"
-          data-section-key="payments-method"
-          ref={(element) => {
-            sectionRefs.current['payments-method'] = element;
-          }}
-        >
-        <header>
-            <h2>Payments Method</h2>
-        </header>
-        <div className="learners-account-section-body">
-            {paymentMethodsLoading ? (
-              <div className="social-empty-state">
-                <h3>Loading payment methods...</h3>
-                <p className="learners-account-muted">Please wait while we fetch your saved payment methods.</p>
-              </div>
-            ) : paymentMethods.length > 0 ? (
-              <div className="learners-account-file-grid payment-methods-grid">
-                {paymentMethods.map((method) => (
-                  <div key={method.id} className="learners-account-file-card payment-method-card">
-                    <img src={method.paymentType === 'bank_card' ? bankCardIcon : method.paymentType === 'airtel_money' ? airtelPayIcon : mtnPayIcon} alt={method.paymentType} className="file-type-icon" />
-                    <div className="file-meta">
-                      <strong>{method.accountHolderName}</strong>
-                      <small>{method.paymentType.replace('_', ' ')}</small>
-                      <small>{method.accountNumber || method.phoneNumber || method.cardLastFour || method.expiryDate || 'Saved'}</small>
-                    </div>
-                    <div className="payment-method-actions">
-                      <button type="button" className={method.isPrimary ? 'payment-pill is-primary' : 'payment-pill'} onClick={() => handlePrimaryPaymentMethod(method.id)}>
-                        <span className="payment-pill-dot" />
-                        {method.isPrimary ? 'Primary' : 'Make primary'}
-                      </button>
-                      <button type="button" className="file-remove-badge" aria-label={`Delete ${method.accountHolderName}`} onClick={() => handleDeletePaymentMethod(method.id)}>
-                        &times;
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="social-empty-state">
-                <h3>No payment methods yet</h3>
-                <p className="learners-account-muted">Add one below to start saving it to your account.</p>
-              </div>
-            )}
-
-            <div className="payment-type-selection">
-            <h5>1. Payment Type</h5>
-            <ul className="nav nav-tabs" id="paymentTab" role="tablist">
-                <li className="nav-item" role="presentation">
-                <button className={`nav-link${paymentMethodTab === 'mobile_money' ? ' active' : ''}`} type="button" role="tab" onClick={() => handlePaymentMethodTabChange('mobile_money')}>
-                    <div className="method-icon"><img src={mtnPayIcon} alt="MTN" /></div>
-                    <span>MTN Mobile Money</span>
-                </button>
-                </li>
-                <li className="nav-item" role="presentation">
-                <button className={`nav-link${paymentMethodTab === 'airtel_money' ? ' active' : ''}`} type="button" role="tab" onClick={() => handlePaymentMethodTabChange('airtel_money')}>
-                    <div className="method-icon"><img src={airtelPayIcon} alt="Airtel" /></div>
-                    <span>Airtel Money</span>
-                </button>
-                </li>
-                <li className="nav-item" role="presentation">
-                <button className={`nav-link${paymentMethodTab === 'bank_card' ? ' active' : ''}`} type="button" role="tab" onClick={() => handlePaymentMethodTabChange('bank_card')}>
-                    <div className="method-icon"><img src={bankCardIcon} alt="Bank Card" /></div>
-                    <span>Bank Cards</span>
-                </button>
-                </li>
-            </ul>
-            </div>
-
-            <div className="tab-content" id="paymentTabContent">
-            <div className="tab-pane fade show active bank-card-pane" role="tabpanel">
-                <h5 className="pane-title">Add {paymentMethodTab === 'bank_card' ? 'Bank Card' : paymentMethodTab === 'airtel_money' ? 'Airtel Money' : 'MTN Mobile Money'}</h5>
-
-                <div className="bank-form-grid">
-                <div className="bank-form-row">
-                    <label className="bank-form-label">
-                    Account Holder <span className="required">*</span>
-                    <img src={infoGrayIcon} className="info-icon" alt="info" />
-                    </label>
-                    <div className="bank-form-control">
-                    <input type="text" value={paymentMethodForm.accountHolderName} onChange={(event) => setPaymentMethodForm((currentState) => ({ ...currentState, accountHolderName: event.target.value }))} placeholder="Max Smith" />
-                    </div>
-                </div>
-
-                {paymentMethodTab === 'bank_card' ? (
-                  <>
-                    <div className="bank-form-row">
-                        <label className="bank-form-label">
-                        Card Number <span className="required">*</span>
-                        <img src={infoGrayIcon} className="info-icon" alt="info" />
-                        </label>
-                        <div className="bank-form-control has-icons">
-                        <input type="text" value={paymentMethodForm.cardNumber} onChange={(event) => setPaymentMethodForm((currentState) => ({ ...currentState, cardNumber: event.target.value }))} placeholder="010 000 000 0000 0000" />
-                        <div className="card-network-logos">
-                            <img src={visaIcon} alt="Visa" />
-                            <img src={mastercardIcon} alt="Mastercard" />
-                            <img src={amexIcon} alt="Amex" />
-                        </div>
-                        </div>
-                    </div>
-
-                    <div className="bank-form-row">
-                        <label className="bank-form-label">Expiration Date</label>
-                        <div className="bank-form-control multi-inputs">
-                        <input type="text" value={paymentMethodForm.expiryMonth} onChange={(event) => setPaymentMethodForm((currentState) => ({ ...currentState, expiryMonth: event.target.value }))} placeholder="MM" />
-                        <input type="text" value={paymentMethodForm.expiryYear} onChange={(event) => setPaymentMethodForm((currentState) => ({ ...currentState, expiryYear: event.target.value }))} placeholder="YYYY" />
-                        <div className="cvv-input-wrap">
-                            <input type="text" placeholder="CVV" />
-                            <img src={cvvIcon} className="cvv-icon" alt="CVV" />
-                        </div>
-                        </div>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="bank-form-row">
-                        <label className="bank-form-label">Account Number <span className="required">*</span></label>
-                        <div className="bank-form-control">
-                          <input type="text" value={paymentMethodForm.accountNumber} onChange={(event) => setPaymentMethodForm((currentState) => ({ ...currentState, accountNumber: event.target.value }))} placeholder="Account number" />
-                        </div>
-                    </div>
-                    <div className="bank-form-row">
-                        <label className="bank-form-label">Phone Number <span className="required">*</span></label>
-                        <div className="bank-form-control">
-                          <input type="text" value={paymentMethodForm.phoneNumber} onChange={(event) => setPaymentMethodForm((currentState) => ({ ...currentState, phoneNumber: event.target.value }))} placeholder="07xx xxx xxx" />
-                        </div>
-                    </div>
-                    <div className="bank-form-row">
-                        <label className="bank-form-label">Provider</label>
-                        <div className="bank-form-control">
-                          <input type="text" value={paymentMethodForm.paymentProvider} onChange={(event) => setPaymentMethodForm((currentState) => ({ ...currentState, paymentProvider: event.target.value }))} placeholder="Provider name" />
-                        </div>
-                    </div>
-                  </>
+// ─── Section Card (defined OUTSIDE HOASettings to prevent remount on re-render) ─
+const SectionCard = ({ id, title, children, saved, onSave, sectionRef, showDiscard = true, showFooter = true, headerAction = null }) => (
+    <div
+        className="hoas-section-card"
+        id={id}
+        data-section={id}
+        ref={sectionRef}
+    >
+        <div className="hoas-section-header">
+            <div className="hoas-section-title-row">
+                <h2>{title}</h2>
+                {saved && (
+                    <span className="hoas-saved-badge">
+                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                            <path d="M2 6.5L4.8 9.5L10 3" stroke="#17C653" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                        Saved
+                    </span>
                 )}
-
-                <div className="bank-form-row action-row">
-                    <div className="save-future-toggle save-card">
-                    <label>Save for future use</label>
-                    <button type="button" className={getSwitchClassName('saveForFutureUse')} aria-pressed={switchState.saveForFutureUse} onClick={() => {
-                      toggleSwitch('saveForFutureUse');
-                      setPaymentMethodForm((currentState) => ({ ...currentState, isPrimary: !currentState.isPrimary }));
-                    }}>
-                      <span />
-                    </button>
-                    </div>
-                    
-                    <button type="button" className="btn-save-changes" onClick={handlePaymentMethodSave} disabled={paymentMethodsSaving}>
-                      {paymentMethodsSaving ? 'Saving...' : 'Save Changes'}
+                {headerAction}
+            </div>
+        </div>
+        <div className="hoas-section-body">
+            {children}
+            {showFooter && (
+                <div className="hoas-section-footer">
+                    {showDiscard && <button className="hoas-btn-discard">Discard</button>}
+                    <button className="hoas-btn-save" onClick={onSave}>
+                        Save Changes
                     </button>
                 </div>
-
-                </div> 
-
-                <div className="sso-footer-text">
-                Saved payment methods are loaded from your account and stored in the database.
-                </div>
-
-            </div>
-            </div>
-
+            )}
         </div>
-        </section>
+    </div>
+);
 
-        {/* Preferences */}
-        <section
-          className="learners-account-section"
-          data-section-key="preferences"
-          ref={(element) => {
-            sectionRefs.current.preferences = element;
-          }}
-        >
-        <header>
-            <h2>Preferences</h2>
-        </header>
-        <div className="learners-account-section-body">
+// ─── Main Component ────────────────────────────────────────────────────────────
+const LearnerAccount = () => {
+    const [saved, setSaved] = useState({});
+    const [activeSection, setActiveSection] = useState('general');
+    const sectionRefs = useRef({});
+    const documentInputRef = useRef(null);
+    const socialMoreRef = useRef(null);
+    const socialPopoverRef = useRef(null);
 
-            {/* Language */}
-            <div className="learners-account-field-row">
-            <label>Language</label>
-            <div className="learners-account-field-control">
-                <div className="dropdown w-100">
-                <button className="btn pref-bs-dropdown w-100 d-flex align-items-center dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                    <div className="d-flex align-items-center gap-2">
-                    <span className="pref-icon">{languageOptions.find((option) => option.value === preferencesState.language)?.icon || '🇺🇸'}</span>
-                    <span>{languageOptions.find((option) => option.value === preferencesState.language)?.label || 'American English'}</span>
+    const [uploadedPhoto, setUploadedPhoto] = useState(null);
+    const [uploadError, setUploadError] = useState('');
+    const [documentFiles, setDocumentFiles] = useState(
+        DOCUMENT_FILES.map((file) => ({
+            ...file,
+            id: `${file.name}-${file.size}`,
+        }))
+    );
+    const [documentDropActive, setDocumentDropActive] = useState(false);
+
+    // Phone & Visibility
+    const [phoneNumber, setPhoneNumber] = useState('700 000 000');
+    const [visibility, setVisibility] = useState('public');
+
+    // Email section
+    const [emailAddress, setEmailAddress] = useState('jasontatum@gonaraza.com');
+    const [emailSystemUpdates, setEmailSystemUpdates] = useState(true);
+    const [emailPrimary, setEmailPrimary] = useState(false);
+
+    // Theme selection
+    const [selectedTheme, setSelectedTheme] = useState('light');
+    const [syncSystem, setSyncSystem] = useState(true);
+
+    // Address section
+    const [addrAddress, setAddrAddress] = useState('Avenida Imaginária, 789');
+    const [addrCountry, setAddrCountry] = useState('ES');
+    const [addrState, setAddrState] = useState('');
+    const [addrCity, setAddrCity] = useState('Barcelona');
+    const [addrPostcode, setAddrPostcode] = useState('08013');
+
+    // Appearance section
+    const [appearanceTheme, setAppearanceTheme] = useState('dark');
+    const [transparentSidebar, setTransparentSidebar] = useState(true);
+
+    // Payment gateway
+    const [selectedGateway, setSelectedGateway] = useState('card');
+
+    // Toggles
+    const [publicProfile, setPublicProfile] = useState(true);
+    const [searchIndexing, setSearchIndexing] = useState(true);
+
+    // Two-factor authentication
+    const [twoFactorSMS, setTwoFactorSMS] = useState(true);
+    const [twoFactorAuthenticator, setTwoFactorAuthenticator] = useState(false);
+    const [twoFactorPassword, setTwoFactorPassword] = useState('');
+
+    // Payments
+    const [savePaymentMethod, setSavePaymentMethod] = useState(true);
+    const [paymentSimName, setPaymentSimName] = useState('');
+    const [paymentCardName, setPaymentCardName] = useState('');
+    const [paymentCardNumber, setPaymentCardNumber] = useState('');
+    const [paymentCardBrand, setPaymentCardBrand] = useState('unknown');
+    const [paymentExpiryMonth, setPaymentExpiryMonth] = useState('');
+    const [paymentCvv, setPaymentCvv] = useState('');
+    const [expiryError, setExpiryError] = useState('');
+    const [paymentPhoneNumber, setPaymentPhoneNumber] = useState('');
+
+    // Preferences
+    const [preferenceLanguage, setPreferenceLanguage] = useState('en-us');
+    const [preferenceTimezone, setPreferenceTimezone] = useState('gmt-5-est');
+    const [preferenceCurrency, setPreferenceCurrency] = useState('usd');
+    const [showListNames, setShowListNames] = useState(false);
+    const [showLinkedTaskNames, setShowLinkedTaskNames] = useState(true);
+    const [emailVisibility, setEmailVisibility] = useState(true);
+
+    // Notifications
+    const [notificationEmailEnabled, setNotificationEmailEnabled] = useState(true);
+    const [notificationMessageEnabled, setNotificationMessageEnabled] = useState(true);
+    const [projectNotifications, setProjectNotifications] = useState('disabled');
+    const [emailNotifications, setEmailNotifications] = useState('unread-statuses');
+    const [autoSubscribeTasks, setAutoSubscribeTasks] = useState(true);
+
+    const [socialConnections, setSocialConnections] = useState(INITIAL_SOCIAL_CONNECTIONS);
+    const [socialPopover, setSocialPopover] = useState(null);
+
+    const handleSave = useCallback((sectionId) => {
+        setSaved(prev => ({ ...prev, [sectionId]: true }));
+    }, []);
+
+    const addDocumentFiles = useCallback((files) => {
+        const nextFiles = Array.from(files)
+            .filter((file) => file && file.name)
+            .map((file) => ({
+                id: `${file.name}-${file.lastModified}-${file.size}-${Math.random().toString(36).slice(2, 8)}`,
+                name: file.name,
+                size: formatFileSize(file.size),
+            }));
+
+        if (nextFiles.length === 0) return;
+
+        setDocumentFiles((currentFiles) => [...currentFiles, ...nextFiles]);
+        setSaved((currentSaved) => ({ ...currentSaved, documents: true }));
+    }, []);
+
+    const handleDocumentInputChange = useCallback((event) => {
+        addDocumentFiles(event.target.files || []);
+        event.target.value = '';
+    }, [addDocumentFiles]);
+
+    const handleDocumentDrop = useCallback((event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        setDocumentDropActive(false);
+        addDocumentFiles(event.dataTransfer.files || []);
+    }, [addDocumentFiles]);
+
+    const handleDocumentDragOver = useCallback((event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        setDocumentDropActive(true);
+    }, []);
+
+    const handleDocumentDragLeave = useCallback((event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        setDocumentDropActive(false);
+    }, []);
+
+    const removeDocumentFile = useCallback((fileId) => {
+        setDocumentFiles((currentFiles) => currentFiles.filter((file) => file.id !== fileId));
+    }, []);
+
+    const openDocumentPicker = useCallback(() => {
+        documentInputRef.current?.click();
+    }, []);
+
+    const closeSocialPopover = useCallback(() => {
+        setSocialPopover(null);
+    }, []);
+
+    const openSocialPopover = useCallback((action, event) => {
+        const triggerRect = event.currentTarget.getBoundingClientRect();
+        const popoverWidth = 320;
+        const estimatedPopoverHeight = action.id === 'more' ? 288 : 236;
+        const viewportPadding = 16;
+        const centerX = triggerRect.left + (triggerRect.width / 2);
+        const clampedCenterX = Math.min(
+            window.innerWidth - viewportPadding - (popoverWidth / 2),
+            Math.max(viewportPadding + (popoverWidth / 2), centerX)
+        );
+
+        const topAbove = triggerRect.top - estimatedPopoverHeight - 12;
+        const topBelow = triggerRect.bottom + 12;
+        const canOpenAbove = topAbove >= viewportPadding;
+        const top = canOpenAbove
+            ? topAbove
+            : Math.min(topBelow, window.innerHeight - viewportPadding - estimatedPopoverHeight);
+
+        setSocialPopover({
+            id: action.id,
+            mode: action.id === 'more' ? 'custom' : 'connect',
+            title: action.id === 'more' ? 'Add social media account' : action.label,
+            label: action.id === 'more' ? 'Social media name' : 'Social media link',
+            name: action.name || '',
+            link: action.handle || '',
+            icon: action.icon,
+            iconBg: action.iconBg || '#F6F7FB',
+            iconColor: action.iconColor || '#6B7280',
+            left: clampedCenterX,
+            top,
+            placement: canOpenAbove ? 'top' : 'bottom',
+            nameValue: action.id === 'more' ? '' : action.name || '',
+            linkValue: action.handle || '',
+            error: '',
+        });
+    }, []);
+
+    const submitSocialPopover = useCallback((event) => {
+        event.preventDefault();
+
+        if (!socialPopover) return;
+
+        const linkValue = socialPopover.linkValue.trim();
+        const nameValue = socialPopover.mode === 'custom' ? socialPopover.nameValue.trim() : socialPopover.name;
+
+        if (!nameValue || !linkValue) {
+            setSocialPopover((currentPopover) => (
+                currentPopover
+                    ? { ...currentPopover, error: 'Both fields are required.' }
+                    : currentPopover
+            ));
+            return;
+        }
+
+        if (socialPopover.mode === 'connect') {
+            setSocialConnections((currentConnections) => {
+                const existingConnection = currentConnections.find((connection) => connection.id === socialPopover.id);
+                const nextConnection = {
+                    id: socialPopover.id,
+                    name: socialPopover.name,
+                    handle: linkValue,
+                    icon: socialPopover.icon,
+                    iconBg: socialPopover.iconBg,
+                    iconColor: socialPopover.iconColor,
+                    active: true,
+                };
+
+                if (existingConnection) {
+                    return currentConnections.map((connection) => (
+                        connection.id === socialPopover.id ? nextConnection : connection
+                    ));
+                }
+
+                return [...currentConnections, nextConnection];
+            });
+        } else {
+            const normalizedId = nameValue.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+            setSocialConnections((currentConnections) => {
+                const alreadyExists = currentConnections.some((connection) => connection.id === normalizedId || connection.name.toLowerCase() === nameValue.toLowerCase());
+
+                if (alreadyExists) {
+                    return currentConnections.map((connection) => (
+                        connection.id === normalizedId || connection.name.toLowerCase() === nameValue.toLowerCase()
+                            ? { ...connection, name: nameValue, handle: linkValue, active: true }
+                            : connection
+                    ));
+                }
+
+                return [
+                    ...currentConnections,
+                    {
+                        id: normalizedId || `custom-${Date.now()}`,
+                        name: nameValue,
+                        handle: linkValue,
+                        icon: <span className="hoas-social-plus">+</span>,
+                        iconBg: '#F6F7FB',
+                        iconColor: '#6B7280',
+                        active: true,
+                    },
+                ];
+            });
+        }
+
+        setSaved((currentSaved) => ({ ...currentSaved, social: true }));
+        closeSocialPopover();
+    }, [closeSocialPopover, socialPopover]);
+
+    const toggleSocialConnection = useCallback((connectionId, checked) => {
+        setSocialConnections((currentConnections) => currentConnections.map((connection) => (
+            connection.id === connectionId
+                ? { ...connection, active: checked }
+                : connection
+        )));
+        setSaved((currentSaved) => ({ ...currentSaved, social: true }));
+    }, []);
+
+    const removeSocialConnection = useCallback((connectionId) => {
+        setSocialConnections((currentConnections) => currentConnections.filter((connection) => connection.id !== connectionId));
+        setSaved((currentSaved) => ({ ...currentSaved, social: true }));
+    }, []);
+
+    useEffect(() => {
+        if (!socialPopover) return undefined;
+
+        const handlePointerDown = (event) => {
+            if (socialPopoverRef.current && socialPopoverRef.current.contains(event.target)) return;
+            closeSocialPopover();
+        };
+
+        const handleKeyDown = (event) => {
+            if (event.key === 'Escape') closeSocialPopover();
+        };
+
+        document.addEventListener('mousedown', handlePointerDown);
+        document.addEventListener('keydown', handleKeyDown);
+
+        return () => {
+            document.removeEventListener('mousedown', handlePointerDown);
+            document.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [closeSocialPopover, socialPopover]);
+
+    // Scroll within the .learners-main container to avoid over-scrolling the
+    // window/body which creates empty space at the bottom for bottom sections.
+    const scrollWithinContainer = (el) => {
+        if (!el) return;
+        const container = el.closest('.learners-main') || el.closest('[class*="contents-sec"]') || el.closest('[style*="overflow"]');
+        if (container) {
+            const containerTop = container.getBoundingClientRect().top;
+            const elTop = el.getBoundingClientRect().top;
+            const offset = elTop - containerTop + container.scrollTop - 16; // 16px breathing room
+            container.scrollTo({ top: offset, behavior: 'smooth' });
+        } else {
+            el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+    };
+
+    const scrollToSection = (id) => {
+        // For payment sub-tabs, switch the tab and scroll to the payment section
+        if (id === 'payment-mtn') {
+            setSelectedGateway('mtn');
+            setActiveSection('payment-mtn');
+            setTimeout(() => scrollWithinContainer(sectionRefs.current['payment']), 0);
+        } else if (id === 'payment-airtel') {
+            setSelectedGateway('airtel');
+            setActiveSection('payment-airtel');
+            setTimeout(() => scrollWithinContainer(sectionRefs.current['payment']), 0);
+        } else if (id === 'payment-card') {
+            setSelectedGateway('card');
+            setActiveSection('payment-card');
+            setTimeout(() => scrollWithinContainer(sectionRefs.current['payment']), 0);
+        } else {
+            setActiveSection(id);
+            setTimeout(() => scrollWithinContainer(sectionRefs.current[id]), 0);
+        }
+    };
+
+    // Scroll spy
+    useEffect(() => {
+        const observer = new IntersectionObserver(
+            (entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const section = entry.target.dataset.section;
+                        // When scrolling to the payment section, mirror active to the right tab key
+                        if (section === 'payment') {
+                            const tabKey = selectedGateway === 'mtn' ? 'payment-mtn'
+                                : selectedGateway === 'airtel' ? 'payment-airtel'
+                                : 'payment-card';
+                            setActiveSection(tabKey);
+                        } else {
+                            setActiveSection(section);
+                        }
+                    }
+                });
+            },
+            { rootMargin: '-30% 0px -60% 0px', threshold: 0 }
+        );
+
+        Object.values(sectionRefs.current).forEach(el => el && observer.observe(el));
+        return () => observer.disconnect();
+    }, []);
+
+
+    return (
+        <LearnersPageShell>
+            <div className="hoas-page-wrapper">
+
+                {/* Page Header */}
+                <div className="hoas-page-header">
+                    <div>
+                        <h1>Platform Settings</h1>
+                        <p className="hoas-page-subtitle">Manage your platform configuration and preferences</p>
                     </div>
-                </button>
-                <ul className="dropdown-menu w-100 shadow-sm border-0">
-                    {languageOptions.map((option) => (
-                      <li key={option.value}>
-                        <button className="dropdown-item" type="button" onClick={() => setPreferencesState((currentState) => ({ ...currentState, language: option.value }))}>
-                          {option.icon} {option.label}
+                    <div className="hoas-header-actions">
+                        <span className="hoas-update-status">
+                            <img src={hoarefresh} alt="Refresh" className="hoas-sync-icon" />
+                            Data updated every 5min
+                            <span className="hoas-dot" />
+                        </span>
+                        <button className="hoas-btn-primary">
+                            Go to website <img src={hoagoto} alt="Go" />
                         </button>
-                      </li>
-                    ))}
-                </ul>
-                </div>
-            </div>
-            </div>
-
-            {/* Time zone */}
-            <div className="learners-account-field-row">
-            <label>Time zone</label>
-            <div className="learners-account-field-control">
-                <div className="dropdown w-100">
-                <button className="btn pref-bs-dropdown w-100 d-flex align-items-center dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                    <span>{timezoneOptions.find((option) => option.value === preferencesState.timezone)?.label || timezoneOptions[0].label}</span>
-                </button>
-                <ul className="dropdown-menu w-100 shadow-sm border-0">
-                    {timezoneOptions.map((option) => (
-                      <li key={option.value}>
-                        <button className="dropdown-item" type="button" onClick={() => setPreferencesState((currentState) => ({ ...currentState, timezone: option.value }))}>
-                          {option.label}
-                        </button>
-                      </li>
-                    ))}
-                </ul>
-                </div>
-            </div>
-            </div>
-
-            {/* Currency */}
-            <div className="learners-account-field-row">
-            <label>Currency</label>
-            <div className="learners-account-field-control">
-                <div className="dropdown w-100">
-                <button className="btn pref-bs-dropdown w-100 d-flex align-items-center dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                    <div className="d-flex align-items-center gap-2">
-                    <span className="pref-icon currency-badge">{currencyOptions.find((option) => option.value === preferencesState.currency)?.icon || '$'}</span>
-                    <span>{currencyOptions.find((option) => option.value === preferencesState.currency)?.label || 'United States Dollar (USD)'}</span>
-                    </div>
-                </button>
-                <ul className="dropdown-menu w-100 shadow-sm border-0">
-                    {currencyOptions.map((option) => (
-                      <li key={option.value}>
-                        <button className="dropdown-item" type="button" onClick={() => setPreferencesState((currentState) => ({ ...currentState, currency: option.value }))}>
-                          {option.icon} {option.label}
-                        </button>
-                      </li>
-                    ))}
-                </ul>
-                </div>
-            </div>
-            </div>
-
-            {/* Attributes */}
-            <div className="learners-account-field-row align-top">
-            <label>Attributes</label>
-            <div className="learners-account-field-control pref-checkbox-group">
-                
-                <label className="pref-checkbox-wrapper">
-                <input type="checkbox" checked={preferencesState.showListNames} onChange={(event) => setPreferencesState((currentState) => ({ ...currentState, showListNames: event.target.checked }))} />
-                <span className="pref-checkmark"></span>
-                <div className="pref-check-text">
-                    <strong>Show list names</strong>
-                    <p>See the name next to each icon</p>
-                </div>
-                </label>
-
-                <label className="pref-checkbox-wrapper">
-                <input type="checkbox" checked={preferencesState.showLinkedTaskNames} onChange={(event) => setPreferencesState((currentState) => ({ ...currentState, showLinkedTaskNames: event.target.checked }))} />
-                <span className="pref-checkmark"></span>
-                <div className="pref-check-text">
-                    <strong>Show linked task names</strong>
-                    <p>Show task names next to ids for linked project tasks.</p>
-                </div>
-                </label>
-
-            </div>
-            </div>
-
-            {/* Email visibility */}
-            <div className="learners-account-field-row">
-            <label>Email visibility</label>
-            <div className="learners-account-field-control">
-                <div className="pref-toggle-inline">
-                <button type="button" className={getSwitchClassName('prefEmailVisible')} aria-pressed={switchState.prefEmailVisible} onClick={() => {
-                  toggleSwitch('prefEmailVisible');
-                  setPreferencesState((currentState) => ({ ...currentState, emailVisibility: !currentState.emailVisibility }));
-                }}>
-                    <span />
-                </button>
-                <span className="pref-toggle-text">Visible</span>
-                </div>
-            </div>
-            </div>
-
-            <div className="learners-account-section-actions">
-            <button type="button" className="learners-account-save-btn" onClick={handlePreferencesSave} disabled={preferencesSaving}>
-              {preferencesSaving ? 'Saving...' : 'Save Changes'}
-            </button>
-            </div>
-
-        </div>
-        </section>
-
-        {/* Notifications */}
-        <section 
-        className="learners-account-section"
-          data-section-key="notifications"
-          ref={(element) => {
-            sectionRefs.current.notifications = element;
-          }}
-        >
-        <header>
-            <h2>Notifications</h2>
-        </header>
-        <div className="learners-account-section-body">
-
-            {/* Top Notification Cards */}
-            <div className="notif-top-cards">
-            
-            {/* Email Card */}
-            <div className="notif-card">
-                <div className="notif-icon-wrap">
-                <img src={nott1Icon} alt="Email" />
-                </div>
-                <div className="notif-info">
-                <strong>Email</strong>
-                <span>Tailor Your Email Preferences.</span>
-                </div>
-                <button type="button" className={getSwitchClassName('notifEmail')} aria-pressed={switchState.notifEmail} onClick={() => toggleSwitch('notifEmail')}>
-                <span />
-                </button>
-            </div>
-
-            {/* Messages Card */}
-            <div className="notif-card">
-                <div className="notif-icon-wrap">
-                <img src={nott2Icon} alt="Messages" />
-                </div>
-                <div className="notif-info">
-                <strong>Messages</strong>
-                <span>Stay Updated on Mobile.</span>
-                </div>
-                <button type="button" className={getSwitchClassName('notifMessages')} aria-pressed={switchState.notifMessages} onClick={() => toggleSwitch('notifMessages')}>
-                <span />
-                </button>
-            </div>
-
-            </div>
-
-            {/* Project Notifications */}
-            <div className="notif-group">
-            <h3>Project notifications</h3>
-            <div className="notif-options">
-                <label className="custom-radio">
-                <input type="radio" name="project_notif" value="all" />
-                <span className="radio-mark"></span>
-                <span className="radio-text">All new messages (Recommended)</span>
-                </label>
-                
-                <label className="custom-radio">
-                <input type="radio" name="project_notif" value="direct_hiring" />
-                <span className="radio-mark"></span>
-                <span className="radio-text">Direct @mentions & Hiring</span>
-                </label>
-                
-                <label className="custom-radio">
-                <input type="radio" name="project_notif" value="direct" />
-                <span className="radio-mark"></span>
-                <span className="radio-text">Only Direct @mentions</span>
-                </label>
-                
-                <label className="custom-radio">
-                <input type="radio" name="project_notif" value="hiring" />
-                <span className="radio-mark"></span>
-                <span className="radio-text">Only Hiring</span>
-                </label>
-                
-                <label className="custom-radio">
-                <input type="radio" name="project_notif" value="disabled" defaultChecked />
-                <span className="radio-mark"></span>
-                <span className="radio-text">Disabled</span>
-                </label>
-            </div>
-            </div>
-
-            {/* Email Notifications */}
-            <div className="notif-group">
-            <h3>Email notifications</h3>
-            <div className="notif-options">
-                <label className="custom-radio">
-                <input type="radio" name="email_notif" value="all" />
-                <span className="radio-mark"></span>
-                <span className="radio-text">All new messages and statuses</span>
-                </label>
-                
-                <label className="custom-radio">
-                <input type="radio" name="email_notif" value="unread" defaultChecked />
-                <span className="radio-mark"></span>
-                <span className="radio-text">Unread messages and statuses () Recommended</span>
-                </label>
-                
-                <label className="custom-radio">
-                <input type="radio" name="email_notif" value="disabled" />
-                <span className="radio-mark"></span>
-                <span className="radio-text">Disabled</span>
-                </label>
-            </div>
-            </div>
-
-            {/* Subscriptions */}
-            <div className="notif-group">
-            <h3>Subscriptions</h3>
-            <div className="notif-options">
-                <label className="custom-checkbox-square">
-              <input type="checkbox" checked={switchState.notifSubscribe} onChange={handleCheckboxChange('notifSubscribe')} />
-                <span className="check-mark-square"></span>
-                <span className="check-text">Automatically subscribe to tasks you create</span>
-                </label>
-            </div>
-            </div>
-
-            <div className="learners-account-section-actions">
-            <button type="button" className="learners-account-save-btn">
-                Save Changes
-            </button>
-            </div>
-
-        </div>
-        </section>
-
-        {/* Address */}
-        <section
-          className="learners-account-section"
-          data-section-key="address"
-          ref={(element) => {
-            sectionRefs.current.address = element;
-          }}
-        >
-          <header>
-            <h2>Address</h2>
-          </header>
-          <div className="learners-account-section-body">
-            <div className="learners-account-field-row">
-              <label>Address</label>
-              <div className="learners-account-field-control">
-                <input
-                  type="text"
-                  value={addressProfile.address}
-                  onChange={(event) => setAddressProfile((currentState) => ({ ...currentState, address: event.target.value }))}
-                  placeholder="Avinguda imaginària, 789"
-                />
-              </div>
-            </div>
-            <div className="learners-account-field-row">
-              <label>Country</label>
-              <div className="learners-account-field-control">
-                <input
-                  type="text"
-                  value={addressProfile.country}
-                  onChange={(event) => setAddressProfile((currentState) => ({ ...currentState, country: event.target.value }))}
-                  placeholder="Spain"
-                />
-              </div>
-            </div>
-            <div className="learners-account-field-row">
-              <label>State</label>
-              <div className="learners-account-field-control">
-                <input
-                  type="text"
-                  value={addressProfile.state}
-                  onChange={(event) => setAddressProfile((currentState) => ({ ...currentState, state: event.target.value }))}
-                  placeholder="Barcelona"
-                />
-              </div>
-            </div>
-            <div className="learners-account-field-row">
-              <label>City</label>
-              <div className="learners-account-field-control">
-                <input
-                  type="text"
-                  value={addressProfile.city}
-                  onChange={(event) => setAddressProfile((currentState) => ({ ...currentState, city: event.target.value }))}
-                  placeholder="Barcelona"
-                />
-              </div>
-            </div>
-            <div className="learners-account-field-row">
-              <label>Postcode</label>
-              <div className="learners-account-field-control">
-                <input
-                  type="text"
-                  value={addressProfile.postcode}
-                  onChange={(event) => setAddressProfile((currentState) => ({ ...currentState, postcode: event.target.value }))}
-                  placeholder="08012"
-                />
-              </div>
-            </div>
-
-            <div className="learners-account-section-actions">
-              <button type="button" className="learners-account-save-btn" onClick={handleAddressSave} disabled={addressSaving}>
-                <img src={acSav} alt="" /> {addressSaving ? 'Saving...' : 'Save Changes'}
-              </button>
-            </div>
-          </div>
-        </section>
-
-        {/* Appearance */}
-        <section
-          className="learners-account-section"
-          data-section-key="appearance"
-          ref={(element) => {
-            sectionRefs.current.appearance = element;
-          }}
-        >
-        <header>
-            <h2>Appearance</h2>
-        </header>
-        <div className="learners-account-section-body appearance-body">
-
-            {/* Theme Mode Selection */}
-            <div className="theme-mode-section">
-            <div className="theme-mode-header">
-                <strong>Theme mode</strong>
-                <p>Select or customize your ui theme</p>
-            </div>
-
-            <div className="theme-options-grid">
-                
-                {/* Dark Theme (Active) */}
-                <button type="button" className="theme-option-card is-active">
-                <div className="theme-img-wrap">
-                    <img src={themeDarkImg} alt="Dark Theme" />
-                    <div className="theme-active-check">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <circle cx="12" cy="12" r="10" fill="#22C55E"/>
-                        <path d="M8 12L11 15L16 9" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
                     </div>
                 </div>
-                <span>Dark</span>
-                </button>
 
-                {/* Light Theme */}
-                <button type="button" className="theme-option-card">
-                <div className="theme-img-wrap">
-                    <img src={themeLightImg} alt="Light Theme" />
-                </div>
-                <span>Light</span>
-                </button>
+                <div className="hoas-layout-container">
 
-                {/* System Theme */}
-                <button type="button" className="theme-option-card">
-                <div className="theme-img-wrap">
-                    <img src={themeSystemImg} alt="System Theme" />
-                </div>
-                <span>System</span>
-                </button>
+                    {/* ── Left sticky nav ── */}
+                    <div className="hoas-settings-nav">
+                        <h2 className="hoas-settings-title">Settings</h2>
+                        {NAV_CATEGORIES.map(category => (
+                            <div key={category.title} className="hoas-nav-category">
+                                <h3 className="hoas-nav-category-title">{category.title}</h3>
+                                <ul className="hoas-nav-list">
+                                    {category.items.map((nav) => (
+                                        <li key={nav.id}>
+                                            <button
+                                                className={`hoas-nav-btn ${activeSection === nav.id ? 'active' : ''}`}
+                                                onClick={() => scrollToSection(nav.id)}
+                                            >
+                                                <span className="hoas-step-icon">
+                                                    {saved[nav.id] ? <IconChecked /> : <IconUnchecked />}
+                                                </span>
+                                                <span className="hoas-nav-label">{nav.label}</span>
+                                            </button>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        ))}
+                    </div>
 
-            </div>
-            </div>
+                    {/* ── Main Content ── */}
+                    <div className="hoas-content-area">
 
-            <hr className="appearance-divider" />
+                        {/* ── 1. Basic Settings ── */}
+                        <SectionCard id="general" title="Basic Settings" saved={saved['general']} onSave={() => handleSave('general')} sectionRef={el => sectionRefs.current['general'] = el}>
+                            <div className="hoas-form-horizontal-row">
+                                <label className="hoas-form-horizontal-label">Client ID</label>
+                                <div className="hoas-form-horizontal-control">
+                                    <input type="text" defaultValue="03-ACA-02-2026-000001" />
+                                </div>
+                            </div>
 
-            {/* Transparent Sidebar */}
-            <div className="learners-account-field-row align-top appearance-sidebar-row">
-            <label>Transparent sidebar</label>
-            <div className="learners-account-field-control sidebar-toggle-control">
-                <div className="sidebar-toggle-wrap">
-                <span className="toggle-status">Active</span>
-                <button type="button" className={getSwitchClassName('appearanceSidebar')} aria-pressed={switchState.appearanceSidebar} onClick={() => toggleSwitch('appearanceSidebar')}>
-                  <span />
-                </button>
-                </div>
-                <p className="appearance-desc">
-                Toggle the transparent sidebar for a sleek interface. Switch it on for transparency or off for a solid background.
-                </p>
-            </div>
-            </div>
+                            <div className="hoas-form-horizontal-row">
+                                <label className="hoas-form-horizontal-label">Photo</label>
+                                <div className="hoas-form-horizontal-control">
+                                    <div style={{ width: '100%' }}>
+                                        <div className="hoas-photo-upload-area">
+                                            <span className="hoas-photo-info">150×150px JPEG, PNG Image</span>
+                                            <div className="hoas-photo-preview">
+                                                <div className="hoas-photo-inner">
+                                                    <img src={uploadedPhoto || "/assets/imgs/default-profile.png"} alt="Profile" />
+                                                    <label className="hoas-photo-camera-overlay">
+                                                        <IconCamera />
+                                                        <input
+                                                            type="file"
+                                                            accept="image/png, image/jpeg"
+                                                            style={{ display: 'none' }}
+                                                            onChange={(e) => {
+                                                                const file = e.target.files && e.target.files[0];
+                                                                if (file) {
+                                                                    if (file.size > 1048576) {
+                                                                        setUploadError('File size exceeds 1MB. Please choose a smaller image.');
+                                                                        return;
+                                                                    }
+                                                                    setUploadError('');
+                                                                    setUploadedPhoto(URL.createObjectURL(file));
+                                                                }
+                                                            }}
+                                                        />
+                                                    </label>
+                                                </div>
+                                                {uploadedPhoto && (
+                                                    <div className="hoas-photo-remove" onClick={() => setUploadedPhoto(null)}>
+                                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                                                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                                                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                                                        </svg>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                        {uploadError && <p className="hoas-photo-error">{uploadError}</p>}
+                                    </div>
+                                </div>
+                            </div>
 
-            <div className="learners-account-section-actions">
-            <button type="button" className="learners-account-save-btn">
-                Save Changes
-            </button>
-            </div>
+                            <div className="hoas-form-horizontal-row">
+                                <label className="hoas-form-horizontal-label">Name</label>
+                                <div className="hoas-form-horizontal-control">
+                                    <input type="text" defaultValue="Jason Tatum" />
+                                </div>
+                            </div>
 
-        </div>
-        </section>
+                            <div className="hoas-form-horizontal-row">
+                                <label className="hoas-form-horizontal-label">Role</label>
+                                <div className="hoas-form-horizontal-control">
+                                    <input type="text" defaultValue="UI/UX Designer" />
+                                </div>
+                            </div>
 
-      </div>
-    </section>
-  );
-}
+                            <div className="hoas-form-horizontal-row">
+                                <label className="hoas-form-horizontal-label">Phone number</label>
+                                <div className="hoas-form-horizontal-control">
+                                    <PhoneInput value={phoneNumber} onChange={setPhoneNumber} />
+                                </div>
+                            </div>
+
+                            <div className="hoas-form-horizontal-row">
+                                <label className="hoas-form-horizontal-label">Visibility</label>
+                                <div className="hoas-form-horizontal-control">
+                                    <CustomDropdown
+                                        value={visibility}
+                                        onChange={setVisibility}
+                                        options={[
+                                            { value: 'public', label: 'Public' },
+                                            { value: 'private', label: 'Private' },
+                                            { value: 'unlisted', label: 'Unlisted' },
+                                        ]}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="hoas-form-horizontal-row">
+                                <label className="hoas-form-horizontal-label">Availability</label>
+                                <div className="hoas-form-horizontal-control">
+                                    <div className="hoas-availability-area">
+                                        <span className="hoas-availability-text">Available to hire</span>
+                                        <Toggle checked={publicProfile} onChange={e => setPublicProfile(e.target.checked)} />
+                                    </div>
+                                </div>
+                            </div>
+                        </SectionCard>
+
+                        {/* ── Email ── */}
+                        <SectionCard id="email" title="Email" saved={saved['email']} onSave={() => handleSave('email')} sectionRef={el => sectionRefs.current['email'] = el}>
+                            <div className="hoas-form-horizontal-row">
+                                <label className="hoas-form-horizontal-label">Email</label>
+                                <div className="hoas-form-horizontal-control">
+                                    <input
+                                        type="email"
+                                        value={emailAddress}
+                                        onChange={e => setEmailAddress(e.target.value)}
+                                        placeholder="jasontatum@gonaraza.com"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="hoas-form-horizontal-row" style={{ alignItems: 'center', minHeight: 0, marginBottom: '6px' }}>
+                                <label className="hoas-form-horizontal-label" />
+                                <div className="hoas-form-horizontal-control">
+                                    <div className="hoas-email-toggles">
+                                        <div className="hoas-email-toggle-item">
+                                            <span className="hoas-email-toggle-label">System Updates</span>
+                                            <Toggle checked={emailSystemUpdates} onChange={e => setEmailSystemUpdates(e.target.checked)} />
+                                        </div>
+                                        <div className="hoas-email-toggle-item">
+                                            <span className="hoas-email-toggle-label">Primary</span>
+                                            <Toggle checked={emailPrimary} onChange={e => setEmailPrimary(e.target.checked)} />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="hoas-form-horizontal-row" style={{ minHeight: 0, marginBottom: 0 }}>
+                                <label className="hoas-form-horizontal-label" />
+                                <div className="hoas-form-horizontal-control">
+                                    <p className="hoas-email-help-text" style={{ color: "#450468"}}>
+                                        Input your email, designate as primary for priority updates. Toggle to seamlessly customize your communication preferences.
+                                    </p>
+                                </div>
+                            </div>
+                        </SectionCard>
+
+                        {/* ── 2. Documents and Files ── */}
+                        <SectionCard id="documents" title="Documents and Files" saved={saved['documents']} onSave={() => handleSave('documents')} sectionRef={el => sectionRefs.current['documents'] = el} showDiscard={false}>
+                            <input
+                                ref={documentInputRef}
+                                type="file"
+                                className="hoas-doc-upload-input"
+                                multiple
+                                onChange={handleDocumentInputChange}
+                            />
+
+                            <button
+                                type="button"
+                                className={`hoas-doc-upload-zone ${documentDropActive ? 'is-active' : ''}`}
+                                onClick={openDocumentPicker}
+                                onDragOver={handleDocumentDragOver}
+                                onDragLeave={handleDocumentDragLeave}
+                                onDrop={handleDocumentDrop}
+                            >
+                                <div className="hoas-doc-upload-icon">
+                                    <img src={hoadraganddrop} alt="PDF Icon" />
+                                </div>
+                                <div className="hoas-doc-upload-copy">
+                                    <strong>Add Certificates files or Click Upload</strong>
+                                    <span>Upload case files, if any.</span>
+                                </div>
+                            </button>
+
+                            <div className="hoas-doc-file-grid">
+                                {documentFiles.map((file) => (
+                                    <div key={file.id} className="hoas-doc-file-card">
+                                        <button type="button" className="hoas-doc-file-remove" aria-label={`Remove ${file.name}`} onClick={() => removeDocumentFile(file.id)}>
+                                            ×
+                                        </button>
+                                        <div className="hoas-doc-file-icon" aria-hidden="true">
+                                            <img src={hoapdffile} alt="PDF Icon" />
+                                        </div>
+                                        <div className="hoas-doc-file-meta">
+                                            <span className="hoas-doc-file-name">{file.name}</span>
+                                            <span className="hoas-doc-file-size">{file.size}</span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </SectionCard>
+
+
+
+                        {/* ── 3. Social Media Links ── */}
+                        <SectionCard id="social" title="Social Media Links" saved={saved['social']} onSave={() => handleSave('social')} sectionRef={el => sectionRefs.current['social'] = el}>
+                            <div className="hoas-social-card-list">
+                                {socialConnections.map((connection) => (
+                                    <div key={connection.id} className="hoas-social-connection-card">
+                                        <div className="hoas-social-connection-main">
+                                            <div className="hoas-social-icon" >
+                                                {connection.icon}
+                                            </div>
+                                            <div className="hoas-social-connection-copy">
+                                                <span className="hoas-social-connection-name">{connection.name}</span>
+                                                <span className="hoas-social-connection-handle">{connection.handle}</span>
+                                            </div>
+                                        </div>
+                                        <div className="hoas-social-connection-actions">
+                                            <Toggle checked={Boolean(connection.active)} onChange={e => toggleSocialConnection(connection.id, e.target.checked)} />
+                                            <button type="button" className="hoas-social-delete" aria-label={`Remove ${connection.name}`} onClick={() => removeSocialConnection(connection.id)}>
+                                                <img src={hoadelete} alt="Delete" />
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+
+                            <div className="hoas-social-more" ref={socialMoreRef}>
+                                {socialPopover && (
+                                    <div
+                                        ref={socialPopoverRef}
+                                        className={`hoas-social-popover ${socialPopover.placement === 'bottom' ? 'is-below' : ''}`}
+                                        style={{ left: `${socialPopover.left}px`, top: `${socialPopover.top}px` }}
+                                    >
+                                        <div className="hoas-social-popover-header">
+                                            <div className="hoas-social-popover-icon" style={{ background: socialPopover.iconBg, color: socialPopover.iconColor }}>
+                                                {socialPopover.icon}
+                                            </div>
+                                            <div>
+                                                <h4>{socialPopover.title}</h4>
+                                                <p>{socialPopover.mode === 'custom' ? 'Enter a new social profile and link.' : 'Paste the profile link before connecting.'}</p>
+                                            </div>
+                                        </div>
+
+                                        <form className="hoas-social-popover-form" onSubmit={submitSocialPopover}>
+                                            {socialPopover.mode === 'custom' && (
+                                                <label className="hoas-social-popover-field">
+                                                    <span>Social media name</span>
+                                                    <input
+                                                        type="text"
+                                                        value={socialPopover.nameValue}
+                                                        onChange={(event) => setSocialPopover((currentPopover) => currentPopover ? { ...currentPopover, nameValue: event.target.value, error: '' } : currentPopover)}
+                                                        placeholder="Instagram, TikTok, etc."
+                                                    />
+                                                </label>
+                                            )}
+
+                                            <label className="hoas-social-popover-field">
+                                                <span>{socialPopover.label}</span>
+                                                <input
+                                                    type="text"
+                                                    value={socialPopover.linkValue}
+                                                    onChange={(event) => setSocialPopover((currentPopover) => currentPopover ? { ...currentPopover, linkValue: event.target.value, error: '' } : currentPopover)}
+                                                    placeholder="https://..."
+                                                />
+                                            </label>
+
+                                            {socialPopover.error && <p className="hoas-social-popover-error">{socialPopover.error}</p>}
+
+                                            <div className="hoas-social-popover-actions">
+                                                <button type="button" className="hoas-social-popover-cancel" onClick={closeSocialPopover}>Cancel</button>
+                                                <button type="submit" className="hoas-social-popover-submit">Add</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                )}
+
+                                <div className="hoas-social-more-title">More Social connections options</div>
+                                <p className="hoas-social-more-text">Effortless access awaits! Connect seamlessly with your preferred social account.</p>
+                                <div className="hoas-social-actions-row">
+                                    {SOCIAL_CONNECT_ACTIONS.filter((action) => action.id === 'more' || !socialConnections.some((connection) => connection.id === action.id)).map((action) => (
+                                        <button key={action.id} type="button" className="hoas-social-action-btn" onClick={(event) => openSocialPopover(action, event)}>
+                                            <span className="hoas-social-action-icon">{action.icon}</span>
+                                            <span>{action.label}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        </SectionCard>
+
+                        {/* ── 4. Two-Factor Authentication ── */}
+                        <SectionCard
+                            id="twofactor"
+                            title="Two-Factor authentication(2FA)"
+                            saved={saved['twofactor']}
+                            onSave={() => handleSave('twofactor')}
+                            sectionRef={el => sectionRefs.current['twofactor'] = el}
+                            showFooter={false}
+                            headerAction={(
+                                <button type="button" className="hoas-section-header-menu" aria-label="Two-factor actions">
+                                    <IconDotsVertical />
+                                </button>
+                            )}
+                        >
+                            <div className="hoas-2fa-options">
+                                {TWO_FACTOR_OPTIONS.map((option) => {
+                                    const checked = option.id === 'sms' ? twoFactorSMS : twoFactorAuthenticator;
+                                    const onChange = option.id === 'sms' ? setTwoFactorSMS : setTwoFactorAuthenticator;
+
+                                    return (
+                                        <div key={option.id} className="hoas-2fa-option-row">
+                                            <div className="hoas-2fa-option-main">
+                                                <div className="hoas-2fa-option-icon">
+                                                    {option.icon}
+                                                </div>
+                                                <div className="hoas-2fa-option-copy">
+                                                    <span className="hoas-2fa-option-title">{option.label}</span>
+                                                    <p className="hoas-2fa-option-desc">{option.description}</p>
+                                                </div>
+                                            </div>
+                                            <Toggle checked={checked} onChange={e => onChange(e.target.checked)} />
+                                        </div>
+                                    );
+                                })}
+                            </div>
+
+                            <div className="hoas-2fa-password-row">
+                                <label className="hoas-2fa-password-label">Password</label>
+                                <div className="hoas-2fa-password-control">
+                                    <input
+                                        type="password"
+                                        value={twoFactorPassword}
+                                        onChange={e => setTwoFactorPassword(e.target.value)}
+                                        placeholder="Enter password"
+                                    />
+                                    <p>Enter your password to setup Two-Factor authentication</p>
+                                </div>
+                            </div>
+
+                            <div className="hoas-2fa-actions">
+                                <button type="button" className="hoas-btn-save" onClick={() => handleSave('twofactor')}>Setup</button>
+                            </div>
+                        </SectionCard>
+
+                        {/* ── 5. Payment Methods ── */}
+                        <SectionCard
+                            id="payment"
+                            title="Payment Methods"
+                            saved={saved['payment-mtn'] || saved['payment-airtel'] || saved['payment-card']}
+                            onSave={() => handleSave(selectedGateway === 'mtn' ? 'payment-mtn' : selectedGateway === 'airtel' ? 'payment-airtel' : 'payment-card')}
+                            sectionRef={el => sectionRefs.current['payment'] = el}
+                            showFooter={false}
+                        >
+                            {/* Tab switcher */}
+                            <div className="hoas-payment-types">
+                                {[
+                                    { id: 'mtn',    label: 'MTN Mobile Money', icon: '/assets/icons/MTN-pay.svg'},
+                                    { id: 'airtel', label: 'Airtel Money',      icon: '/assets/icons/AIR-pay.svg'},
+                                    { id: 'card',   label: 'Bank Cards',        icon: '/assets/icons/CARD-pay.svg'},
+                                ].map((type) => (
+                                    <button
+                                        key={type.id}
+                                        type="button"
+                                        className={`hoas-payment-type-card ${selectedGateway === type.id ? 'active' : ''}`}
+                                        onClick={() => { setSelectedGateway(type.id); setActiveSection('payment-' + type.id); }}
+                                    >
+                                        <div className="hoas-payment-type-icon" >
+                                            <img src={type.icon} alt={type.label} />
+                                        </div>
+                                        <span>{type.label}</span>
+                                        {selectedGateway === type.id && <span className="hoas-payment-type-active-line" />}
+                                    </button>
+                                ))}
+                            </div>
+
+                            {/* MTN Mobile Money form */}
+                            {selectedGateway === 'mtn' && (
+                                <>
+                                    <div className="hoas-payment-subtitle">Add MTN Mobile Money</div>
+                                    <div className="hoas-payment-form">
+                                        <div className="hoas-payment-field">
+                                            <PaymentFieldLabel hint="Enter the name registered on your MTN SIM card.">SIM Card Name</PaymentFieldLabel>
+                                            <input
+                                                type="text"
+                                                value={paymentSimName}
+                                                onChange={e => setPaymentSimName(e.target.value)}
+                                                placeholder="Max Smith"
+                                            />
+                                        </div>
+                                        <div className="hoas-payment-field hoas-payment-phone-field">
+                                            <PaymentFieldLabel hint="Rwanda MTN numbers start with 078 or 079.">Phone Number <span className="hoas-required">*</span></PaymentFieldLabel>
+                                            <input
+                                                type="tel"
+                                                inputMode="numeric"
+                                                value={paymentPhoneNumber}
+                                                onChange={e => setPaymentPhoneNumber(formatRwandaPhoneNumber(e.target.value))}
+                                                placeholder="07 88 123 456"
+                                                className="hoas-payment-phone-field-input"
+                                            />
+                                        </div>
+                                        <div className="hoas-payment-footer-row">
+                                            <div className="hoas-payment-save-toggle">
+                                                <span className="hoas-toggle-label">Save for future use</span>
+                                                <Toggle checked={savePaymentMethod} onChange={e => setSavePaymentMethod(e.target.checked)} />
+                                            </div>
+                                            <button type="button" className="hoas-btn-save" onClick={() => handleSave('payment-mtn')}>Save Changes</button>
+                                        </div>
+                                    </div>
+                                </>
+                            )}
+
+                            {/* Airtel Money form */}
+                            {selectedGateway === 'airtel' && (
+                                <>
+                                    <div className="hoas-payment-subtitle">Add Airtel Money</div>
+                                    <div className="hoas-payment-form">
+                                        <div className="hoas-payment-field">
+                                            <PaymentFieldLabel hint="Enter the name registered on your Airtel SIM card.">SIM Card Name</PaymentFieldLabel>
+                                            <input
+                                                type="text"
+                                                placeholder="Max Smith"
+                                            />
+                                        </div>
+                                        <div className="hoas-payment-field hoas-payment-phone-field">
+                                            <PaymentFieldLabel hint="Rwanda Airtel numbers start with 073 or 072.">Phone Number <span className="hoas-required">*</span></PaymentFieldLabel>
+                                            <input
+                                                type="tel"
+                                                inputMode="numeric"
+                                                placeholder="07 32 123 456"
+                                                className="hoas-payment-phone-field-input"
+                                            />
+                                        </div>
+                                        <div className="hoas-payment-footer-row">
+                                            <div className="hoas-payment-save-toggle">
+                                                <span className="hoas-toggle-label">Save for future use</span>
+                                                <Toggle checked={savePaymentMethod} onChange={e => setSavePaymentMethod(e.target.checked)} />
+                                            </div>
+                                            <button type="button" className="hoas-btn-save" onClick={() => handleSave('payment-airtel')}>Save Changes</button>
+                                        </div>
+                                    </div>
+                                </>
+                            )}
+
+                            {/* Bank Cards form */}
+                            {selectedGateway === 'card' && (
+                                <>
+                                    <div className="hoas-payment-subtitle">Add Bank Card</div>
+                                    <div className="hoas-payment-form">
+                                        <div className="hoas-payment-field">
+                                            <PaymentFieldLabel hint="Use the name exactly as it appears on the card.">Name On Card <span className="hoas-required">*</span></PaymentFieldLabel>
+                                            <input type="text" value={paymentCardName} onChange={e => setPaymentCardName(e.target.value)} placeholder="Max Smith" />
+                                        </div>
+                                        <div className="hoas-payment-field">
+                                            <PaymentFieldLabel hint="Card brand is detected automatically as you type.">Card Number <span className="hoas-required">*</span></PaymentFieldLabel>
+                                            <div className="hoas-input-with-icon-right hoas-payment-card-number">
+                                                <input
+                                                    type="text"
+                                                    inputMode="numeric"
+                                                    value={paymentCardNumber}
+                                                    onChange={e => {
+                                                        const nextBrand = detectCardBrand(e.target.value);
+                                                        setPaymentCardBrand(nextBrand);
+                                                        setPaymentCardNumber(formatCardNumber(e.target.value, nextBrand));
+                                                    }}
+                                                    placeholder="0000 0000 0000 0000"
+                                                />
+                                                <div className="hoas-card-icons">
+                                                    {(paymentCardBrand === 'visa' || paymentCardBrand === 'unknown') && <img src="/assets/icons/VISA-pay.svg" alt="Visa" height="18" />}
+                                                    {(paymentCardBrand === 'mastercard' || paymentCardBrand === 'unknown') && <img src="/assets/icons/MASTER-PAY.svg" alt="Mastercard" height="18" />}
+                                                    {paymentCardBrand === 'amex' && <span className="hoas-payment-brand-badge">Amex</span>}
+                                                </div>
+                                            </div>
+                                            {paymentCardBrand !== 'unknown' && (
+                                                <p className="hoas-payment-detected-brand">Detected: {paymentCardBrand === 'mastercard' ? 'Mastercard' : paymentCardBrand === 'visa' ? 'Visa' : 'Amex'}</p>
+                                            )}
+                                        </div>
+                                        <div className="hoas-payment-field">
+                                            <PaymentFieldLabel hint="Enter the expiration month and year, plus the CVV security code.">Expiration Date</PaymentFieldLabel>
+                                            <div className="hoas-payment-expiry-grid">
+                                                <div style={{ position: 'relative', width: '100%' }}>
+                                                    <input type="text" style={{ width: '100%' }} value={paymentExpiryMonth} onChange={e => {
+                                                        let val = e.target.value.replace(/\D/g, '');
+                                                        let err = '';
+                                                        if (val.length >= 2) {
+                                                            const m = parseInt(val.substring(0, 2), 10);
+                                                            if (m < 1 || m > 12) err = 'Invalid month';
+                                                            val = val.substring(0, 2) + '/' + val.substring(2, 4);
+                                                        }
+                                                        if (val.length === 5) {
+                                                            const y = parseInt(val.substring(3, 5), 10);
+                                                            const currentYear = new Date().getFullYear() % 100;
+                                                            if (y < currentYear && !err) err = 'Card expired';
+                                                        }
+                                                        setPaymentExpiryMonth(val);
+                                                        setExpiryError(err);
+                                                    }} placeholder="03/27" maxLength="5" />
+                                                    {expiryError && <span style={{ color: '#E32A2A', fontSize: '10.5px', position: 'absolute', left: '4px', bottom: '-16px', whiteSpace: 'nowrap' }}>{expiryError}</span>}
+                                                </div>
+                                                <input type="text" value={paymentCvv} onChange={e => setPaymentCvv(e.target.value)} placeholder="CVV" maxLength="4" />
+                                            </div>
+                                        </div>
+                                        <div className="hoas-payment-footer-row">
+                                            <div className="hoas-payment-save-toggle">
+                                                <span className="hoas-toggle-label">Save for future use</span>
+                                                <Toggle checked={savePaymentMethod} onChange={e => setSavePaymentMethod(e.target.checked)} />
+                                            </div>
+                                            <button type="button" className="hoas-btn-save" onClick={() => handleSave('payment-card')}>Save Changes</button>
+                                        </div>
+                                    </div>
+                                </>
+                            )}
+
+                            <p className="hoas-payment-footnote">
+                                Single Sign-On (SSO) authentication streamlines access across multiple platforms. Users log in once, gaining seamless entry to various systems without repetitive credentials.
+                            </p>
+                        </SectionCard>
+
+                        {/* ── 6. Preferences ── */}
+                        <SectionCard id="preferences" title="Preferences" saved={saved['preferences']} onSave={() => handleSave('preferences')} sectionRef={el => sectionRefs.current['preferences'] = el} showDiscard={false}>
+                            <div className="hoas-preferences-list">
+                                <div className="hoas-form-horizontal-row hoas-preference-row">
+                                    <label className="hoas-form-horizontal-label">Language</label>
+                                    <div className="hoas-form-horizontal-control">
+                                        <CustomDropdown
+                                            value={preferenceLanguage}
+                                            onChange={setPreferenceLanguage}
+                                            options={PREFERENCE_LANGUAGE_OPTIONS}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="hoas-form-horizontal-row hoas-preference-row">
+                                    <label className="hoas-form-horizontal-label">Time zone</label>
+                                    <div className="hoas-form-horizontal-control">
+                                        <CustomDropdown
+                                            value={preferenceTimezone}
+                                            onChange={setPreferenceTimezone}
+                                            options={PREFERENCE_TIMEZONE_OPTIONS}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="hoas-form-horizontal-row hoas-preference-row">
+                                    <label className="hoas-form-horizontal-label">Currency</label>
+                                    <div className="hoas-form-horizontal-control">
+                                        <CustomDropdown
+                                            value={preferenceCurrency}
+                                            onChange={setPreferenceCurrency}
+                                            options={PREFERENCE_CURRENCY_OPTIONS}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="hoas-form-horizontal-row hoas-preference-row hoas-preference-attributes-row">
+                                    <label className="hoas-form-horizontal-label">Attributes</label>
+                                    <div className="hoas-form-horizontal-control">
+                                        <div className="hoas-preference-attributes">
+                                            <label className="hoas-preference-checkbox">
+                                                <input type="checkbox" checked={showListNames} onChange={e => setShowListNames(e.target.checked)} />
+                                                <span className="hoas-preference-checkbox-box">{showListNames ? <IconCheckSquare /> : <IconSquare />}</span>
+                                                <span className="hoas-preference-checkbox-copy">
+                                                    <span className="hoas-preference-checkbox-title">Show list names</span>
+                                                    <span className="hoas-preference-checkbox-desc">See the name next to each icon</span>
+                                                </span>
+                                            </label>
+
+                                            <label className="hoas-preference-checkbox">
+                                                <input type="checkbox" checked={showLinkedTaskNames} onChange={e => setShowLinkedTaskNames(e.target.checked)} />
+                                                <span className="hoas-preference-checkbox-box">{showLinkedTaskNames ? <IconCheckSquare /> : <IconSquare />}</span>
+                                                <span className="hoas-preference-checkbox-copy">
+                                                    <span className="hoas-preference-checkbox-title">Show linked task names</span>
+                                                    <span className="hoas-preference-checkbox-desc">Show task names next to ids for linked project tasks.</span>
+                                                </span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="hoas-form-horizontal-row hoas-preference-row">
+                                    <label className="hoas-form-horizontal-label">Email visibility</label>
+                                    <div className="hoas-form-horizontal-control">
+                                        <div className="hoas-preference-visibility">
+                                            <Toggle checked={emailVisibility} onChange={e => setEmailVisibility(e.target.checked)} />
+                                            <span>{emailVisibility ? 'Visible' : 'Hidden'}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </SectionCard>
+
+                        {/* ── 7. Notifications ── */}
+                        <SectionCard id="notifications" title="Notifications" saved={saved['notifications']} onSave={() => handleSave('notifications')} sectionRef={el => sectionRefs.current['notifications'] = el} showDiscard={false}>
+                            <div className="hoas-notification-top-grid">
+                                <div className="hoas-notification-channel-card">
+                                    <div className="hoas-notification-channel-main">
+                                        <div className="hoas-notification-channel-icon">
+                                            <IconMail />
+                                        </div>
+                                        <div>
+                                            <div className="hoas-notification-channel-title">Email</div>
+                                            <div className="hoas-notification-channel-desc">Tailor Your Email Preferences.</div>
+                                        </div>
+                                    </div>
+                                    <Toggle checked={notificationEmailEnabled} onChange={e => setNotificationEmailEnabled(e.target.checked)} />
+                                </div>
+
+                                <div className="hoas-notification-channel-card">
+                                    <div className="hoas-notification-channel-main">
+                                        <div className="hoas-notification-channel-icon">
+                                            <IconMessage />
+                                        </div>
+                                        <div>
+                                            <div className="hoas-notification-channel-title">Messages</div>
+                                            <div className="hoas-notification-channel-desc">Stay Updated on Mobile.</div>
+                                        </div>
+                                    </div>
+                                    <Toggle checked={notificationMessageEnabled} onChange={e => setNotificationMessageEnabled(e.target.checked)} />
+                                </div>
+                            </div>
+
+                            <div className="hoas-notification-group">
+                                <div className="hoas-notification-group-title">Project notifications</div>
+                                <div className="hoas-notification-radio-list">
+                                    {PROJECT_NOTIFICATION_OPTIONS.map((option) => (
+                                        <label key={option.value} className="hoas-notification-radio-item">
+                                            <input
+                                                type="radio"
+                                                name="project-notifications"
+                                                checked={projectNotifications === option.value}
+                                                onChange={() => setProjectNotifications(option.value)}
+                                            />
+                                            <span className="hoas-notification-radio-dot" />
+                                            <span>{option.label}</span>
+                                        </label>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="hoas-notification-group">
+                                <div className="hoas-notification-group-title">Email notifications</div>
+                                <div className="hoas-notification-radio-list">
+                                    {EMAIL_NOTIFICATION_OPTIONS.map((option) => (
+                                        <label key={option.value} className="hoas-notification-radio-item">
+                                            <input
+                                                type="radio"
+                                                name="email-notifications"
+                                                checked={emailNotifications === option.value}
+                                                onChange={() => setEmailNotifications(option.value)}
+                                            />
+                                            <span className="hoas-notification-radio-dot" />
+                                            <span>{option.label}</span>
+                                        </label>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="hoas-notification-group">
+                                <div className="hoas-notification-group-title">Subscriptions</div>
+                                <label className="hoas-notification-checkbox">
+                                    <input type="checkbox" checked={true} disabled />
+                                    <span className="hoas-notification-checkbox-box">
+                                        <IconCheckSquare />
+                                    </span>
+                                    <span>Automatically subscribe to tasks you create</span>
+                                </label>
+                            </div>
+                        </SectionCard>
+
+
+
+                        {/* ── 10. Address ── */}
+                        <SectionCard id="address" title="Address" saved={saved['address']} onSave={() => handleSave('address')} sectionRef={el => sectionRefs.current['address'] = el} showDiscard={false}>
+                            <div className="hoas-address-form">
+                                <div className="hoas-address-row">
+                                    <label className="hoas-address-label">Address</label>
+                                    <div className="hoas-address-control">
+                                        <input
+                                            type="text"
+                                            value={addrAddress}
+                                            onChange={e => setAddrAddress(e.target.value)}
+                                            placeholder="Street address"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="hoas-address-row">
+                                    <label className="hoas-address-label">Country</label>
+                                    <div className="hoas-address-control">
+                                        <AddressCountrySelect
+                                            value={addrCountry}
+                                            onChange={setAddrCountry}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="hoas-address-row">
+                                    <label className="hoas-address-label">State</label>
+                                    <div className="hoas-address-control">
+                                        <input
+                                            type="text"
+                                            value={addrState}
+                                            onChange={e => setAddrState(e.target.value)}
+                                            placeholder="State"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="hoas-address-row">
+                                    <label className="hoas-address-label">City</label>
+                                    <div className="hoas-address-control">
+                                        <input
+                                            type="text"
+                                            value={addrCity}
+                                            onChange={e => setAddrCity(e.target.value)}
+                                            placeholder="City"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="hoas-address-row">
+                                    <label className="hoas-address-label">Postcode</label>
+                                    <div className="hoas-address-control">
+                                        <input
+                                            type="text"
+                                            value={addrPostcode}
+                                            onChange={e => setAddrPostcode(e.target.value)}
+                                            placeholder="Postcode"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        </SectionCard>
+
+                        {/* ── 11. Appearance ── */}
+                        <SectionCard id="appearance" title="Appearance" saved={saved['appearance']} onSave={() => handleSave('appearance')} sectionRef={el => sectionRefs.current['appearance'] = el} showDiscard={false}>
+                            <div className="hoas-appearance-intro">
+                                <div className="hoas-appearance-intro-title">Theme mode</div>
+                                <p>Select or customize your theme. Drop in your downloaded images below.</p>
+                            </div>
+
+                            <div className="hoas-appearance-theme-grid">
+                                {[
+                                    { id: 'dark',   label: 'Dark',   src: '/assets/themes/theme-dark.png' },
+                                    { id: 'light',  label: 'Light',  src: '/assets/themes/theme-light.png' },
+                                    { id: 'system', label: 'System', src: '/assets/themes/theme-system.png' },
+                                ].map(({ id, label, src }) => (
+                                    <button
+                                        key={id}
+                                        type="button"
+                                        className={`hoas-appearance-theme-card ${appearanceTheme === id ? 'active' : ''}`}
+                                        onClick={() => setAppearanceTheme(id)}
+                                    >
+                                        <div className="hoas-appearance-theme-img-wrap">
+                                            <img
+                                                src={id === 'dark' ? dark_theme : id === 'light' ? light_theme : system_default_theme}
+                                                alt={label}
+                                                className="hoas-appearance-theme-img"
+                                                onError={e => { e.currentTarget.style.display = 'none'; }}
+                                            />
+                                            {appearanceTheme === id && <div className="hoas-appearance-preview-check" />}
+                                        </div>
+                                        <span className="hoas-appearance-theme-label">{label}</span>
+                                    </button>
+                                ))}
+                            </div>
+
+                            <div className="hoas-appearance-toggle-row">
+                                <span className="hoas-appearance-toggle-label">Transparent sidebar</span>
+                                <div className="hoas-appearance-toggle-control">
+                                    <span className="hoas-appearance-toggle-state">
+                                        {transparentSidebar ? 'Active' : 'Inactive'}
+                                    </span>
+                                    <Toggle
+                                        checked={transparentSidebar}
+                                        onChange={e => setTransparentSidebar(e.target.checked)}
+                                    />
+                                </div>
+                                <p className="hoas-appearance-toggle-copy">
+                                    Toggle the transparent sidebar for a sleek interface. Switch it on for transparency or off for a solid background.
+                                </p>
+                            </div>
+                        </SectionCard>
+
+                    </div>{/* end content-area */}
+                </div>{/* end layout-container */}
+            </div>{/* end page-wrapper */}
+        </LearnersPageShell>
+    );
+};
+
+export default LearnerAccount;
