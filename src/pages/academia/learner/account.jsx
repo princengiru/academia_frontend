@@ -225,7 +225,7 @@ const buildSectionCompletion = ({
     ),
     email: hasText(emailAddress),
     documents: Boolean(completion.documents_completed || documentFiles.some((d) => d.isPersisted)),
-    social: socialConnections.some((c) => c.active && hasText(c.handle)),
+    social: socialConnections.some((c) => c.active && hasText(c.url)),
     'payment-mtn': hasMtn,
     'payment-airtel': hasAirtel,
     'payment-card': Boolean(completion.payment_method_completed || hasCard),
@@ -269,33 +269,117 @@ const DOCUMENT_FILES = [
   { name: 'Resume A0.pdf', size: '5.6 MB' },
 ];
 
-const SOCIAL_CONNECT_ACTIONS = [
-  {
-    id: 'x',
-    label: 'Connect X',
-    icon: <IconTwitter />,
+const MAX_CUSTOM_SOCIALS = 3;
+
+const SOCIAL_PLATFORM_CATALOG = {
+  instagram: {
+    aliases: ['instagram', 'ig'],
+    name: 'Instagram',
+    renderIcon: () => <IconInstagram />,
+    iconBg: '#FFF0F6',
+    iconColor: '#F8285A',
+  },
+  facebook: {
+    aliases: ['facebook', 'fb'],
+    name: 'Facebook',
+    renderIcon: () => <IconFacebook />,
+    iconBg: '#EFF4FF',
+    iconColor: '#1877F2',
+  },
+  youtube: {
+    aliases: ['youtube', 'yt'],
+    name: 'YouTube',
+    renderIcon: () => <img src={hoayoutube} alt="Youtube" />,
+    iconBg: '#FFF2F2',
+    iconColor: '#FF0000',
+  },
+  linkedin: {
+    aliases: ['linkedin', 'li', 'in'],
+    name: 'LinkedIn',
+    renderIcon: () => <IconLinkedIn />,
+    iconBg: '#EFF6FF',
+    iconColor: '#1B84FF',
+  },
+  x: {
+    aliases: ['x', 'twitter'],
     name: 'X',
-    handle: 'x.com/gonaraza',
+    renderIcon: () => <IconTwitter />,
     iconBg: '#F5F5F5',
     iconColor: '#111111',
   },
+};
+
+const resolveSocialPlatformKey = (value) => {
+  const key = String(value || '').toLowerCase().trim();
+  if (!key) return null;
+
+  for (const [canonical, config] of Object.entries(SOCIAL_PLATFORM_CATALOG)) {
+    if (canonical === key || config.aliases.includes(key)) return canonical;
+  }
+
+  return null;
+};
+
+const getSocialPlatformConfig = (platformKey) => {
+  const resolved = resolveSocialPlatformKey(platformKey);
+  return resolved ? { id: resolved, ...SOCIAL_PLATFORM_CATALOG[resolved] } : null;
+};
+
+const renderSocialIcon = (platformKey, isCustom = false) => {
+  const config = getSocialPlatformConfig(platformKey);
+  if (!isCustom && config) return config.renderIcon();
+  return <IconGlobe />;
+};
+
+const isValidHttpUrl = (value) => {
+  try {
+    const parsed = new URL(String(value).trim());
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+  } catch {
+    return false;
+  }
+};
+
+const SOCIAL_CONNECT_ACTIONS = [
   {
-    id: 'youtube',
-    label: 'Connect Youtube',
-    icon: <img src={hoayoutube} alt="Youtube" />,
-    name: 'YouTube',
-    handle: 'youtube.com/@gonaraza',
-    iconBg: '#FFF2F2',
-    iconColor: '#FF0000',
+    id: 'instagram',
+    label: 'Connect Instagram',
+    name: 'Instagram',
+    icon: <IconInstagram />,
+    iconBg: '#FFF0F6',
+    iconColor: '#F8285A',
   },
   {
     id: 'facebook',
     label: 'Connect Facebook',
-    icon: <IconFacebook />,
     name: 'Facebook',
-    handle: 'facebook.com/gonaraza',
+    icon: <IconFacebook />,
     iconBg: '#EFF4FF',
     iconColor: '#1877F2',
+  },
+  {
+    id: 'youtube',
+    label: 'Connect Youtube',
+    name: 'YouTube',
+    icon: <img src={hoayoutube} alt="Youtube" />,
+    iconBg: '#FFF2F2',
+    iconColor: '#FF0000',
+  },
+  {
+    id: 'linkedin',
+    label: 'Connect LinkedIn',
+    name: 'LinkedIn',
+    icon: <IconLinkedIn />,
+    iconBg: '#EFF6FF',
+    iconColor: '#1B84FF',
+  },
+  {
+    id: 'x',
+    label: 'Connect X',
+    name: 'X',
+    icon: <IconTwitter />,
+    iconBg: '#F5F5F5',
+    iconColor: '#111111',
   },
   {
     id: 'more',
@@ -357,26 +441,15 @@ const EMAIL_NOTIFICATION_OPTIONS = [
   { value: 'disabled', label: 'Disabled' },
 ];
 
-const INITIAL_SOCIAL_CONNECTIONS = [
-  {
-    id: 'ig',
-    name: 'Instagram',
-    handle: 'jasontatum@gonaraza.com',
-    icon: <IconInstagram />,
-    iconBg: '#FFF0F6',
-    iconColor: '#F8285A',
-    active: true,
-  },
-  {
-    id: 'li',
-    name: 'LinkedIn',
-    handle: 'jasont@keenthemes.co',
-    icon: <IconLinkedIn />,
-    iconBg: '#EFF6FF',
-    iconColor: '#1B84FF',
-    active: false,
-  },
-];
+const getPaymentMethodForGateway = (methods, gateway) => {
+  if (gateway === 'mtn') {
+    return methods.find((method) => method.paymentType === 'mobile_money');
+  }
+  if (gateway === 'airtel') {
+    return methods.find((method) => method.paymentType === 'airtel_money');
+  }
+  return methods.find((method) => method.paymentType === 'bank_card');
+};
 
 const formatFileSize = (bytes) => {
   if (bytes === 0) return '0 B';
@@ -426,6 +499,13 @@ const formatCardNumber = (value, brand) => {
     })
     .filter(Boolean)
     .join(' ');
+};
+
+const isMaskedValue = (value) => typeof value === 'string' && value.includes('*');
+
+const extractPaymentDigits = (value) => {
+  if (isMaskedValue(value)) return '';
+  return String(value || '').replace(/\D/g, '');
 };
 
 // ─── Country Data (all world countries) ───────────────────────────────────────
@@ -866,8 +946,8 @@ const SectionCard = ({ id, title, children, saved, onSave, sectionRef, showDisca
       {children}
       {showFooter && (
         <div className="hoas-section-footer">
-          {showDiscard && <button className="hoas-btn-discard">Discard</button>}
-          <button className="hoas-btn-save" onClick={onSave}>
+          {showDiscard && <button type="button" className="hoas-btn-discard">Discard</button>}
+          <button type="button" className="hoas-btn-save" onClick={onSave}>
             Save Changes
           </button>
         </div>
@@ -954,16 +1034,18 @@ const LearnerAccount = () => {
   const [twoFactorPassword, setTwoFactorPassword] = useState('');
 
   // Payments
-  const [savePaymentMethod, setSavePaymentMethod] = useState(true);
+  const [savePaymentMethod, setSavePaymentMethod] = useState(false);
   const [paymentSimName, setPaymentSimName] = useState('');
   const [paymentCardName, setPaymentCardName] = useState('');
   const [paymentCardNumber, setPaymentCardNumber] = useState('');
   const [paymentCardBrand, setPaymentCardBrand] = useState('unknown');
   const [paymentExpiryMonth, setPaymentExpiryMonth] = useState('');
   const [paymentCvv, setPaymentCvv] = useState('');
+  const [cardNumberIsMasked, setCardNumberIsMasked] = useState(false);
+  const [cvvIsMasked, setCvvIsMasked] = useState(false);
+  const [phoneNumberIsMasked, setPhoneNumberIsMasked] = useState(false);
   const [expiryError, setExpiryError] = useState('');
   const [paymentPhoneNumber, setPaymentPhoneNumber] = useState('');
-  const [paymentAccountNumber, setPaymentAccountNumber] = useState('');
   const [savedPaymentMethods, setSavedPaymentMethods] = useState([]);
 
   // Preferences
@@ -981,7 +1063,7 @@ const LearnerAccount = () => {
   const [emailNotifications, setEmailNotifications] = useState('unread-statuses');
   const [autoSubscribeTasks, setAutoSubscribeTasks] = useState(true);
 
-  const [socialConnections, setSocialConnections] = useState(INITIAL_SOCIAL_CONNECTIONS);
+  const [socialConnections, setSocialConnections] = useState([]);
   const [socialPopover, setSocialPopover] = useState(null);
 
   const getToken = () => localStorage.getItem('token');
@@ -1050,6 +1132,7 @@ const LearnerAccount = () => {
     accountNumber: m.accountNumber || m.account_number || null,
     phoneNumber: m.phoneNumber || m.phone_number || null,
     cardLastFour: m.cardLastFour || m.card_last_four || null,
+    cardCvv: m.cardCvv || m.card_cvv || null,
     expiryDate: m.expiryDate || m.expiry_date || null,
     isPrimary: Boolean(m.isPrimary ?? m.is_primary),
     isActive: Boolean(m.isActive ?? m.is_active),
@@ -1173,17 +1256,18 @@ const LearnerAccount = () => {
 
         // Social links -> socialConnections list
         const links = Array.isArray(socialRes?.data?.links) ? socialRes.data.links : [];
-        if (links.length) {
-          setSocialConnections(links.map((l) => ({
-            id: l.platform_key,
-            name: l.display_name || l.platform_key,
-            handle: l.url,
-            icon: <span className="hoas-social-plus">+</span>,
-            iconBg: '#F6F7FB',
-            iconColor: '#6B7280',
-            active: Boolean(l.is_active),
-          })));
-        }
+        setSocialConnections(links.map((link) => {
+          const platformKey = resolveSocialPlatformKey(link.platform_key) || link.platform_key;
+          const config = getSocialPlatformConfig(platformKey);
+          return {
+            id: platformKey,
+            platformKey,
+            name: link.display_name || config?.name || link.platform_key,
+            url: link.url,
+            active: Boolean(link.is_active),
+            isCustom: !resolveSocialPlatformKey(link.platform_key),
+          };
+        }));
 
         // Notifications
         const ns = notifRes?.data?.settings;
@@ -1226,11 +1310,11 @@ const LearnerAccount = () => {
     try {
       setProfileSaving(true);
       const payload = {
-        links: socialConnections.map((c) => ({
-          platformKey: String(c.id),
-          displayName: c.name,
-          url: c.handle,
-          isActive: Boolean(c.active),
+        links: socialConnections.map((connection) => ({
+          platformKey: String(connection.platformKey || connection.id),
+          displayName: connection.name,
+          url: connection.url,
+          isActive: Boolean(connection.active),
         })),
       };
       await apiFetch('/api/profile/social-links', { method: 'PUT', body: JSON.stringify(payload) });
@@ -1409,9 +1493,8 @@ const LearnerAccount = () => {
       id: action.id,
       mode: action.id === 'more' ? 'custom' : 'connect',
       title: action.id === 'more' ? 'Add social media account' : action.label,
-      label: action.id === 'more' ? 'Social media name' : 'Social media link',
+      label: action.id === 'more' ? 'Profile URL' : 'Profile URL',
       name: action.name || '',
-      link: action.handle || '',
       icon: action.icon,
       iconBg: action.iconBg || '#F6F7FB',
       iconColor: action.iconColor || '#6B7280',
@@ -1419,7 +1502,7 @@ const LearnerAccount = () => {
       top,
       placement: canOpenAbove ? 'top' : 'bottom',
       nameValue: action.id === 'more' ? '' : action.name || '',
-      linkValue: action.handle || '',
+      linkValue: '',
       error: '',
     });
   }, []);
@@ -1431,32 +1514,55 @@ const LearnerAccount = () => {
 
     const linkValue = socialPopover.linkValue.trim();
     const nameValue = socialPopover.mode === 'custom' ? socialPopover.nameValue.trim() : socialPopover.name;
+    const customCount = socialConnections.filter((connection) => connection.isCustom).length;
 
     if (!nameValue || !linkValue) {
       setSocialPopover((currentPopover) => (
         currentPopover
-          ? { ...currentPopover, error: 'Both fields are required.' }
+          ? { ...currentPopover, error: 'Please fill in all required fields.' }
+          : currentPopover
+      ));
+      return;
+    }
+
+    if (!isValidHttpUrl(linkValue)) {
+      setSocialPopover((currentPopover) => (
+        currentPopover
+          ? { ...currentPopover, error: 'Enter a valid URL starting with http:// or https://.' }
+          : currentPopover
+      ));
+      return;
+    }
+
+    if (socialPopover.mode === 'custom' && customCount >= MAX_CUSTOM_SOCIALS) {
+      setSocialPopover((currentPopover) => (
+        currentPopover
+          ? { ...currentPopover, error: `You can add up to ${MAX_CUSTOM_SOCIALS} custom social profiles.` }
           : currentPopover
       ));
       return;
     }
 
     if (socialPopover.mode === 'connect') {
+      const platformKey = resolveSocialPlatformKey(socialPopover.id) || socialPopover.id;
       setSocialConnections((currentConnections) => {
-        const existingConnection = currentConnections.find((connection) => connection.id === socialPopover.id);
+        const existingConnection = currentConnections.find((connection) => (
+          resolveSocialPlatformKey(connection.platformKey || connection.id) === platformKey
+        ));
         const nextConnection = {
-          id: socialPopover.id,
+          id: platformKey,
+          platformKey,
           name: socialPopover.name,
-          handle: linkValue,
-          icon: socialPopover.icon,
-          iconBg: socialPopover.iconBg,
-          iconColor: socialPopover.iconColor,
+          url: linkValue,
           active: true,
+          isCustom: false,
         };
 
         if (existingConnection) {
           return currentConnections.map((connection) => (
-            connection.id === socialPopover.id ? nextConnection : connection
+            resolveSocialPlatformKey(connection.platformKey || connection.id) === platformKey
+              ? nextConnection
+              : connection
           ));
         }
 
@@ -1464,13 +1570,16 @@ const LearnerAccount = () => {
       });
     } else {
       const normalizedId = nameValue.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+      const platformKey = normalizedId || `custom-${Date.now()}`;
       setSocialConnections((currentConnections) => {
-        const alreadyExists = currentConnections.some((connection) => connection.id === normalizedId || connection.name.toLowerCase() === nameValue.toLowerCase());
+        const alreadyExists = currentConnections.some((connection) => (
+          connection.id === platformKey || connection.name.toLowerCase() === nameValue.toLowerCase()
+        ));
 
         if (alreadyExists) {
           return currentConnections.map((connection) => (
-            connection.id === normalizedId || connection.name.toLowerCase() === nameValue.toLowerCase()
-              ? { ...connection, name: nameValue, handle: linkValue, active: true }
+            connection.id === platformKey || connection.name.toLowerCase() === nameValue.toLowerCase()
+              ? { ...connection, name: nameValue, url: linkValue, active: true, isCustom: true }
               : connection
           ));
         }
@@ -1478,13 +1587,12 @@ const LearnerAccount = () => {
         return [
           ...currentConnections,
           {
-            id: normalizedId || `custom-${Date.now()}`,
+            id: platformKey,
+            platformKey,
             name: nameValue,
-            handle: linkValue,
-            icon: <span className="hoas-social-plus">+</span>,
-            iconBg: '#F6F7FB',
-            iconColor: '#6B7280',
+            url: linkValue,
             active: true,
+            isCustom: true,
           },
         ];
       });
@@ -1492,7 +1600,7 @@ const LearnerAccount = () => {
 
     setSaved((currentSaved) => ({ ...currentSaved, social: true }));
     closeSocialPopover();
-  }, [closeSocialPopover, socialPopover]);
+  }, [closeSocialPopover, socialConnections, socialPopover]);
 
   const toggleSocialConnection = useCallback((connectionId, checked) => {
     setSocialConnections((currentConnections) => currentConnections.map((connection) => (
@@ -1785,73 +1893,151 @@ const LearnerAccount = () => {
     setSavedPaymentMethods(normalizePaymentMethods(res?.data?.paymentMethods));
   }, [apiFetch, normalizePaymentMethods]);
 
+  const activePaymentMethod = useMemo(
+    () => getPaymentMethodForGateway(savedPaymentMethods, selectedGateway),
+    [savedPaymentMethods, selectedGateway]
+  );
+
+  const applyPaymentMethodToForm = useCallback((method, gateway) => {
+    if (!method) {
+      if (gateway === 'card') {
+        setPaymentCardName('');
+        setPaymentCardNumber('');
+        setPaymentExpiryMonth('');
+        setPaymentCvv('');
+        setPaymentCardBrand('unknown');
+        setCardNumberIsMasked(false);
+        setCvvIsMasked(false);
+      } else {
+        setPaymentSimName('');
+        setPaymentPhoneNumber('');
+        setPhoneNumberIsMasked(false);
+      }
+      setSavePaymentMethod(false);
+      return;
+    }
+
+    if (gateway === 'card') {
+      setPaymentCardName(method.accountHolderName || '');
+      setPaymentCardNumber(method.accountNumber || '');
+      setPaymentExpiryMonth(method.expiryDate || '');
+      setPaymentCvv(method.cardCvv || '');
+      setPaymentCardBrand(method.paymentProvider && method.paymentProvider !== 'unknown' ? method.paymentProvider : 'unknown');
+      setCardNumberIsMasked(isMaskedValue(method.accountNumber));
+      setCvvIsMasked(isMaskedValue(method.cardCvv));
+    } else {
+      setPaymentSimName(method.accountHolderName || '');
+      setPaymentPhoneNumber(method.phoneNumber || '');
+      setPhoneNumberIsMasked(isMaskedValue(method.phoneNumber));
+    }
+
+    setSavePaymentMethod(Boolean(method.isPrimary));
+  }, []);
+
+  useEffect(() => {
+    const method = getPaymentMethodForGateway(savedPaymentMethods, selectedGateway);
+    applyPaymentMethodToForm(method, selectedGateway);
+  }, [applyPaymentMethodToForm, savedPaymentMethods, selectedGateway]);
+
   const handlePaymentSave = useCallback(async () => {
     try {
       setPaymentMethodsSaving(true);
+      const existingMethod = getPaymentMethodForGateway(savedPaymentMethods, selectedGateway);
 
       if (selectedGateway === 'card') {
         if (!paymentCardName.trim()) throw new Error('Name on card is required.');
-        const digits = paymentCardNumber.replace(/\D/g, '');
-        if (digits.length < 4) throw new Error('Card number is required.');
-        if (!paymentExpiryMonth || paymentExpiryMonth.length < 4) throw new Error('Expiry date is required.');
+        const digits = cardNumberIsMasked ? '' : extractPaymentDigits(paymentCardNumber);
+        const cvvDigits = cvvIsMasked ? '' : extractPaymentDigits(paymentCvv);
 
-        await apiFetch('/api/profile/payment-methods', {
-          method: 'POST',
-          body: JSON.stringify({
-            paymentType: 'bank_card',
-            accountHolderName: paymentCardName.trim(),
-            cardLastFour: digits.slice(-4),
-            expiryDate: paymentExpiryMonth,
-            paymentProvider: paymentCardBrand !== 'unknown' ? paymentCardBrand : null,
-            isPrimary: Boolean(savePaymentMethod),
-          }),
-        });
+        if (!existingMethod && digits.length < 13) throw new Error('Card number is required.');
+        if (!paymentExpiryMonth || paymentExpiryMonth.length < 4) throw new Error('Expiry date is required.');
+        if (!existingMethod && cvvDigits.length < 3) throw new Error('CVV is required.');
+
+        const payload = {
+          accountHolderName: paymentCardName.trim(),
+          expiryDate: paymentExpiryMonth,
+          paymentProvider: paymentCardBrand !== 'unknown' ? paymentCardBrand : null,
+          isPrimary: Boolean(savePaymentMethod),
+        };
+
+        if (!cardNumberIsMasked && digits.length >= 13) {
+          payload.accountNumber = digits;
+          payload.cardLastFour = digits.slice(-4);
+        }
+
+        if (!cvvIsMasked && cvvDigits.length >= 3) {
+          payload.cardCvv = cvvDigits;
+        }
+
+        if (existingMethod) {
+          await apiFetch(`/api/profile/payment-methods/${existingMethod.id}`, {
+            method: 'PUT',
+            body: JSON.stringify(payload),
+          });
+        } else {
+          await apiFetch('/api/profile/payment-methods', {
+            method: 'POST',
+            body: JSON.stringify({
+              ...payload,
+              paymentType: 'bank_card',
+            }),
+          });
+        }
       } else {
         if (!paymentSimName.trim()) throw new Error('SIM card name is required.');
-        if (!paymentAccountNumber.trim()) throw new Error('Account number is required.');
-        const phoneDigits = paymentPhoneNumber.replace(/\s/g, '');
-        if (!phoneDigits.trim()) throw new Error('Phone number is required.');
+        const phoneDigits = phoneNumberIsMasked ? '' : extractPaymentDigits(paymentPhoneNumber);
+        if (!existingMethod && !phoneDigits) throw new Error('Phone number is required.');
 
-        await apiFetch('/api/profile/payment-methods', {
-          method: 'POST',
-          body: JSON.stringify({
-            paymentType: selectedGateway === 'mtn' ? 'mobile_money' : 'airtel_money',
-            accountHolderName: paymentSimName.trim(),
-            accountNumber: paymentAccountNumber.trim(),
-            phoneNumber: phoneDigits,
-            paymentProvider: selectedGateway === 'mtn' ? 'MTN Rwanda' : 'Airtel Rwanda',
-            isPrimary: Boolean(savePaymentMethod),
-          }),
-        });
+        const payload = {
+          accountHolderName: paymentSimName.trim(),
+          paymentProvider: selectedGateway === 'mtn' ? 'MTN Rwanda' : 'Airtel Rwanda',
+          isPrimary: Boolean(savePaymentMethod),
+        };
+
+        if (!phoneNumberIsMasked && phoneDigits) {
+          payload.phoneNumber = paymentPhoneNumber.replace(/\s/g, '');
+        }
+
+        if (existingMethod) {
+          await apiFetch(`/api/profile/payment-methods/${existingMethod.id}`, {
+            method: 'PUT',
+            body: JSON.stringify(payload),
+          });
+        } else {
+          await apiFetch('/api/profile/payment-methods', {
+            method: 'POST',
+            body: JSON.stringify({
+              ...payload,
+              paymentType: selectedGateway === 'mtn' ? 'mobile_money' : 'airtel_money',
+            }),
+          });
+        }
       }
 
       await refreshPaymentMethods();
-      handleSave(selectedGateway === 'mtn' ? 'payment-mtn' : selectedGateway === 'airtel' ? 'payment-airtel' : 'payment-card');
-      pushFeedback('Payment method saved.');
 
-      setPaymentSimName('');
-      setPaymentAccountNumber('');
-      setPaymentPhoneNumber('');
-      setPaymentCardName('');
-      setPaymentCardNumber('');
-      setPaymentExpiryMonth('');
-      setPaymentCvv('');
+      if (savePaymentMethod) {
+        const refreshed = await apiFetch('/api/profile/payment-methods');
+        const methods = normalizePaymentMethods(refreshed?.data?.paymentMethods);
+        const savedMethod = getPaymentMethodForGateway(methods, selectedGateway);
+        if (savedMethod?.id) {
+          await apiFetch(`/api/profile/payment-methods/${savedMethod.id}/primary`, { method: 'PUT' });
+          await refreshPaymentMethods();
+        }
+      }
+
+      const latestMethods = normalizePaymentMethods((await apiFetch('/api/profile/payment-methods'))?.data?.paymentMethods);
+      const latestMethod = getPaymentMethodForGateway(latestMethods, selectedGateway);
+      applyPaymentMethodToForm(latestMethod, selectedGateway);
+
+      handleSave(selectedGateway === 'mtn' ? 'payment-mtn' : selectedGateway === 'airtel' ? 'payment-airtel' : 'payment-card');
+      pushFeedback(existingMethod ? 'Payment method updated.' : 'Payment method saved.');
     } catch (e) {
       pushFeedback(e.message || 'Failed to save payment method.', 'error');
     } finally {
       setPaymentMethodsSaving(false);
     }
-  }, [apiFetch, handleSave, paymentAccountNumber, paymentCardBrand, paymentCardName, paymentCardNumber, paymentExpiryMonth, paymentPhoneNumber, paymentSimName, pushFeedback, refreshPaymentMethods, savePaymentMethod, selectedGateway]);
-
-  const handlePrimaryPaymentMethod = useCallback(async (id) => {
-    try {
-      await apiFetch(`/api/profile/payment-methods/${id}/primary`, { method: 'PUT' });
-      await refreshPaymentMethods();
-      pushFeedback('Primary payment method updated.');
-    } catch (e) {
-      pushFeedback(e.message || 'Failed to update payment method.', 'error');
-    }
-  }, [apiFetch, pushFeedback, refreshPaymentMethods]);
+  }, [apiFetch, applyPaymentMethodToForm, cardNumberIsMasked, cvvIsMasked, handleSave, normalizePaymentMethods, paymentCardBrand, paymentCardName, paymentCardNumber, paymentCvv, paymentExpiryMonth, paymentPhoneNumber, paymentSimName, phoneNumberIsMasked, pushFeedback, refreshPaymentMethods, savePaymentMethod, savedPaymentMethods, selectedGateway]);
 
   const handleDeletePaymentMethod = useCallback(async (id) => {
     try {
@@ -2212,17 +2398,19 @@ const LearnerAccount = () => {
 
 
             {/* ── 3. Social Media Links ── */}
-            <SectionCard id="social" title="Social Media Links" saved={saved['social']} onSave={handleSocialSave} sectionRef={el => sectionRefs.current['social'] = el}>
+            <SectionCard id="social" title="Social Media Links" saved={isSectionComplete('social')} onSave={handleSocialSave} sectionRef={el => sectionRefs.current['social'] = el} showDiscard={false}>
               <div className="hoas-social-card-list">
-                {socialConnections.map((connection) => (
+                {socialConnections.length === 0 ? (
+                  <div style={{ padding: '8px 4px 12px', color: '#99A1B7' }}>No social profiles connected yet.</div>
+                ) : socialConnections.map((connection) => (
                   <div key={connection.id} className="hoas-social-connection-card">
                     <div className="hoas-social-connection-main">
-                      <div className="hoas-social-icon" >
-                        {connection.icon}
+                      <div className="hoas-social-icon">
+                        {renderSocialIcon(connection.platformKey || connection.id, connection.isCustom)}
                       </div>
                       <div className="hoas-social-connection-copy">
                         <span className="hoas-social-connection-name">{connection.name}</span>
-                        <span className="hoas-social-connection-handle">{connection.handle}</span>
+                        <span className="hoas-social-connection-handle">{connection.url}</span>
                       </div>
                     </div>
                     <div className="hoas-social-connection-actions">
@@ -2260,7 +2448,7 @@ const LearnerAccount = () => {
                             type="text"
                             value={socialPopover.nameValue}
                             onChange={(event) => setSocialPopover((currentPopover) => currentPopover ? { ...currentPopover, nameValue: event.target.value, error: '' } : currentPopover)}
-                            placeholder="Instagram, TikTok, etc."
+                            placeholder="TikTok, Pinterest, etc."
                           />
                         </label>
                       )}
@@ -2268,10 +2456,10 @@ const LearnerAccount = () => {
                       <label className="hoas-social-popover-field">
                         <span>{socialPopover.label}</span>
                         <input
-                          type="text"
+                          type="url"
                           value={socialPopover.linkValue}
                           onChange={(event) => setSocialPopover((currentPopover) => currentPopover ? { ...currentPopover, linkValue: event.target.value, error: '' } : currentPopover)}
-                          placeholder="https://..."
+                          placeholder="https://your-profile-url.com"
                         />
                       </label>
 
@@ -2288,7 +2476,15 @@ const LearnerAccount = () => {
                 <div className="hoas-social-more-title">More Social connections options</div>
                 <p className="hoas-social-more-text">Effortless access awaits! Connect seamlessly with your preferred social account.</p>
                 <div className="hoas-social-actions-row">
-                  {SOCIAL_CONNECT_ACTIONS.filter((action) => action.id === 'more' || !socialConnections.some((connection) => connection.id === action.id)).map((action) => (
+                  {SOCIAL_CONNECT_ACTIONS.filter((action) => {
+                    if (action.id === 'more') {
+                      return socialConnections.filter((connection) => connection.isCustom).length < MAX_CUSTOM_SOCIALS;
+                    }
+                    const platformKey = resolveSocialPlatformKey(action.id);
+                    return !socialConnections.some((connection) => (
+                      resolveSocialPlatformKey(connection.platformKey || connection.id) === platformKey
+                    ));
+                  }).map((action) => (
                     <button key={action.id} type="button" className="hoas-social-action-btn" onClick={(event) => openSocialPopover(action, event)}>
                       <span className="hoas-social-action-icon">{action.icon}</span>
                       <span>{action.label}</span>
@@ -2389,42 +2585,13 @@ const LearnerAccount = () => {
             <SectionCard
               id="payment"
               title="Payment Methods"
-              saved={saved['payment-mtn'] || saved['payment-airtel'] || saved['payment-card']}
+              saved={isSectionComplete('payment-mtn') || isSectionComplete('payment-airtel') || isSectionComplete('payment-card')}
               onSave={() => handleSave(selectedGateway === 'mtn' ? 'payment-mtn' : selectedGateway === 'airtel' ? 'payment-airtel' : 'payment-card')}
               sectionRef={el => sectionRefs.current['payment'] = el}
               showFooter={false}
             >
               {paymentMethodsLoading ? (
                 <div style={{ padding: '6px 0 14px', color: '#99A1B7' }}>Loading payment methods...</div>
-              ) : savedPaymentMethods.length > 0 ? (
-                <div className="hoas-doc-file-grid" style={{ marginBottom: 18 }}>
-                  {savedPaymentMethods.map((method) => (
-                    <div key={method.id} className="hoas-doc-file-card" style={{ alignItems: 'flex-start' }}>
-                      <button type="button" className="hoas-doc-file-remove" aria-label="Delete payment method" onClick={() => handleDeletePaymentMethod(method.id)}>
-                        ×
-                      </button>
-                      <div className="hoas-doc-file-icon" aria-hidden="true">
-                        <img
-                          src={method.paymentType === 'bank_card' ? hoabankcards : method.paymentType === 'airtel_money' ? hoaairtel : hoamtn}
-                          alt=""
-                        />
-                      </div>
-                      <div className="hoas-doc-file-meta">
-                        <span className="hoas-doc-file-name">{method.accountHolderName}</span>
-                        <span className="hoas-doc-file-size">{method.paymentType.replace('_', ' ')}</span>
-                        <span className="hoas-doc-file-size">{method.accountNumber || method.phoneNumber || method.cardLastFour || method.expiryDate || ''}</span>
-                        <button
-                          type="button"
-                          className="hoas-btn-save"
-                          style={{ marginTop: 10, height: 34, padding: '0 12px', width: 'fit-content' }}
-                          onClick={() => handlePrimaryPaymentMethod(method.id)}
-                        >
-                          {method.isPrimary ? 'Primary' : 'Make primary'}
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
               ) : null}
 
               {/* Tab switcher */}
@@ -2452,7 +2619,12 @@ const LearnerAccount = () => {
               {/* MTN Mobile Money form */}
               {selectedGateway === 'mtn' && (
                 <>
-                  <div className="hoas-payment-subtitle">Add MTN Mobile Money</div>
+                  <div className="hoas-payment-subtitle-row">
+                    <div className="hoas-payment-subtitle">
+                      {activePaymentMethod ? 'Edit MTN Mobile Money' : 'Add MTN Mobile Money'}
+                    </div>
+                    {activePaymentMethod?.isPrimary && <span className="hoas-payment-primary-badge">Primary</span>}
+                  </div>
                   <div className="hoas-payment-form">
                     <div className="hoas-payment-field">
                       <PaymentFieldLabel hint="Enter the name registered on your MTN SIM card.">SIM Card Name</PaymentFieldLabel>
@@ -2460,7 +2632,7 @@ const LearnerAccount = () => {
                         type="text"
                         value={paymentSimName}
                         onChange={e => setPaymentSimName(e.target.value)}
-                        placeholder="Max Smith"
+                        placeholder="Enter the name on your SIM"
                       />
                     </div>
                     <div className="hoas-payment-field hoas-payment-phone-field">
@@ -2469,28 +2641,29 @@ const LearnerAccount = () => {
                         type="tel"
                         inputMode="numeric"
                         value={paymentPhoneNumber}
-                        onChange={e => setPaymentPhoneNumber(formatRwandaPhoneNumber(e.target.value))}
+                        onChange={(e) => {
+                          setPhoneNumberIsMasked(false);
+                          setPaymentPhoneNumber(formatRwandaPhoneNumber(e.target.value));
+                        }}
                         placeholder="07 88 123 456"
                         className="hoas-payment-phone-field-input"
                       />
                     </div>
-                    <div className="hoas-payment-field">
-                      <PaymentFieldLabel hint="Your mobile money account number.">Account Number <span className="hoas-required">*</span></PaymentFieldLabel>
-                      <input
-                        type="text"
-                        value={paymentAccountNumber}
-                        onChange={e => setPaymentAccountNumber(e.target.value)}
-                        placeholder="250788123456"
-                      />
-                    </div>
                     <div className="hoas-payment-footer-row">
                       <div className="hoas-payment-save-toggle">
-                        <span className="hoas-toggle-label">Save for future use</span>
+                        <span className="hoas-toggle-label">Set as primary</span>
                         <Toggle checked={savePaymentMethod} onChange={e => setSavePaymentMethod(e.target.checked)} />
                       </div>
-                      <button type="button" className="hoas-btn-save" onClick={handlePaymentSave} disabled={paymentMethodsSaving}>
-                        {paymentMethodsSaving ? 'Saving...' : 'Save Changes'}
-                      </button>
+                      <div className="hoas-payment-action-buttons">
+                        {activePaymentMethod && (
+                          <button type="button" className="hoas-btn-discard" onClick={() => handleDeletePaymentMethod(activePaymentMethod.id)} disabled={paymentMethodsSaving}>
+                            Remove
+                          </button>
+                        )}
+                        <button type="button" className="hoas-btn-save" onClick={handlePaymentSave} disabled={paymentMethodsSaving}>
+                          {paymentMethodsSaving ? 'Saving...' : 'Save Changes'}
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </>
@@ -2499,7 +2672,12 @@ const LearnerAccount = () => {
               {/* Airtel Money form */}
               {selectedGateway === 'airtel' && (
                 <>
-                  <div className="hoas-payment-subtitle">Add Airtel Money</div>
+                  <div className="hoas-payment-subtitle-row">
+                    <div className="hoas-payment-subtitle">
+                      {activePaymentMethod ? 'Edit Airtel Money' : 'Add Airtel Money'}
+                    </div>
+                    {activePaymentMethod?.isPrimary && <span className="hoas-payment-primary-badge">Primary</span>}
+                  </div>
                   <div className="hoas-payment-form">
                     <div className="hoas-payment-field">
                       <PaymentFieldLabel hint="Enter the name registered on your Airtel SIM card.">SIM Card Name</PaymentFieldLabel>
@@ -2507,7 +2685,7 @@ const LearnerAccount = () => {
                         type="text"
                         value={paymentSimName}
                         onChange={e => setPaymentSimName(e.target.value)}
-                        placeholder="Max Smith"
+                        placeholder="Enter the name on your SIM"
                       />
                     </div>
                     <div className="hoas-payment-field hoas-payment-phone-field">
@@ -2516,28 +2694,29 @@ const LearnerAccount = () => {
                         type="tel"
                         inputMode="numeric"
                         value={paymentPhoneNumber}
-                        onChange={e => setPaymentPhoneNumber(formatRwandaPhoneNumber(e.target.value))}
+                        onChange={(e) => {
+                          setPhoneNumberIsMasked(false);
+                          setPaymentPhoneNumber(formatRwandaPhoneNumber(e.target.value));
+                        }}
                         placeholder="07 32 123 456"
                         className="hoas-payment-phone-field-input"
                       />
                     </div>
-                    <div className="hoas-payment-field">
-                      <PaymentFieldLabel hint="Your Airtel Money account number.">Account Number <span className="hoas-required">*</span></PaymentFieldLabel>
-                      <input
-                        type="text"
-                        value={paymentAccountNumber}
-                        onChange={e => setPaymentAccountNumber(e.target.value)}
-                        placeholder="250712345678"
-                      />
-                    </div>
                     <div className="hoas-payment-footer-row">
                       <div className="hoas-payment-save-toggle">
-                        <span className="hoas-toggle-label">Save for future use</span>
+                        <span className="hoas-toggle-label">Set as primary</span>
                         <Toggle checked={savePaymentMethod} onChange={e => setSavePaymentMethod(e.target.checked)} />
                       </div>
-                      <button type="button" className="hoas-btn-save" onClick={handlePaymentSave} disabled={paymentMethodsSaving}>
-                        {paymentMethodsSaving ? 'Saving...' : 'Save Changes'}
-                      </button>
+                      <div className="hoas-payment-action-buttons">
+                        {activePaymentMethod && (
+                          <button type="button" className="hoas-btn-discard" onClick={() => handleDeletePaymentMethod(activePaymentMethod.id)} disabled={paymentMethodsSaving}>
+                            Remove
+                          </button>
+                        )}
+                        <button type="button" className="hoas-btn-save" onClick={handlePaymentSave} disabled={paymentMethodsSaving}>
+                          {paymentMethodsSaving ? 'Saving...' : 'Save Changes'}
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </>
@@ -2546,11 +2725,16 @@ const LearnerAccount = () => {
               {/* Bank Cards form */}
               {selectedGateway === 'card' && (
                 <>
-                  <div className="hoas-payment-subtitle">Add Bank Card</div>
+                  <div className="hoas-payment-subtitle-row">
+                    <div className="hoas-payment-subtitle">
+                      {activePaymentMethod ? 'Edit card details' : 'Add Bank Card'}
+                    </div>
+                    {activePaymentMethod?.isPrimary && <span className="hoas-payment-primary-badge">Primary</span>}
+                  </div>
                   <div className="hoas-payment-form">
                     <div className="hoas-payment-field">
                       <PaymentFieldLabel hint="Use the name exactly as it appears on the card.">Name On Card <span className="hoas-required">*</span></PaymentFieldLabel>
-                      <input type="text" value={paymentCardName} onChange={e => setPaymentCardName(e.target.value)} placeholder="Max Smith" />
+                      <input type="text" value={paymentCardName} onChange={e => setPaymentCardName(e.target.value)} placeholder="Enter the name on your card" />
                     </div>
                     <div className="hoas-payment-field">
                       <PaymentFieldLabel hint="Card brand is detected automatically as you type.">Card Number <span className="hoas-required">*</span></PaymentFieldLabel>
@@ -2559,12 +2743,14 @@ const LearnerAccount = () => {
                           type="text"
                           inputMode="numeric"
                           value={paymentCardNumber}
-                          onChange={e => {
-                            const nextBrand = detectCardBrand(e.target.value);
+                          onChange={(e) => {
+                            const raw = e.target.value.replace(/\*/g, '');
+                            setCardNumberIsMasked(false);
+                            const nextBrand = detectCardBrand(raw);
                             setPaymentCardBrand(nextBrand);
-                            setPaymentCardNumber(formatCardNumber(e.target.value, nextBrand));
+                            setPaymentCardNumber(formatCardNumber(raw, nextBrand));
                           }}
-                          placeholder="0000 0000 0000 0000"
+                          placeholder={activePaymentMethod ? '41*****1111' : '0000 0000 0000 0000'}
                         />
                         <div className="hoas-card-icons">
                           {(paymentCardBrand === 'visa' || paymentCardBrand === 'unknown') && <img src="/assets/icons/VISA-pay.svg" alt="Visa" height="18" />}
@@ -2572,9 +2758,6 @@ const LearnerAccount = () => {
                           {paymentCardBrand === 'amex' && <span className="hoas-payment-brand-badge">Amex</span>}
                         </div>
                       </div>
-                      {paymentCardBrand !== 'unknown' && (
-                        <p className="hoas-payment-detected-brand">Detected: {paymentCardBrand === 'mastercard' ? 'Mastercard' : paymentCardBrand === 'visa' ? 'Visa' : 'Amex'}</p>
-                      )}
                     </div>
                     <div className="hoas-payment-field">
                       <PaymentFieldLabel hint="Enter the expiration month and year, plus the CVV security code.">Expiration Date</PaymentFieldLabel>
@@ -2598,17 +2781,34 @@ const LearnerAccount = () => {
                           }} placeholder="03/27" maxLength="5" />
                           {expiryError && <span style={{ color: '#E32A2A', fontSize: '10.5px', position: 'absolute', left: '4px', bottom: '-16px', whiteSpace: 'nowrap' }}>{expiryError}</span>}
                         </div>
-                        <input type="text" value={paymentCvv} onChange={e => setPaymentCvv(e.target.value)} placeholder="CVV" maxLength="4" />
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          value={paymentCvv}
+                          onChange={(e) => {
+                            setCvvIsMasked(false);
+                            setPaymentCvv(e.target.value.replace(/\D/g, '').slice(0, 4));
+                          }}
+                          placeholder={activePaymentMethod ? '***' : 'CVV'}
+                          maxLength="4"
+                        />
                       </div>
                     </div>
                     <div className="hoas-payment-footer-row">
                       <div className="hoas-payment-save-toggle">
-                        <span className="hoas-toggle-label">Save for future use</span>
+                        <span className="hoas-toggle-label">Set as primary</span>
                         <Toggle checked={savePaymentMethod} onChange={e => setSavePaymentMethod(e.target.checked)} />
                       </div>
-                      <button type="button" className="hoas-btn-save" onClick={handlePaymentSave} disabled={paymentMethodsSaving}>
-                        {paymentMethodsSaving ? 'Saving...' : 'Save Changes'}
-                      </button>
+                      <div className="hoas-payment-action-buttons">
+                        {activePaymentMethod && (
+                          <button type="button" className="hoas-btn-discard" onClick={() => handleDeletePaymentMethod(activePaymentMethod.id)} disabled={paymentMethodsSaving}>
+                            Remove
+                          </button>
+                        )}
+                        <button type="button" className="hoas-btn-save" onClick={handlePaymentSave} disabled={paymentMethodsSaving}>
+                          {paymentMethodsSaving ? 'Saving...' : 'Save Changes'}
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </>
@@ -2659,23 +2859,35 @@ const LearnerAccount = () => {
                   <label className="hoas-form-horizontal-label">Attributes</label>
                   <div className="hoas-form-horizontal-control">
                     <div className="hoas-preference-attributes">
-                      <label className="hoas-preference-checkbox">
-                        <input type="checkbox" checked={showListNames} onChange={e => setShowListNames(e.target.checked)} />
-                        <span className="hoas-preference-checkbox-box">{showListNames ? <IconCheckSquare /> : <IconSquare />}</span>
+                      <button
+                        type="button"
+                        className={`hoas-preference-checkbox${showListNames ? ' is-checked' : ''}`}
+                        onClick={() => setShowListNames((current) => !current)}
+                        aria-pressed={showListNames}
+                      >
+                        <span className="hoas-preference-checkbox-box" aria-hidden="true">
+                          {showListNames ? <IconCheckSquare /> : <IconSquare />}
+                        </span>
                         <span className="hoas-preference-checkbox-copy">
                           <span className="hoas-preference-checkbox-title">Show list names</span>
                           <span className="hoas-preference-checkbox-desc">See the name next to each icon</span>
                         </span>
-                      </label>
+                      </button>
 
-                      <label className="hoas-preference-checkbox">
-                        <input type="checkbox" checked={showLinkedTaskNames} onChange={e => setShowLinkedTaskNames(e.target.checked)} />
-                        <span className="hoas-preference-checkbox-box">{showLinkedTaskNames ? <IconCheckSquare /> : <IconSquare />}</span>
+                      <button
+                        type="button"
+                        className={`hoas-preference-checkbox${showLinkedTaskNames ? ' is-checked' : ''}`}
+                        onClick={() => setShowLinkedTaskNames((current) => !current)}
+                        aria-pressed={showLinkedTaskNames}
+                      >
+                        <span className="hoas-preference-checkbox-box" aria-hidden="true">
+                          {showLinkedTaskNames ? <IconCheckSquare /> : <IconSquare />}
+                        </span>
                         <span className="hoas-preference-checkbox-copy">
                           <span className="hoas-preference-checkbox-title">Show linked task names</span>
                           <span className="hoas-preference-checkbox-desc">Show task names next to ids for linked project tasks.</span>
                         </span>
-                      </label>
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -2726,16 +2938,16 @@ const LearnerAccount = () => {
                 <div className="hoas-notification-group-title">Project notifications</div>
                 <div className="hoas-notification-radio-list">
                   {PROJECT_NOTIFICATION_OPTIONS.map((option) => (
-                    <label key={option.value} className="hoas-notification-radio-item">
-                      <input
-                        type="radio"
-                        name="project-notifications"
-                        checked={projectNotifications === option.value}
-                        onChange={() => setProjectNotifications(option.value)}
-                      />
-                      <span className="hoas-notification-radio-dot" />
+                    <button
+                      key={option.value}
+                      type="button"
+                      className={`hoas-notification-radio-item${projectNotifications === option.value ? ' is-selected' : ''}`}
+                      onClick={() => setProjectNotifications(option.value)}
+                      aria-pressed={projectNotifications === option.value}
+                    >
+                      <span className="hoas-notification-radio-dot" aria-hidden="true" />
                       <span>{option.label}</span>
-                    </label>
+                    </button>
                   ))}
                 </div>
               </div>
@@ -2744,29 +2956,33 @@ const LearnerAccount = () => {
                 <div className="hoas-notification-group-title">Email notifications</div>
                 <div className="hoas-notification-radio-list">
                   {EMAIL_NOTIFICATION_OPTIONS.map((option) => (
-                    <label key={option.value} className="hoas-notification-radio-item">
-                      <input
-                        type="radio"
-                        name="email-notifications"
-                        checked={emailNotifications === option.value}
-                        onChange={() => setEmailNotifications(option.value)}
-                      />
-                      <span className="hoas-notification-radio-dot" />
+                    <button
+                      key={option.value}
+                      type="button"
+                      className={`hoas-notification-radio-item${emailNotifications === option.value ? ' is-selected' : ''}`}
+                      onClick={() => setEmailNotifications(option.value)}
+                      aria-pressed={emailNotifications === option.value}
+                    >
+                      <span className="hoas-notification-radio-dot" aria-hidden="true" />
                       <span>{option.label}</span>
-                    </label>
+                    </button>
                   ))}
                 </div>
               </div>
 
               <div className="hoas-notification-group">
                 <div className="hoas-notification-group-title">Subscriptions</div>
-                <label className="hoas-notification-checkbox">
-                  <input type="checkbox" checked={true} disabled />
-                  <span className="hoas-notification-checkbox-box">
-                    <IconCheckSquare />
+                <button
+                  type="button"
+                  className={`hoas-notification-checkbox${autoSubscribeTasks ? ' is-checked' : ''}`}
+                  onClick={() => setAutoSubscribeTasks((current) => !current)}
+                  aria-pressed={autoSubscribeTasks}
+                >
+                  <span className="hoas-notification-checkbox-box" aria-hidden="true">
+                    {autoSubscribeTasks ? <IconCheckSquare /> : <IconSquare />}
                   </span>
                   <span>Automatically subscribe to tasks you create</span>
-                </label>
+                </button>
               </div>
             </SectionCard>
 

@@ -237,6 +237,12 @@
     gap: 10px;
     cursor: pointer;
     user-select: none;
+    width: 100%;
+    padding: 0;
+    border: none;
+    background: transparent;
+    text-align: left;
+    font: inherit;
 }
 
 .hoas-preference-checkbox input {
@@ -277,12 +283,14 @@
     left: 5px;
 }
 
-.hoas-preference-checkbox input:checked + .hoas-preference-checkbox-box {
+.hoas-preference-checkbox input:checked + .hoas-preference-checkbox-box,
+.hoas-preference-checkbox.is-checked .hoas-preference-checkbox-box {
     background: #51296b;
     border-color: #51296b;
 }
 
-.hoas-preference-checkbox input:checked + .hoas-preference-checkbox-box::after {
+.hoas-preference-checkbox input:checked + .hoas-preference-checkbox-box::after,
+.hoas-preference-checkbox.is-checked .hoas-preference-checkbox-box::after {
     opacity: 1;
 }
 
@@ -391,6 +399,12 @@
     font-weight: 500;
     cursor: pointer;
     user-select: none;
+    width: 100%;
+    padding: 0;
+    border: none;
+    background: transparent;
+    text-align: left;
+    font: inherit;
 }
 
 .hoas-notification-radio-item input {
@@ -409,7 +423,8 @@
     box-sizing: border-box;
 }
 
-.hoas-notification-radio-item input:checked + .hoas-notification-radio-dot {
+.hoas-notification-radio-item input:checked + .hoas-notification-radio-dot,
+.hoas-notification-radio-item.is-selected .hoas-notification-radio-dot {
     border: 4.5px solid #450468;
     background: #FFFFFF;
 }
@@ -423,6 +438,11 @@
     font-size: 12.5px;
     color: #51296b;
     font-weight: 500;
+    padding: 0;
+    border: none;
+    background: transparent;
+    text-align: left;
+    font: inherit;
 }
 
 .hoas-notification-checkbox input {
@@ -462,12 +482,14 @@
     left: 5px;
 }
 
-.hoas-notification-checkbox input:checked + .hoas-notification-checkbox-box {
+.hoas-notification-checkbox input:checked + .hoas-notification-checkbox-box,
+.hoas-notification-checkbox.is-checked .hoas-notification-checkbox-box {
     background: #A07DB3;
     border-color: #A07DB3;
 }
 
-.hoas-notification-checkbox input:checked + .hoas-notification-checkbox-box::after {
+.hoas-notification-checkbox input:checked + .hoas-notification-checkbox-box::after,
+.hoas-notification-checkbox.is-checked .hoas-notification-checkbox-box::after {
     opacity: 1;
 }
 
@@ -2148,7 +2170,31 @@
     font-size: 13.5px;
     font-weight: 700;
     color: #071437;
+    margin: 0;
+}
+
+.hoas-payment-subtitle-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
     margin: 6px 0 16px;
+}
+
+.hoas-payment-primary-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: #EEFBF3;
+    color: #17C653;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.hoas-payment-action-buttons {
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
 /* Payment card header (used in split per-method cards) */
