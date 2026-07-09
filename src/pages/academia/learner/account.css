@@ -1,12 +1,8 @@
-/* =========================================
-   HOA SETTINGS — COMPLETE REDESIGN
-   ========================================= */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 .hoas-page-wrapper {
     font-family: 'Inter', 'Poppins', sans-serif;
     color: #071437;
-    min-height: 100%;
 }
 
 /* ── Utilities ── */
@@ -784,6 +780,7 @@
     transition: background 0.2s;
 }
 .hoas-btn-save:hover { background: #3a0358; }
+.hoas-btn-save:disabled { background: #885c9f; cursor: not-allowed; }
 
 /* =========================================
    FORMS & INPUTS
@@ -885,17 +882,6 @@
 .hoas-section-card[data-section="email"] .hoas-form-horizontal-control {
     align-items: flex-start;
 }
-
-/*.hoas-section-card[data-section="email"] .hoas-form-horizontal-control input[type="email"] {
-    padding: 9px 12px;
-    border: 1px solid #DDE2EC;
-    border-radius: 2px;
-    background: #FFFFFF;
-    color: #1F2937;
-    font-size: 13px;
-    line-height: 1.35;
-    box-shadow: none;
-}*/
 
 .hoas-section-card[data-section="email"] .hoas-form-horizontal-control input[type="email"]::placeholder {
     color: #8791A7;
@@ -1505,6 +1491,13 @@
 }
 .hoas-switch input:checked + .hoas-slider { background: #450468; }
 .hoas-switch input:checked + .hoas-slider:before { transform: translateX(16px); }
+.hoas-switch.is-disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+.hoas-switch.is-disabled .hoas-slider {
+    cursor: not-allowed;
+}
 
 /* =========================================
    UPLOAD BOXES
@@ -2612,4 +2605,44 @@
     color: #A1A5B7;
     line-height: 1.6;
     margin: 0;
+}
+/* =========================================
+   FEEDBACK ALERTS
+   ========================================= */
+.learners-account-feedback {
+    margin: 0 0 18px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    font-size: 13px;
+    line-height: 18px;
+    border: 1px solid transparent;
+}
+
+.learners-account-feedback.is-success {
+    background: #effaf2;
+    border-color: #c9e8d1;
+    color: #196a3b;
+}
+
+.learners-account-feedback.is-error {
+    background: #fff1f1;
+    border-color: #f5c2c7;
+    color: #b42318;
+}
+
+.learners-account-feedback-floating {
+    position: fixed;
+    top: 20px;
+    right: 24px;
+    z-index: 1300;
+    min-width: 280px;
+    max-width: min(420px, calc(100vw - 48px));
+    margin: 0;
+    box-shadow: 0 12px 30px rgba(16, 24, 40, 0.18);
+    animation: learnersToastIn 0.18s ease-out;
+}
+
+@keyframes learnersToastIn {
+    from { transform: translateY(-8px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
 }
