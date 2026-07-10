@@ -7,17 +7,16 @@ import { getProfilePhotoDisplayUrl, isCustomProfilePhoto } from './profilePhotoU
 import {
   buildBasicDraftFromUser,
   buildPreferencesDraftFromUser,
-  COUNTRY_OPTIONS,
-  CURRENCY_OPTIONS,
-  formatAddressDisplay,
-  formatRwandaPhoneNumber,
-  LANGUAGE_OPTIONS,
-  mapLanguageToApi,
+  buildProjectProfileDraftFromUser,
+  formatExperienceLabel,
+  formatLocationDisplay,
+  formatRoleLabel,
   MAX_PROFILE_PHOTO_BYTES,
   serializeBasicDraft,
   serializePreferencesDraft,
-  TIMEZONE_OPTIONS,
+  serializeProjectProfileDraft,
 } from './learnerProfileShared';
+import { formatTelephoneDisplay } from './phoneCountries';
 
 import defaultProfile from '../../../assets/imgs/default-profile.png';
 import badge1 from '../../../assets/icons/badge-1.svg';
@@ -27,17 +26,36 @@ import leEx from '../../../assets/icons/le-ex.svg';
 import leLo from '../../../assets/icons/le-lo.svg';
 import userIcon from '../../../assets/icons/user.svg';
 import acInn from '../../../assets/icons/ac-inn.svg';
-import rwandaIcon from '../../../assets/icons/rwanda.svg';
 import resetIcon from '../../../assets/icons/reset.svg';
 import calendarIcon from '../../../assets/icons/calendar.svg';
 import drop1 from '../../../assets/icons/drop1.svg';
 import trashIcon from '../../../assets/icons/trash.svg';
 import dotsVertical from '../../../assets/icons/dots-vertical.svg';
+import exitDown from '../../../assets/icons/exit-down.svg';
+import leEm from '../../../assets/icons/le-em.svg';
+import acEye from '../../../assets/icons/ac-eye.svg';
+import './projects.css';
 import './settings.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const SIGN_IN_PATH = '/academia/auth/signin';
 
 const activityFilters = ['This week', 'Last week', 'This month', 'All time'];
+
+const FIELD_TOOLTIPS = {
+  fullName: 'Your display name shown across the platform. Name changes are limited to once every 60 days.',
+  email: 'Your primary account email used for sign-in and notifications.',
+  telephone: 'Your contact number with country code for account recovery and message notifications.',
+  userType: 'Your account type on the Academia platform.',
+  role: 'Your professional role or job title shown on your project profile.',
+  password: 'Your account password. Use Reset Password to change it.',
+};
+
+const FieldInfo = ({ tip }) => (
+  <span className="learners-settings-info-trigger" data-tip={tip} tabIndex={0} role="button" aria-label={tip}>
+    <img src={acInn} alt="" />
+  </span>
+);
 
 const SettingsSaveButton = ({ children, disabled, saving, onClick, savingLabel = 'Saving...', className = 'learners-settings-inline-save' }) => (
   <button type="button" className={className} onClick={onClick} disabled={disabled || saving}>
@@ -99,14 +117,33 @@ function LearnersSettings() {
   const feedbackTimerRef = useRef(null);
   const basicBaselineRef = useRef('');
   const preferencesBaselineRef = useRef('');
+  const projectProfileBaselineRef = useRef('');
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [feedback, setFeedback] = useState({ type: '', message: '' });
   const [activeTab, setActiveTab] = useState('overview');
-  const [activityFilter, setActivityFilter] = useState('This month');
+  const [activityFilter, setActivityFilter] = useState('This week');
+  const [projects, setProjects] = useState([]);
+  const [followerCount, setFollowerCount] = useState(0);
+  const [activityItems, setActivityItems] = useState([]);
+  const [aboutExpanded, setAboutExpanded] = useState(false);
+  const [passwordVisible, setPasswordVisible] = useState(false);
+  const [confirmDeactivation, setConfirmDeactivation] = useState(false);
+  const [confirmDeletion, setConfirmDeletion] = useState(false);
+  const [deactivating, setDeactivating] = useState(false);
+  const [deactivateStage, setDeactivateStage] = useState('idle');
+  const [deactivatePassword, setDeactivatePassword] = useState('');
+  const [deactivateOtp, setDeactivateOtp] = useState('');
+  const [deleteStage, setDeleteStage] = useState('idle');
+  const [deletePassword, setDeletePassword] = useState('');
+  const [deleteOtp, setDeleteOtp] = useState('');
+  const [deletingAccount, setDeletingAccount] = useState(false);
   const [openActivityMenuId, setOpenActivityMenuId] = useState(null);
+  const [activityFilterOpen, setActivityFilterOpen] = useState(false);
   const [reviewedActivityIds, setReviewedActivityIds] = useState([]);
+  const [notificationEmailEnabled, setNotificationEmailEnabled] = useState(true);
+  const [notificationMessageEnabled, setNotificationMessageEnabled] = useState(true);
 
   const [profileAvatarPath, setProfileAvatarPath] = useState('');
   const [cropModalOpen, setCropModalOpen] = useState(false);
@@ -154,19 +191,24 @@ function LearnersSettings() {
   });
   const [preferencesDraft, setPreferencesDraft] = useState({
     language: 'en-us',
-    timezone: TIMEZONE_OPTIONS[0].value,
+    timezone: 'gmt-5-est',
     currency: 'usd',
     showListNames: false,
     showLinkedTaskNames: true,
     emailVisibility: false,
   });
   const [skillDraft, setSkillDraft] = useState('');
-  const [isBasicEditing, setIsBasicEditing] = useState(false);
+  const [projectProfileDraft, setProjectProfileDraft] = useState({
+    jobTitle: '',
+    yearsExperience: '',
+    bio: '',
+    availableToHire: false,
+    skills: [],
+  });
+  const [isProjectProfileEditing, setIsProjectProfileEditing] = useState(false);
   const [isAboutEditing, setIsAboutEditing] = useState(false);
   const [isSkillsEditing, setIsSkillsEditing] = useState(false);
-  const [isPreferencesEditing, setIsPreferencesEditing] = useState(false);
-  const [savingBasic, setSavingBasic] = useState(false);
-  const [savingPreferences, setSavingPreferences] = useState(false);
+  const [savingProjectProfile, setSavingProjectProfile] = useState(false);
   const [photoUploading, setPhotoUploading] = useState(false);
   const [twoFactorProcessing, setTwoFactorProcessing] = useState(false);
   const [twoFactorStage, setTwoFactorStage] = useState('idle');
@@ -239,10 +281,29 @@ function LearnersSettings() {
     setBaselineTick((tick) => tick + 1);
   }, []);
 
+  const markProjectProfileBaseline = useCallback((draft) => {
+    projectProfileBaselineRef.current = serializeProjectProfileDraft(draft);
+    setBaselineTick((tick) => tick + 1);
+  }, []);
+
   const markPreferencesBaseline = useCallback((draft) => {
     preferencesBaselineRef.current = serializePreferencesDraft(draft);
     setBaselineTick((tick) => tick + 1);
   }, []);
+
+  const loadActivity = useCallback(async (filter) => {
+    try {
+      const response = await apiFetch(`/api/profile/activity?filter=${encodeURIComponent(filter)}`);
+      const items = Array.isArray(response?.data?.items) ? response.data.items : [];
+      setActivityItems(items);
+    } catch (activityError) {
+      setActivityItems([]);
+    }
+  }, [apiFetch]);
+
+  const openAccountSection = useCallback((section) => {
+    navigate(`/academia/learner/account?section=${section}`);
+  }, [navigate]);
 
   const loadSettings = async () => {
     const token = getToken();
@@ -262,6 +323,9 @@ function LearnersSettings() {
       apiFetch('/api/certificates/user/statistics'),
       apiFetch('/api/certificates/user/my-certificates?limit=6&offset=0'),
       apiFetch('/api/auth/account-status'),
+      apiFetch('/api/projects/my'),
+      apiFetch('/api/followers/stats'),
+      apiFetch('/api/profile/notification-settings'),
     ]);
 
     let firstError = '';
@@ -293,9 +357,12 @@ function LearnersSettings() {
         skills: nextBasicDraft.skills,
       });
 
+      const nextProjectProfileDraft = buildProjectProfileDraftFromUser(user);
       setBasicDraft(nextBasicDraft);
+      setProjectProfileDraft(nextProjectProfileDraft);
       setPreferencesDraft(nextPreferencesDraft);
       markBasicBaseline(nextBasicDraft);
+      markProjectProfileBaseline(nextProjectProfileDraft);
       markPreferencesBaseline(nextPreferencesDraft);
       setProfileCompletion(completion);
     } else {
@@ -334,11 +401,39 @@ function LearnersSettings() {
       setAccountStatus(accountResult.value?.data || accountResult.value || null);
     }
 
+    const projectsResult = requests[6];
+    if (projectsResult.status === 'fulfilled') {
+      const body = projectsResult.value;
+      const list = Array.isArray(body?.data)
+        ? body.data
+        : Array.isArray(body?.data?.data)
+          ? body.data.data
+          : Array.isArray(body?.projects)
+            ? body.projects
+            : [];
+      setProjects(list);
+    }
+
+    const followersResult = requests[7];
+    if (followersResult.status === 'fulfilled') {
+      setFollowerCount(Number(followersResult.value?.data?.followers || 0));
+    }
+
+    const notificationResult = requests[8];
+    if (notificationResult.status === 'fulfilled') {
+      const settings = notificationResult.value?.data?.settings;
+      if (settings) {
+        setNotificationEmailEnabled(Boolean(settings.emailEnabled));
+        setNotificationMessageEnabled(Boolean(settings.messagesEnabled));
+      }
+    }
+
     if (firstError) {
       setError(firstError);
     }
 
     setLoading(false);
+    await loadActivity(activityFilter);
   };
 
   useEffect(() => {
@@ -351,6 +446,11 @@ function LearnersSettings() {
     };
   }, []);
 
+  useEffect(() => {
+    if (loading) return;
+    loadActivity(activityFilter);
+  }, [activityFilter, loading, loadActivity]);
+
   const profileCompletionValue = Number(profileCompletion?.profile_percentage ?? profileCompletion?.profilePercentage ?? 0);
   const totalCertificates = Number(certificateStats?.totalCertificates ?? certificates.length ?? 0);
   const totalDocuments = documents.length;
@@ -358,50 +458,38 @@ function LearnersSettings() {
   const isAccountActive = accountStatus?.isActive !== false;
   const is2FAEnabled = Boolean(accountStatus?.twoFactorEnabled);
 
-  const summaryCards = useMemo(() => ([
-    { label: 'Profile completion', value: `${Math.round(profileCompletionValue)}%` },
-    { label: 'Certificates', value: formatNumber(totalCertificates) },
-    { label: 'Documents', value: formatNumber(totalDocuments) },
-    { label: 'Payment methods', value: formatNumber(totalPaymentMethods) },
-  ]), [profileCompletionValue, totalCertificates, totalDocuments, totalPaymentMethods]);
+  const projectStats = useMemo(() => {
+    const totals = projects.reduce((acc, project) => ({
+      views: acc.views + Number(project.views_count || project.views || 0),
+      likes: acc.likes + Number(project.likes_count || project.likes || 0),
+      feedbacks: acc.feedbacks + Number(project.comments_count || project.feedbacks_count || 0),
+    }), { views: 0, likes: 0, feedbacks: 0 });
 
-  const activityItems = useMemo(() => {
-    const certificateEvents = certificates.map((certificate) => ({
-      id: `certificate-${certificate.id || certificate.certificateNumber}`,
-      type: 'Certificate',
-      title: certificate.courseTitle || certificate.courseName || 'Certificate earned',
-      body: certificate.certificateNumber ? `Certificate ${certificate.certificateNumber}` : 'Issued from your account data',
-      date: certificate.issueDate,
-      tone: certificate.status === 'passed' ? 'success' : certificate.status === 'failed' ? 'warning' : 'info',
-    }));
+    return [
+      { label: 'Project Views', value: formatNumber(totals.views) },
+      { label: 'Project Likes', value: formatNumber(totals.likes) },
+      { label: 'Project Feedbacks', value: formatNumber(totals.feedbacks) },
+    ];
+  }, [projects]);
 
-    const documentEvents = documents.map((document) => ({
-      id: `document-${document.id}`,
-      type: 'Document',
-      title: document.document_name || document.name || 'Document uploaded',
-      body: document.is_public ? 'Shared document' : 'Private document',
-      date: document.created_at,
-      tone: 'info',
-    }));
+  const userTypeLabel = formatRoleLabel(profile.role);
+  const jobTitleLabel = projectProfileDraft.jobTitle?.trim() || '—';
+  const telephoneDisplay = formatTelephoneDisplay(profile.phone, profile.country);
+  const notificationsMasterEnabled = notificationEmailEnabled || notificationMessageEnabled;
+  const experienceLabel = formatExperienceLabel(projectProfileDraft.yearsExperience);
+  const followersLabel = `${formatNumber(followerCount)} Followers`;
+  const locationLabel = formatLocationDisplay(profile);
+  const headerBadgeValue = projects.length || totalCertificates || Math.round(profileCompletionValue);
+  const aboutPreview = projectProfileDraft.bio || 'No bio has been added yet. Share your experience and interests here.';
+  const aboutDisplay = aboutExpanded || aboutPreview.length <= 140
+    ? aboutPreview
+    : `${aboutPreview.slice(0, 140).trim()}...`;
 
-    const paymentEvents = paymentMethods.map((method) => ({
-      id: `payment-${method.id}`,
-      type: 'Payment method',
-      title: method.paymentProvider || method.payment_provider || 'Payment method added',
-      body: method.is_primary ? 'Primary payment method' : 'Saved payment method',
-      date: method.created_at || method.createdAt,
-      tone: 'success',
-    }));
-
-    return [...certificateEvents, ...documentEvents, ...paymentEvents]
-      .filter((item) => isWithinFilter(item.date, activityFilter))
-      .sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
-  }, [activityFilter, certificates, documents, paymentMethods]);
-
-  const profileAddressLabel = useMemo(
-    () => formatAddressDisplay(profile),
-    [profile]
-  );
+  const activityToneClass = (tone) => {
+    if (tone === 'success') return 'green';
+    if (tone === 'warning') return 'orange';
+    return 'blue';
+  };
 
   const visibleActivityItems = activityItems.filter((item) => !reviewedActivityIds.includes(item.id));
 
@@ -410,11 +498,22 @@ function LearnersSettings() {
     [profileAvatarPath]
   );
 
+  const projectProfileDirty = useMemo(() => {
+    void baselineTick;
+    if (!projectProfileBaselineRef.current) return false;
+    return serializeProjectProfileDraft(projectProfileDraft) !== projectProfileBaselineRef.current;
+  }, [baselineTick, projectProfileDraft]);
+
   const basicDirty = useMemo(() => {
     void baselineTick;
     if (!basicBaselineRef.current) return false;
     return serializeBasicDraft(basicDraft) !== basicBaselineRef.current;
   }, [baselineTick, basicDraft]);
+
+  const resetProjectProfileDraft = () => {
+    if (!projectProfileBaselineRef.current) return;
+    setProjectProfileDraft(JSON.parse(projectProfileBaselineRef.current));
+  };
 
   const preferencesDirty = useMemo(() => {
     void baselineTick;
@@ -507,100 +606,46 @@ function LearnersSettings() {
     setTwoFactorOtp('');
   };
 
-  const saveBasicProfile = async () => {
-    if (!basicDirty) return;
+  const saveProjectProfile = async () => {
+    if (!projectProfileDirty) return;
 
-    setSavingBasic(true);
+    setSavingProjectProfile(true);
     setError('');
 
     try {
-      const response = await apiFetch('/api/profile/complete', {
+      const response = await apiFetch('/api/profile/project-profile', {
         method: 'PUT',
         body: JSON.stringify({
-          name: basicDraft.name.trim(),
-          phone: basicDraft.phone.replace(/\s/g, ''),
-          role: profile.role,
-          visibility: basicDraft.visibility,
-          bio: basicDraft.bio,
-          address: basicDraft.address,
-          country: basicDraft.country,
-          state: basicDraft.state,
-          city: basicDraft.city,
-          postcode: basicDraft.postcode,
-          skills: basicDraft.skills,
-          availableToHire: basicDraft.availableToHire,
-          emailNotifications: basicDraft.emailNotifications,
+          jobTitle: projectProfileDraft.jobTitle.trim(),
+          yearsExperience: projectProfileDraft.yearsExperience === '' ? null : Number(projectProfileDraft.yearsExperience),
+          bio: projectProfileDraft.bio,
+          skills: projectProfileDraft.skills,
+          availableToHire: projectProfileDraft.availableToHire,
         }),
       });
 
       const user = response?.data?.user || {};
-      const completion = response?.data?.profilePercentage;
-      const nextBasicDraft = buildBasicDraftFromUser({ ...user, skills: user.skills || basicDraft.skills });
+      const nextProjectProfileDraft = buildProjectProfileDraftFromUser({
+        ...user,
+        skills: user.skills || projectProfileDraft.skills,
+      });
 
+      setProjectProfileDraft(nextProjectProfileDraft);
+      markProjectProfileBaseline(nextProjectProfileDraft);
       setProfile((current) => ({
         ...current,
-        name: nextBasicDraft.name,
-        email: user.email || current.email,
-        phone: nextBasicDraft.phone,
-        role: nextBasicDraft.role,
-        visibility: nextBasicDraft.visibility,
-        bio: nextBasicDraft.bio,
-        address: nextBasicDraft.address,
-        country: nextBasicDraft.country,
-        state: nextBasicDraft.state,
-        city: nextBasicDraft.city,
-        postcode: nextBasicDraft.postcode,
-        availableToHire: nextBasicDraft.availableToHire,
-        emailNotifications: nextBasicDraft.emailNotifications,
-        skills: nextBasicDraft.skills,
+        bio: nextProjectProfileDraft.bio,
+        availableToHire: nextProjectProfileDraft.availableToHire,
+        skills: nextProjectProfileDraft.skills,
       }));
-      setBasicDraft(nextBasicDraft);
-      markBasicBaseline(nextBasicDraft);
-      setProfileCompletion((current) => ({ ...(current || {}), profile_percentage: completion ?? current?.profile_percentage ?? 0 }));
-      setIsBasicEditing(false);
+      setIsProjectProfileEditing(false);
       setIsAboutEditing(false);
       setIsSkillsEditing(false);
-      pushFeedback('Profile saved.', 'success');
+      pushFeedback('Project profile saved.', 'success');
     } catch (saveError) {
-      pushFeedback(saveError.message || 'Couldn\'t save profile. Please try again.', 'error');
+      pushFeedback(saveError.message || 'Could not save project profile. Please try again.', 'error');
     } finally {
-      setSavingBasic(false);
-    }
-  };
-
-  const savePreferences = async () => {
-    if (!preferencesDirty) return;
-
-    setSavingPreferences(true);
-    setError('');
-
-    try {
-      const response = await apiFetch('/api/profile/preferences', {
-        method: 'PUT',
-        body: JSON.stringify({
-          language: mapLanguageToApi(preferencesDraft.language),
-          timezone: preferencesDraft.timezone,
-          currency: preferencesDraft.currency.toUpperCase(),
-          showListNames: preferencesDraft.showListNames,
-          showLinkedTaskNames: preferencesDraft.showLinkedTaskNames,
-          emailVisibility: preferencesDraft.emailVisibility,
-        }),
-      });
-
-      const user = response?.data?.user || {};
-      const nextPreferencesDraft = buildPreferencesDraftFromUser(user);
-      setPreferencesDraft(nextPreferencesDraft);
-      markPreferencesBaseline(nextPreferencesDraft);
-      setProfileCompletion((current) => ({
-        ...(current || {}),
-        profile_percentage: response?.data?.profilePercentage ?? current?.profile_percentage ?? 0,
-      }));
-      setIsPreferencesEditing(false);
-      pushFeedback('Preferences saved.', 'success');
-    } catch (saveError) {
-      pushFeedback(saveError.message || 'Couldn\'t save preferences. Please try again.', 'error');
-    } finally {
-      setSavingPreferences(false);
+      setSavingProjectProfile(false);
     }
   };
 
@@ -728,7 +773,7 @@ function LearnersSettings() {
   };
 
   const toggleAvailability = () => {
-    setBasicDraft((current) => ({ ...current, availableToHire: !current.availableToHire }));
+    setProjectProfileDraft((current) => ({ ...current, availableToHire: !current.availableToHire }));
   };
 
   const addSkill = () => {
@@ -738,7 +783,7 @@ function LearnersSettings() {
       return;
     }
 
-    setBasicDraft((current) => ({
+    setProjectProfileDraft((current) => ({
       ...current,
       skills: Array.from(new Set([...current.skills, nextSkill])),
     }));
@@ -747,7 +792,7 @@ function LearnersSettings() {
 
   const removeSkill = (skill) => {
     if (!isSkillsEditing) return;
-    setBasicDraft((current) => ({
+    setProjectProfileDraft((current) => ({
       ...current,
       skills: current.skills.filter((item) => item !== skill),
     }));
@@ -765,9 +810,127 @@ function LearnersSettings() {
     setOpenActivityMenuId(null);
   };
 
+  const handleClearAllActivity = () => {
+    if (!visibleActivityItems.length) return;
+    setReviewedActivityIds((current) => Array.from(new Set([
+      ...current,
+      ...visibleActivityItems.map((item) => item.id),
+    ])));
+    pushFeedback('Activity cleared.', 'success');
+  };
+
+  const handleRequestDeactivateAccount = async () => {
+    if (!confirmDeactivation) {
+      pushFeedback('Please confirm account deactivation.', 'error');
+      return;
+    }
+
+    if (!deactivatePassword) {
+      pushFeedback('Enter your current password to continue.', 'error');
+      return;
+    }
+
+    try {
+      setDeactivating(true);
+      await apiFetch('/api/auth/request-deactivate-account', {
+        method: 'POST',
+        body: JSON.stringify({ currentPassword: deactivatePassword }),
+      });
+      setDeactivateStage('otp-pending');
+      pushFeedback('Verification code sent to your email.', 'success');
+    } catch (deactivateError) {
+      pushFeedback(deactivateError.message || 'Could not start account deactivation.', 'error');
+    } finally {
+      setDeactivating(false);
+    }
+  };
+
+  const handleConfirmDeactivateAccount = async () => {
+    if (!confirmDeactivation) {
+      pushFeedback('Please confirm account deactivation.', 'error');
+      return;
+    }
+
+    if (deactivateOtp.trim().length !== 6) {
+      pushFeedback('Enter the 6-digit verification code.', 'error');
+      return;
+    }
+
+    try {
+      setDeactivating(true);
+      await apiFetch('/api/auth/confirm-deactivate-account', {
+        method: 'POST',
+        body: JSON.stringify({
+          otp: deactivateOtp.trim(),
+          reason: 'User requested deactivation from settings',
+        }),
+      });
+      localStorage.removeItem('token');
+      navigate(SIGN_IN_PATH);
+    } catch (deactivateError) {
+      pushFeedback(deactivateError.message || 'Could not deactivate account. Please try again.', 'error');
+    } finally {
+      setDeactivating(false);
+    }
+  };
+
+  const handleRequestDeleteAccount = async () => {
+    if (!deletePassword) {
+      pushFeedback('Enter your current password to continue.', 'error');
+      return;
+    }
+
+    try {
+      setDeletingAccount(true);
+      await apiFetch('/api/auth/request-delete-account', {
+        method: 'POST',
+        body: JSON.stringify({ currentPassword: deletePassword }),
+      });
+      setDeleteStage('otp-pending');
+      pushFeedback('Verification code sent to your email.', 'success');
+    } catch (deleteError) {
+      pushFeedback(deleteError.message || 'Could not start account deletion.', 'error');
+    } finally {
+      setDeletingAccount(false);
+    }
+  };
+
+  const handleConfirmDeleteAccount = async () => {
+    if (!confirmDeletion) {
+      pushFeedback('Please confirm account deletion.', 'error');
+      return;
+    }
+
+    if (deleteOtp.trim().length !== 6) {
+      pushFeedback('Enter the 6-digit verification code.', 'error');
+      return;
+    }
+
+    try {
+      setDeletingAccount(true);
+      await apiFetch('/api/auth/confirm-delete-account', {
+        method: 'POST',
+        body: JSON.stringify({ otp: deleteOtp.trim() }),
+      });
+      localStorage.removeItem('token');
+      navigate(SIGN_IN_PATH);
+    } catch (deleteError) {
+      pushFeedback(deleteError.message || 'Could not delete account. Please try again.', 'error');
+    } finally {
+      setDeletingAccount(false);
+    }
+  };
+
+  const openProjectsUpload = () => {
+    navigate('/academia/learner/projects');
+  };
+
   return (
     <LearnersPageShell>
-      <section className="learners-settings-page" onClick={(event) => { if (!event.target.closest('.learners-settings-activity-menu')) setOpenActivityMenuId(null); }}>
+      <section className="learners-settings-page learners-projects-page" onClick={(event) => {
+        if (!event.target.closest('.learners-settings-activity-menu')) setOpenActivityMenuId(null);
+        if (!event.target.closest('.learners-settings-activity-filter-wrap')) setActivityFilterOpen(false);
+      }}>
         <input
           ref={photoInputRef}
           type="file"
@@ -793,12 +956,12 @@ function LearnersSettings() {
                 </span>
                 <span className="learners-projects-count-badge">
                   <img src={badge1} alt="Badge" />
-                  <span>{Math.round(profileCompletionValue)}%</span>
+                  <span>{headerBadgeValue}</span>
                 </span>
               </div>
 
               <div className="learners-projects-profile-meta">
-                <span>{profile.role || 'Learner'}</span>
+                <span>{userTypeLabel}</span>
                 <span>&bull;</span>
                 <span>{profile.email || 'No email on file'}</span>
               </div>
@@ -806,26 +969,12 @@ function LearnersSettings() {
           </div>
 
           <div className="learners-projects-profile-actions">
-            <button
-              type="button"
-              className="learners-projects-secondary-btn"
-              onClick={() => photoInputRef.current?.click()}
-              disabled={photoUploading}
-            >
-              {photoUploading ? 'Uploading...' : hasCustomProfilePhoto ? 'Change Photo' : 'Upload Photo'}
+            <button type="button" className="learners-projects-primary-btn" onClick={openProjectsUpload}>
+              <span>Upload new project</span>
+              <img src={exitDown} alt="Upload" />
             </button>
-            {hasCustomProfilePhoto && (
-              <button
-                type="button"
-                className="learners-projects-secondary-btn"
-                onClick={handlePhotoReset}
-                disabled={photoUploading}
-              >
-                Remove Photo
-              </button>
-            )}
-            <button type="button" className="learners-projects-primary-btn" onClick={() => navigate('/academia/learner/account')}>
-              Open Account
+            <button type="button" className="learners-projects-secondary-btn" onClick={() => navigate('/academia/learner/account')}>
+              View Profile
             </button>
           </div>
         </section>
@@ -866,79 +1015,132 @@ function LearnersSettings() {
         )}
 
         <section className="learners-settings-shell">
-          <aside className="learners-settings-side">
-            <section className="learners-settings-side-section">
-              <div className="learners-settings-side-head learners-settings-side-head-main">
-                <div>
-                  <h2>Profile Snapshot</h2>
-                  <p>Everything here is synced from your account.</p>
-                </div>
+          <aside className="learners-settings-side learners-projects-side">
+            <div className="learners-projects-section-head learners-projects-section-head-side">
+              <div>
+                <h2>Project Profile</h2>
+                <p>Bio &amp; All about your experience</p>
+              </div>
+            </div>
+
+            <div className="learners-projects-side-card learners-projects-side-card-profile">
+              <div className="learners-projects-side-card-head">
+                <span
+                  className="learners-projects-availability"
+                  role="button"
+                  tabIndex={0}
+                  onClick={toggleAvailability}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault();
+                      toggleAvailability();
+                    }
+                  }}
+                >
+                  {projectProfileDraft.availableToHire ? 'Available Now' : 'Not available'}
+                </span>
+                <button
+                  type="button"
+                  className="learners-projects-edit-btn"
+                  onClick={() => setIsProjectProfileEditing((current) => !current)}
+                >
+                  <img src={bPencil} alt="Edit" />
+                  <span>{isProjectProfileEditing ? 'Editing' : 'Edit'}</span>
+                </button>
               </div>
 
-              <div className="learners-settings-stats-list">
-                {summaryCards.map((item) => (
-                  <div key={item.label}>
-                    <span>{item.label}</span>
-                    <strong>{item.value}</strong>
+              {isProjectProfileEditing ? (
+                <div className="learners-settings-side-form" style={{ marginTop: 12 }}>
+                  <input
+                    type="text"
+                    className="learners-settings-inline-input"
+                    placeholder="Job title (e.g. UI/UX Designer)"
+                    value={projectProfileDraft.jobTitle}
+                    onChange={(event) => setProjectProfileDraft((current) => ({ ...current, jobTitle: event.target.value }))}
+                  />
+                  <input
+                    type="number"
+                    min="0"
+                    className="learners-settings-inline-input"
+                    placeholder="Years of experience"
+                    value={projectProfileDraft.yearsExperience}
+                    onChange={(event) => setProjectProfileDraft((current) => ({ ...current, yearsExperience: event.target.value }))}
+                  />
+                  <div className="learners-settings-inline-actions">
+                    <SettingsSaveButton onClick={saveProjectProfile} disabled={!projectProfileDirty} saving={savingProjectProfile}>
+                      Save profile
+                    </SettingsSaveButton>
+                    <button
+                      type="button"
+                      className="learners-settings-inline-cancel"
+                      onClick={() => {
+                        resetProjectProfileDraft();
+                        setIsProjectProfileEditing(false);
+                      }}
+                    >
+                      Cancel
+                    </button>
                   </div>
-                ))}
-              </div>
+                </div>
+              ) : (
+                <div className="learners-projects-side-list">
+                  <div><img src={leUe} alt="Job title" /><span>{jobTitleLabel}</span></div>
+                  <div><img src={leEx} alt="Experience" /><span>{experienceLabel}</span></div>
+                  <div><img src={leLo} alt="Location" /><span>{locationLabel}</span></div>
+                </div>
+              )}
 
-              <div className="learners-settings-side-list" style={{ marginTop: 14 }}>
-                <div><img src={leUe} alt="Role" /><span>{profile.role || 'Learner'}</span></div>
-                <div><img src={leEx} alt="Visibility" /><span>{profile.visibility === 'private' ? 'Private profile' : 'Public profile'}</span></div>
-                <div><img src={leLo} alt="Address" /><span>{profileAddressLabel}</span></div>
-                <div><img src={userIcon} alt="2FA" /><span>{is2FAEnabled ? 'Two-factor enabled' : 'Two-factor disabled'}</span></div>
+              <div className="learners-projects-followers-row">
+                <img src={userIcon} alt="Followers" />
+                <span>{followersLabel}</span>
               </div>
 
               <button
                 type="button"
-                className={`learners-settings-followers-btn ${basicDraft.availableToHire ? 'is-active' : ''}`}
-                onClick={toggleAvailability}
-                aria-pressed={basicDraft.availableToHire}
+                className="learners-projects-email-btn"
+                onClick={() => openAccountSection('email')}
               >
-                <img src={userIcon} alt="Availability" />
-                <span>{basicDraft.availableToHire ? 'Available to hire' : 'Not available to hire'}</span>
+                <span>Edit E-mail</span>
+                <img src={leEm} alt="Email" />
               </button>
+            </div>
 
-              {basicDirty && (
-                <p className="learners-settings-side-hint">You have unsaved profile changes. Save them from Overview.</p>
-              )}
-
-              <button type="button" className="learners-settings-email-btn" onClick={() => setActiveTab('overview')}>
-                View profile settings
-              </button>
-            </section>
-
-            <section className="learners-settings-side-section">
-              <div className="learners-settings-side-head">
+            <div className="learners-projects-side-card">
+              <div className="learners-projects-side-card-head">
                 <h3>About</h3>
-                <button type="button" className="learners-settings-edit-btn" onClick={() => setIsAboutEditing((current) => !current)}>
+                <button type="button" className="learners-projects-icon-edit" onClick={() => setIsAboutEditing((current) => !current)}>
                   <img src={bPencil} alt="Edit" />
-                  <span>{isAboutEditing ? 'Editing' : 'Edit'}</span>
                 </button>
               </div>
 
               {!isAboutEditing ? (
-                <p className="learners-settings-about-copy">
-                  {basicDraft.bio || 'No bio has been added yet. This area now reflects your account data only.'}
+                <p className="learners-projects-side-paragraph">
+                  {aboutDisplay}
+                  {aboutPreview.length > 140 && !aboutExpanded && (
+                    <>
+                      {' '}
+                      <button type="button" className="learners-settings-read-more" onClick={() => setAboutExpanded(true)}>
+                        Read more
+                      </button>
+                    </>
+                  )}
                 </p>
               ) : (
                 <div className="learners-settings-about-editor learners-settings-side-form">
                   <textarea
                     className="learners-settings-textarea"
-                    value={basicDraft.bio}
-                    onChange={(event) => setBasicDraft((current) => ({ ...current, bio: event.target.value }))}
+                    value={projectProfileDraft.bio}
+                    onChange={(event) => setProjectProfileDraft((current) => ({ ...current, bio: event.target.value }))}
                   />
                   <div className="learners-settings-inline-actions">
-                    <SettingsSaveButton onClick={saveBasicProfile} disabled={!basicDirty} saving={savingBasic} savingLabel="Saving bio...">
+                    <SettingsSaveButton onClick={saveProjectProfile} disabled={!projectProfileDirty} saving={savingProjectProfile} savingLabel="Saving bio...">
                       Save bio
                     </SettingsSaveButton>
                     <button
                       type="button"
                       className="learners-settings-inline-cancel"
                       onClick={() => {
-                        resetBasicDraft();
+                        resetProjectProfileDraft();
                         setIsAboutEditing(false);
                       }}
                     >
@@ -947,25 +1149,42 @@ function LearnersSettings() {
                   </div>
                 </div>
               )}
-            </section>
+            </div>
 
-            <section className="learners-settings-side-section">
-              <div className="learners-settings-side-head">
-                <h3>Skills</h3>
-                <button type="button" className="learners-settings-edit-btn" onClick={() => setIsSkillsEditing((current) => !current)}>
+            <div className="learners-projects-side-card">
+              <div className="learners-projects-side-card-head">
+                <h3>Projects Stats</h3>
+              </div>
+              <div className="learners-projects-stats-list">
+                {projectStats.map((item) => (
+                  <div key={item.label}>
+                    <span>{item.label}</span>
+                    <strong>{item.value}</strong>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="learners-projects-side-card">
+              <div className="learners-projects-side-card-head">
+                <h3>Tools &amp; Skills</h3>
+                <button type="button" className="learners-projects-icon-edit" onClick={() => setIsSkillsEditing((current) => !current)}>
                   <img src={bPencil} alt="Edit" />
-                  <span>{isSkillsEditing ? 'Editing' : 'Edit'}</span>
                 </button>
               </div>
 
-              <div className={`learners-settings-skills-list ${isSkillsEditing ? 'is-editing' : ''}`}>
-                {basicDraft.skills.length ? basicDraft.skills.map((skill) => (
-                  <button key={skill} type="button" className="learners-settings-skill-chip" onClick={() => removeSkill(skill)}>
+              <div className={`learners-projects-skills-list ${isSkillsEditing ? 'is-editing' : ''}`}>
+                {projectProfileDraft.skills.length ? projectProfileDraft.skills.map((skill) => (
+                  <span key={skill} className="learners-settings-skill-row">
                     <span>{skill}</span>
-                    {isSkillsEditing && <span className="learners-settings-skill-chip-remove">&times;</span>}
-                  </button>
+                    {isSkillsEditing && (
+                      <button type="button" className="learners-settings-skill-remove-btn" onClick={() => removeSkill(skill)} aria-label={`Remove ${skill}`}>
+                        <img src={trashIcon} alt="Remove" />
+                      </button>
+                    )}
+                  </span>
                 )) : (
-                  <div className="learners-settings-about-copy">No skills saved to your account yet.</div>
+                  <span>No skills saved yet.</span>
                 )}
               </div>
 
@@ -984,14 +1203,14 @@ function LearnersSettings() {
                     </button>
                   </div>
                   <div className="learners-settings-inline-actions">
-                    <SettingsSaveButton onClick={saveBasicProfile} disabled={!basicDirty} saving={savingBasic} savingLabel="Saving skills...">
+                    <SettingsSaveButton onClick={saveProjectProfile} disabled={!projectProfileDirty} saving={savingProjectProfile} savingLabel="Saving skills...">
                       Save skills
                     </SettingsSaveButton>
                     <button
                       type="button"
                       className="learners-settings-inline-cancel"
                       onClick={() => {
-                        resetBasicDraft();
+                        resetProjectProfileDraft();
                         setIsSkillsEditing(false);
                       }}
                     >
@@ -1000,7 +1219,7 @@ function LearnersSettings() {
                   </div>
                 </div>
               )}
-            </section>
+            </div>
           </aside>
 
           <div className="learners-settings-main">
@@ -1008,16 +1227,6 @@ function LearnersSettings() {
               <li className="nav-item" role="presentation">
                 <button type="button" className={`nav-link ${activeTab === 'overview' ? 'active' : ''}`} onClick={() => setActiveTab('overview')}>
                   Overview
-                </button>
-              </li>
-              <li className="nav-item" role="presentation">
-                <button type="button" className={`nav-link ${activeTab === 'preferences' ? 'active' : ''}`} onClick={() => setActiveTab('preferences')}>
-                  Preferences
-                </button>
-              </li>
-              <li className="nav-item" role="presentation">
-                <button type="button" className={`nav-link ${activeTab === 'security' ? 'active' : ''}`} onClick={() => setActiveTab('security')}>
-                  Security
                 </button>
               </li>
               <li className="nav-item" role="presentation">
@@ -1038,13 +1247,13 @@ function LearnersSettings() {
               ) : null}
 
               {!loading && activeTab === 'overview' && (
-                <section className="tab-pane fade show active">
+                <section className="tab-pane fade show active learners-settings-overview-stack">
                   <article className="learners-settings-panel">
                     <div className="learners-settings-panel-head">
                       <h3>Profile Information</h3>
-                      <button type="button" className="learners-settings-edit-btn" onClick={() => setIsBasicEditing((current) => !current)}>
+                      <button type="button" className="learners-settings-edit-btn" onClick={() => openAccountSection('general')}>
                         <img src={bPencil} alt="Edit" />
-                        <span>{isBasicEditing ? 'Editing' : 'Edit'}</span>
+                        <span>Edit</span>
                       </button>
                     </div>
 
@@ -1052,392 +1261,78 @@ function LearnersSettings() {
                       <div className="learners-settings-field is-full">
                         <div className="learners-settings-field-head">
                           <label>Full Name</label>
-                          <img src={acInn} alt="Info" />
+                          <FieldInfo tip={FIELD_TOOLTIPS.fullName} />
                         </div>
-                        <input
-                          type="text"
-                          className="learners-settings-field-value learners-settings-field-control"
-                          value={basicDraft.name}
-                          onChange={(event) => setBasicDraft((current) => ({ ...current, name: event.target.value }))}
-                          disabled={!isBasicEditing}
-                        />
+                        <div className="learners-settings-field-value learners-settings-field-control is-plain">{profile.name || '—'}</div>
                       </div>
 
                       <div className="learners-settings-field">
                         <div className="learners-settings-field-head">
-                          <label>Email</label>
-                          <img src={acInn} alt="Info" />
+                          <label>E-mail</label>
+                          <FieldInfo tip={FIELD_TOOLTIPS.email} />
                         </div>
-                        <input type="email" className="learners-settings-field-value learners-settings-field-control" value={profile.email} readOnly disabled />
+                        <div className="learners-settings-field-value learners-settings-field-control is-plain">{profile.email || '—'}</div>
                       </div>
 
                       <div className="learners-settings-field">
                         <div className="learners-settings-field-head">
                           <label>Telephone</label>
-                          <img src={acInn} alt="Info" />
+                          <FieldInfo tip={FIELD_TOOLTIPS.telephone} />
                         </div>
-                        <label className="learners-settings-field-value learners-settings-field-control learners-settings-phone-value">
-                          <img src={rwandaIcon} alt="Rwanda" />
-                          <input
-                            type="tel"
-                            value={basicDraft.phone}
-                            onChange={(event) => setBasicDraft((current) => ({
-                              ...current,
-                              phone: formatRwandaPhoneNumber(event.target.value),
-                            }))}
-                            disabled={!isBasicEditing}
-                          />
-                        </label>
+                        <div className="learners-settings-field-value learners-settings-field-control is-plain">{telephoneDisplay}</div>
+                      </div>
+
+                      <div className="learners-settings-field">
+                        <div className="learners-settings-field-head">
+                          <label>User Type</label>
+                          <FieldInfo tip={FIELD_TOOLTIPS.userType} />
+                        </div>
+                        <div className="learners-settings-field-value learners-settings-field-control is-plain">{userTypeLabel}</div>
                       </div>
 
                       <div className="learners-settings-field">
                         <div className="learners-settings-field-head">
                           <label>Role</label>
-                          <img src={acInn} alt="Info" />
+                          <FieldInfo tip={FIELD_TOOLTIPS.role} />
                         </div>
-                        <input
-                          type="text"
-                          className="learners-settings-field-value learners-settings-field-control"
-                          value={profile.role}
-                          readOnly
-                          disabled
-                        />
-                      </div>
-
-                      <div className="learners-settings-field">
-                        <div className="learners-settings-field-head">
-                          <label>Visibility</label>
-                          <img src={acInn} alt="Info" />
-                        </div>
-                        <div className="dropdown w-100">
-                          <button
-                            type="button"
-                            className="learners-settings-field-value learners-settings-field-control pref-bs-dropdown w-100 d-flex align-items-center dropdown-toggle"
-                            data-bs-toggle="dropdown"
-                            aria-expanded="false"
-                            disabled={!isBasicEditing}
-                          >
-                            <div className="d-flex align-items-center gap-2">
-                              <span>{basicDraft.visibility === 'private' ? 'Private' : 'Public'}</span>
-                            </div>
-                          </button>
-                          {isBasicEditing && (
-                            <ul className="dropdown-menu w-100 shadow-sm border-0">
-                              <li>
-                                <button className="dropdown-item" type="button" onClick={() => setBasicDraft((c) => ({ ...c, visibility: 'public' }))}>
-                                  Public
-                                </button>
-                              </li>
-                              <li>
-                                <button className="dropdown-item" type="button" onClick={() => setBasicDraft((c) => ({ ...c, visibility: 'private' }))}>
-                                  Private
-                                </button>
-                              </li>
-                            </ul>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="learners-settings-field is-full">
-                        <div className="learners-settings-field-head">
-                          <label>Address</label>
-                          <img src={acInn} alt="Info" />
-                        </div>
-                        <input
-                          type="text"
-                          className="learners-settings-field-value learners-settings-field-control"
-                          value={basicDraft.address}
-                          onChange={(event) => setBasicDraft((current) => ({ ...current, address: event.target.value }))}
-                          disabled={!isBasicEditing}
-                          placeholder="Street address"
-                        />
-                      </div>
-
-                      <div className="learners-settings-field">
-                        <div className="learners-settings-field-head">
-                          <label>Country</label>
-                          <img src={acInn} alt="Info" />
-                        </div>
-                        <select
-                          className="learners-settings-field-value learners-settings-field-control"
-                          value={basicDraft.country}
-                          onChange={(event) => setBasicDraft((current) => ({ ...current, country: event.target.value }))}
-                          disabled={!isBasicEditing}
-                        >
-                          {COUNTRY_OPTIONS.map((option) => (
-                            <option key={option.code} value={option.code}>{option.name}</option>
-                          ))}
-                        </select>
-                      </div>
-
-                      <div className="learners-settings-field">
-                        <div className="learners-settings-field-head">
-                          <label>State</label>
-                          <img src={acInn} alt="Info" />
-                        </div>
-                        <input
-                          type="text"
-                          className="learners-settings-field-value learners-settings-field-control"
-                          value={basicDraft.state}
-                          onChange={(event) => setBasicDraft((current) => ({ ...current, state: event.target.value }))}
-                          disabled={!isBasicEditing}
-                          placeholder="State"
-                        />
-                      </div>
-
-                      <div className="learners-settings-field">
-                        <div className="learners-settings-field-head">
-                          <label>City</label>
-                          <img src={acInn} alt="Info" />
-                        </div>
-                        <input
-                          type="text"
-                          className="learners-settings-field-value learners-settings-field-control"
-                          value={basicDraft.city}
-                          onChange={(event) => setBasicDraft((current) => ({ ...current, city: event.target.value }))}
-                          disabled={!isBasicEditing}
-                          placeholder="City"
-                        />
-                      </div>
-
-                      <div className="learners-settings-field">
-                        <div className="learners-settings-field-head">
-                          <label>Postcode</label>
-                          <img src={acInn} alt="Info" />
-                        </div>
-                        <input
-                          type="text"
-                          className="learners-settings-field-value learners-settings-field-control"
-                          value={basicDraft.postcode}
-                          onChange={(event) => setBasicDraft((current) => ({ ...current, postcode: event.target.value }))}
-                          disabled={!isBasicEditing}
-                          placeholder="Postcode"
-                        />
+                        <div className="learners-settings-field-value learners-settings-field-control is-plain">{jobTitleLabel}</div>
                       </div>
 
                       <div className="learners-settings-field is-full learners-settings-notification-field">
                         <div className="learners-settings-field-head">
-                          <label>Account settings</label>
-                          <img src={acInn} alt="Info" />
+                          <label>Send Notification To</label>
+                          <button
+                            type="button"
+                            className={`learners-settings-switch ${notificationsMasterEnabled ? 'is-on' : ''}`}
+                            aria-pressed={notificationsMasterEnabled}
+                            aria-label="Notification channels enabled"
+                            onClick={() => openAccountSection('notifications')}
+                          />
                         </div>
-                        <div className="learners-settings-notification-options">
+                        <div className={`learners-settings-notification-options ${notificationsMasterEnabled ? '' : 'is-disabled'}`}>
                           <label>
-                            <button
-                              type="button"
-                              className={`learners-settings-switch ${basicDraft.availableToHire ? 'is-on' : ''}`}
-                              onClick={() => setBasicDraft((current) => ({ ...current, availableToHire: !current.availableToHire }))}
-                              aria-pressed={basicDraft.availableToHire}
-                              disabled={!isBasicEditing}
-                            />
-                            <span>Available to hire</span>
+                            <input type="checkbox" checked={notificationEmailEnabled} readOnly disabled />
+                            Email
                           </label>
                           <label>
-                            <button
-                              type="button"
-                              className={`learners-settings-switch ${basicDraft.emailNotifications ? 'is-on' : ''}`}
-                              onClick={() => setBasicDraft((current) => ({ ...current, emailNotifications: !current.emailNotifications }))}
-                              aria-pressed={basicDraft.emailNotifications}
-                              disabled={!isBasicEditing}
-                            />
-                            <span>Email notifications</span>
+                            <input type="checkbox" checked={notificationMessageEnabled} readOnly disabled />
+                            Message (Telephone)
                           </label>
                         </div>
                       </div>
                     </div>
 
-                    <div className="learners-settings-inline-actions" style={{ marginTop: 18 }}>
-                      <SettingsSaveButton onClick={saveBasicProfile} disabled={!basicDirty} saving={savingBasic} savingLabel="Saving profile...">
-                        Save profile
-                      </SettingsSaveButton>
-                      <button
-                        type="button"
-                        className="learners-settings-inline-cancel"
-                        onClick={() => {
-                          resetBasicDraft();
-                          setIsBasicEditing(false);
-                        }}
-                      >
-                        Cancel
-                      </button>
-                    </div>
+                    <p className="learners-settings-side-hint">
+                      Name, phone, email, and address are managed on your Account page. Name changes are limited to once every 60 days.
+                    </p>
                   </article>
-                </section>
-              )}
 
-              {!loading && activeTab === 'preferences' && (
-                <section className="tab-pane fade show active">
                   <article className="learners-settings-panel">
                     <div className="learners-settings-panel-head">
-                      <h3>Preferences</h3>
-                      <button type="button" className="learners-settings-edit-btn" onClick={() => setIsPreferencesEditing((current) => !current)}>
-                        <img src={bPencil} alt="Edit" />
-                        <span>{isPreferencesEditing ? 'Editing' : 'Edit'}</span>
-                      </button>
-                    </div>
-
-                    <div className="learners-settings-form-grid">
-                      <div className="learners-settings-field">
-                        <div className="learners-settings-field-head">
-                          <label>Language</label>
-                          <img src={acInn} alt="Info" />
-                        </div>
-                        <div className="dropdown w-100">
-                          <button
-                            type="button"
-                            className="learners-settings-field-value learners-settings-field-control pref-bs-dropdown w-100 d-flex align-items-center dropdown-toggle"
-                            data-bs-toggle="dropdown"
-                            aria-expanded="false"
-                            disabled={!isPreferencesEditing}
-                          >
-                            <div className="d-flex align-items-center gap-2">
-                              <span className="pref-icon">{LANGUAGE_OPTIONS.find((o) => o.value === preferencesDraft.language)?.icon || '🌐'}</span>
-                              <span>{LANGUAGE_OPTIONS.find((o) => o.value === preferencesDraft.language)?.label || 'Language'}</span>
-                            </div>
-                          </button>
-                          {isPreferencesEditing && (
-                            <ul className="dropdown-menu w-100 shadow-sm border-0">
-                              {LANGUAGE_OPTIONS.map((option) => (
-                                <li key={option.value}>
-                                  <button className="dropdown-item" type="button" onClick={() => setPreferencesDraft((c) => ({ ...c, language: option.value }))}>
-                                    <span className="me-2">{option.icon}</span>
-                                    {option.label}
-                                  </button>
-                                </li>
-                              ))}
-                            </ul>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="learners-settings-field">
-                        <div className="learners-settings-field-head">
-                          <label>Timezone</label>
-                          <img src={acInn} alt="Info" />
-                        </div>
-                        <div className="dropdown w-100">
-                          <button
-                            type="button"
-                            className="learners-settings-field-value learners-settings-field-control pref-bs-dropdown w-100 d-flex align-items-center dropdown-toggle"
-                            data-bs-toggle="dropdown"
-                            aria-expanded="false"
-                            disabled={!isPreferencesEditing}
-                          >
-                            <span>{TIMEZONE_OPTIONS.find((o) => o.value === preferencesDraft.timezone)?.label || 'Timezone'}</span>
-                          </button>
-                          {isPreferencesEditing && (
-                            <ul className="dropdown-menu w-100 shadow-sm border-0">
-                              {TIMEZONE_OPTIONS.map((option) => (
-                                <li key={option.value}>
-                                  <button className="dropdown-item" type="button" onClick={() => setPreferencesDraft((c) => ({ ...c, timezone: option.value }))}>
-                                    {option.label}
-                                  </button>
-                                </li>
-                              ))}
-                            </ul>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="learners-settings-field">
-                        <div className="learners-settings-field-head">
-                          <label>Currency</label>
-                          <img src={acInn} alt="Info" />
-                        </div>
-                        <div className="dropdown w-100">
-                          <button
-                            type="button"
-                            className="learners-settings-field-value learners-settings-field-control pref-bs-dropdown w-100 d-flex align-items-center dropdown-toggle"
-                            data-bs-toggle="dropdown"
-                            aria-expanded="false"
-                            disabled={!isPreferencesEditing}
-                          >
-                            <div className="d-flex align-items-center gap-2">
-                              <span className="pref-icon currency-badge">{CURRENCY_OPTIONS.find((o) => o.value === preferencesDraft.currency)?.icon || '$'}</span>
-                              <span>{CURRENCY_OPTIONS.find((o) => o.value === preferencesDraft.currency)?.label || 'Currency'}</span>
-                            </div>
-                          </button>
-                          {isPreferencesEditing && (
-                            <ul className="dropdown-menu w-100 shadow-sm border-0">
-                              {CURRENCY_OPTIONS.map((option) => (
-                                <li key={option.value}>
-                                  <button className="dropdown-item" type="button" onClick={() => setPreferencesDraft((c) => ({ ...c, currency: option.value }))}>
-                                    <span className="me-2">{option.icon}</span>
-                                    {option.label}
-                                  </button>
-                                </li>
-                              ))}
-                            </ul>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="learners-settings-field is-full learners-settings-notification-field">
-                        <div className="learners-settings-field-head">
-                          <label>Visibility switches</label>
-                          <img src={acInn} alt="Info" />
-                        </div>
-                        <div className="learners-settings-notification-options">
-                          <label>
-                            <button
-                              type="button"
-                              className={`learners-settings-switch ${preferencesDraft.showListNames ? 'is-on' : ''}`}
-                              onClick={() => setPreferencesDraft((current) => ({ ...current, showListNames: !current.showListNames }))}
-                              aria-pressed={preferencesDraft.showListNames}
-                              disabled={!isPreferencesEditing}
-                            />
-                            <span>Show list names</span>
-                          </label>
-                          <label>
-                            <button
-                              type="button"
-                              className={`learners-settings-switch ${preferencesDraft.showLinkedTaskNames ? 'is-on' : ''}`}
-                              onClick={() => setPreferencesDraft((current) => ({ ...current, showLinkedTaskNames: !current.showLinkedTaskNames }))}
-                              aria-pressed={preferencesDraft.showLinkedTaskNames}
-                              disabled={!isPreferencesEditing}
-                            />
-                            <span>Show linked task names</span>
-                          </label>
-                          <label>
-                            <button
-                              type="button"
-                              className={`learners-settings-switch ${preferencesDraft.emailVisibility ? 'is-on' : ''}`}
-                              onClick={() => setPreferencesDraft((current) => ({ ...current, emailVisibility: !current.emailVisibility }))}
-                              aria-pressed={preferencesDraft.emailVisibility}
-                              disabled={!isPreferencesEditing}
-                            />
-                            <span>Email visibility</span>
-                          </label>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="learners-settings-inline-actions" style={{ marginTop: 18 }}>
-                      <SettingsSaveButton onClick={savePreferences} disabled={!preferencesDirty} saving={savingPreferences} savingLabel="Saving preferences...">
-                        Save preferences
-                      </SettingsSaveButton>
-                      <button
-                        type="button"
-                        className="learners-settings-inline-cancel"
-                        onClick={() => {
-                          resetPreferencesDraft();
-                          setIsPreferencesEditing(false);
-                        }}
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </article>
-                </section>
-              )}
-
-              {!loading && activeTab === 'security' && (
-                <section className="tab-pane fade show active">
-                  <article className="learners-settings-panel">
-                    <div className="learners-settings-panel-head">
-                      <h3>Security options and account status</h3>
-                      <button type="button" className="learners-settings-ghost-btn" onClick={() => navigate('/academia/learner/account')}>
-                        <img src={resetIcon} alt="Account" />
-                        <span>Open account page</span>
+                      <h3>Security &amp; Privacy</h3>
+                      <button type="button" className="learners-settings-ghost-btn" onClick={() => setShowPasswordForm(true)}>
+                        <img src={resetIcon} alt="Reset" />
+                        <span>Reset Password</span>
                       </button>
                     </div>
 
@@ -1445,17 +1340,14 @@ function LearnersSettings() {
                       <div className="learners-settings-field is-full">
                         <div className="learners-settings-field-head">
                           <label>Password</label>
-                          <img src={acInn} alt="Info" />
+                          <FieldInfo tip={FIELD_TOOLTIPS.password} />
                         </div>
                         {!showPasswordForm ? (
-                          <div className="learners-settings-password-actions">
-                            <p className="learners-settings-about-copy">Update your account password securely.</p>
-                            <SettingsSaveButton
-                              className="learners-settings-inline-save"
-                              onClick={() => setShowPasswordForm(true)}
-                            >
-                              Change password
-                            </SettingsSaveButton>
+                          <div className="learners-settings-field-value learners-settings-field-control learners-settings-password-value">
+                            <span>{passwordVisible ? 'Your password is hidden for security' : '••••••••••••'}</span>
+                            <button type="button" className="learners-settings-icon-btn" onClick={() => setPasswordVisible((current) => !current)} aria-label="Toggle password visibility">
+                              <img src={acEye} alt="Show" />
+                            </button>
                           </div>
                         ) : (
                           <div className="learners-settings-side-form">
@@ -1503,43 +1395,26 @@ function LearnersSettings() {
                         )}
                       </div>
 
-                      <div className="learners-settings-field">
-                        <div className="learners-settings-field-head">
-                          <label>Account status</label>
-                          <img src={acInn} alt="Info" />
-                        </div>
-                        <div className="learners-settings-field-value">{isAccountActive ? 'Active' : 'Inactive'}</div>
-                      </div>
-
-                      <div className="learners-settings-field">
-                        <div className="learners-settings-field-head">
-                          <label>Two-factor authentication</label>
-                          <img src={acInn} alt="Info" />
-                        </div>
-                        <div className="learners-settings-field-value">{is2FAEnabled ? 'Enabled' : 'Disabled'}</div>
-                      </div>
-
                       <div className="learners-settings-field is-full">
                         <div className="learners-settings-callout is-security">
-                          <div className="learners-settings-callout-icon">✓</div>
+                          <div className="learners-settings-callout-icon">🛡</div>
                           <div className="learners-settings-callout-copy">
-                            <strong>Two-factor authentication</strong>
+                            <strong>Secure Your Account</strong>
                             <p>
                               {is2FAEnabled
                                 ? 'Two-factor authentication is enabled on your account.'
-                                : 'Add an extra verification step when signing in.'}
+                                : 'Two-factor authentication adds an extra layer of security to your account. To log in, you will need to provide a 2FA code.'}
                             </p>
                           </div>
                           {twoFactorStage === 'idle' && (
-                            <SettingsSaveButton
-                              className="learners-settings-inline-save"
+                            <button
+                              type="button"
+                              className="learners-settings-callout-btn"
                               onClick={is2FAEnabled ? startDisableTwoFactor : startEnableTwoFactor}
                               disabled={twoFactorProcessing}
-                              saving={twoFactorProcessing}
-                              savingLabel="Sending..."
                             >
-                              {is2FAEnabled ? 'Disable 2FA' : 'Enable 2FA'}
-                            </SettingsSaveButton>
+                              {twoFactorProcessing ? 'Sending...' : is2FAEnabled ? 'Disable' : 'Enable'}
+                            </button>
                           )}
                         </div>
                       </div>
@@ -1573,6 +1448,149 @@ function LearnersSettings() {
                       )}
                     </div>
                   </article>
+
+                  <article className="learners-settings-panel">
+                    <div className="learners-settings-panel-head">
+                      <h3>Account Privacy</h3>
+                    </div>
+
+                    <div className="learners-settings-callout is-warning">
+                      <div className="learners-settings-callout-icon">!</div>
+                      <div className="learners-settings-callout-copy">
+                        <strong>You Are Deactivating Your Account</strong>
+                        <p>
+                          Deactivation requires your current password and a verification code sent to your email. You can sign in again later to reactivate your account.
+                          {' '}
+                          <button type="button" className="learners-settings-read-more" onClick={() => navigate('/academia/learner/account')}>
+                            Learn more
+                          </button>
+                        </p>
+                      </div>
+                    </div>
+
+                    <label className="learners-settings-confirm-row">
+                      <input
+                        type="checkbox"
+                        checked={confirmDeactivation}
+                        onChange={(event) => setConfirmDeactivation(event.target.checked)}
+                      />
+                      <span>I confirm my account deactivation</span>
+                    </label>
+
+                    {deactivateStage === 'idle' ? (
+                      <div className="learners-settings-side-form" style={{ marginTop: 16 }}>
+                        <input
+                          type="password"
+                          className="learners-settings-field-value learners-settings-field-control"
+                          value={deactivatePassword}
+                          onChange={(event) => setDeactivatePassword(event.target.value)}
+                          placeholder="Current password"
+                          autoComplete="current-password"
+                        />
+                        <button
+                          type="button"
+                          className="learners-settings-danger-btn is-full"
+                          onClick={handleRequestDeactivateAccount}
+                          disabled={!confirmDeactivation || !deactivatePassword || deactivating}
+                        >
+                          {deactivating ? 'Sending code...' : 'Deactivate Account'}
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="learners-settings-side-form" style={{ marginTop: 16 }}>
+                        <input
+                          type="text"
+                          className="learners-settings-field-value learners-settings-field-control"
+                          value={deactivateOtp}
+                          onChange={(event) => setDeactivateOtp(event.target.value.replace(/\D/g, '').slice(0, 6))}
+                          placeholder="Enter 6-digit verification code"
+                          maxLength={6}
+                        />
+                        <div className="learners-settings-inline-actions">
+                          <SettingsSaveButton onClick={handleConfirmDeactivateAccount} disabled={deactivateOtp.length !== 6 || deactivating} saving={deactivating}>
+                            Confirm deactivation
+                          </SettingsSaveButton>
+                          <button
+                            type="button"
+                            className="learners-settings-inline-cancel"
+                            onClick={() => {
+                              setDeactivateStage('idle');
+                              setDeactivateOtp('');
+                            }}
+                            disabled={deactivating}
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="learners-settings-callout is-warning" style={{ marginTop: 24 }}>
+                      <div className="learners-settings-callout-icon">!</div>
+                      <div className="learners-settings-callout-copy">
+                        <strong>Delete Account Permanently</strong>
+                        <p>
+                          Deleting your account is permanent. You will need your current password and a verification code sent to your email.
+                        </p>
+                      </div>
+                    </div>
+
+                    {deleteStage === 'idle' ? (
+                      <div className="learners-settings-side-form" style={{ marginTop: 16 }}>
+                        <input
+                          type="password"
+                          className="learners-settings-field-value learners-settings-field-control"
+                          value={deletePassword}
+                          onChange={(event) => setDeletePassword(event.target.value)}
+                          placeholder="Current password"
+                          autoComplete="current-password"
+                        />
+                        <label className="learners-settings-confirm-row">
+                          <input
+                            type="checkbox"
+                            checked={confirmDeletion}
+                            onChange={(event) => setConfirmDeletion(event.target.checked)}
+                          />
+                          <span>I confirm my account deletion</span>
+                        </label>
+                        <button
+                          type="button"
+                          className="learners-settings-danger-btn is-full"
+                          onClick={handleRequestDeleteAccount}
+                          disabled={!confirmDeletion || !deletePassword || deletingAccount}
+                        >
+                          {deletingAccount ? 'Sending code...' : 'Delete Account'}
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="learners-settings-side-form" style={{ marginTop: 16 }}>
+                        <input
+                          type="text"
+                          className="learners-settings-field-value learners-settings-field-control"
+                          value={deleteOtp}
+                          onChange={(event) => setDeleteOtp(event.target.value.replace(/\D/g, '').slice(0, 6))}
+                          placeholder="Enter 6-digit verification code"
+                          maxLength={6}
+                        />
+                        <div className="learners-settings-inline-actions">
+                          <SettingsSaveButton onClick={handleConfirmDeleteAccount} disabled={deleteOtp.length !== 6 || deletingAccount} saving={deletingAccount}>
+                            Confirm deletion
+                          </SettingsSaveButton>
+                          <button
+                            type="button"
+                            className="learners-settings-inline-cancel"
+                            onClick={() => {
+                              setDeleteStage('idle');
+                              setDeleteOtp('');
+                            }}
+                            disabled={deletingAccount}
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </article>
                 </section>
               )}
 
@@ -1582,30 +1600,40 @@ function LearnersSettings() {
                     <div className="learners-settings-activity-head">
                       <h3>Recent Activity</h3>
                       <div className="learners-settings-activity-actions">
-                        <div className="dropdown learners-settings-activity-filter-wrap">
-                          <button className="learners-settings-activity-filter dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <div className="learners-settings-activity-filter-wrap">
+                          <button
+                            className="learners-settings-activity-filter"
+                            type="button"
+                            aria-expanded={activityFilterOpen}
+                            onClick={() => setActivityFilterOpen((current) => !current)}
+                          >
                             <img src={calendarIcon} alt="Calendar" />
                             <span>{activityFilter}</span>
                             <img src={drop1} alt="Dropdown" />
                           </button>
-                          <ul className="dropdown-menu learners-settings-activity-filter-menu">
-                            {activityFilters.map((filterOption) => (
-                              <li key={filterOption}>
-                                <button
-                                  className={`dropdown-item ${activityFilter === filterOption ? 'active' : ''}`}
-                                  type="button"
-                                  onClick={() => setActivityFilter(filterOption)}
-                                >
-                                  {filterOption}
-                                </button>
-                              </li>
-                            ))}
-                          </ul>
+                          {activityFilterOpen ? (
+                            <ul className="learners-settings-activity-filter-menu learners-settings-activity-filter-menu-open">
+                              {activityFilters.map((filterOption) => (
+                                <li key={filterOption}>
+                                  <button
+                                    className={`dropdown-item ${activityFilter === filterOption ? 'active' : ''}`}
+                                    type="button"
+                                    onClick={() => {
+                                      setActivityFilter(filterOption);
+                                      setActivityFilterOpen(false);
+                                    }}
+                                  >
+                                    {filterOption}
+                                  </button>
+                                </li>
+                              ))}
+                            </ul>
+                          ) : null}
                         </div>
 
-                        <button type="button" className="learners-settings-activity-clear-btn" onClick={loadSettings}>
-                          <img src={trashIcon} alt="Refresh" />
-                          <span>Refresh</span>
+                        <button type="button" className="learners-settings-activity-clear-btn" onClick={handleClearAllActivity}>
+                          <img src={trashIcon} alt="Clear" />
+                          <span>Clear all</span>
                         </button>
                       </div>
                     </div>
@@ -1618,7 +1646,7 @@ function LearnersSettings() {
                         </div>
                       ) : (
                         visibleActivityItems.map((item) => (
-                          <article key={item.id} className={`learners-settings-activity-item learners-settings-activity-item-${item.tone} ${reviewedActivityIds.includes(item.id) ? 'is-reviewed' : ''}`}>
+                          <article key={item.id} className={`learners-settings-activity-item learners-settings-activity-item-${activityToneClass(item.tone)} ${reviewedActivityIds.includes(item.id) ? 'is-reviewed' : ''}`}>
                             <div className="learners-settings-activity-item-copy">
                               <div className="learners-settings-activity-meta">
                                 <span>{formatDate(item.date)}</span>
@@ -1641,7 +1669,7 @@ function LearnersSettings() {
                                 <img src={dotsVertical} alt="Menu" />
                               </button>
 
-                              <div className="learners-settings-activity-popover" hidden={openActivityMenuId !== item.id}>
+                              <div className={`learners-settings-activity-popover ${openActivityMenuId === item.id ? 'is-open' : ''}`}>
                                 <button type="button" onClick={() => handleActivityAction(item.id, 'review')}>
                                   Mark reviewed
                                 </button>

@@ -22,6 +22,25 @@ export const formatAddressDisplay = ({ address, city, state, country, postcode }
   return parts.join(', ') || 'Address not set';
 };
 
+export const formatLocationDisplay = ({ city, country } = {}) => {
+  const countryLabel = COUNTRY_OPTIONS.find((item) => item.code === country)?.name || country;
+  const parts = [city, countryLabel].filter((part) => String(part || '').trim());
+  return parts.join(', ') || 'Location not set';
+};
+
+export const formatRoleLabel = (role) => {
+  if (!role || role === 'student') return 'Learner';
+  if (role === 'instructor') return 'Instructor';
+  if (role === 'admin') return 'Admin';
+  return String(role).charAt(0).toUpperCase() + String(role).slice(1).replace(/_/g, ' ');
+};
+
+export const formatExperienceLabel = (years) => {
+  const value = Number(years);
+  if (!Number.isFinite(value) || value <= 0) return 'Experience not set';
+  return `${value} year${value === 1 ? '' : 's'} experience`;
+};
+
 export const buildAddressDraftFromUser = (user) => ({
   address: user.address || '',
   country: user.country && String(user.country).trim() ? user.country : 'RW',
@@ -98,12 +117,30 @@ export const buildBasicDraftFromUser = (user) => ({
   role: user.role || 'student',
   visibility: user.visibility || 'public',
   bio: user.bio || '',
+  jobTitle: user.job_title || '',
+  yearsExperience: user.years_experience ?? '',
   ...buildAddressDraftFromUser(user),
   availableToHire: Boolean(user.available_to_hire),
   emailNotifications: user.email_notifications === undefined || user.email_notifications === null
     ? true
     : Boolean(user.email_notifications),
   skills: normalizeSkills(user.skills),
+});
+
+export const buildProjectProfileDraftFromUser = (user) => ({
+  jobTitle: user.job_title || '',
+  yearsExperience: user.years_experience ?? '',
+  bio: user.bio || '',
+  availableToHire: Boolean(user.available_to_hire),
+  skills: normalizeSkills(user.skills),
+});
+
+export const serializeProjectProfileDraft = (draft) => JSON.stringify({
+  jobTitle: draft.jobTitle,
+  yearsExperience: draft.yearsExperience,
+  bio: draft.bio,
+  availableToHire: draft.availableToHire,
+  skills: draft.skills,
 });
 
 export const buildPreferencesDraftFromUser = (user) => ({

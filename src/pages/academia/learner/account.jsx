@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import './account.css';
 import LearnersPageShell from './LearnersPageShell';
 
@@ -172,8 +173,9 @@ const NAV_CATEGORIES = [
 ];
 
 const ROLE_LABELS = {
-  student: 'Student',
+  student: 'Learner',
   instructor: 'Instructor',
+  admin: 'Admin',
 };
 
 const hasText = (value) => typeof value === 'string' && value.trim().length > 0;
@@ -988,6 +990,7 @@ const SectionCard = ({ id, title, children, onSave, sectionRef, showDiscard = tr
 
 // ─── Main Component ────────────────────────────────────────────────────────────
 const LearnerAccount = () => {
+  const [searchParams] = useSearchParams();
   const [saved, setSaved] = useState({});
   const [activeSection, setActiveSection] = useState('general');
   const sectionRefs = useRef({});
@@ -1033,6 +1036,7 @@ const LearnerAccount = () => {
   // Phone & Visibility
   const [clientId, setClientId] = useState('');
   const [fullName, setFullName] = useState('');
+  const [nameChangeStatus, setNameChangeStatus] = useState({ canChangeName: true, daysUntilNameChange: 0 });
   const [role, setRole] = useState('student');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [visibility, setVisibility] = useState('public');
@@ -1368,7 +1372,7 @@ const LearnerAccount = () => {
         setPaymentMethodsLoading(true);
         setTwoFactorLoading(true);
 
-        const [profileRes, docsRes, paymentRes, accountStatusRes, socialRes, notifRes, appearanceRes] = await Promise.all([
+        const [profileRes, docsRes, paymentRes, accountStatusRes, socialRes, notifRes, appearanceRes, nameStatusRes] = await Promise.all([
           apiFetch('/api/profile'),
           apiFetch('/api/profile/documents'),
           apiFetch('/api/profile/payment-methods'),
@@ -1376,6 +1380,7 @@ const LearnerAccount = () => {
           apiFetch('/api/profile/social-links'),
           apiFetch('/api/profile/notification-settings'),
           apiFetch('/api/profile/appearance-settings'),
+          apiFetch('/api/profile/name-change-status'),
         ]);
 
         if (cancelled) return;
@@ -1385,6 +1390,7 @@ const LearnerAccount = () => {
         setProfileCompletion(profileRes?.data?.completionStatus || null);
         setClientId(user.client_id || '');
         setFullName(user.name || '');
+        setNameChangeStatus(nameStatusRes?.data || { canChangeName: true, daysUntilNameChange: 0 });
         setRole(user.role || 'student');
         setEmailAddress(user.email || '');
         setPhoneNumber(user.phone ? formatRwandaPhoneNumber(String(user.phone)) : '');
@@ -1925,6 +1931,14 @@ const LearnerAccount = () => {
     return () => observer.disconnect();
   }, []);
 
+  useEffect(() => {
+    if (profileLoading) return;
+    const section = searchParams.get('section');
+    if (!section) return;
+    const timer = window.setTimeout(() => scrollToSection(section), 120);
+    return () => window.clearTimeout(timer);
+  }, [profileLoading, searchParams]);
+
   const handleGeneralSave = useCallback(async () => {
     try {
       setProfileSaving(true);
@@ -1951,6 +1965,8 @@ const LearnerAccount = () => {
         email_prefs_completed: 1,
       }));
       pushFeedback('Profile details saved.');
+      const nameStatusRes = await apiFetch('/api/profile/name-change-status');
+      setNameChangeStatus(nameStatusRes?.data || { canChangeName: true, daysUntilNameChange: 0 });
     } catch (e) {
       pushFeedback(e.message || 'Couldn\'t save profile details. Please try again.', 'error');
     } finally {
@@ -2596,7 +2612,17 @@ const LearnerAccount = () => {
               <div className="hoas-form-horizontal-row">
                 <label className="hoas-form-horizontal-label">Name</label>
                 <div className="hoas-form-horizontal-control">
-                  <input type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} disabled={profileLoading} />
+                  <input
+                    type="text"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    disabled={profileLoading || !nameChangeStatus.canChangeName}
+                  />
+                  {!nameChangeStatus.canChangeName && (
+                    <p className="hoas-photo-error" style={{ marginTop: 8 }}>
+                      You can change your name again in {nameChangeStatus.daysUntilNameChange} day(s).
+                    </p>
+                  )}
                 </div>
               </div>
 

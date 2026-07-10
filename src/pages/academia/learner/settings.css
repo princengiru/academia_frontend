@@ -144,9 +144,82 @@
 
 .learners-settings-page .learners-settings-shell {
   display: grid;
-  grid-template-columns: 250px minmax(0, 1fr);
+  grid-template-columns: 280px minmax(0, 1fr);
   gap: 25px;
   align-items: start;
+}
+
+.learners-settings-page.learners-projects-page .learners-projects-primary-btn {
+  gap: 7px;
+  background: #450468;
+}
+
+.learners-settings-page.learners-projects-page .learners-projects-primary-btn img {
+  width: 14px;
+  height: 14px;
+  filter: brightness(0) invert(1);
+}
+
+.learners-settings-page .learners-settings-overview-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.learners-settings-page .learners-settings-read-more {
+  border: none;
+  background: transparent;
+  padding: 0;
+  color: #520A80;
+  text-decoration: underline;
+  font: inherit;
+  cursor: pointer;
+}
+
+.learners-settings-page .learners-settings-panel {
+  background: #FFFFFF;
+  border: 1px solid #E1E7F0;
+  border-radius: 12px;
+}
+
+.learners-settings-page .learners-settings-danger-btn.is-full {
+  width: 100%;
+  min-height: 42px;
+}
+
+.learners-settings-page .learners-settings-skill-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+}
+
+.learners-settings-page .learners-settings-skill-remove-btn {
+  border: none;
+  background: transparent;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.learners-settings-page .learners-settings-skill-remove-btn img {
+  width: 14px;
+  height: 14px;
+}
+
+.learners-settings-page .learners-settings-side-hint {
+  margin-top: 14px;
+  font-size: 11px;
+  line-height: 16px;
+  color: #7B8499;
+}
+
+.learners-settings-page .learners-settings-callout.is-warning {
+  margin-top: 0;
+  grid-template-columns: auto minmax(0, 1fr);
 }
 
 .learners-settings-page .learners-settings-side {
@@ -248,10 +321,50 @@
 .learners-settings-page .learners-settings-side-list img,
 .learners-settings-page .learners-settings-followers-btn img,
 .learners-settings-page .learners-settings-field-head img,
+.learners-settings-page .learners-settings-info-trigger img,
 .learners-settings-page .learners-settings-password-value img,
 .learners-settings-page .learners-settings-phone-value img {
   width: 12px;
   height: 12px;
+}
+
+.learners-settings-page .learners-settings-info-trigger {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  cursor: help;
+}
+
+.learners-settings-page .learners-settings-info-trigger::after {
+  content: attr(data-tip);
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 8px);
+  width: max-content;
+  max-width: 220px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid #E1E7F0;
+  background: #FFFFFF;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.12);
+  font-family: Inter, sans-serif;
+  font-size: 11px;
+  line-height: 15px;
+  font-weight: 400;
+  color: #475569;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.15s ease, visibility 0.15s ease;
+  z-index: 40;
+}
+
+.learners-settings-page .learners-settings-info-trigger:hover::after,
+.learners-settings-page .learners-settings-info-trigger:focus-visible::after {
+  opacity: 1;
+  visibility: visible;
 }
 
 .learners-settings-page .learners-settings-availability-row {
@@ -604,7 +717,7 @@
   padding: 0;
   border: 1px solid #E1E7F0;
   border-radius: 12px;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .learners-settings-page .learners-settings-panel-head {
@@ -984,14 +1097,32 @@
   height: 14px;
 }
 
-.learners-settings-page .learners-settings-activity-filter-menu {
+.learners-settings-page .learners-settings-activity-filter-wrap {
+  position: relative;
+  z-index: 30;
+}
+
+.learners-settings-page .learners-settings-activity-filter-menu,
+.learners-settings-page .learners-settings-activity-filter-menu-open {
   min-width: 170px;
   border: 1px solid #E1E7F0;
   border-radius: 10px;
   padding: 8px;
 }
 
-.learners-settings-page .learners-settings-activity-filter-menu .dropdown-item {
+.learners-settings-page .learners-settings-activity-filter-menu-open {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  margin: 0;
+  list-style: none;
+  z-index: 120;
+  background: #FFFFFF;
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.12);
+}
+
+.learners-settings-page .learners-settings-activity-filter-menu .dropdown-item,
+.learners-settings-page .learners-settings-activity-filter-menu-open .dropdown-item {
   border-radius: 8px;
   font-family: Inter, sans-serif;
   font-size: 12px;
@@ -1000,7 +1131,9 @@
 }
 
 .learners-settings-page .learners-settings-activity-filter-menu .dropdown-item.active,
-.learners-settings-page .learners-settings-activity-filter-menu .dropdown-item:active {
+.learners-settings-page .learners-settings-activity-filter-menu .dropdown-item:active,
+.learners-settings-page .learners-settings-activity-filter-menu-open .dropdown-item.active,
+.learners-settings-page .learners-settings-activity-filter-menu-open .dropdown-item:active {
   background: #F4ECFB;
   color: #520A80;
 }
@@ -1142,7 +1275,12 @@
   border: 1px solid #E1E7F0;
   background: #FFFFFF;
   box-shadow: 0 16px 40px rgba(15, 23, 42, 0.08);
-  z-index: 5;
+  z-index: 50;
+  display: none;
+}
+
+.learners-settings-page .learners-settings-activity-popover.is-open {
+  display: block;
 }
 
 .learners-settings-page .learners-settings-activity-popover button {
