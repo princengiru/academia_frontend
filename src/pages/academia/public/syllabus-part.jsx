@@ -150,7 +150,7 @@ function AcademiaSyllabusPart() {
   return (
     <div className="syllabus-part-page">
       {/* Hero Section */}
-      <section className="hero-sec">
+      <section className="hero-sec-breakout">
         <div className="hero-sec-inner">
           <div className="hsi-contents">
             <div className="hsi-contents-h">

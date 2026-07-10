@@ -5,6 +5,18 @@
     box-sizing: border-box;
 }
 
+.syllabus-part-page .hero-sec-breakout {
+    width: 100vw;
+    position: relative;
+    left: 50%;
+    right: 50%;
+    margin-left: -50vw;
+    margin-right: -50vw;
+    box-sizing: border-box;
+    padding: 20px 30px;
+    border-bottom: 1px solid #DBDFE9;
+}
+
 .syllabus-part-page .hero-sec {
     padding: 20px 30px;
     border-bottom: 1px solid #DBDFE9;
@@ -101,6 +113,13 @@
     align-items: center;
     justify-content: space-between;
     padding: 0 5%;
+    width: 100vw;
+    position: relative;
+    left: 50%;
+    right: 50%;
+    margin-left: -50vw;
+    margin-right: -50vw;
+    box-sizing: border-box;
 }
 
 .syllabus-part-page .newsletter-sec-l {
@@ -795,7 +814,8 @@
 
 @media(max-width: 768px) {
 
-    .syllabus-part-page .hero-sec {
+    .syllabus-part-page .hero-sec,
+    .syllabus-part-page .hero-sec-breakout {
         padding: 15px;
     }
 

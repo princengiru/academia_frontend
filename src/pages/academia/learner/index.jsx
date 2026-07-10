@@ -6,7 +6,7 @@ import 'swiper/css';
 import 'swiper/css/pagination';
 import defaultProfile from '../../../assets/imgs/default-profile.png';
 import acSav from '../../../assets/icons/ac-sav.svg';
-import wExitRight from '../../../assets/icons/w-exit-right.svg';
+import hoagoto from '../../../assets/icons/hoagoto.svg';
 import badge1 from '../../../assets/icons/badge-1.svg';
 import userIcon from '../../../assets/icons/user.svg';
 import locationIcon from '../../../assets/icons/location.svg';
@@ -171,9 +171,9 @@ function LearnersIndex() {
                 <img src={acSav} alt="" />
                 <span>Saved Library</span>
               </a>
-              <a className="learners-btn learners-btn-primary" href="#" onClick={(event) => event.preventDefault()}>
+              <a className="learners-btn learners-btn-primary" href="/academia/index" target="_blank" rel="noopener noreferrer">
                 <span>Go to website</span>
-                <img src={wExitRight} alt="" />
+                <img src={hoagoto} alt="Go" />
               </a>
             </div>
           </div>

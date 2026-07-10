@@ -4,7 +4,7 @@ import LearnersPageShell from './LearnersPageShell';
 
 // Icons & Images
 import acSav from '../../../assets/icons/ac-sav.svg';
-import wExitRight from '../../../assets/icons/w-exit-right.svg';
+import hoagoto from '../../../assets/icons/hoagoto.svg';
 import acFf from '../../../assets/icons/ac-ff.svg';
 import acFi from '../../../assets/icons/ac-fi.svg';
 import acOn from '../../../assets/imgs/ac-on.jpg';
@@ -233,7 +233,7 @@ function LearnersCourses() {
     id: course.id,
     title: course.title,
     metaLeft: course.category || course.level || 'Course syllabus',
-    metaRight: `${course.chapterCount || 0} Chapters`,
+    metaRight: `${course.chapterCount || 0} Outlines`,
     icon: course.id % 2 === 0 ? acLock : acPlus,
   }));
 
@@ -251,9 +251,9 @@ function LearnersCourses() {
                 <img src={acSav} alt="Save" />
                 <span>Saved Library</span>
               </a>
-              <a className="learners-btn learners-btn-primary" href="/" onClick={preventDefault}>
+              <a className="learners-btn learners-btn-primary" href="/academia/index" target="_blank" rel="noopener noreferrer">
                 <span>Go to website</span>
-                <img src={wExitRight} alt="Exit" />
+                <img src={hoagoto} alt="Go" />
               </a>
             </div>
           </div>
@@ -514,19 +514,43 @@ function LearnersCourses() {
 
             <div className="learners-syllabus-list">
               {syllabusItems.length > 0 ? syllabusItems.map((husk) => (
-                <div key={husk.id} className="fgbl-item learners-syllabus-item">
+                <div key={husk.id} className="fgbl-item learners-syllabus-item" style={{ background: '#FCFCFC', border: '1px solid #E2E8F0', padding: '16px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div className="fgbl-item-l">
-                    <h4>{husk.title}</h4>
-                    <p>
-                      <span>{husk.metaLeft}</span>
-                      <span>|</span>
+                    <h4 
+                      style={{ margin: '0 0 6px 0', fontSize: '15px', color: '#071437', fontWeight: '600', textDecoration: 'none', cursor: 'pointer' }}
+                      onClick={() => navigate(`/academia/learner/course-part?id=${husk.id}`, { state: { courseId: husk.id } })}
+                    >
+                      {husk.title}
+                    </h4>
+                    <p style={{ margin: 0, fontSize: '13px', color: '#99A1B7' }}>
                       <span>{husk.metaRight}</span>
                     </p>
                   </div>
                   <div className="fgbl-item-r">
-                    <button type="button" onClick={preventDefault}>
-                      <span>Follow</span>
-                      <img src={husk.icon} alt={husk.title} />
+                    <button 
+                      type="button" 
+                      onClick={() => navigate(`/academia/learner/course-part?id=${husk.id}`, { state: { courseId: husk.id } })}
+                      className="learners-btn-view-syllabus"
+                      style={{
+                        background: 'transparent',
+                        border: '1px solid #E2E8F0',
+                        borderRadius: '6px',
+                        padding: '6px 12px',
+                        fontSize: '12px',
+                        fontWeight: '600',
+                        color: '#4B5675',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        transition: 'all 0.2s ease'
+                      }}
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#99A1B7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                      </svg>
+                      <span>View Papers</span>
                     </button>
                   </div>
                 </div>

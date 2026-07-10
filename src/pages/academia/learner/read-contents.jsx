@@ -8,7 +8,7 @@ import AssessmentView from './read-contents/AssessmentView';
 
 // Icons & Images
 import acSav from '../../../assets/icons/ac-sav.svg';
-import wExitRight from '../../../assets/icons/w-exit-right.svg';
+import hoagoto from '../../../assets/icons/hoagoto.svg';
 import acLe from '../../../assets/icons/ac-le.svg';
 import acOnImg from '../../../assets/imgs/ac-on.jpg';
 import defaultProfile from '../../../assets/imgs/default-profile.png';
@@ -58,28 +58,29 @@ const genesisOutcomes = [];
 
 const slateExerciseQuestions = [];
 
-const genesisAssessmentTracker = [];
+const EMPTY_ASSESSMENT_RESULT = {
+  score: '',
+  headline: '',
+  summary: '',
+  buttonLabel: '',
+  stats: [],
+  status: '',
+};
 
-const slateAssessmentQuestions = [];
-
-const apexAssessmentResult = {
-  score: '89.8%',
-  headline: 'Congratulations John Doe,',
-  summary: 'Week 1 done, Ready to lock in ultimately on other weeks',
-  buttonLabel: 'Continue WEEK 2',
-  stats: [
-    { value: '26', label: 'Questions' },
-    { value: '21', label: 'Correct answer' },
-    { value: '5', label: 'Wrong Answer' },
-    { value: '1h 7min', label: 'Time' },
-    { value: 'Passed', label: 'Status', tone: 'success' },
-  ],
-  status: 'graded'
+const EMPTY_ASSESSMENT_DETAILS = {
+  id: null,
+  type: 'summative',
+  title: '',
+  passingScore: 80,
+  durationMinutes: 0,
+  attemptLimit: null,
+  showCorrectAnswers: true,
+  showScoreImmediately: true,
+  randomizeQuestions: false,
+  isPublished: true,
 };
 
 const slateOutlineWeeks = [];
-
-const apexChapterContent = {};
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
@@ -99,7 +100,18 @@ const stripHtml = (html) => {
 
 const formatHtmlContent = (html) => {
   if (!html) return '';
-  return html.replace(/src="\/uploads\//g, `src="${API_BASE_URL}/uploads/`);
+  let cleanHtml = html
+    .replace(/src="\/uploads\//g, `src="${API_BASE_URL}/uploads/`)
+    .replace(/href="\/uploads\//g, `href="${API_BASE_URL}/uploads/`);
+  
+  cleanHtml = cleanHtml.replace(/<a\s+(href="[^"]*")/gi, (match, hrefPart) => {
+    if (/target=/i.test(match)) {
+      return match;
+    }
+    return `<a target="_blank" rel="noopener noreferrer" ${hrefPart}`;
+  });
+  
+  return cleanHtml;
 };
 
 const shuffleArray = (array) => {
@@ -200,7 +212,9 @@ function LearnersReadContents() {
   const [courseMetaState, setCourseMetaState] = useState(apexCourseMeta);
   const [courseReader, setCourseReader] = useState(slateCourseReader);
   const [outlineWeeksState, setOutlineWeeksState] = useState(slateOutlineWeeks);
-  const [chapterContentMapState, setChapterContentMapState] = useState(apexChapterContent);
+  const [activeChapterContent, setActiveChapterContent] = useState(null);
+  const [loadingChapterContent, setLoadingChapterContent] = useState(false);
+  const [contentReloadKey, setContentReloadKey] = useState(0);
   const [exerciseQuestionsState, setExerciseQuestionsState] = useState(slateExerciseQuestions);
   const [outcomesState, setOutcomesState] = useState(genesisOutcomes);
   const [studentAttempts, setStudentAttempts] = useState([]);
@@ -223,14 +237,8 @@ function LearnersReadContents() {
       return Math.round((completed / total) * 100);
     }
 
-    const keys = Object.keys(chapterContentMapState);
-    if (keys.length > 0) {
-      const done = keys.filter(id => completedChapters.includes(id) || completedChapters.includes(Number(id)));
-      return Math.round((done.length / keys.length) * 100);
-    }
-
     return 0;
-  }, [outlineWeeksState, chapterContentMapState, completedChapters]);
+  }, [outlineWeeksState, completedChapters]);
 
   const [loadingCourse, setLoadingCourse] = useState(false);
 
@@ -243,7 +251,7 @@ function LearnersReadContents() {
   // Assessment State
   const [assessmentQuestions, setAssessmentQuestions] = useState([]);
   const [assessmentTracker, setAssessmentTracker] = useState([]);
-  const [assessmentResult, setAssessmentResult] = useState(apexAssessmentResult);
+  const [assessmentResult, setAssessmentResult] = useState(EMPTY_ASSESSMENT_RESULT);
 
   const [isAssessmentStarted, setIsAssessmentStarted] = useState(false);
   const [isConfirmingSubmit, setIsConfirmingSubmit] = useState(false);
@@ -253,17 +261,22 @@ function LearnersReadContents() {
   const [selectedAssessmentOptions, setSelectedAssessmentOptions] = useState([]);
   const [isAssessmentGraded, setIsAssessmentGraded] = useState(false);
   const [isAssessmentComplete, setIsAssessmentComplete] = useState(false);
-  const [currentAssessmentDetails, setCurrentAssessmentDetails] = useState({
-    id: null,
-    type: 'summative',
-    title: '',
-    passingScore: 80,
-    durationMinutes: 0,
-    attemptLimit: null,
-    showCorrectAnswers: true,
-    showScoreImmediately: true,
-    randomizeQuestions: false,
-  });
+  const [isSummativeComplete, setIsSummativeComplete] = useState(false);
+  const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+  const toastTimerRef = useRef(null);
+  const showToast = (message, type = 'success') => {
+    setToast({ show: true, message, type });
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    toastTimerRef.current = setTimeout(() => {
+      setToast({ show: false, message: '', type: 'success' });
+    }, type === 'error' ? 8000 : 5000);
+  };
+  useEffect(() => {
+    return () => {
+      if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    };
+  }, []);
+  const [currentAssessmentDetails, setCurrentAssessmentDetails] = useState(EMPTY_ASSESSMENT_DETAILS);
   const [currentAttemptId, setCurrentAttemptId] = useState(null);
   const [assessmentAnswers, setAssessmentAnswers] = useState({});
   const [isAssessmentReviewMode, setIsAssessmentReviewMode] = useState(false);
@@ -276,11 +289,216 @@ function LearnersReadContents() {
   const [maxAttempts, setMaxAttempts] = useState(null);
   const timerIntervalRef = useRef(null);
   const submitRef = useRef(null);
+  const contentLoadTokenRef = useRef(0);
+
+  const bumpLoadToken = () => {
+    contentLoadTokenRef.current += 1;
+    return contentLoadTokenRef.current;
+  };
+
+  const isStaleLoad = (token) => contentLoadTokenRef.current !== token;
+
+  const resetAssessmentState = () => {
+    setAssessmentQuestions([]);
+    setAssessmentTracker([]);
+    setAssessmentAnswers({});
+    setSelectedAssessmentOptions([]);
+    setAssessmentTextAnswer('');
+    setIsAssessmentGraded(false);
+    setIsAssessmentComplete(false);
+    setIsAssessmentStarted(false);
+    setIsConfirmingSubmit(false);
+    setIsAssessmentReviewMode(false);
+    setAssessmentAttemptData(null);
+    setCurrentAttemptId(null);
+    setCurrentAssessmentIndex(0);
+    setAssessmentResult(EMPTY_ASSESSMENT_RESULT);
+    setCurrentAssessmentDetails({ ...EMPTY_ASSESSMENT_DETAILS });
+    setAttemptNumber(1);
+    setMaxAttempts(null);
+    if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+    setAssessmentTimerActive(false);
+    setTimeRemainingSeconds(0);
+    setLoadingAssessment(true);
+  };
+
+  const resetChapterState = () => {
+    setExerciseQuestionsState([]);
+    setExerciseStates([]);
+    setExerciseAnswers({});
+    setExerciseGradedList({});
+    setCurrentExerciseIndex(0);
+    setSelectedExerciseOption(null);
+    setIsExerciseGraded(false);
+    setActiveChapterContent(null);
+    setLoadingChapterContent(true);
+  };
 
   const hasAttemptsLeft = useMemo(() => {
     if (!maxAttempts) return true;
     return attemptNumber < maxAttempts;
   }, [attemptNumber, maxAttempts]);
+
+  const updateSummativeCompletion = (complete) => {
+    setIsSummativeComplete(complete);
+    setCompletedChapters((prev) => {
+      const hasAssessment = prev.includes('assessment');
+      if (complete) {
+        return hasAssessment ? prev : [...prev, 'assessment'];
+      }
+      return hasAssessment ? prev.filter((id) => id !== 'assessment') : prev;
+    });
+  };
+
+  const isSummativeAttempt = (att, assessmentId) => {
+    if (Number(att.assessmentId) !== Number(assessmentId)) return false;
+    const cat = String(att.category || att.assessment_category || '').toLowerCase();
+    return cat !== 'formative';
+  };
+
+  const hydrateCompletedAssessmentResult = async ({
+    type,
+    attemptId,
+    historyAttempt,
+    questionCount,
+    passingScore,
+    token,
+    exhaustedAttempts = false,
+  }) => {
+    if (!attemptId) return;
+
+    let scorePct = parseFloat(historyAttempt?.percentage ?? historyAttempt?.score ?? 0);
+    let passed = !!(historyAttempt?.isPassed || historyAttempt?.is_passed);
+    let correct = 0;
+    let wrong = 0;
+    let answered = 0;
+    let status = historyAttempt?.status || 'graded';
+
+    if (token) {
+      try {
+        const resultsUrl = type === 'summative'
+          ? `${API_BASE_URL}/api/summative-attempts/${attemptId}/results`
+          : `${API_BASE_URL}/api/formative-attempts/${attemptId}/results`;
+        const resultsRes = await fetch(resultsUrl, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (resultsRes.ok) {
+          const resultsBody = await resultsRes.json();
+          const finalResults = resultsBody.data || resultsBody;
+          scorePct = parseFloat(
+            finalResults.attempt?.percentage ??
+            finalResults.attempt?.score ??
+            historyAttempt?.percentage ??
+            historyAttempt?.score ??
+            0
+          );
+          passed = finalResults.attempt?.is_passed ?? finalResults.attempt?.isPassed ?? (scorePct >= passingScore);
+          correct = finalResults.results?.correct_answers || 0;
+          wrong = finalResults.results?.wrong_answers || 0;
+          answered = finalResults.results?.pending_review || 0;
+          status = finalResults.attempt?.status || status;
+        }
+      } catch (e) {
+        console.error('Failed to hydrate completed assessment result:', e);
+      }
+    }
+
+    if (!passed && scorePct >= passingScore) passed = true;
+
+    const isSummative = type === 'summative';
+    setAssessmentResult({
+      score: `${Number(scorePct || 0).toFixed(1)}%`,
+      headline: passed ? 'Congratulations!' : (answered > 0 ? 'Submitted for Review' : (isSummative ? 'Assessment Completed' : 'Quiz Completed')),
+      summary: passed
+        ? (isSummative
+          ? 'You have passed the final summative assessment. You can now claim your certificate!'
+          : 'You have passed the quiz assessment. Great job!')
+        : exhaustedAttempts
+          ? 'You have used all attempts for this assessment.'
+          : answered > 0
+            ? `Your essay/text answers will be reviewed by the instructor. Auto-graded score: ${Number(scorePct || 0).toFixed(1)}%`
+            : 'You did not achieve the required passing score.',
+      buttonLabel: passed
+        ? (isSummative ? 'Claim Certificate' : '')
+        : (exhaustedAttempts ? 'No attempt left' : 'Retry Quiz'),
+      stats: [
+        { value: String(questionCount || 0), label: 'Questions' },
+        { value: String(correct), label: 'Correct' },
+        { value: String(wrong), label: 'Wrong' },
+        ...(answered > 0 ? [{ value: String(answered), label: 'Pending Review' }] : []),
+        {
+          value: passed ? 'Passed' : (answered > 0 ? 'Pending' : 'Failed'),
+          label: 'Status',
+          tone: passed ? 'success' : (answered > 0 ? '' : 'danger'),
+        },
+      ],
+      status,
+    });
+  };
+
+  const refreshSummativeCompletionStatus = async (courseId) => {
+    if (!courseId) return;
+    const token = localStorage.getItem('token');
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/courses/${courseId}/summative-assessment`);
+      if (!res.ok) {
+        updateSummativeCompletion(false);
+        return;
+      }
+      const data = extractBody(await res.json());
+      if (!data?.id) {
+        updateSummativeCompletion(false);
+        return;
+      }
+
+      let historyList = [];
+      if (token) {
+        const perfRes = await fetch(`${API_BASE_URL}/api/profile/performance?limit=1000`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (perfRes.ok) {
+          const perfBody = await perfRes.json();
+          historyList = perfBody?.data?.assessmentHistory || [];
+        }
+      }
+
+      const res2 = await fetch(`${API_BASE_URL}/api/summative-assessments/${data.id}`);
+      if (!res2.ok) {
+        updateSummativeCompletion(false);
+        return;
+      }
+      const fullAssessment = extractBody(await res2.json());
+      if (!fullAssessment) {
+        updateSummativeCompletion(false);
+        return;
+      }
+
+      const isPublished = fullAssessment.is_published ?? fullAssessment.isPublished ?? true;
+      if (!isPublished) {
+        updateSummativeCompletion(false);
+        return;
+      }
+
+      const limitVal = fullAssessment.attempt_limit || fullAssessment.attemptLimit || 1;
+      const passingScore = Number(fullAssessment.passingScore || fullAssessment.passing_score || 80);
+      const myAttempts = historyList.filter((att) => isSummativeAttempt(att, data.id));
+      const completedAttempts = myAttempts.filter((att) => att.status === 'submitted' || att.status === 'graded');
+      const passedAttempt = completedAttempts.find((att) => {
+        if (att.isPassed || att.is_passed) return true;
+        const pct = parseFloat(att.percentage ?? att.score ?? 0);
+        return pct >= passingScore;
+      });
+
+      if (passedAttempt || (limitVal && completedAttempts.length >= limitVal)) {
+        updateSummativeCompletion(true);
+      } else {
+        updateSummativeCompletion(false);
+      }
+    } catch (err) {
+      console.error('Failed to refresh summative completion status:', err);
+      updateSummativeCompletion(false);
+    }
+  };
 
   // Countdown Timer Effect
   useEffect(() => {
@@ -509,7 +727,8 @@ function LearnersReadContents() {
     checkEnrollmentStatus();
   }, [inboundId]);
 
-  const loadSummativeAssessment = async (courseId) => {
+  const loadSummativeAssessment = async (courseId, loadToken) => {
+    if (isStaleLoad(loadToken)) return;
     setLoadingAssessment(true);
     setAssessmentQuestions([]);
     setAssessmentTracker([]);
@@ -519,6 +738,9 @@ function LearnersReadContents() {
     setIsAssessmentStarted(false);
     setIsConfirmingSubmit(false);
     setAssessmentAttemptData(null);
+    setAssessmentResult(EMPTY_ASSESSMENT_RESULT);
+    setCurrentAssessmentDetails({ ...EMPTY_ASSESSMENT_DETAILS, type: 'summative' });
+    updateSummativeCompletion(false);
     try {
       // 1. Fetch performance history first to know attempt status without starting!
       let historyList = [];
@@ -531,7 +753,6 @@ function LearnersReadContents() {
           if (perfRes.ok) {
             const perfBody = await perfRes.json();
             historyList = perfBody?.data?.assessmentHistory || [];
-            setUserPerformanceHistory(historyList);
           }
         } catch (e) {
           console.error("Failed to fetch performance history on load:", e);
@@ -539,18 +760,21 @@ function LearnersReadContents() {
       }
 
       const res = await fetch(`${API_BASE_URL}/api/courses/${courseId}/summative-assessment`);
+      if (isStaleLoad(loadToken)) return;
       if (!res.ok) return;
       const body = await res.json();
       const data = extractBody(body);
       if (!data || !data.id) return;
 
       const res2 = await fetch(`${API_BASE_URL}/api/summative-assessments/${data.id}`);
+      if (isStaleLoad(loadToken)) return;
       if (!res2.ok) return;
       const body2 = await res2.json();
       const fullAssessment = extractBody(body2);
 
       if (fullAssessment) {
         const limitVal = fullAssessment.attempt_limit || fullAssessment.attemptLimit || 1;
+        const isPublished = fullAssessment.is_published ?? fullAssessment.isPublished ?? true;
         setCurrentAssessmentDetails({
           id: data.id,
           type: 'summative',
@@ -561,6 +785,7 @@ function LearnersReadContents() {
           showCorrectAnswers: !!(fullAssessment.show_correct_answers ?? false),
           showScoreImmediately: !!(fullAssessment.show_score_immediately ?? true),
           randomizeQuestions: !!(fullAssessment.randomize_questions ?? false),
+          isPublished: Boolean(isPublished),
         });
 
         setAssessmentAnswers({});
@@ -611,68 +836,63 @@ function LearnersReadContents() {
           setAssessmentTracker(finalQuestions.map(() => 'pending'));
         }
 
-        if (finalQuestions.length === 0) {
+        if (finalQuestions.length === 0 || !isPublished) {
           setIsAssessmentComplete(false);
           setIsAssessmentStarted(false);
-          setCompletedChapters(prev => prev.filter(id => id !== 'assessment'));
+          updateSummativeCompletion(false);
           return;
         }
 
         // 3. Determine attempt state based on history
-        const myAttempts = historyList.filter(att => Number(att.assessmentId) === Number(data.id));
+        const myAttempts = historyList.filter(att => isSummativeAttempt(att, data.id));
         const completedAttempts = myAttempts.filter(att => att.status === 'submitted' || att.status === 'graded');
         const activeAttempt = myAttempts.find(att => att.status === 'in_progress');
+        const passingScore = Number(fullAssessment.passingScore || fullAssessment.passing_score || 80);
+        const passedAttempt = completedAttempts.find((att) => {
+          if (att.isPassed || att.is_passed) return true;
+          const pct = parseFloat(att.percentage ?? att.score ?? 0);
+          return pct >= passingScore;
+        });
 
-        // Check if the user has reached the attempt limit
-        if (limitVal && completedAttempts.length >= limitVal && myAttempts.length > 0) {
-          const latestAttempt = myAttempts[0];
+        if (passedAttempt) {
+          if (isStaleLoad(loadToken)) return;
+          setCurrentAttemptId(passedAttempt.id);
+          setAttemptNumber(passedAttempt.attemptNumber || 1);
+          setMaxAttempts(limitVal);
+          setIsAssessmentComplete(true);
+          updateSummativeCompletion(true);
+          await hydrateCompletedAssessmentResult({
+            type: 'summative',
+            attemptId: passedAttempt.id,
+            historyAttempt: passedAttempt,
+            questionCount: finalQuestions.length,
+            passingScore,
+            token,
+            exhaustedAttempts: false,
+          });
+        } else if (limitVal && completedAttempts.length >= limitVal) {
+          if (isStaleLoad(loadToken)) return;
+          const latestAttempt = completedAttempts[0] || myAttempts[0];
           const attemptId = latestAttempt.id;
           setCurrentAttemptId(attemptId);
           setAttemptNumber(latestAttempt.attemptNumber || 1);
+          setMaxAttempts(limitVal);
           setIsAssessmentComplete(true);
-
-          // Mark as completed on frontend state as well to prevent icon toggling
-          setCompletedChapters((prev) => {
-            if (prev.includes('assessment')) return prev;
-            return [...prev, 'assessment'];
+          updateSummativeCompletion(true);
+          await hydrateCompletedAssessmentResult({
+            type: 'summative',
+            attemptId,
+            historyAttempt: latestAttempt,
+            questionCount: finalQuestions.length,
+            passingScore,
+            token,
+            exhaustedAttempts: true,
           });
-
-          if (token) {
-            try {
-              // Fetch results directly from history attempt ID!
-              const resultsRes = await fetch(`${API_BASE_URL}/api/summative-attempts/${attemptId}/results`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-              });
-              if (resultsRes.ok) {
-                const resultsBody = await resultsRes.json();
-                const finalResults = resultsBody.data || resultsBody;
-                const scorePct = parseFloat(finalResults.attempt?.percentage ?? finalResults.attempt?.score ?? latestAttempt.percentage ?? 0);
-                const passed = finalResults.attempt?.is_passed ?? (scorePct >= (fullAssessment.passing_score ?? 80));
-                const total = finalQuestions.length;
-                const correct = finalResults.results?.correct_answers || 0;
-                const wrong = finalResults.results?.wrong_answers || 0;
-                const answered = finalResults.results?.pending_review || 0;
-
-                setAssessmentResult({
-                  score: `${scorePct.toFixed(1)}%`,
-                  headline: passed ? 'Congratulations!' : 'Assessment Completed',
-                  summary: 'You have used all attempts for this assessment.',
-                  buttonLabel: passed ? 'Claim Certificate' : 'No attempt left',
-                  stats: [
-                    { value: String(total), label: 'Questions' },
-                    { value: passed ? 'Passed' : 'Failed', label: 'Status', tone: passed ? 'success' : 'danger' }
-                  ],
-                  status: latestAttempt.status || 'graded'
-                });
-              }
-            } catch (e) {
-              console.error("Failed to load completed summative state:", e);
-            }
-          }
         } else if (activeAttempt) {
           // Active attempt exists: set up metadata for prep card
           setIsAssessmentStarted(false);
           setIsAssessmentComplete(false);
+          updateSummativeCompletion(false);
           setAttemptNumber(activeAttempt.attemptNumber || 1);
           setMaxAttempts(limitVal);
           setCurrentAttemptId(activeAttempt.id);
@@ -685,6 +905,7 @@ function LearnersReadContents() {
           // Fresh attempt: do not call start yet!
           setIsAssessmentStarted(false);
           setIsAssessmentComplete(false);
+          updateSummativeCompletion(false);
           setAttemptNumber(completedAttempts.length + 1);
           setMaxAttempts(limitVal);
           setAssessmentAttemptData(null);
@@ -693,11 +914,12 @@ function LearnersReadContents() {
     } catch (err) {
       console.error("Failed to load summative assessment:", err);
     } finally {
-      setLoadingAssessment(false);
+      if (!isStaleLoad(loadToken)) setLoadingAssessment(false);
     }
   };
 
-  const loadFormativeAssessment = async (assessmentId) => {
+  const loadFormativeAssessment = async (assessmentId, loadToken) => {
+    if (isStaleLoad(loadToken)) return;
     setLoadingAssessment(true);
     setAssessmentQuestions([]);
     setAssessmentTracker([]);
@@ -707,6 +929,8 @@ function LearnersReadContents() {
     setIsAssessmentStarted(false);
     setIsConfirmingSubmit(false);
     setAssessmentAttemptData(null);
+    setAssessmentResult(EMPTY_ASSESSMENT_RESULT);
+    setCurrentAssessmentDetails({ ...EMPTY_ASSESSMENT_DETAILS, type: 'formative' });
     try {
       // 1. Fetch performance history first to know attempt status without starting!
       let historyList = [];
@@ -719,7 +943,6 @@ function LearnersReadContents() {
           if (perfRes.ok) {
             const perfBody = await perfRes.json();
             historyList = perfBody?.data?.assessmentHistory || [];
-            setUserPerformanceHistory(historyList);
           }
         } catch (e) {
           console.error("Failed to fetch performance history on load:", e);
@@ -727,6 +950,7 @@ function LearnersReadContents() {
       }
 
       const res = await fetch(`${API_BASE_URL}/api/formative-assessments/${assessmentId}`);
+      if (isStaleLoad(loadToken)) return;
       if (!res.ok) return;
       const body = await res.json();
       const fullAssessment = extractBody(body);
@@ -814,57 +1038,48 @@ function LearnersReadContents() {
         }
 
         // 3. Determine attempt state based on history
-        const myAttempts = historyList.filter(att => Number(att.assessmentId) === Number(assessmentId));
+        const myAttempts = historyList.filter(att => 
+          Number(att.assessmentId) === Number(assessmentId) && att.category === 'formative'
+        );
         const completedAttempts = myAttempts.filter(att => att.status === 'submitted' || att.status === 'graded');
         const activeAttempt = myAttempts.find(att => att.status === 'in_progress');
+        const passingScore = Number(fullAssessment.passingScore || fullAssessment.passing_score || 60);
+        const passedAttempt = completedAttempts.find((att) => {
+          if (att.isPassed || att.is_passed) return true;
+          const pct = parseFloat(att.percentage ?? att.score ?? 0);
+          return pct >= passingScore;
+        });
 
-        // Check if the user has reached the attempt limit
-        if (limitVal && completedAttempts.length >= limitVal && myAttempts.length > 0) {
-          const latestAttempt = myAttempts[0];
+        if (passedAttempt) {
+          setCurrentAttemptId(passedAttempt.id);
+          setAttemptNumber(passedAttempt.attemptNumber || 1);
+          setMaxAttempts(limitVal);
+          setIsAssessmentComplete(true);
+          await hydrateCompletedAssessmentResult({
+            type: 'formative',
+            attemptId: passedAttempt.id,
+            historyAttempt: passedAttempt,
+            questionCount: finalQuestions.length,
+            passingScore,
+            token,
+            exhaustedAttempts: false,
+          });
+        } else if (limitVal && completedAttempts.length >= limitVal && myAttempts.length > 0) {
+          const latestAttempt = completedAttempts[0] || myAttempts[0];
           const attemptId = latestAttempt.id;
           setCurrentAttemptId(attemptId);
           setAttemptNumber(latestAttempt.attemptNumber || 1);
+          setMaxAttempts(limitVal);
           setIsAssessmentComplete(true);
-
-          if (token) {
-            try {
-              // Fetch results directly from history attempt ID!
-              const resultsRes = await fetch(`${API_BASE_URL}/api/formative-attempts/${attemptId}/results`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-              });
-              if (resultsRes.ok) {
-                const resultsBody = await resultsRes.json();
-                const finalResults = resultsBody.data || resultsBody;
-                const scorePct = parseFloat(finalResults.attempt?.percentage ?? finalResults.attempt?.score ?? latestAttempt.percentage ?? 0);
-                const passed = finalResults.attempt?.is_passed ?? (scorePct >= (fullAssessment.passing_score ?? 60));
-                const total = finalQuestions.length;
-                const correct = finalResults.results?.correct_answers || 0;
-                const wrong = finalResults.results?.wrong_answers || 0;
-                const answered = finalResults.results?.pending_review || 0;
-
-                setAssessmentResult({
-                  score: `${scorePct.toFixed(1)}%`,
-                  headline: passed ? 'Congratulations!' : (answered > 0 ? 'Submitted for Review' : 'Quiz Completed'),
-                  summary: passed
-                    ? 'You have passed the quiz assessment. Great job!'
-                    : answered > 0
-                      ? `Your essay/text answers will be reviewed by the instructor. Auto-graded score: ${scorePct.toFixed(1)}%`
-                      : 'You did not achieve the required passing score.',
-                  buttonLabel: passed ? 'Continue Course' : 'No attempt left',
-                  stats: [
-                    { value: String(total), label: 'Questions' },
-                    { value: String(correct), label: 'Correct' },
-                    { value: String(wrong), label: 'Wrong' },
-                    ...(answered > 0 ? [{ value: String(answered), label: 'Pending Review' }] : []),
-                    { value: passed ? 'Passed' : (answered > 0 ? 'Pending' : 'Failed'), label: 'Status', tone: passed ? 'success' : (answered > 0 ? '' : 'danger') },
-                  ],
-                  status: latestAttempt.status || 'graded'
-                });
-              }
-            } catch (e) {
-              console.error("Failed to load completed formative state:", e);
-            }
-          }
+          await hydrateCompletedAssessmentResult({
+            type: 'formative',
+            attemptId,
+            historyAttempt: latestAttempt,
+            questionCount: finalQuestions.length,
+            passingScore,
+            token,
+            exhaustedAttempts: true,
+          });
         } else if (activeAttempt) {
           // Active attempt exists: set up metadata for prep card
           setIsAssessmentStarted(false);
@@ -889,7 +1104,7 @@ function LearnersReadContents() {
     } catch (err) {
       console.error("Failed to load formative assessment:", err);
     } finally {
-      setLoadingAssessment(false);
+      if (!isStaleLoad(loadToken)) setLoadingAssessment(false);
     }
   };
 
@@ -954,9 +1169,9 @@ function LearnersReadContents() {
 
   const issueCertificate = async (score) => {
     const token = localStorage.getItem('token');
-    if (!token || !inboundId) return;
+    if (!token || !inboundId) return false;
     try {
-      await fetch(`${API_BASE_URL}/api/courses/${inboundId}/certificates/issue`, {
+      const res = await fetch(`${API_BASE_URL}/api/courses/${inboundId}/certificates/issue`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -968,8 +1183,14 @@ function LearnersReadContents() {
           total_hours: 10
         })
       });
+      if (res.ok) return true;
+      const body = await res.json().catch(() => ({}));
+      // Treat duplicate issue as already claimed
+      if (/already issued/i.test(body?.message || '')) return true;
+      return false;
     } catch (err) {
       console.error("Failed to automatically issue certificate:", err);
+      return false;
     }
   };
 
@@ -1076,35 +1297,6 @@ function LearnersReadContents() {
             setExpandedWeeks((prev) => ({ ...prev, [targetWeekId]: true }));
           }
 
-          // build chapter content map
-          const cmap = {};
-          apiWeeks.forEach((w, idx) => {
-            const weekLabel = w.title || `Week ${w.week_number || idx + 1}`;
-            if (Array.isArray(w.chapters)) {
-              w.chapters.forEach((c, ci) => {
-                const cid = c.id || `ch-${idx}-${ci}`;
-                cmap[cid] = {
-                  id: cid,
-                  weekId: w.id,
-                  weekLabel: weekLabel,
-                  chapterLabel: c.title || c.name || `Chapter ${ci + 1}`,
-                  progressLabel: `Viewed : 0%`,
-                  headline: c.title || c.name || '',
-                  summary: c.description || c.summary || '',
-                  image: c.thumbnail ? (c.thumbnail.startsWith('/') ? `${API_BASE_URL}${c.thumbnail}` : c.thumbnail) : acOnImg,
-                  introTitle: 'Introduction',
-                  introBody: c.description || c.content || '',
-                  introLinkLabel: 'Read more',
-                  audienceTitle: 'Who is the course for?',
-                  audienceBody: c.target_audience || courseData.target_audience || '',
-                  attachments: c.attachments,
-                  exercises: c.exercises || [],
-                };
-              });
-            }
-          });
-          setChapterContentMapState((prev) => ({ ...prev, ...cmap }));
-
           // outcomes
           if (courseData.objectives) {
             let list = [];
@@ -1113,36 +1305,6 @@ function LearnersReadContents() {
             setOutcomesState(list.map(stripHtml).filter(Boolean));
           }
 
-          // exercises
-          const exercises = [];
-          let exCount = 0;
-          apiWeeks.forEach((w) => {
-            if (Array.isArray(w.chapters)) {
-              w.chapters.forEach((c) => {
-                if (Array.isArray(c.exercises)) {
-                  c.exercises.forEach((ex, exIndex) => {
-                    exCount++;
-                    exercises.push({
-                      id: ex.id || `${c.id}.${exIndex + 1}`,
-                      number: exCount,
-                      type: (ex.type === 'multiple_choice' || ex.type === 'checkbox' || ex.type === 'multi') ? 'multi' : 'single',
-                      prompt: ex.question || ex.title || ex.prompt || 'Exercise',
-                      options: ex.options || ['Option A', 'Option B'],
-                      correctAnswers: ex.correctAnswers || [],
-                    });
-                  });
-                }
-              });
-            }
-          });
-          if (exercises.length) {
-            setExerciseQuestionsState(exercises);
-            setExerciseStates(exercises.map(() => 'pending'));
-          }
-
-          if (activeChId) {
-            fetchChapterExercises(activeChId).catch(() => { });
-          }
         } else if (chapters.length) {
           // Fallback when weeks list is empty: group chapters by week_number or just week-1
           const groupedWeeksMap = {};
@@ -1188,30 +1350,6 @@ function LearnersReadContents() {
             setExpandedWeeks((prev) => ({ ...prev, [targetWeekId]: true }));
           }
 
-          // Build content map for all fallback chapters
-          const cmap = {};
-          chapters.forEach((c, i) => {
-            const cid = c.id || `ch-${i}`;
-            const wNum = c.week_number || 1;
-            cmap[cid] = {
-              id: cid,
-              weekLabel: `Week ${wNum}`,
-              chapterLabel: c.title || c.name || `Chapter ${i + 1}`,
-              progressLabel: `Viewed : 0%`,
-              headline: c.title || c.name || '',
-              summary: c.description || c.summary || '',
-              image: c.thumbnail ? (c.thumbnail.startsWith('/') ? `${API_BASE_URL}${c.thumbnail}` : c.thumbnail) : acOnImg,
-              introTitle: 'Introduction',
-              introBody: c.description || c.content || '',
-              introLinkLabel: 'Read more',
-              audienceTitle: 'Who is the course for?',
-              audienceBody: c.target_audience || courseData.target_audience || '',
-              attachments: c.attachments,
-              exercises: c.exercises || [],
-            };
-          });
-          setChapterContentMapState((prev) => ({ ...prev, ...cmap }));
-
           // outcomes
           if (courseData.objectives) {
             let list = [];
@@ -1219,34 +1357,7 @@ function LearnersReadContents() {
             else if (Array.isArray(courseData.objectives)) list = courseData.objectives;
             setOutcomesState(list.map(stripHtml).filter(Boolean));
           }
-
-          // exercises
-          const exercises = [];
-          chapters.forEach((c, chIndex) => {
-            if (Array.isArray(c.exercises)) {
-              c.exercises.forEach((ex, exIndex) => {
-                exercises.push({
-                  id: ex.id || `${chIndex + 1}.${exIndex + 1}`,
-                  number: exIndex + 1,
-                  type: (ex.type === 'multiple_choice' || ex.type === 'checkbox' || ex.type === 'multi') ? 'multi' : 'single',
-                  prompt: ex.title || ex.name || ex.headline || ex.prompt || 'Exercise',
-                  options: ex.options || ['Option A', 'Option B'],
-                  correctAnswers: ex.correctAnswers || [],
-                });
-              });
-            }
-          });
-          if (exercises.length) {
-            setExerciseQuestionsState(exercises);
-            setExerciseStates(exercises.map(() => 'pending'));
-          }
-          if (activeChId) {
-            fetchChapterExercises(activeChId).catch(() => { });
-          }
         }
-
-        // load summative assessment
-        await loadSummativeAssessment(courseData.id || id);
 
         // load student progress and attempts for this course to reflect progress
         if (courseData.id || courseData.course_id || id) {
@@ -1254,6 +1365,7 @@ function LearnersReadContents() {
           fetchCourseProgress(courseId).catch(() => { });
           fetchCourseStudentAttempts(courseId).catch(() => { });
           fetchCourseAvgScore(courseId).catch(() => { });
+          refreshSummativeCompletionStatus(courseId).catch(() => { });
         }
       } catch (err) {
         // keep fallbacks
@@ -1275,6 +1387,7 @@ function LearnersReadContents() {
     headline: '',
     summary: '',
     image: acOnImg,
+    video_url: '',
     introTitle: '',
     introBody: '',
     introLinkLabel: '',
@@ -1311,12 +1424,12 @@ function LearnersReadContents() {
         summary: 'Formative assessment / Quiz',
       };
     }
-    return chapterContentMapState[activeChapterId] || defaultContent;
-  }, [activeChapterId, chapterContentMapState, currentAssessmentDetails, outlineWeeksState, isAssessmentComplete]);
+    return activeChapterContent || defaultContent;
+  }, [activeChapterId, activeChapterContent, currentAssessmentDetails, outlineWeeksState, isAssessmentComplete]);
 
   const isCurrentChapterCompleted = useMemo(() => {
     if (activeChapterId === 'assessment') {
-      return isAssessmentComplete;
+      return isSummativeComplete;
     }
     if (typeof activeChapterId === 'string' && activeChapterId.startsWith('formative-')) {
       const targetWeek = outlineWeeksState.find(w =>
@@ -1326,7 +1439,7 @@ function LearnersReadContents() {
       return assessmentItem ? assessmentItem.completed : false;
     }
     return completedChapters.includes(activeChapterId) || completedChapters.includes(Number(activeChapterId));
-  }, [activeChapterId, completedChapters, outlineWeeksState, isAssessmentComplete]);
+  }, [activeChapterId, completedChapters, outlineWeeksState, isSummativeComplete]);
 
   const pdfAttachments = useMemo(() => {
     if (!activeContent || !activeContent.attachments) return [];
@@ -1430,10 +1543,14 @@ function LearnersReadContents() {
         const data = extractBody(body) || {};
         const progressList = data.progress || [];
         const completedIds = progressList.map(p => Number(p.chapter_id));
-        const completedAssessments = data.completedAssessments || [];
+        const completedAssessments = (data.completedAssessments || []).filter((id) => id !== 'assessment');
         
         setCompletedChapters((prev) => {
-          const localMocks = prev.filter(id => typeof id === 'string' && !completedAssessments.includes(id));
+          const localMocks = prev.filter(id =>
+            typeof id === 'string' &&
+            id !== 'assessment' &&
+            !completedAssessments.includes(id)
+          );
           const merged = [...completedIds, ...completedAssessments, ...localMocks];
           
           // Update outline weeks state with completed status!
@@ -1554,67 +1671,42 @@ function LearnersReadContents() {
     }
   };
 
-  const handleChapterSelect = (chapterId) => {
-    setActiveChapterId(chapterId);
-    if (window.innerWidth <= 991) setIsSidebarOpen(false);
+  const mapChapterToContent = (chapterId, chapterData, courseData = {}) => {
+    const targetWeek = outlineWeeksState.find((w) =>
+      w.chapters?.some((c) => String(c.id) === String(chapterId))
+    );
+    const chapterMeta = targetWeek?.chapters?.find((c) => String(c.id) === String(chapterId));
+    const weekLabel = targetWeek?.title || (chapterData?.week_number ? `Week ${chapterData.week_number}` : '');
+    const title = chapterData?.title || chapterData?.name || chapterMeta?.title || 'Chapter';
 
-    // Reset States
-    setIsAudienceExpanded(false);
-    setActivePdfIndex(0);
-    setActiveTextPageIndex(0);
-    setIsWorkspaceOpen(false);
-
-    const isSummative = chapterId === 'assessment';
-    const isFormative = typeof chapterId === 'string' && chapterId.startsWith('formative-');
-
-    if (isSummative || isFormative) {
-      setCurrentAttemptId(null);
-      setCurrentAssessmentIndex(0);
-      setSelectedAssessmentOptions([]);
-      setIsAssessmentGraded(false);
-      setIsAssessmentComplete(false);
-      setAssessmentTextAnswer('');
-      setAssessmentAnswers({});
-      setIsAssessmentReviewMode(false);
-      setIsAssessmentStarted(false);
-      setIsConfirmingSubmit(false);
-      setAssessmentAttemptData(null);
-      // Stop any running timer from previous assessment
-      if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
-      setAssessmentTimerActive(false);
-      setTimeRemainingSeconds(0);
-
-      if (isFormative) {
-        const assessmentId = chapterId.replace('formative-', '');
-        loadFormativeAssessment(assessmentId).catch(() => {});
-      } else {
-        if (inboundId) {
-          loadSummativeAssessment(inboundId).catch(() => {});
-        }
-      }
-    } else {
-      setCurrentExerciseIndex(0);
-      setSelectedExerciseOption(null);
-      setIsExerciseGraded(false);
-      setExerciseStates([]);
-      setExerciseAnswers({});
-      setExerciseGradedList({});
-      
-      // fetch exercises for the selected chapter from backend
-      if (chapterId) {
-        fetchChapterExercises(chapterId).catch(() => { });
-      }
-    }
+    return {
+      id: chapterId,
+      weekLabel,
+      chapterLabel: title,
+      progressLabel: 'Viewed : 0%',
+      headline: title,
+      summary: chapterData?.description || chapterData?.summary || '',
+      image: chapterData?.thumbnail
+        ? (chapterData.thumbnail.startsWith('/') ? `${API_BASE_URL}${chapterData.thumbnail}` : chapterData.thumbnail)
+        : acOnImg,
+      video_url: chapterData?.video_url || '',
+      introTitle: 'Introduction',
+      introBody: chapterData?.description || chapterData?.content || '',
+      introLinkLabel: 'Read more',
+      audienceTitle: 'Who is the course for?',
+      audienceBody: chapterData?.target_audience || courseData?.target_audience || '',
+      attachments: chapterData?.attachments || null,
+    };
   };
 
-  // Fetch exercises for a chapter from backend and set state
-  const fetchChapterExercises = async (chapterId) => {
-    if (!chapterId) return;
+  const fetchChapterExercises = async (chapterId, loadToken, attemptsList = studentAttempts) => {
+    if (!chapterId || isStaleLoad(loadToken)) return;
     try {
       const isMockId = typeof chapterId === 'string' && (chapterId.startsWith('ch-') || chapterId.startsWith('chapter-') || isNaN(Number(chapterId)));
       let list = [];
       if (!isMockId) {
         const res = await fetch(`${API_BASE_URL}/api/chapters/${chapterId}/exercises`);
+        if (isStaleLoad(loadToken)) return;
         if (res.ok) {
           const body = await res.json();
           const data = extractBody(body) || [];
@@ -1622,11 +1714,7 @@ function LearnersReadContents() {
         }
       }
 
-      // Fallback to local content map if empty
-      if (!list || !list.length) {
-        const localChapter = chapterContentMapState[chapterId] || Object.values(chapterContentMapState).find(c => String(c.id) === String(chapterId));
-        list = localChapter?.exercises || [];
-      }
+      if (isStaleLoad(loadToken)) return;
 
       if (!list || !list.length) {
         setExerciseQuestionsState([]);
@@ -1655,54 +1743,29 @@ function LearnersReadContents() {
         };
       });
 
+      if (isStaleLoad(loadToken)) return;
       setExerciseQuestionsState(mapped);
 
-      // Restore states based on student attempts
       const answersMap = {};
       const gradedMap = {};
       const statesList = mapped.map((m) => {
-        const att = studentAttempts.find(a => Number(a.exercise_id) === Number(m.id));
+        const att = attemptsList.find((a) => Number(a.exercise_id) === Number(m.id));
         if (att) {
           gradedMap[m.id] = true;
           const optIdx = att.answer !== null ? Number(att.answer) : null;
           answersMap[m.id] = isNaN(optIdx) ? null : optIdx;
           return att.is_correct ? 'correct' : 'wrong';
-        } else {
-          gradedMap[m.id] = false;
-          answersMap[m.id] = null;
-          return 'pending';
         }
+        gradedMap[m.id] = false;
+        answersMap[m.id] = null;
+        return 'pending';
       });
       setExerciseAnswers(answersMap);
       setExerciseGradedList(gradedMap);
       setExerciseStates(statesList);
     } catch (err) {
       console.error("Failed to fetch chapter exercises:", err);
-      const localChapter = chapterContentMapState[chapterId] || Object.values(chapterContentMapState).find(c => String(c.id) === String(chapterId));
-      const list = localChapter?.exercises || [];
-      if (list && list.length) {
-        const mapped = list.map((ex, i) => {
-          let options = ex.options;
-          if (typeof options === 'string') {
-            try { options = JSON.parse(options); } catch (e) { options = null; }
-          }
-          const optionLabels = Array.isArray(options) ? options.map(getOptionLabel) : (options || ['Option A', 'Option B']);
-          const correctAnswers = extractCorrectAnswers(ex, options, optionLabels);
-          return {
-            id: ex.id || ex.exercise_id || `ex-${i}`,
-            number: ex.order_index || i + 1,
-            type: (ex.type === 'multiple_choice' || ex.type === 'checkbox' || ex.type === 'multi') ? 'multi' : 'single',
-            prompt: ex.question || ex.title || ex.prompt || 'Exercise',
-            options: optionLabels,
-            correctAnswers,
-            points: ex.points || 1
-          };
-        });
-        setExerciseQuestionsState(mapped);
-        setExerciseAnswers({});
-        setExerciseGradedList({});
-        setExerciseStates(mapped.map(() => 'pending'));
-      } else {
+      if (!isStaleLoad(loadToken)) {
         setExerciseQuestionsState([]);
         setExerciseStates([]);
         setExerciseAnswers({});
@@ -1710,6 +1773,95 @@ function LearnersReadContents() {
       }
     }
   };
+
+  const loadChapterContent = async (chapterId, loadToken) => {
+    if (!chapterId || isStaleLoad(loadToken)) return;
+    setLoadingChapterContent(true);
+    setActiveChapterContent(null);
+    try {
+      const isMockId = typeof chapterId === 'string' && (chapterId.startsWith('ch-') || chapterId.startsWith('chapter-') || isNaN(Number(chapterId)));
+      let chapterData = null;
+      if (!isMockId) {
+        const res = await fetch(`${API_BASE_URL}/api/chapters/${chapterId}`);
+        if (isStaleLoad(loadToken)) return;
+        if (res.ok) {
+          const body = await res.json();
+          chapterData = extractBody(body);
+        }
+      }
+
+      if (isStaleLoad(loadToken)) return;
+
+      const targetWeek = outlineWeeksState.find((w) =>
+        w.chapters?.some((c) => String(c.id) === String(chapterId))
+      );
+      const chapterMeta = targetWeek?.chapters?.find((c) => String(c.id) === String(chapterId));
+
+      setActiveChapterContent(mapChapterToContent(chapterId, chapterData || { title: chapterMeta?.title }, {}));
+
+      let attemptsRes = [];
+      if (inboundId) {
+        const attRes = await fetch(`${API_BASE_URL}/api/courses/${inboundId}/exercise-attempts`);
+        if (isStaleLoad(loadToken)) return;
+        if (attRes.ok) {
+          const body = await attRes.json();
+          const data = extractBody(body) || [];
+          attemptsRes = Array.isArray(data) ? data : (data.data || []);
+          setStudentAttempts(attemptsRes);
+        }
+      }
+
+      if (isStaleLoad(loadToken)) return;
+      await fetchChapterExercises(chapterId, loadToken, attemptsRes);
+    } catch (err) {
+      console.error('Failed to load chapter content:', err);
+      if (!isStaleLoad(loadToken)) {
+        setActiveChapterContent(null);
+      }
+    } finally {
+      if (!isStaleLoad(loadToken)) setLoadingChapterContent(false);
+    }
+  };
+
+  const handleChapterSelect = (chapterId) => {
+    setContentReloadKey((k) => k + 1);
+    setActiveChapterId(chapterId);
+    if (window.innerWidth <= 991) setIsSidebarOpen(false);
+    setIsAudienceExpanded(false);
+    setActivePdfIndex(0);
+    setActiveTextPageIndex(0);
+    setIsWorkspaceOpen(false);
+  };
+
+  useEffect(() => {
+    if (!activeChapterId || loadingCourse) return;
+
+    const loadToken = bumpLoadToken();
+    const isSummative = activeChapterId === 'assessment';
+    const isFormative = typeof activeChapterId === 'string' && activeChapterId.startsWith('formative-');
+
+    if (isSummative) {
+      resetChapterState();
+      setLoadingChapterContent(false);
+      resetAssessmentState();
+      if (inboundId) loadSummativeAssessment(inboundId, loadToken).catch(() => {});
+      return;
+    }
+
+    if (isFormative) {
+      resetChapterState();
+      setLoadingChapterContent(false);
+      resetAssessmentState();
+      const assessmentId = activeChapterId.replace('formative-', '');
+      loadFormativeAssessment(assessmentId, loadToken).catch(() => {});
+      return;
+    }
+
+    resetAssessmentState();
+    setLoadingAssessment(false);
+    resetChapterState();
+    loadChapterContent(activeChapterId, loadToken).catch(() => {});
+  }, [activeChapterId, inboundId, loadingCourse, contentReloadKey]);
 
   // Fetch student attempts for a course
   const fetchCourseStudentAttempts = async (courseId) => {
@@ -1843,7 +1995,7 @@ function LearnersReadContents() {
 
     const token = localStorage.getItem('token');
     if (!token || !currentAttemptId) {
-      alert("No active attempt found. Please try again.");
+      showToast("No active attempt found. Please try again.", "error");
       return;
     }
 
@@ -1927,7 +2079,7 @@ function LearnersReadContents() {
             ? `Your essay/text answers will be reviewed by the instructor. Auto-graded score: ${scorePct.toFixed(1)}%`
             : 'You did not achieve the required passing score. Please try again.',
         buttonLabel: passed
-          ? (currentAssessmentDetails.type === 'summative' ? 'Claim Certificate' : 'Continue Course')
+          ? (currentAssessmentDetails.type === 'summative' ? 'Claim Certificate' : '')
           : (hasAttemptsLeft ? 'Retry Quiz' : 'No attempt left'),
         stats: [
           { value: String(total), label: 'Questions' },
@@ -1945,10 +2097,7 @@ function LearnersReadContents() {
           if (passed) {
             issueCertificate(scorePct).catch(() => {});
           }
-          setCompletedChapters((prev) => {
-            if (prev.includes('assessment')) return prev;
-            return [...prev, 'assessment'];
-          });
+          updateSummativeCompletion(true);
         }
       } else if (currentAssessmentDetails.type === 'formative') {
         const assKey = `formative-${currentAssessmentDetails.id}`;
@@ -1988,84 +2137,21 @@ function LearnersReadContents() {
       setIsAssessmentComplete(true);
     } catch (err) {
       console.error("Failed to submit assessment:", err);
-      alert("Submission failed. Please check your connection and try again.");
+      showToast("Submission failed. Please check your connection and try again.", "error");
     }
   };
 
   submitRef.current = handleAssessmentSubmit;
 
   const handleAssessmentCompleteButton = () => {
-    const statusStat = assessmentResult.stats?.find(s => s.label === 'Status');
-    const passed = statusStat?.value === 'Passed';
-
-    if (passed) {
-      if (currentAssessmentDetails.type === 'summative') {
-        navigate('/academia/learner/certificates');
-      } else {
-        // Formative assessment passed: find next item in timeline!
-        let nextChapterId = null;
-        let foundCurrent = false;
-        for (const week of outlineWeeksState) {
-          // Check chapters
-          if (week.chapters) {
-            for (const ch of week.chapters) {
-              if (foundCurrent) {
-                nextChapterId = ch.id;
-                break;
-              }
-              if (String(ch.id) === String(activeChapterId)) {
-                foundCurrent = true;
-              }
-            }
-          }
-          if (nextChapterId) break;
-
-          // Check assessments
-          if (week.assessments) {
-            for (const ass of week.assessments) {
-              if (foundCurrent) {
-                nextChapterId = ass.id;
-                break;
-              }
-              if (String(ass.id) === String(activeChapterId)) {
-                foundCurrent = true;
-              }
-            }
-          }
-          if (nextChapterId) break;
-        }
-
-        if (nextChapterId) {
-          handleChapterSelect(nextChapterId);
-        } else {
-          setIsAssessmentComplete(false);
-          setIsAssessmentReviewMode(false);
-          setIsAssessmentGraded(false);
-        }
-      }
-    } else {
-      setCurrentAssessmentIndex(0);
-      setSelectedAssessmentOptions([]);
-      setAssessmentTextAnswer('');
-      setIsAssessmentGraded(false);
-      setIsAssessmentComplete(false);
-      setAssessmentAnswers({});
-      setIsAssessmentReviewMode(false);
-      setAssessmentTracker(assessmentQuestions.map(() => 'pending'));
-      
-      // Re-start attempt on retry
-      if (currentAssessmentDetails.type === 'formative' && currentAssessmentDetails.id) {
-        loadFormativeAssessment(currentAssessmentDetails.id).catch(() => {});
-      } else if (currentAssessmentDetails.type === 'summative' && inboundId) {
-        loadSummativeAssessment(inboundId).catch(() => {});
-      }
-    }
+    // Only used for Retry Quiz — reload assessment for a fresh attempt
+    setContentReloadKey((k) => k + 1);
   };
 
   const handleEnrollFromReader = async () => {
     const token = localStorage.getItem('token');
     if (!token) {
-      alert("Please sign in to enroll in this course.");
+      showToast("Please sign in to enroll in this course.", "error");
       navigate('/academia/auth/signin');
       return;
     }
@@ -2088,7 +2174,7 @@ function LearnersReadContents() {
       }
       setIsEnrolled(true);
     } catch (err) {
-      alert(err.message || 'Failed to enroll in the course.');
+      showToast(err.message || 'Failed to enroll in the course.', "error");
     } finally {
       setIsEnrolling(false);
     }
@@ -2105,9 +2191,9 @@ function LearnersReadContents() {
                 <img src={acSav} alt="Save" />
                 <span>Saved Library</span>
               </a>
-              <a className="learners-btn learners-btn-primary" href="/" onClick={preventDefault}>
+              <a className="learners-btn learners-btn-primary" href="/academia/index" target="_blank" rel="noopener noreferrer">
                 <span>Go to website</span>
-                <img src={wExitRight} alt="Exit" />
+                <img src={hoagoto} alt="Go" />
               </a>
             </div>
           </div>
@@ -2136,8 +2222,7 @@ function LearnersReadContents() {
             activeChapterId={activeChapterId}
             handleChapterSelect={handleChapterSelect}
             stripHtml={stripHtml}
-            isAssessmentComplete={isAssessmentComplete}
-            completedChapters={completedChapters}
+            isSummativeComplete={isSummativeComplete}
           />
 
           <main className="learners-read-contents-main">
@@ -2174,6 +2259,9 @@ function LearnersReadContents() {
                 <div className="learners-loading">Loading course content…</div>
               ) : showContentSections ? (
                 <>
+                  {loadingChapterContent && !isAssessmentView ? (
+                    <div className="learners-loading">Loading chapter content…</div>
+                  ) : (
                   <LessonView
                     activeContent={activeContent}
                     isEnrolled={isEnrolled}
@@ -2185,8 +2273,10 @@ function LearnersReadContents() {
                     setIsWorkspaceOpen={setIsWorkspaceOpen}
                     stripHtml={stripHtml}
                   />
+                  )}
 
                   <WorkspaceModal
+                    key={activeChapterId}
                     isWorkspaceOpen={isWorkspaceOpen}
                     setIsWorkspaceOpen={setIsWorkspaceOpen}
                     activeContent={activeContent}
@@ -2216,8 +2306,10 @@ function LearnersReadContents() {
                   />
 
                   <AssessmentView
+                    key={activeChapterId}
                     isAssessmentView={isAssessmentView}
                     currentAssessmentDetails={currentAssessmentDetails}
+                    courseId={inboundId}
                     maxAttempts={maxAttempts}
                     attemptNumber={attemptNumber}
                     assessmentTimerActive={assessmentTimerActive}
@@ -2251,6 +2343,7 @@ function LearnersReadContents() {
                     assessmentAttemptData={assessmentAttemptData}
                     startAssessmentTimer={startAssessmentTimer}
                     handleStartAssessment={handleStartAssessment}
+                    showToast={showToast}
                   />
                 </>
               ) : (
@@ -2317,6 +2410,28 @@ function LearnersReadContents() {
           </form>
         </div>
       </section>
+      {/* Floating Toast Notification */}
+      {toast.show && (
+        <div className={`toast-${toast.type}`} style={{
+          position: 'fixed',
+          bottom: '24px',
+          right: '24px',
+          backgroundColor: toast.type === 'success' ? '#10B981' : '#EF4444',
+          color: '#FFFFFF',
+          padding: '12px 24px',
+          borderRadius: '8px',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          zIndex: 9999,
+        }}>
+          <span className="toast-icon" style={{ fontWeight: 'bold' }}>
+            {toast.type === 'success' ? '✓' : '✕'}
+          </span>
+          <span className="toast-message" style={{ fontSize: '13px', fontWeight: 500 }}>{toast.message}</span>
+        </div>
+      )}
     </LearnersPageShell>
   );
 }

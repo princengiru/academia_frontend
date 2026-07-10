@@ -29,6 +29,22 @@ import './read-story.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
+const formatHtmlContent = (html) => {
+  if (!html) return '';
+  let cleanHtml = html
+    .replace(/src="\/uploads\//g, `src="${API_BASE_URL}/uploads/`)
+    .replace(/href="\/uploads\//g, `href="${API_BASE_URL}/uploads/`);
+  
+  cleanHtml = cleanHtml.replace(/<a\s+(href="[^"]*")/gi, (match, hrefPart) => {
+    if (/target=/i.test(match)) {
+      return match;
+    }
+    return `<a target="_blank" rel="noopener noreferrer" ${hrefPart}`;
+  });
+  
+  return cleanHtml;
+};
+
 const resolveStoryImage = (value) => {
   if (!value) return null;
   if (value.startsWith('http://') || value.startsWith('https://') || value.startsWith('data:') || value.startsWith('blob:')) {
@@ -374,7 +390,7 @@ function AcademiaReadStory() {
               {currentStoryContent ? (
                 <div 
                   dangerouslySetInnerHTML={{ 
-                    __html: storyData?.contentHtml || (`<p>${String(currentStoryContent).replace(/\n/g, '</p><p>')}</p>`) 
+                    __html: formatHtmlContent(storyData?.contentHtml || (`<p>${String(currentStoryContent).replace(/\n/g, '</p><p>')}</p>`)) 
                   }} 
                   className="story-html-content"
                 />

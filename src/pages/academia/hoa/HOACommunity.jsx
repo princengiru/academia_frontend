@@ -5,6 +5,22 @@ import './hoa-community.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
+const formatHtmlContent = (html) => {
+  if (!html) return '';
+  let cleanHtml = html
+    .replace(/src="\/uploads\//g, `src="${API_BASE_URL}/uploads/`)
+    .replace(/href="\/uploads\//g, `href="${API_BASE_URL}/uploads/`);
+  
+  cleanHtml = cleanHtml.replace(/<a\s+(href="[^"]*")/gi, (match, hrefPart) => {
+    if (/target=/i.test(match)) {
+      return match;
+    }
+    return `<a target="_blank" rel="noopener noreferrer" ${hrefPart}`;
+  });
+  
+  return cleanHtml;
+};
+
 // Reusing standard project icons where applicable
 import hoarefresh from '../../../assets/icons/hoarefresh.svg';
 import hoagoto from '../../../assets/icons/hoagoto.svg';
@@ -994,7 +1010,7 @@ const HOACommunity = () => {
 
                                             <div className="hoac-article-body">
                                                 {selectedStory.contents ? (
-                                                    <div dangerouslySetInnerHTML={{ __html: selectedStory.contents }} />
+                                                    <div dangerouslySetInnerHTML={{ __html: formatHtmlContent(selectedStory.contents) }} />
                                                 ) : (
                                                     <p>{selectedStory.description}</p>
                                                 )}

@@ -2322,7 +2322,6 @@
 .learners-workspace-modal-close:hover {
   background: #E2E8F0;
   color: #0F172A;
-  transform: rotate(90deg);
 }
 
 /* Scrollable modal body layout */

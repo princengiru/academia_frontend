@@ -5,6 +5,7 @@ import 'react-quill-new/dist/quill.snow.css';
 import ProfessorLayout from '../../../components/layouts/ProfessorLayout/ProfessorLayout';
 import { ChevronDown, AlertTriangle, Search, RefreshCw } from 'lucide-react';
 import './management-student-qa.css';
+import hoagoto from '../../../assets/icons/hoagoto.svg';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
@@ -633,9 +634,9 @@ const ManagementStudentQA = () => {
                 <img src="/assets/icons/van.svg" alt="" style={{ width: '14px', height: '14px', objectFit: 'contain' }} />
                 <span>View Analytics</span>
               </a>
-              <a className="learners-btn learners-btn-primary" href="#" onClick={(e) => { preventDefault(e); navigate('/academia'); }}>
+              <a className="learners-btn learners-btn-primary" href="/academia/index" target="_blank" rel="noopener noreferrer">
                 <span>Go to website</span>
-                <img src="/assets/icons/exit-right.svg" alt="" style={{ width: '14px', height: '14px', objectFit: 'contain' }} />
+                <img src={hoagoto} alt="Go" style={{ width: '14px', height: '14px', objectFit: 'contain' }} />
               </a>
             </div>
           </div>

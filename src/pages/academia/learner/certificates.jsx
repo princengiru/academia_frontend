@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import LearnersPageShell from './LearnersPageShell';
 
@@ -9,7 +9,6 @@ import searchIcon from '../../../assets/icons/search.svg';
 import drop1 from '../../../assets/icons/drop1.svg';
 import resumeIcon from '../../../assets/icons/resume.svg';
 import downloadIcon from '../../../assets/icons/download.svg';
-import playIcon from '../../../assets/icons/play.svg';
 import acEye from '../../../assets/icons/ac-eye.svg';
 import acShare from '../../../assets/icons/ac-share.svg';
 import acLe2 from '../../../assets/icons/ac-le2.svg';
@@ -72,22 +71,70 @@ function isInRange(issueDate, selectedRange) {
   return true;
 }
 
-function toActionLabel(status) {
-  if (status === 'passed') return 'Download';
-  if (status === 'failed') return 'Retake';
-  return 'Resume';
-}
+function normalizeCertificate(raw) {
+  if (!raw || typeof raw !== 'object') return null;
 
-function toActionIcon(status) {
-  if (status === 'passed') return downloadIcon;
-  if (status === 'failed') return playIcon;
-  return resumeIcon;
+  const finalScoreRaw = raw.finalScore ?? raw.final_score ?? raw.score ?? null;
+  const finalScore = finalScoreRaw === null || finalScoreRaw === undefined || finalScoreRaw === ''
+    ? null
+    : Number(finalScoreRaw);
+
+  const isVerified = Boolean(
+    raw.isVerified === true ||
+    raw.is_verified === 1 ||
+    raw.is_verified === true ||
+    raw.verified === true
+  );
+
+  const certificateNumber = raw.certificateNumber || raw.certificate_number || raw.number || '';
+  const issueDate = raw.issueDate || raw.issue_date || raw.createdAt || raw.created_at || null;
+  const totalHours = Number(raw.total_hours ?? raw.totalHours ?? raw.timeSpent?.hours ?? 0);
+  const timeDisplay = raw.timeSpent?.display
+    || (totalHours > 0 ? `${Math.round(totalHours)}h` : '—');
+
+  // Issued certificates are earned passes. Never treat them as failed/retake.
+  // Display status is HOA verification, not assessment pass/fail.
+  const displayStatus = isVerified ? 'approved' : 'pending';
+
+  return {
+    ...raw,
+    id: raw.id,
+    courseId: raw.courseId ?? raw.course_id ?? raw.course?.id ?? null,
+    courseTitle: raw.courseTitle || raw.course_title || raw.courseName || raw.course_name || raw.course?.title || 'Certificate',
+    finalScore: Number.isFinite(finalScore) ? finalScore : null,
+    totalQuestions: raw.totalQuestions ?? raw.total_questions ?? 0,
+    total_hours: totalHours,
+    timeSpent: { display: timeDisplay, hours: totalHours },
+    issueDate,
+    certificateNumber,
+    isVerified,
+    displayStatus,
+    student: raw.student || {
+      name: raw.student_name || raw.studentName || '',
+      email: raw.student_email || raw.studentEmail || '',
+    },
+  };
 }
 
 function LearnersCertificates() {
   const navigate = useNavigate();
   const [certificates, setCertificates] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+  const toastTimerRef = useRef(null);
+  const showToast = (message, type = 'success') => {
+    setToast({ show: true, message, type });
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    toastTimerRef.current = setTimeout(() => {
+      setToast({ show: false, message: '', type: 'success' });
+    }, type === 'error' ? 8000 : 5000);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    };
+  }, []);
   const [error, setError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedRange, setSelectedRange] = useState('This Month');
@@ -128,13 +175,14 @@ function LearnersCertificates() {
     }
 
     const listData = listBody?.data ?? listBody;
-    const items = Array.isArray(listData?.certificates)
+    const items = (Array.isArray(listData?.certificates)
       ? listData.certificates
       : Array.isArray(listData?.data)
         ? listData.data
         : Array.isArray(listData)
           ? listData
-          : [];
+          : []
+    ).map(normalizeCertificate).filter(Boolean);
 
     const pagination = listData?.pagination || listBody?.pagination || { limit: pageSizeArg, offset, total: items.length, pages: Math.max(1, Math.ceil(items.length / pageSizeArg)) };
 
@@ -255,21 +303,32 @@ function LearnersCertificates() {
   };
 
   const handlePrimaryAction = (certificate) => {
-    if (certificate?.status === 'passed' && certificate?.certificateNumber) {
-      window.open(`${API_BASE_URL}/api/certificates/${certificate.certificateNumber}/download`, '_blank', 'noopener,noreferrer');
+    if (!certificate?.certificateNumber) {
+      showToast('Certificate number is not available yet.', 'error');
       return;
     }
-
-    navigate('/academia/learner/courses');
+    if (!certificate.isVerified) {
+      showToast('This certificate is pending approval from HOA. You will be able to download it once approved.', 'error');
+      return;
+    }
+    window.open(`${API_BASE_URL}/api/certificates/${certificate.certificateNumber}/download`, '_blank', 'noopener,noreferrer');
   };
 
   const handleViewCertificate = (certificate) => {
     if (!certificate?.certificateNumber) return;
+    if (!certificate.isVerified) {
+      showToast("This certificate is pending approval from HOA.", "error");
+      return;
+    }
     window.open(`${API_BASE_URL}/api/certificates/${certificate.certificateNumber}/download`, '_blank', 'noopener,noreferrer');
   };
 
   const handleShareCertificate = async (certificate) => {
     if (!certificate?.certificateNumber) return;
+    if (!certificate.isVerified) {
+      showToast("This certificate is pending approval from HOA.", "error");
+      return;
+    }
 
     const url = `${API_BASE_URL}/api/certificates/verify/${certificate.certificateNumber}`;
     try {
@@ -279,6 +338,7 @@ function LearnersCertificates() {
       }
       if (navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(url);
+        showToast("Certificate verification link copied to clipboard!", "success");
       }
     } catch {
       // Silent fallback: the page still works without sharing support.
@@ -408,14 +468,18 @@ function LearnersCertificates() {
           <>
             <section className="learners-certificates-grid">
               {visibleCertificates.map((certificate, idx) => {
-                const status = certificate.status || 'pending';
-                const primaryAction = toActionLabel(status);
-                const primaryIcon = toActionIcon(status);
-                const title = certificate.courseTitle || certificate.courseName || 'Certificate';
+                const isApproved = certificate.isVerified;
+                const primaryAction = isApproved ? 'Download' : 'Pending HOA';
+                const primaryIcon = isApproved ? downloadIcon : resumeIcon;
+                const title = certificate.courseTitle || 'Certificate';
                 const issueDate = certificate.issueDate ? `Completed on ${formatDate(certificate.issueDate)}` : 'Date unavailable';
-                const score = certificate.finalScore !== undefined && certificate.finalScore !== null ? formatPercent(certificate.finalScore) : '0%';
-                const questions = certificate.totalQuestions ?? certificate.total_questions ?? 0;
-                const timeSpent = certificate.timeSpent?.display || `${Math.round(Number(certificate.total_hours || 0))}h`;
+                const score = certificate.finalScore !== undefined && certificate.finalScore !== null
+                  ? formatPercent(certificate.finalScore)
+                  : '—';
+                const questions = certificate.totalQuestions ?? 0;
+                const timeSpent = certificate.timeSpent?.display || '—';
+                const statusLabel = isApproved ? 'Approved' : 'Pending HOA';
+                const statusClass = isApproved ? 'is-passed' : 'is-progress';
 
                 return (
                   <article key={certificate.id || idx} className="learners-certificate-card">
@@ -449,8 +513,8 @@ function LearnersCertificates() {
                           <span>Time</span>
                         </div>
                         <div>
-                          <p className={`learners-certificate-status ${status === 'passed' ? 'is-passed' : status === 'failed' ? 'is-failed' : 'is-progress'}`}>
-                            {status === 'passed' ? 'Passed' : status === 'failed' ? 'Failed' : 'In Progress'}
+                          <p className={`learners-certificate-status ${statusClass}`}>
+                            {statusLabel}
                           </p>
                           <span>Status</span>
                         </div>
@@ -503,6 +567,27 @@ function LearnersCertificates() {
           </div>
         )}
       </section>
+      {toast.show && (
+        <div className={`toast-${toast.type}`} style={{
+          position: 'fixed',
+          bottom: '24px',
+          right: '24px',
+          backgroundColor: toast.type === 'success' ? '#10B981' : '#EF4444',
+          color: '#FFFFFF',
+          padding: '12px 24px',
+          borderRadius: '8px',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          zIndex: 9999,
+        }}>
+          <span className="toast-icon" style={{ fontWeight: 'bold' }}>
+            {toast.type === 'success' ? '✓' : '✕'}
+          </span>
+          <span className="toast-message" style={{ fontSize: '13px', fontWeight: 500 }}>{toast.message}</span>
+        </div>
+      )}
     </LearnersPageShell>
   );
 }

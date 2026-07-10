@@ -1,5 +1,38 @@
 import React, { useState, useEffect } from 'react';
 
+const resolveYoutubeEmbedUrl = (url) => {
+  if (!url) return '';
+  if (url.includes('youtube.com/embed/')) {
+    return url;
+  }
+  let videoId = '';
+  if (url.includes('youtu.be/')) {
+    const parts = url.split('youtu.be/');
+    if (parts[1]) {
+      videoId = parts[1].split(/[?#]/)[0];
+    }
+  } else if (url.includes('v=')) {
+    const parts = url.split('v=');
+    if (parts[1]) {
+      videoId = parts[1].split(/[&#]/)[0];
+    }
+  } else if (url.includes('youtube.com/v/')) {
+    const parts = url.split('youtube.com/v/');
+    if (parts[1]) {
+      videoId = parts[1].split(/[?#]/)[0];
+    }
+  }
+  if (videoId) {
+    return `https://www.youtube.com/embed/${videoId}`;
+  }
+  return url;
+};
+
+const isYoutubeUrl = (url) => {
+  if (!url) return false;
+  return url.includes('youtube.com') || url.includes('youtu.be');
+};
+
 // Icons & Images
 import wAcBook from '../../../../assets/icons/w-ac-book.svg';
 import leTec from '../../../../assets/icons/le-tec.svg';
@@ -270,30 +303,56 @@ const WorkspaceModal = ({
               )
             )}
 
-            <div className="learners-read-article-paper-a3" aria-hidden="true">
-              {pdfUrl ? (
-                <iframe
-                  src={`${pdfUrl}#toolbar=0&navpanes=0`}
-                  title="Past Paper PDF Viewer"
-                  width="100%"
-                  height="100%"
-                  style={{ border: 'none', borderRadius: '8px' }}
-                  loading="lazy"
-                />
-              ) : textPages.length > 0 ? (
-                <div
-                  className="learners-book-text-page"
-                  dangerouslySetInnerHTML={{ __html: formatHtmlContent(textPages[activeTextPageIndex]) }}
-                />
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#64748B', padding: '20px', textAlign: 'center' }}>
-                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" strokeWidth="1.5" style={{ marginBottom: '12px' }}>
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                    <polyline points="14 2 14 8 20 8" />
-                    <line x1="9" y1="15" x2="15" y2="15" />
-                  </svg>
-                  <h4>No PDF document or text content attached for this lesson</h4>
-                  <p style={{ fontSize: '12px', marginTop: '4px' }}>There are no downloadable slides, past papers, or text readings provided for this chapter yet.</p>
+            <div className="learners-read-article-paper-a3" aria-hidden="true" style={{ display: 'flex', flexDirection: 'column', gap: '20px', height: 'auto', background: '#FFFFFF', padding: '16px', border: '1px solid #E7EAF0' }}>
+              {activeContent?.video_url && (
+                <div className="learners-workspace-video-wrap" style={{ borderRadius: '8px', overflow: 'hidden', border: '1px solid #E2E8F0', background: '#000', width: '100%', aspectRatio: '16/9' }}>
+                  {isYoutubeUrl(activeContent.video_url) ? (
+                    <iframe
+                      width="100%"
+                      src={resolveYoutubeEmbedUrl(activeContent.video_url)}
+                      title="Lesson Video"
+                      frameBorder="0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                      allowFullScreen
+                      style={{ display: 'block', border: 'none', width: '100%', height: '100%', aspectRatio: '16/9' }}
+                    />
+                  ) : (
+                    <video
+                      src={activeContent.video_url.startsWith('/') && !activeContent.video_url.startsWith('/src/') ? `${API_BASE_URL}${activeContent.video_url}` : activeContent.video_url}
+                      controls
+                      style={{ width: '100%', height: '100%', display: 'block', aspectRatio: '16/9' }}
+                    />
+                  )}
+                </div>
+              )}
+
+              {(pdfUrl || textPages.length > 0 || !activeContent?.video_url) && (
+                <div style={{ width: '100%' }}>
+                  {pdfUrl ? (
+                    <iframe
+                      src={`${pdfUrl}#toolbar=0&navpanes=0`}
+                      title="Past Paper PDF Viewer"
+                      width="100%"
+                      height="600"
+                      style={{ border: 'none', borderRadius: '8px', minHeight: '600px' }}
+                      loading="lazy"
+                    />
+                  ) : textPages.length > 0 ? (
+                    <div
+                      className="learners-book-text-page"
+                      dangerouslySetInnerHTML={{ __html: formatHtmlContent(textPages[activeTextPageIndex]) }}
+                    />
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '200px', color: '#64748B', padding: '20px', textAlign: 'center' }}>
+                      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" strokeWidth="1.5" style={{ marginBottom: '12px' }}>
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                        <polyline points="14 2 14 8 20 8" />
+                        <line x1="9" y1="15" x2="15" y2="15" />
+                      </svg>
+                      <h4>No PDF document or text content attached for this lesson</h4>
+                      <p style={{ fontSize: '12px', marginTop: '4px' }}>There are no downloadable slides, past papers, or text readings provided for this chapter yet.</p>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import ProfessorLayout from '../../../components/layouts/ProfessorLayout/ProfessorLayout';
 import './performance.css';
+import hoagoto from '../../../assets/icons/hoagoto.svg';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
@@ -282,9 +283,9 @@ const Performance = () => {
                 <img src="/assets/icons/ac-sav.svg" alt="" />
                 <span>Saved Library</span>
               </a>
-              <a className="learners-btn learners-btn-primary" href="/academia">
+              <a className="learners-btn learners-btn-primary" href="/academia/index" target="_blank" rel="noopener noreferrer">
                 <span>Go to website</span>
-                <img src="/assets/icons/w-exit-right.svg" alt="" />
+                <img src={hoagoto} alt="Go" />
               </a>
             </div>
           </div>

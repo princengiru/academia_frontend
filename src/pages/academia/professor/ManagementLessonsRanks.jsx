@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import ProfessorLayout from '../../../components/layouts/ProfessorLayout/ProfessorLayout';
 import './management-lessons-ranks.css';
+import hoagoto from '../../../assets/icons/hoagoto.svg';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
@@ -133,9 +134,9 @@ const ManagementLessonsRanks = () => {
                 <img src="/assets/icons/van.svg" alt="" />
                 <span>View Analytics</span>
               </a>
-              <a className="learners-btn learners-btn-primary" href="#" onClick={(e) => { preventDefault(e); navigate('/academia'); }}>
+              <a className="learners-btn learners-btn-primary" href="/academia/index" target="_blank" rel="noopener noreferrer">
                 <span>Go to website</span>
-                <img src="/assets/icons/exit-right.svg" alt="" />
+                <img src={hoagoto} alt="Go" />
               </a>
             </div>
           </div>

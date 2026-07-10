@@ -3,6 +3,41 @@ import React from 'react';
 // Icons & Images
 import wAcBook from '../../../../assets/icons/w-ac-book.svg';
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
+const resolveYoutubeEmbedUrl = (url) => {
+  if (!url) return '';
+  if (url.includes('youtube.com/embed/')) {
+    return url;
+  }
+  let videoId = '';
+  if (url.includes('youtu.be/')) {
+    const parts = url.split('youtu.be/');
+    if (parts[1]) {
+      videoId = parts[1].split(/[?#]/)[0];
+    }
+  } else if (url.includes('v=')) {
+    const parts = url.split('v=');
+    if (parts[1]) {
+      videoId = parts[1].split(/[&#]/)[0];
+    }
+  } else if (url.includes('youtube.com/v/')) {
+    const parts = url.split('youtube.com/v/');
+    if (parts[1]) {
+      videoId = parts[1].split(/[?#]/)[0];
+    }
+  }
+  if (videoId) {
+    return `https://www.youtube.com/embed/${videoId}`;
+  }
+  return url;
+};
+
+const isYoutubeUrl = (url) => {
+  if (!url) return false;
+  return url.includes('youtube.com') || url.includes('youtu.be');
+};
+
 const LessonView = ({
   activeContent,
   isEnrolled,
@@ -64,9 +99,12 @@ const LessonView = ({
     <div className="learners-read-lesson-view">
       <h2 className="learners-read-article-title">{stripHtml(activeContent.headline)}</h2>
 
-      <div className="learners-read-article-media">
-        <img src={activeContent.image} alt={activeContent.headline} />
-      </div>
+      {/* cover / thumbnail */}
+      {activeContent.image && (
+        <div className="learners-read-article-media" style={{ borderRadius: '12px', overflow: 'hidden', marginBottom: '24px' }}>
+          <img src={activeContent.image} alt={activeContent.headline} style={{ width: '100%', height: 'auto', borderRadius: '12px' }} />
+        </div>
+      )}
 
       <section className="learners-workspace-launch-section" style={{ marginTop: '30px' }}>
         <div className="learners-workspace-launch-banner">

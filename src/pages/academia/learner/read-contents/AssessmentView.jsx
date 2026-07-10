@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ClipboardList, Award, AlertTriangle, CheckCircle } from 'lucide-react';
 
 
@@ -8,7 +9,10 @@ import leftIcon from '../../../../assets/icons/left.svg';
 import doneIcon from '../../../../assets/icons/done.svg';
 import right1 from '../../../../assets/icons/right1.svg';
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
 const AssessmentView = ({
+  courseId,
   isAssessmentView,
   currentAssessmentDetails,
   maxAttempts,
@@ -43,8 +47,117 @@ const AssessmentView = ({
   setIsConfirmingSubmit,
   assessmentAttemptData,
   startAssessmentTimer,
-  handleStartAssessment
+  handleStartAssessment,
+  showToast
 }) => {
+  const navigate = useNavigate();
+  const [isClaiming, setIsClaiming] = React.useState(false);
+  const [claimMessage, setClaimMessage] = React.useState('');
+  const [hasClaimed, setHasClaimed] = React.useState(false);
+  const [checkingCertificate, setCheckingCertificate] = React.useState(false);
+
+  React.useEffect(() => {
+    setHasClaimed(false);
+    setClaimMessage('');
+  }, [courseId, currentAssessmentDetails?.id]);
+
+  React.useEffect(() => {
+    let cancelled = false;
+
+    const checkExistingCertificate = async () => {
+      if (!isAssessmentView || !isAssessmentComplete || currentAssessmentDetails?.type !== 'summative' || !courseId) {
+        return;
+      }
+
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      setCheckingCertificate(true);
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/certificates/user/my-certificates?limit=100&offset=0`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) return;
+        const body = await res.json();
+        const listData = body?.data ?? body;
+        const items = Array.isArray(listData?.certificates)
+          ? listData.certificates
+          : Array.isArray(listData?.data)
+            ? listData.data
+            : Array.isArray(listData)
+              ? listData
+              : [];
+
+        const alreadyIssued = items.some((cert) => {
+          const certCourseId = cert.courseId ?? cert.course_id ?? cert.course?.id;
+          return Number(certCourseId) === Number(courseId);
+        });
+
+        if (!cancelled && alreadyIssued) {
+          setHasClaimed(true);
+          setClaimMessage('Certificate already issued for this course.');
+        }
+      } catch (err) {
+        console.error('Failed to check existing certificate:', err);
+      } finally {
+        if (!cancelled) setCheckingCertificate(false);
+      }
+    };
+
+    checkExistingCertificate();
+    return () => { cancelled = true; };
+  }, [isAssessmentView, isAssessmentComplete, currentAssessmentDetails?.type, courseId]);
+
+  const handleClaimCertificate = async () => {
+    if (hasClaimed) {
+      navigate('/academia/learner/certificates');
+      return;
+    }
+
+    const token = localStorage.getItem('token');
+    if (!token) {
+      showToast("Please sign in to claim your certificate.", "error");
+      return;
+    }
+    
+    setIsClaiming(true);
+    setClaimMessage("");
+    
+    try {
+      const scoreVal = assessmentResult?.score ? parseFloat(assessmentResult.score.replace('%', '')) : 75;
+      const res = await fetch(`${API_BASE_URL}/api/courses/${courseId}/certificates/issue`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          final_score: scoreVal,
+          formative_score: scoreVal,
+          total_hours: 10
+        })
+      });
+      
+      const body = await res.json();
+      if (!res.ok) {
+        const message = body.message || "Failed to claim certificate.";
+        if (/already issued/i.test(message)) {
+          setHasClaimed(true);
+          setClaimMessage('Certificate already issued for this course.');
+          return;
+        }
+        throw new Error(message);
+      }
+      
+      setHasClaimed(true);
+      setClaimMessage("Certificate request submitted! Pending HOA approval.");
+    } catch (err) {
+      setClaimMessage(err.message || "Could not claim certificate.");
+    } finally {
+      setIsClaiming(false);
+    }
+  };
+
   if (!isAssessmentView) return null;
 
   if (loadingAssessment) {
@@ -494,6 +607,10 @@ const AssessmentView = ({
             </div>
           </section>
         )
+      ) : !assessmentResult?.score && !assessmentResult?.headline ? (
+        <div className="learners-loading" style={{ padding: '80px 40px', textAlign: 'center', fontSize: '15px', color: '#5B0A86', fontWeight: '500' }}>
+          Loading assessment results...
+        </div>
       ) : (
         <section className="learners-read-assessment-complete">
           {/* Score Display (only if showScoreImmediately is true) */}
@@ -547,17 +664,88 @@ const AssessmentView = ({
                 Review Questions
               </button>
             )}
-            <button 
-              type="button" 
-              className="learners-read-assessment-complete-button" 
-              onClick={handleAssessmentCompleteButton}
-              disabled={assessmentResult.buttonLabel === 'No attempt left'}
-              style={assessmentResult.buttonLabel === 'No attempt left' ? { opacity: 0.6, cursor: 'not-allowed' } : {}}
-            >
-              <span>{assessmentResult.buttonLabel}</span>
-              {assessmentResult.buttonLabel !== 'No attempt left' && <img src={right1} alt="Continue" />}
-            </button>
+
+            {(() => {
+              const scorePct = parseFloat(assessmentResult.score?.replace('%', '')) || 0;
+              const isPassed = scorePct >= (currentAssessmentDetails.passingScore || 60);
+              const isSummative = currentAssessmentDetails.type === 'summative';
+
+              if (isSummative && isPassed) {
+                if (checkingCertificate) {
+                  return null;
+                }
+                return (
+                  <button
+                    type="button"
+                    className="learners-btn-primary"
+                    onClick={handleClaimCertificate}
+                    disabled={isClaiming}
+                    style={{
+                      background: hasClaimed ? '#10B981' : '#5B0A86',
+                      color: '#FFFFFF',
+                      padding: '12px 24px',
+                      borderRadius: '24px',
+                      border: 'none',
+                      fontWeight: '600',
+                      fontSize: '14px',
+                      cursor: isClaiming ? 'not-allowed' : 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '8px'
+                    }}
+                  >
+                    <Award size={16} />
+                    <span>
+                      {isClaiming
+                        ? 'Claiming...'
+                        : hasClaimed
+                          ? 'View Certificates'
+                          : 'Claim Certificate'}
+                    </span>
+                  </button>
+                );
+              }
+              return null;
+            })()}
+
+            {assessmentResult.buttonLabel === 'Retry Quiz' && (
+              <button
+                type="button"
+                className="learners-read-assessment-complete-button"
+                onClick={handleAssessmentCompleteButton}
+              >
+                <span>Retry Quiz</span>
+                <img src={right1} alt="Retry" />
+              </button>
+            )}
+
+            {assessmentResult.buttonLabel === 'No attempt left' && (
+              <button
+                type="button"
+                className="learners-read-assessment-complete-button"
+                disabled
+                style={{ opacity: 0.6, cursor: 'not-allowed' }}
+              >
+                <span>No attempt left</span>
+              </button>
+            )}
           </div>
+
+          {claimMessage && (
+            <div style={{
+              marginTop: '16px',
+              padding: '12px',
+              borderRadius: '8px',
+              backgroundColor: hasClaimed ? '#ECFDF5' : '#FEF2F2',
+              border: `1px solid ${hasClaimed ? '#A7F3D0' : '#FCA5A5'}`,
+              color: hasClaimed ? '#065F46' : '#991B1B',
+              fontSize: '13px',
+              textAlign: 'center',
+              fontWeight: '500'
+            }}>
+              {claimMessage}
+            </div>
+          )}
         </section>
       )}
     </section>

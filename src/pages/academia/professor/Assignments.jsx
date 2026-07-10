@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import ProfessorLayout from '../../../components/layouts/ProfessorLayout/ProfessorLayout';
 import './assignments.css';
+import hoagoto from '../../../assets/icons/hoagoto.svg';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
@@ -386,7 +387,7 @@ const Assignments = () => {
     show_correct_answers: false,
     show_score_immediately: true,
     randomize_questions: false,
-    is_published: true,
+    is_published: false,
     course_id: '',
     week_id: '',
     questions: [],
@@ -568,7 +569,7 @@ const Assignments = () => {
       show_correct_answers: false,
       show_score_immediately: true,
       randomize_questions: false,
-      is_published: true,
+      is_published: false,
       course_id: instructorCourses.length > 0 ? String(instructorCourses[0].id) : '',
       week_id: '',
       questions: [],
@@ -723,6 +724,41 @@ const Assignments = () => {
       showToast('Assessment deleted successfully!', 'success');
     } catch (error) {
       showToast(error.message || 'Failed to delete assessment.', 'error');
+    }
+  };
+
+  const handleTogglePublish = async (row) => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      showToast('Authentication missing.', 'error');
+      return;
+    }
+
+    const newPublishState = !row.is_published;
+    const isFormative = row.category === 'formative';
+    const endpoint = isFormative
+      ? `${API_BASE_URL}/api/formative-assessments/${row.id}`
+      : `${API_BASE_URL}/api/summative-assessments/${row.id}`;
+
+    try {
+      const response = await fetch(endpoint, {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          is_published: newPublishState,
+        }),
+      });
+
+      const body = await response.json();
+      if (!response.ok) throw new Error(body?.message || 'Failed to update publication status.');
+
+      showToast(`Assessment ${newPublishState ? 'published' : 'reverted to draft'} successfully!`, 'success');
+      setRefreshTrigger((prev) => prev + 1);
+    } catch (error) {
+      showToast(error.message || 'Failed to update publication status.', 'error');
     }
   };
 
@@ -1128,9 +1164,9 @@ const Assignments = () => {
                 <img src="/assets/icons/van.svg" alt="" />
                 <span>View Analytics</span>
               </a>
-              <a className="learners-btn learners-btn-primary" href="#" onClick={preventDefault}>
+              <a className="learners-btn learners-btn-primary" href="/academia/index" target="_blank" rel="noopener noreferrer">
                 <span>Go to website</span>
-                <img src="/assets/icons/exit-right.svg" alt="" />
+                <img src={hoagoto} alt="Go" />
               </a>
             </div>
           </div>
@@ -1267,22 +1303,6 @@ const Assignments = () => {
                     <img src="/assets/icons/sorter.svg" alt="Sort" />
                   </th>
                   <th>
-                    <span>Avg. Score</span>
-                    <img src="/assets/icons/sorter.svg" alt="Sort" />
-                  </th>
-                  <th>
-                    <span>Duration (Min)</span>
-                    <img src="/assets/icons/sorter.svg" alt="Sort" />
-                  </th>
-                  <th>
-                    <span>Certificates</span>
-                    <img src="/assets/icons/sorter.svg" alt="Sort" />
-                  </th>
-                  <th>
-                    <span>Attempt Limit</span>
-                    <img src="/assets/icons/sorter.svg" alt="Sort" />
-                  </th>
-                  <th>
                     <span>Actions</span>
                   </th>
                 </tr>
@@ -1290,7 +1310,7 @@ const Assignments = () => {
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan="11" className="prof-table-empty-cell">
+                    <td colSpan="7" className="prof-table-empty-cell">
                       <div className="prof-table-empty">
                         <span className="prof-table-empty-badge">Professor dashboard</span>
                         <h4>Loading assessments</h4>
@@ -1300,7 +1320,7 @@ const Assignments = () => {
                   </tr>
                 ) : currentRows.length === 0 ? (
                   <tr>
-                    <td colSpan="11" className="prof-table-empty-cell">
+                    <td colSpan="7" className="prof-table-empty-cell">
                       <div className="prof-table-empty">
                         <span className="prof-table-empty-badge">Professor dashboard</span>
                         <h4>{fetchError ? 'Unable to load assessments' : 'No assessments found'}</h4>
@@ -1342,8 +1362,11 @@ const Assignments = () => {
                           <p>{row.totalPoints ? `${row.totalPoints} points` : '---'}</p>
                         </div>
                       </td>
-                      <td>
-                        <span className={`status-pill ${row.is_published ? 'pill-green' : 'pill-gray'}`}>
+                      <td onClick={(e) => {
+                        e.stopPropagation();
+                        handleTogglePublish(row);
+                      }} style={{ cursor: 'pointer' }}>
+                        <span className={`status-pill ${row.is_published ? 'pill-green' : 'pill-gray'}`} title="Click to toggle status">
                           <span className="dot"></span> {row.is_published ? 'Published' : 'Draft'}
                         </span>
                       </td>
@@ -1361,10 +1384,6 @@ const Assignments = () => {
                            row.studentsAttempts
                          )}
                        </td>
-                       <td>{row.avgScore}</td>
-                       <td>{row.durationMinutes || '---'}</td>
-                       <td>{row.certificatesEarned}</td>
-                       <td>{row.attemptLimit}</td>
                        <td className="action-col" onClick={(e) => e.stopPropagation()}>
                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                            <div className="prof-row-action-menu" style={{ position: 'relative' }}>
@@ -1409,6 +1428,16 @@ const Assignments = () => {
                                  >
                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '8px' }}><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg>
                                    Questions
+                                 </button>
+                                 <button
+                                   type="button"
+                                   onClick={() => {
+                                     handleTogglePublish(row);
+                                     setOpenRowMenuId(null);
+                                   }}
+                                 >
+                                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '8px' }}><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                                   {row.is_published ? 'Revert to Draft' : 'Publish'}
                                  </button>
                                  <button
                                    type="button"
@@ -2302,6 +2331,17 @@ const Assignments = () => {
                           <div className="assessments-drawer-stat-item">
                             <h3>{submissionsAssessment.attemptLimit}</h3>
                             <p>Attempt Limit</p>
+                          </div>
+                        </div>
+
+                        <div className="assessments-drawer-stats-row">
+                          <div className="assessments-drawer-stat-item">
+                            <h3>{submissionsAssessment.avgScore !== undefined && submissionsAssessment.avgScore !== null ? submissionsAssessment.avgScore : '---'}</h3>
+                            <p>Avg. Score</p>
+                          </div>
+                          <div className="assessments-drawer-stat-item">
+                            <h3>{submissionsAssessment.certificatesEarned ?? 0}</h3>
+                            <p>Certificates</p>
                           </div>
                         </div>
 

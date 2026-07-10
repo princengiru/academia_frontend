@@ -21,8 +21,7 @@ const Sidebar = ({
   activeChapterId,
   handleChapterSelect,
   stripHtml,
-  isAssessmentComplete = false,
-  completedChapters = []
+  isSummativeComplete = false,
 }) => {
   return (
     <>
@@ -134,7 +133,7 @@ const Sidebar = ({
               <div className="learners-read-week-rail" aria-hidden="true">
                 <img 
                   className="learners-read-week-status" 
-                  src={(completedChapters && completedChapters.includes('assessment')) ? checkCircle : noCheckCircle} 
+                  src={isSummativeComplete ? checkCircle : noCheckCircle} 
                   alt="Status" 
                 />
               </div>

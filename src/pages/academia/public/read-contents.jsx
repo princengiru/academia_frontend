@@ -17,7 +17,51 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 const formatHtmlContent = (html) => {
   if (!html) return '';
-  return html.replace(/src="\/uploads\//g, `src="${API_BASE_URL}/uploads/`);
+  let cleanHtml = html
+    .replace(/src="\/uploads\//g, `src="${API_BASE_URL}/uploads/`)
+    .replace(/href="\/uploads\//g, `href="${API_BASE_URL}/uploads/`);
+  
+  cleanHtml = cleanHtml.replace(/<a\s+(href="[^"]*")/gi, (match, hrefPart) => {
+    if (/target=/i.test(match)) {
+      return match;
+    }
+    return `<a target="_blank" rel="noopener noreferrer" ${hrefPart}`;
+  });
+  
+  return cleanHtml;
+};
+
+const resolveYoutubeEmbedUrl = (url) => {
+  if (!url) return '';
+  if (url.includes('youtube.com/embed/')) {
+    return url;
+  }
+  let videoId = '';
+  if (url.includes('youtu.be/')) {
+    const parts = url.split('youtu.be/');
+    if (parts[1]) {
+      videoId = parts[1].split(/[?#]/)[0];
+    }
+  } else if (url.includes('v=')) {
+    const parts = url.split('v=');
+    if (parts[1]) {
+      videoId = parts[1].split(/[&#]/)[0];
+    }
+  } else if (url.includes('youtube.com/v/')) {
+    const parts = url.split('youtube.com/v/');
+    if (parts[1]) {
+      videoId = parts[1].split(/[?#]/)[0];
+    }
+  }
+  if (videoId) {
+    return `https://www.youtube.com/embed/${videoId}`;
+  }
+  return url;
+};
+
+const isYoutubeUrl = (url) => {
+  if (!url) return false;
+  return url.includes('youtube.com') || url.includes('youtu.be');
 };
 
 function AcademiaReadContents() {
@@ -385,17 +429,40 @@ function AcademiaReadContents() {
             {loading ? (
               <p style={{ color: '#64748B' }}>Loading summary…</p>
             ) : (
-              <div 
-                dangerouslySetInnerHTML={{ __html: formatHtmlContent(contentAbstract) }} 
-                style={{ 
-                  color: '#475569', 
-                  lineHeight: '1.6',
-                  wordBreak: 'break-word',
-                  overflowWrap: 'break-word',
-                  whiteSpace: 'pre-wrap',
-                  maxWidth: '100%'
-                }} 
-              />
+              <>
+                <div 
+                  dangerouslySetInnerHTML={{ __html: formatHtmlContent(contentAbstract) }} 
+                  style={{ 
+                    color: '#475569', 
+                    lineHeight: '1.6',
+                    wordBreak: 'break-word',
+                    overflowWrap: 'break-word',
+                    whiteSpace: 'pre-wrap',
+                    maxWidth: '100%'
+                  }} 
+                />
+                 {activeContent?.video_url && (
+                  <div className="public-read-video-wrap" style={{ marginTop: '24px', borderRadius: '12px', overflow: 'hidden', width: '100%', aspectRatio: '16/9', background: '#000' }}>
+                    {isYoutubeUrl(activeContent.video_url) ? (
+                      <iframe
+                        width="100%"
+                        src={resolveYoutubeEmbedUrl(activeContent.video_url)}
+                        title="Lesson Video Player"
+                        frameBorder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                        allowFullScreen
+                        style={{ display: 'block', border: 'none', width: '100%', height: '100%', aspectRatio: '16/9' }}
+                      />
+                    ) : (
+                      <video
+                        src={activeContent.video_url.startsWith('/') && !activeContent.video_url.startsWith('/src/') ? `${API_BASE_URL}${activeContent.video_url}` : activeContent.video_url}
+                        controls
+                        style={{ width: '100%', height: '100%', display: 'block', borderRadius: '12px', aspectRatio: '16/9' }}
+                      />
+                    )}
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>

@@ -14,7 +14,7 @@ import acLe from '../../../assets/icons/ac-le.svg';
 import acUs from '../../../assets/icons/ac-us.svg';
 import acBook from '../../../assets/icons/ac-book.svg';
 import hoabasics from '../../../assets/icons/hoabasics.svg';
-import arrowUpRight from '../../../assets/icons/arrow-up-right.svg';
+import hoagoto from '../../../assets/icons/hoagoto.svg';
 import playIcon from '../../../assets/icons/play.svg';
 import jo1 from '../../../assets/icons/jo1.svg';
 import dtiktok from '../../../assets/icons/dtiktok.svg';
@@ -265,9 +265,9 @@ function CoursePart() {
               <img src={fe1} alt="" />
               <span>Saved Library</span>
             </a>
-            <a className="learners-btn learners-btn-primary" href="#" onClick={(e) => e.preventDefault()}>
+            <a className="learners-btn learners-btn-primary" href="/academia/index" target="_blank" rel="noopener noreferrer">
               <span>Go to website</span>
-              <img src={arrowUpRight} alt="" />
+              <img src={hoagoto} alt="Go" />
             </a>
           </div>
         </div>
@@ -469,8 +469,8 @@ function CoursePart() {
               <h3>{course?.headline}</h3>
 
               <div className="learners-course-specific-features">
-                {featureList.map((f) => (
-                  <div key={f.label} className="learners-course-specific-feature">
+                {featureList.map((f, idx) => (
+                  <div key={`${f.label}-${idx}`} className="learners-course-specific-feature">
                     <img src={f.icon} alt="" />
                     <span>{f.label}</span>
                   </div>
@@ -502,7 +502,7 @@ function CoursePart() {
               {isEnrolled ? (
                 <button type="button" className="learners-course-specific-cta" onClick={() => navigate(`/academia/learner/read-contents?id=${course.id}`, { state: { courseId: course.id } })}>
                   <span>Go to Course</span>
-                  <img src={arrowUpRight} alt="Go" />
+                  <img src={hoagoto} alt="Go" />
                 </button>
               ) : (
                 <button type="button" className="learners-course-specific-cta" onClick={handleJoinToday} disabled={isEnrolling}>

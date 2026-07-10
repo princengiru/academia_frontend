@@ -27,6 +27,12 @@ const resolveImage = (value, fallback) => {
   return `${API_BASE_URL}${value}`;
 };
 
+const IconDownCaret = ({ width = 12, height = 8, className = "", style = {} }) => (
+  <svg width={width} height={height} viewBox="0 0 16 10" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={className} style={style}>
+    <polyline points="2 2 8 8 14 2"></polyline>
+  </svg>
+);
+
 const normalizeStory = (story) => {
   if (!story) return null;
   return {
@@ -75,7 +81,18 @@ function AcademiaSyllabuses() {
   };
 
   const toggleCategoryAll = (category) => {
-    if (!category.subcategories) return;
+    if (!category.subcategories || category.subcategories.length === 0) {
+      setSelectedSubcategories(prev => {
+        const id = `cat-${category.id}`;
+        if (prev.includes(id)) {
+          return prev.filter(x => x !== id);
+        } else {
+          return [...prev, id];
+        }
+      });
+      setCurrentPage(1);
+      return;
+    }
     const subcatIds = category.subcategories.map(s => s.id);
     const allChecked = subcatIds.every(id => selectedSubcategories.includes(id));
 
@@ -91,7 +108,9 @@ function AcademiaSyllabuses() {
   };
 
   const isCategoryFullyChecked = (category) => {
-    if (!category.subcategories || category.subcategories.length === 0) return false;
+    if (!category.subcategories || category.subcategories.length === 0) {
+      return selectedSubcategories.includes(`cat-${category.id}`);
+    }
     return category.subcategories.map(s => s.id).every(id => selectedSubcategories.includes(id));
   };
 
@@ -347,56 +366,104 @@ function AcademiaSyllabuses() {
                 categoryTree.map((category) => {
                   const isOpen = !!expandedCategories[category.id];
                   const hasSubcats = category.subcategories && category.subcategories.length > 0;
-                  if (!hasSubcats) return null; // Only display categories with subcategories
 
                   const allChecked = isCategoryFullyChecked(category);
                   const partiallyChecked = isCategoryPartiallyChecked(category);
 
                   return (
-                    <div key={category.id} className="accordion-item" style={{ borderBottom: '1px solid #F1F5F9', paddingBottom: '12px', marginBottom: '12px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', width: '100%', padding: '4px 0' }}>
-                        <input
-                          type="checkbox"
-                          checked={allChecked}
-                          ref={el => {
-                            if (el) el.indeterminate = partiallyChecked;
-                          }}
-                          onChange={() => toggleCategoryAll(category)}
-                          style={{ marginRight: '10px', width: '16px', height: '16px', cursor: 'pointer' }}
-                        />
-                        <button
-                          className="accordion-button"
-                          type="button"
-                          onClick={() => toggleExpandCategory(category.id)}
-                          aria-expanded={isOpen}
-                          style={{ flex: 1, textAlign: 'left', background: 'none', border: 'none', padding: 0, fontWeight: '600', fontSize: '13.5px', color: '#1E293B', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
-                        >
+                    <div key={category.id} style={{ marginBottom: '8px' }}>
+                      <div
+                        className="syll-cat-header"
+                        onClick={() => toggleExpandCategory(category.id)}
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          padding: '10px 8px',
+                          cursor: 'pointer',
+                          fontSize: '13.5px',
+                          fontWeight: '600',
+                          color: '#071437',
+                          transition: 'all 0.2s ease',
+                          borderBottom: '1px solid #F1F5F9'
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <input
+                            type="checkbox"
+                            checked={allChecked}
+                            ref={el => {
+                              if (el) el.indeterminate = partiallyChecked;
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                            onChange={() => toggleCategoryAll(category)}
+                            style={{ width: '16px', height: '16px', cursor: 'pointer', margin: 0 }}
+                          />
                           <span>{category.name}</span>
-                          <span style={{ fontSize: '11px', color: '#94A3B8', transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s', paddingRight: '5px' }}>▼</span>
-                        </button>
+                        </div>
+                        <span style={{ display: 'flex', alignItems: 'center' }}>
+                          <IconDownCaret 
+                            width={12} height={8} 
+                            style={{ transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', color: '#6B7280' }} 
+                          />
+                        </span>
                       </div>
 
                       {isOpen && (
-                        <div className="accordion-body" style={{ paddingLeft: '26px', display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px' }}>
-                          {category.subcategories.map((subcat) => {
-                            const isChecked = selectedSubcategories.includes(subcat.id);
-                            return (
-                              <div key={subcat.id} className="form-stick" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <input
-                                  className="form-stick-input"
-                                  type="checkbox"
-                                  id={`subcat-${subcat.id}`}
-                                  checked={isChecked}
-                                  onChange={() => toggleSubcategory(subcat.id)}
-                                  style={{ width: '14px', height: '14px', cursor: 'pointer' }}
-                                />
-                                <label className="form-stick-label" htmlFor={`subcat-${subcat.id}`} style={{ fontSize: '12.5px', color: '#475569', cursor: 'pointer', margin: 0 }}>
-                                  {subcat.name}
-                                </label>
-                                {subcat.topics && <span style={{ marginLeft: 'auto', fontSize: '10px', background: '#F1F5F9', color: '#64748B', padding: '2px 6px', borderRadius: '10px' }}>{subcat.topics.length}</span>}
-                              </div>
-                            );
-                          })}
+                        <div className="syll-subcat-list" style={{ padding: '4px 0 8px 14px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                          {hasSubcats ? (
+                            category.subcategories.map((subcat) => {
+                              const isChecked = selectedSubcategories.includes(subcat.id);
+                              return (
+                                <div
+                                  key={subcat.id}
+                                  className={`syll-subcat-item ${isChecked ? 'active' : ''}`}
+                                  onClick={() => toggleSubcategory(subcat.id)}
+                                  style={{
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'center',
+                                    padding: '8px 12px',
+                                    borderRadius: '6px',
+                                    background: isChecked ? '#F8F5FF' : 'transparent',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s ease',
+                                    border: isChecked ? '1px dashed #DDD6FE' : '1px solid transparent'
+                                  }}
+                                >
+                                  <div className="syll-radio-label" style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12.5px', color: isChecked ? '#450468' : '#475569', fontWeight: isChecked ? 600 : 400 }}>
+                                    <input
+                                      type="checkbox"
+                                      checked={isChecked}
+                                      onChange={() => {}} // controlled input placeholder
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        toggleSubcategory(subcat.id);
+                                      }}
+                                      style={{ width: '14px', height: '14px', cursor: 'pointer' }}
+                                    />
+                                    <span>{subcat.name}</span>
+                                  </div>
+                                  {subcat.topics && (
+                                    <span className="syll-count-badge" style={{
+                                      fontSize: '11px',
+                                      fontWeight: 600,
+                                      background: isChecked ? '#DDD6FE' : '#EEF1F6',
+                                      color: isChecked ? '#450468' : '#78829D',
+                                      padding: '2px 8px',
+                                      borderRadius: '10px'
+                                    }}>
+                                      {subcat.topics.length}
+                                    </span>
+                                  )}
+                                </div>
+                              );
+                            })
+                          ) : (
+                            <div style={{ padding: '8px 12px', fontSize: '12px', color: '#99A1B7', fontStyle: 'italic' }}>
+                              No sub-categories available
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
@@ -457,97 +524,57 @@ function AcademiaSyllabuses() {
                 currentTopics.map((topic) => (
                   <div 
                     key={topic.id} 
-                    className="fgbl-item topic-card" 
+                    className="syll-topic-card" 
                     onClick={() => navigate(`/academia/syllabus-part?topicId=${topic.id}`)}
                     style={{ 
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'flex-start',
-                      justifyContent: 'space-between',
-                      gap: '12px',
-                      background: '#FFFFFF',
                       border: '1px solid #E2E8F0',
-                      borderRadius: '12px',
-                      padding: '24px',
-                      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)',
-                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                      borderRadius: '6px',
+                      padding: '12px 14px',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      background: '#FCFCFC',
                       cursor: 'pointer',
-                      position: 'relative',
-                      overflow: 'hidden'
+                      transition: 'all 0.2s ease',
+                      width: '100%',
+                      boxSizing: 'border-box',
+                      marginBottom: '8px'
                     }}
                   >
-                    <div className="topic-card-glow" />
-
-                    <div style={{ width: '100%' }}>
-                      {/* Taxonomy path badge */}
-                      <span style={{
-                        display: 'inline-block',
-                        fontSize: '10px',
-                        background: '#F5F3FF',
-                        color: '#450468',
-                        fontWeight: '600',
-                        padding: '4px 10px',
-                        borderRadius: '20px',
-                        marginBottom: '12px',
-                        border: '1px solid #DDD6FE',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.05em'
-                      }}>
-                        {topic.categoryName} &rsaquo; {topic.subcategoryName}
-                      </span>
-
-                      <h4 style={{
-                        margin: '0 0 8px 0',
-                        fontFamily: 'Montserrat, sans-serif',
-                        fontSize: '15px',
-                        fontWeight: '600',
-                        color: '#0F172A',
-                        lineHeight: '1.4'
-                      }}>
-                        {topic.name}
-                      </h4>
+                    <div className="syll-tc-left" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <h4 style={{ margin: 0, fontSize: '15px', color: '#071437', fontWeight: 600 }}>{topic.name}</h4>
+                      <p style={{ margin: 0, fontSize: '11px', color: '#07143799', fontWeight: 400 }}>
+                        {topic.papers ? topic.papers.length : 0} Outlines
+                      </p>
                     </div>
-
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      width: '100%',
-                      paddingTop: '12px',
-                      borderTop: '1px solid #F1F5F9',
-                      marginTop: 'auto'
-                    }}>
-                      <span style={{
-                        fontSize: '12px',
-                        color: topic.papers && topic.papers.length > 0 ? '#450468' : '#64748B',
-                        fontWeight: '600',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                        fontFamily: 'Inter, sans-serif'
-                      }}>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: topic.papers && topic.papers.length > 0 ? '#8B5CF6' : '#94A3B8' }}>
-                          <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
-                          <polyline points="14 2 14 8 20 8" />
-                        </svg>
-                        {topic.papers ? topic.papers.length : 0} {topic.papers && topic.papers.length === 1 ? 'Outline' : 'Outlines'}
-                      </span>
-
-                      <span className="view-details-btn" style={{
+                    <button 
+                      type="button"
+                      className="syll-btn-view" 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/academia/syllabus-part?topicId=${topic.id}`);
+                      }}
+                      style={{
+                        background: '#FCFCFC',
+                        border: '1px solid #E2E8F0',
+                        color: '#64748B',
+                        width: 'auto',
+                        padding: '6px 12px',
+                        borderRadius: '4px',
                         fontSize: '11px',
-                        color: '#450468',
-                        fontWeight: '700',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.05em',
+                        fontWeight: 600,
+                        cursor: 'pointer',
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '4px',
-                        transition: 'transform 0.2s ease',
-                        fontFamily: 'Inter, sans-serif'
-                      }}>
-                        View {topic.papers && topic.papers.length > 0 ? 'Outlines' : 'Details'} &rarr;
-                      </span>
-                    </div>
+                        gap: '6px'
+                      }}
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: '#99A1B7' }}>
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                      </svg>
+                      View Papers
+                    </button>
                   </div>
                 ))
               ) : (

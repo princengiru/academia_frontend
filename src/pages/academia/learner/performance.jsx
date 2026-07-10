@@ -5,7 +5,7 @@ import './index.css';
 
 // Icons & Images
 import acSav from '../../../assets/icons/ac-sav.svg';
-import wExitRight from '../../../assets/icons/w-exit-right.svg';
+import hoagoto from '../../../assets/icons/hoagoto.svg';
 import certt from '../../../assets/icons/certt.svg';
 import right1 from '../../../assets/icons/right1.svg';
 import calendar2 from '../../../assets/icons/calendar2.svg';
@@ -344,9 +344,9 @@ function LearnersPerformance() {
                 <img src={acSav} alt="Save" />
                 <span>Saved Library</span>
               </a>
-              <a className="learners-btn learners-btn-primary" href="/" onClick={preventDefault}>
+              <a className="learners-btn learners-btn-primary" href="/academia/index" target="_blank" rel="noopener noreferrer">
                 <span>Go to website</span>
-                <img src={wExitRight} alt="Exit" />
+                <img src={hoagoto} alt="Go" />
               </a>
             </div>
           </div>
