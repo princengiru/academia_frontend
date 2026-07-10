@@ -399,14 +399,67 @@
 }
 
 .learners-settings-page .learners-settings-inline-save {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   background: #520A80;
   color: #FFFFFF;
+}
+
+.learners-settings-page .learners-settings-inline-save:hover:not(:disabled) {
+  background: #3a0358;
+}
+
+.learners-settings-page .learners-settings-inline-save:disabled,
+.learners-settings-page .learners-settings-inline-save:disabled:hover {
+  background: #885c9f;
+  color: #FFFFFF;
+  cursor: not-allowed;
+  opacity: 1;
 }
 
 .learners-settings-page .learners-settings-inline-cancel {
   background: #F8FAFC;
   border: 1px solid #E2E8F0;
   color: #64748B;
+}
+
+.learners-settings-page .learners-settings-inline-cancel:hover:not(:disabled) {
+  background: #F1F5F9;
+  color: #334155;
+}
+
+.learners-settings-page .learners-settings-inline-cancel:disabled,
+.learners-settings-page .learners-settings-inline-cancel:disabled:hover {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.learners-settings-page .learners-settings-side-hint {
+  margin: 10px 0 0;
+  font-size: 11px;
+  line-height: 1.4;
+  color: #78829D;
+}
+
+.learners-settings-page .learners-settings-password-actions {
+  display: grid;
+  gap: 12px;
+}
+
+.learners-settings-page .learners-settings-side-form input + input {
+  margin-top: 10px;
+}
+
+.learners-settings-page .learners-settings-field-control select {
+  width: 100%;
+  min-height: 42px;
+  border: none;
+  background: transparent;
+  outline: none;
+  font: inherit;
+  color: inherit;
 }
 
 .learners-settings-page .learners-settings-about-editor,

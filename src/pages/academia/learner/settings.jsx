@@ -1,6 +1,23 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import LearnersPageShell from './LearnersPageShell';
+import ProfilePhotoCropModal from './ProfilePhotoCropModal';
+import HoasButtonSpinner from './HoasButtonSpinner';
+import { getProfilePhotoDisplayUrl, isCustomProfilePhoto } from './profilePhotoUtils';
+import {
+  buildBasicDraftFromUser,
+  buildPreferencesDraftFromUser,
+  COUNTRY_OPTIONS,
+  CURRENCY_OPTIONS,
+  formatAddressDisplay,
+  formatRwandaPhoneNumber,
+  LANGUAGE_OPTIONS,
+  mapLanguageToApi,
+  MAX_PROFILE_PHOTO_BYTES,
+  serializeBasicDraft,
+  serializePreferencesDraft,
+  TIMEZONE_OPTIONS,
+} from './learnerProfileShared';
 
 import defaultProfile from '../../../assets/imgs/default-profile.png';
 import badge1 from '../../../assets/icons/badge-1.svg';
@@ -12,7 +29,6 @@ import userIcon from '../../../assets/icons/user.svg';
 import acInn from '../../../assets/icons/ac-inn.svg';
 import rwandaIcon from '../../../assets/icons/rwanda.svg';
 import resetIcon from '../../../assets/icons/reset.svg';
-import acEye from '../../../assets/icons/ac-eye.svg';
 import calendarIcon from '../../../assets/icons/calendar.svg';
 import drop1 from '../../../assets/icons/drop1.svg';
 import trashIcon from '../../../assets/icons/trash.svg';
@@ -21,30 +37,20 @@ import './settings.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
-const timezoneOptions = [
-  { value: 'GMT -5:00 - Eastern Time(US & Canada)', label: 'GMT -5:00 - Eastern Time(US & Canada)' },
-  { value: 'GMT +2:00 - Central Africa Time', label: 'GMT +2:00 - Central Africa Time' },
-];
-
-const languageOptions = [
-  { value: 'en', label: 'American English' },
-  { value: 'fr', label: 'French' },
-  { value: 'es', label: 'Spanish' },
-];
-
-const currencyOptions = [
-  { value: 'USD', label: 'United States Dollar (USD)' },
-  { value: 'RWF', label: 'Rwandan Franc (RWF)' },
-];
-
 const activityFilters = ['This week', 'Last week', 'This month', 'All time'];
 
-function resolveAssetUrl(value) {
-  if (!value) return defaultProfile;
-  if (value.startsWith('http://') || value.startsWith('https://') || value.startsWith('data:')) return value;
-  if (value.startsWith('/')) return `${API_BASE_URL}${value}`;
-  return `${API_BASE_URL}/${value}`;
-}
+const SettingsSaveButton = ({ children, disabled, saving, onClick, savingLabel = 'Saving...', className = 'learners-settings-inline-save' }) => (
+  <button type="button" className={className} onClick={onClick} disabled={disabled || saving}>
+    {saving ? (
+      <>
+        <HoasButtonSpinner />
+        {savingLabel}
+      </>
+    ) : (
+      children
+    )}
+  </button>
+);
 
 function formatNumber(value) {
   const parsed = Number(value || 0);
@@ -87,31 +93,25 @@ function isWithinFilter(value, filter) {
   return true;
 }
 
-function normalizeSkills(value) {
-  if (Array.isArray(value)) return value.filter(Boolean).map(String);
-  if (typeof value === 'string' && value.trim()) {
-    try {
-      const parsed = JSON.parse(value);
-      if (Array.isArray(parsed)) return parsed.filter(Boolean).map(String);
-    } catch {
-      return value.split(',').map((item) => item.trim()).filter(Boolean);
-    }
-  }
-  return [];
-}
-
 function LearnersSettings() {
   const navigate = useNavigate();
   const photoInputRef = useRef(null);
   const feedbackTimerRef = useRef(null);
+  const basicBaselineRef = useRef('');
+  const preferencesBaselineRef = useRef('');
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [feedback, setFeedback] = useState({ message: '', tone: 'success', visible: false });
+  const [feedback, setFeedback] = useState({ type: '', message: '' });
   const [activeTab, setActiveTab] = useState('overview');
   const [activityFilter, setActivityFilter] = useState('This month');
   const [openActivityMenuId, setOpenActivityMenuId] = useState(null);
   const [reviewedActivityIds, setReviewedActivityIds] = useState([]);
+
+  const [profileAvatarPath, setProfileAvatarPath] = useState('');
+  const [cropModalOpen, setCropModalOpen] = useState(false);
+  const [cropImageSrc, setCropImageSrc] = useState('');
+  const [uploadError, setUploadError] = useState('');
 
   const [profile, setProfile] = useState({
     name: '',
@@ -121,9 +121,13 @@ function LearnersSettings() {
     visibility: 'public',
     avatar: defaultProfile,
     bio: '',
-    location: '',
+    address: '',
+    country: 'RW',
+    state: '',
+    city: '',
+    postcode: '',
     availableToHire: false,
-    emailNotifications: false,
+    emailNotifications: true,
     skills: [],
   });
   const [profileCompletion, setProfileCompletion] = useState(null);
@@ -139,15 +143,19 @@ function LearnersSettings() {
     role: 'student',
     visibility: 'public',
     bio: '',
-    location: '',
+    address: '',
+    country: 'RW',
+    state: '',
+    city: '',
+    postcode: '',
     availableToHire: false,
-    emailNotifications: false,
+    emailNotifications: true,
     skills: [],
   });
   const [preferencesDraft, setPreferencesDraft] = useState({
-    language: 'en',
-    timezone: timezoneOptions[0].value,
-    currency: 'USD',
+    language: 'en-us',
+    timezone: TIMEZONE_OPTIONS[0].value,
+    currency: 'usd',
     showListNames: false,
     showLinkedTaskNames: true,
     emailVisibility: false,
@@ -160,35 +168,84 @@ function LearnersSettings() {
   const [savingBasic, setSavingBasic] = useState(false);
   const [savingPreferences, setSavingPreferences] = useState(false);
   const [photoUploading, setPhotoUploading] = useState(false);
+  const [twoFactorProcessing, setTwoFactorProcessing] = useState(false);
+  const [twoFactorStage, setTwoFactorStage] = useState('idle');
+  const [twoFactorOtp, setTwoFactorOtp] = useState('');
+  const [passwordForm, setPasswordForm] = useState({ current: '', next: '', confirm: '' });
+  const [passwordSaving, setPasswordSaving] = useState(false);
+  const [showPasswordForm, setShowPasswordForm] = useState(false);
+  const [baselineTick, setBaselineTick] = useState(0);
 
-  const showFeedback = (message, tone = 'success') => {
-    setFeedback({ message, tone, visible: true });
-    if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current);
+  const pushFeedback = useCallback((message, type = 'success') => {
+    if (feedbackTimerRef.current) {
+      window.clearTimeout(feedbackTimerRef.current);
+    }
+    setFeedback({ type, message });
     feedbackTimerRef.current = window.setTimeout(() => {
-      setFeedback((current) => ({ ...current, visible: false }));
-    }, 3200);
-  };
+      setFeedback({ type: '', message: '' });
+      feedbackTimerRef.current = null;
+    }, 3500);
+  }, []);
 
-  const fetchJson = async (path, token, options = {}) => {
-    const response = await fetch(`${API_BASE_URL}${path}`, {
-      ...options,
-      headers: {
-        ...(options.headers || {}),
-        Authorization: `Bearer ${token}`,
-        ...(options.body ? { 'Content-Type': 'application/json' } : {}),
-      },
-    });
+  const getToken = () => localStorage.getItem('token');
 
-    const body = await response.json().catch(() => ({}));
-    if (!response.ok) {
-      throw new Error(body?.message || 'Request failed');
+  const apiFetch = useCallback(async (path, options = {}) => {
+    const token = getToken();
+    if (!token) {
+      throw new Error('Please sign in again.');
     }
 
-    return body;
-  };
+    const { timeoutMs = 0, ...fetchOptions } = options;
+    const headers = new Headers(fetchOptions.headers || {});
+    headers.set('Authorization', `Bearer ${token}`);
+
+    if (!(fetchOptions.body instanceof FormData) && fetchOptions.body && !headers.has('Content-Type')) {
+      headers.set('Content-Type', 'application/json');
+    }
+
+    const controller = timeoutMs > 0 ? new AbortController() : null;
+    const timeoutId = controller
+      ? window.setTimeout(() => controller.abort(), timeoutMs)
+      : null;
+
+    try {
+      const response = await fetch(`${API_BASE_URL}${path}`, {
+        ...fetchOptions,
+        headers,
+        signal: controller?.signal,
+      });
+
+      const json = await response.json().catch(() => null);
+      if (!response.ok) {
+        const message = json?.error?.message || json?.message || 'Request failed';
+        throw new Error(message);
+      }
+
+      return json;
+    } catch (fetchError) {
+      if (fetchError?.name === 'AbortError') {
+        throw new Error('Upload timed out. Please try again.');
+      }
+      throw fetchError;
+    } finally {
+      if (timeoutId) {
+        window.clearTimeout(timeoutId);
+      }
+    }
+  }, []);
+
+  const markBasicBaseline = useCallback((draft) => {
+    basicBaselineRef.current = serializeBasicDraft(draft);
+    setBaselineTick((tick) => tick + 1);
+  }, []);
+
+  const markPreferencesBaseline = useCallback((draft) => {
+    preferencesBaselineRef.current = serializePreferencesDraft(draft);
+    setBaselineTick((tick) => tick + 1);
+  }, []);
 
   const loadSettings = async () => {
-    const token = localStorage.getItem('token');
+    const token = getToken();
     if (!token) {
       setLoading(false);
       setError('Please sign in to view your settings.');
@@ -199,12 +256,12 @@ function LearnersSettings() {
     setError('');
 
     const requests = await Promise.allSettled([
-      fetchJson('/api/profile', token),
-      fetchJson('/api/profile/documents', token),
-      fetchJson('/api/profile/payment-methods', token),
-      fetchJson('/api/certificates/user/statistics', token),
-      fetchJson('/api/certificates/user/my-certificates?limit=6&offset=0', token),
-      fetchJson('/api/auth/account-status', token),
+      apiFetch('/api/profile'),
+      apiFetch('/api/profile/documents'),
+      apiFetch('/api/profile/payment-methods'),
+      apiFetch('/api/certificates/user/statistics'),
+      apiFetch('/api/certificates/user/my-certificates?limit=6&offset=0'),
+      apiFetch('/api/auth/account-status'),
     ]);
 
     let firstError = '';
@@ -213,44 +270,33 @@ function LearnersSettings() {
     if (profileResult.status === 'fulfilled') {
       const user = profileResult.value?.data?.user || {};
       const completion = profileResult.value?.data?.completionStatus || null;
-      const avatar = resolveAssetUrl(user.avatar);
-      const skills = normalizeSkills(user.skills);
+      const nextBasicDraft = buildBasicDraftFromUser(user);
+      const nextPreferencesDraft = buildPreferencesDraftFromUser(user);
+      const avatarUrl = getProfilePhotoDisplayUrl(user.avatar, API_BASE_URL);
 
+      setProfileAvatarPath(user.avatar || '');
       setProfile({
-        name: user.name || user.email || 'Learner',
+        name: nextBasicDraft.name,
         email: user.email || '',
-        phone: user.phone || '',
-        role: user.role || 'student',
-        visibility: user.visibility || 'public',
-        avatar,
-        bio: user.bio || '',
-        location: user.location || [user.city, user.country].filter(Boolean).join(', ') || '',
-        availableToHire: Boolean(user.available_to_hire),
-        emailNotifications: Boolean(user.email_notifications),
-        skills,
+        phone: nextBasicDraft.phone,
+        role: nextBasicDraft.role,
+        visibility: nextBasicDraft.visibility,
+        avatar: avatarUrl,
+        bio: nextBasicDraft.bio,
+        address: nextBasicDraft.address,
+        country: nextBasicDraft.country,
+        state: nextBasicDraft.state,
+        city: nextBasicDraft.city,
+        postcode: nextBasicDraft.postcode,
+        availableToHire: nextBasicDraft.availableToHire,
+        emailNotifications: nextBasicDraft.emailNotifications,
+        skills: nextBasicDraft.skills,
       });
 
-      setBasicDraft({
-        name: user.name || user.email || 'Learner',
-        phone: user.phone || '',
-        role: user.role || 'student',
-        visibility: user.visibility || 'public',
-        bio: user.bio || '',
-        location: user.location || [user.city, user.country].filter(Boolean).join(', ') || '',
-        availableToHire: Boolean(user.available_to_hire),
-        emailNotifications: Boolean(user.email_notifications),
-        skills,
-      });
-
-      setPreferencesDraft({
-        language: user.language || 'en',
-        timezone: user.timezone || timezoneOptions[0].value,
-        currency: user.currency || 'USD',
-        showListNames: Boolean(user.show_list_names),
-        showLinkedTaskNames: user.show_linked_task_names !== false,
-        emailVisibility: Boolean(user.email_visibility),
-      });
-
+      setBasicDraft(nextBasicDraft);
+      setPreferencesDraft(nextPreferencesDraft);
+      markBasicBaseline(nextBasicDraft);
+      markPreferencesBaseline(nextPreferencesDraft);
       setProfileCompletion(completion);
     } else {
       firstError = profileResult.reason?.message || 'Failed to load profile data';
@@ -352,28 +398,135 @@ function LearnersSettings() {
       .sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
   }, [activityFilter, certificates, documents, paymentMethods]);
 
+  const profileAddressLabel = useMemo(
+    () => formatAddressDisplay(profile),
+    [profile]
+  );
+
   const visibleActivityItems = activityItems.filter((item) => !reviewedActivityIds.includes(item.id));
 
-  const saveBasicProfile = async () => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      setError('Please sign in again to save your profile.');
-      return;
+  const hasCustomProfilePhoto = useMemo(
+    () => isCustomProfilePhoto(profileAvatarPath),
+    [profileAvatarPath]
+  );
+
+  const basicDirty = useMemo(() => {
+    void baselineTick;
+    if (!basicBaselineRef.current) return false;
+    return serializeBasicDraft(basicDraft) !== basicBaselineRef.current;
+  }, [baselineTick, basicDraft]);
+
+  const preferencesDirty = useMemo(() => {
+    void baselineTick;
+    if (!preferencesBaselineRef.current) return false;
+    return serializePreferencesDraft(preferencesDraft) !== preferencesBaselineRef.current;
+  }, [baselineTick, preferencesDraft]);
+
+  const resetBasicDraft = () => {
+    if (!basicBaselineRef.current) return;
+    const baseline = JSON.parse(basicBaselineRef.current);
+    setBasicDraft({
+      ...baseline,
+      role: profile.role,
+    });
+  };
+
+  const resetPreferencesDraft = () => {
+    if (!preferencesBaselineRef.current) return;
+    setPreferencesDraft(JSON.parse(preferencesBaselineRef.current));
+  };
+
+  const startEnableTwoFactor = async () => {
+    try {
+      setTwoFactorProcessing(true);
+      await apiFetch('/api/auth/enable-2fa', { method: 'POST' });
+      setTwoFactorStage('enable-pending');
+      setTwoFactorOtp('');
+      pushFeedback('Verification code sent to your email.', 'success');
+    } catch (e) {
+      pushFeedback(e.message || 'Couldn\'t start two-factor setup. Please try again.', 'error');
+    } finally {
+      setTwoFactorProcessing(false);
     }
+  };
+
+  const verifyEnableTwoFactor = async () => {
+    try {
+      if (twoFactorOtp.trim().length !== 6) throw new Error('Enter the 6-digit code from your email.');
+      setTwoFactorProcessing(true);
+      await apiFetch('/api/auth/verify-otp-enable-2fa', {
+        method: 'POST',
+        body: JSON.stringify({ otp: twoFactorOtp.trim() }),
+      });
+      setTwoFactorStage('idle');
+      setTwoFactorOtp('');
+      pushFeedback('Two-factor authentication enabled.', 'success');
+      await loadSettings();
+    } catch (e) {
+      pushFeedback(e.message || 'Couldn\'t enable two-factor authentication. Please try again.', 'error');
+    } finally {
+      setTwoFactorProcessing(false);
+    }
+  };
+
+  const startDisableTwoFactor = async () => {
+    try {
+      setTwoFactorProcessing(true);
+      await apiFetch('/api/auth/disable-2fa', { method: 'POST' });
+      setTwoFactorStage('disable-pending');
+      setTwoFactorOtp('');
+      pushFeedback('Verification code sent to your email.', 'success');
+    } catch (e) {
+      pushFeedback(e.message || 'Couldn\'t start two-factor disable. Please try again.', 'error');
+    } finally {
+      setTwoFactorProcessing(false);
+    }
+  };
+
+  const verifyDisableTwoFactor = async () => {
+    try {
+      if (twoFactorOtp.trim().length !== 6) throw new Error('Enter the 6-digit code from your email.');
+      setTwoFactorProcessing(true);
+      await apiFetch('/api/auth/disable-2fa', {
+        method: 'POST',
+        body: JSON.stringify({ otp: twoFactorOtp.trim() }),
+      });
+      setTwoFactorStage('idle');
+      setTwoFactorOtp('');
+      pushFeedback('Two-factor authentication disabled.', 'success');
+      await loadSettings();
+    } catch (e) {
+      pushFeedback(e.message || 'Couldn\'t disable two-factor authentication. Please try again.', 'error');
+    } finally {
+      setTwoFactorProcessing(false);
+    }
+  };
+
+  const cancelTwoFactorFlow = () => {
+    setTwoFactorStage('idle');
+    setTwoFactorOtp('');
+  };
+
+  const saveBasicProfile = async () => {
+    if (!basicDirty) return;
 
     setSavingBasic(true);
     setError('');
 
     try {
-      const response = await fetchJson('/api/profile/complete', token, {
+      const response = await apiFetch('/api/profile/complete', {
         method: 'PUT',
         body: JSON.stringify({
-          name: basicDraft.name,
-          phone: basicDraft.phone,
-          role: basicDraft.role,
+          name: basicDraft.name.trim(),
+          phone: basicDraft.phone.replace(/\s/g, ''),
+          role: profile.role,
           visibility: basicDraft.visibility,
           bio: basicDraft.bio,
-          location: basicDraft.location,
+          address: basicDraft.address,
+          country: basicDraft.country,
+          state: basicDraft.state,
+          city: basicDraft.city,
+          postcode: basicDraft.postcode,
           skills: basicDraft.skills,
           availableToHire: basicDraft.availableToHire,
           emailNotifications: basicDraft.emailNotifications,
@@ -382,118 +535,206 @@ function LearnersSettings() {
 
       const user = response?.data?.user || {};
       const completion = response?.data?.profilePercentage;
+      const nextBasicDraft = buildBasicDraftFromUser({ ...user, skills: user.skills || basicDraft.skills });
 
       setProfile((current) => ({
         ...current,
-        name: user.name || current.name,
+        name: nextBasicDraft.name,
         email: user.email || current.email,
-        phone: user.phone || current.phone,
-        role: user.role || current.role,
-        visibility: user.visibility || current.visibility,
-        bio: user.bio || basicDraft.bio,
-        location: user.location || basicDraft.location,
-        avatar: user.avatar ? resolveAssetUrl(user.avatar) : current.avatar,
-        availableToHire: Boolean(user.available_to_hire),
-        emailNotifications: Boolean(user.email_notifications),
-        skills: normalizeSkills(user.skills).length ? normalizeSkills(user.skills) : basicDraft.skills,
+        phone: nextBasicDraft.phone,
+        role: nextBasicDraft.role,
+        visibility: nextBasicDraft.visibility,
+        bio: nextBasicDraft.bio,
+        address: nextBasicDraft.address,
+        country: nextBasicDraft.country,
+        state: nextBasicDraft.state,
+        city: nextBasicDraft.city,
+        postcode: nextBasicDraft.postcode,
+        availableToHire: nextBasicDraft.availableToHire,
+        emailNotifications: nextBasicDraft.emailNotifications,
+        skills: nextBasicDraft.skills,
       }));
-
+      setBasicDraft(nextBasicDraft);
+      markBasicBaseline(nextBasicDraft);
       setProfileCompletion((current) => ({ ...(current || {}), profile_percentage: completion ?? current?.profile_percentage ?? 0 }));
       setIsBasicEditing(false);
       setIsAboutEditing(false);
       setIsSkillsEditing(false);
-      showFeedback('Profile saved to your account.', 'success');
-      await loadSettings();
+      pushFeedback('Profile saved.', 'success');
     } catch (saveError) {
-      showFeedback(saveError.message || 'Failed to save profile', 'warning');
+      pushFeedback(saveError.message || 'Couldn\'t save profile. Please try again.', 'error');
     } finally {
       setSavingBasic(false);
     }
   };
 
   const savePreferences = async () => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      setError('Please sign in again to save your preferences.');
-      return;
-    }
+    if (!preferencesDirty) return;
 
     setSavingPreferences(true);
     setError('');
 
     try {
-      const response = await fetchJson('/api/profile/preferences', token, {
+      const response = await apiFetch('/api/profile/preferences', {
         method: 'PUT',
-        body: JSON.stringify(preferencesDraft),
+        body: JSON.stringify({
+          language: mapLanguageToApi(preferencesDraft.language),
+          timezone: preferencesDraft.timezone,
+          currency: preferencesDraft.currency.toUpperCase(),
+          showListNames: preferencesDraft.showListNames,
+          showLinkedTaskNames: preferencesDraft.showLinkedTaskNames,
+          emailVisibility: preferencesDraft.emailVisibility,
+        }),
       });
 
       const user = response?.data?.user || {};
-      setProfile((current) => ({
-        ...current,
-        emailNotifications: Boolean(user.email_notifications ?? current.emailNotifications),
+      const nextPreferencesDraft = buildPreferencesDraftFromUser(user);
+      setPreferencesDraft(nextPreferencesDraft);
+      markPreferencesBaseline(nextPreferencesDraft);
+      setProfileCompletion((current) => ({
+        ...(current || {}),
+        profile_percentage: response?.data?.profilePercentage ?? current?.profile_percentage ?? 0,
       }));
       setIsPreferencesEditing(false);
-      showFeedback('Preferences saved to your account.', 'success');
-      await loadSettings();
+      pushFeedback('Preferences saved.', 'success');
     } catch (saveError) {
-      showFeedback(saveError.message || 'Failed to save preferences', 'warning');
+      pushFeedback(saveError.message || 'Couldn\'t save preferences. Please try again.', 'error');
     } finally {
       setSavingPreferences(false);
     }
   };
 
-  const handlePhotoSelect = async (event) => {
-    const file = event.target.files?.[0];
+  const closePhotoCropModal = useCallback(() => {
+    setCropModalOpen(false);
+    if (cropImageSrc) URL.revokeObjectURL(cropImageSrc);
+    setCropImageSrc('');
+  }, [cropImageSrc]);
+
+  const handlePhotoFileSelect = (file) => {
     if (!file) return;
 
-    const token = localStorage.getItem('token');
-    if (!token) {
-      setError('Please sign in again to upload a photo.');
+    if (!file.type.startsWith('image/')) {
+      setUploadError('Please choose a JPEG, PNG, or WebP image.');
       return;
     }
 
-    setPhotoUploading(true);
-    setError('');
+    if (file.size > MAX_PROFILE_PHOTO_BYTES) {
+      setUploadError('This image is too large. Please choose an image under 5 MB.');
+      return;
+    }
+
+    setUploadError('');
+    const objectUrl = URL.createObjectURL(file);
+    setCropImageSrc(objectUrl);
+    setCropModalOpen(true);
+  };
+
+  const handlePhotoUpload = async (fileOrBlob, originalName = 'profile-photo.png') => {
+    if (!fileOrBlob) return;
+
+    if (fileOrBlob.size > MAX_PROFILE_PHOTO_BYTES) {
+      setUploadError('This image is too large. Please choose an image under 5 MB.');
+      return;
+    }
 
     try {
+      setPhotoUploading(true);
+      setUploadError('');
       const formData = new FormData();
-      formData.append('photo', file);
+      const mimeType = fileOrBlob.type || 'image/png';
+      const uploadFile = fileOrBlob instanceof File
+        ? fileOrBlob
+        : new File([fileOrBlob], originalName, { type: mimeType });
+      formData.append('photo', uploadFile);
 
-      const response = await fetch(`${API_BASE_URL}/api/profile/photo`, {
+      const response = await apiFetch('/api/profile/photo', {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
         body: formData,
+        timeoutMs: 45000,
       });
 
-      const body = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        throw new Error(body?.message || 'Failed to upload photo');
-      }
-
-      const nextAvatar = body?.data?.photoUrl || body?.data?.user?.avatar;
-      if (nextAvatar) {
-        setProfile((current) => ({ ...current, avatar: resolveAssetUrl(nextAvatar) }));
-      }
-
-      showFeedback('Photo updated in your account.', 'success');
-      await loadSettings();
+      const nextPath = response?.data?.photoUrl || response?.data?.avatar || response?.data?.user?.avatar || '';
+      setProfileAvatarPath(nextPath);
+      setProfile((current) => ({
+        ...current,
+        avatar: getProfilePhotoDisplayUrl(nextPath, API_BASE_URL),
+      }));
+      pushFeedback('Profile photo updated.', 'success');
     } catch (uploadError) {
-      showFeedback(uploadError.message || 'Failed to upload photo', 'warning');
+      pushFeedback(uploadError.message || 'Couldn\'t upload photo. Please try again.', 'error');
+      throw uploadError;
     } finally {
       setPhotoUploading(false);
-      event.target.value = '';
     }
   };
 
-  const toggleAvailability = async () => {
+  const handlePhotoCropConfirm = (blob) => {
+    closePhotoCropModal();
+    handlePhotoUpload(blob, `profile-photo-${Date.now()}.png`).catch(() => {});
+  };
+
+  const handlePhotoReset = async () => {
+    try {
+      setPhotoUploading(true);
+      await apiFetch('/api/profile/photo', { method: 'DELETE' });
+      setProfileAvatarPath('');
+      setProfile((current) => ({ ...current, avatar: defaultProfile }));
+      pushFeedback('Profile photo reset.', 'success');
+    } catch (resetError) {
+      pushFeedback(resetError.message || 'Couldn\'t reset profile photo. Please try again.', 'error');
+    } finally {
+      setPhotoUploading(false);
+    }
+  };
+
+  const handleProfileImageError = (event) => {
+    event.currentTarget.onerror = null;
+    event.currentTarget.src = defaultProfile;
+  };
+
+  const handleChangePassword = async () => {
+    if (!passwordForm.current || !passwordForm.next) {
+      pushFeedback('Enter your current and new password.', 'error');
+      return;
+    }
+
+    if (passwordForm.next.length < 6) {
+      pushFeedback('New password must be at least 6 characters.', 'error');
+      return;
+    }
+
+    if (passwordForm.next !== passwordForm.confirm) {
+      pushFeedback('New passwords do not match.', 'error');
+      return;
+    }
+
+    try {
+      setPasswordSaving(true);
+      await apiFetch('/api/auth/change-password', {
+        method: 'POST',
+        body: JSON.stringify({
+          currentPassword: passwordForm.current,
+          newPassword: passwordForm.next,
+        }),
+      });
+      setPasswordForm({ current: '', next: '', confirm: '' });
+      setShowPasswordForm(false);
+      pushFeedback('Password changed successfully.');
+    } catch (changeError) {
+      pushFeedback(changeError.message || 'Couldn\'t change password. Please try again.', 'error');
+    } finally {
+      setPasswordSaving(false);
+    }
+  };
+
+  const toggleAvailability = () => {
     setBasicDraft((current) => ({ ...current, availableToHire: !current.availableToHire }));
-    await saveBasicProfile();
   };
 
   const addSkill = () => {
     const nextSkill = skillDraft.trim();
     if (!nextSkill) {
-      showFeedback('Type a skill before adding it.', 'warning');
+      pushFeedback('Type a skill before adding it.', 'error');
       return;
     }
 
@@ -527,12 +768,21 @@ function LearnersSettings() {
   return (
     <LearnersPageShell>
       <section className="learners-settings-page" onClick={(event) => { if (!event.target.closest('.learners-settings-activity-menu')) setOpenActivityMenuId(null); }}>
-        <input ref={photoInputRef} type="file" accept="image/*" hidden onChange={handlePhotoSelect} />
+        <input
+          ref={photoInputRef}
+          type="file"
+          accept="image/png,image/jpeg,image/webp"
+          hidden
+          onChange={(event) => {
+            handlePhotoFileSelect(event.target.files?.[0]);
+            event.target.value = '';
+          }}
+        />
 
         <section className="learners-projects-profile-strip">
           <div className="learners-projects-profile-strip-main">
-            <div className="learners-projects-profile-avatar">
-              <img src={profile.avatar} alt={profile.name || 'Profile'} />
+            <div className="learners-projects-profile-avatar learners-settings-profile-avatar">
+              <img src={profile.avatar} alt={profile.name || 'Profile'} onError={handleProfileImageError} />
             </div>
 
             <div className="learners-projects-profile-copy">
@@ -556,14 +806,35 @@ function LearnersSettings() {
           </div>
 
           <div className="learners-projects-profile-actions">
-            <button type="button" className="learners-projects-secondary-btn" onClick={() => photoInputRef.current?.click()} disabled={photoUploading}>
-              {photoUploading ? 'Uploading...' : 'Change Photo'}
+            <button
+              type="button"
+              className="learners-projects-secondary-btn"
+              onClick={() => photoInputRef.current?.click()}
+              disabled={photoUploading}
+            >
+              {photoUploading ? 'Uploading...' : hasCustomProfilePhoto ? 'Change Photo' : 'Upload Photo'}
             </button>
+            {hasCustomProfilePhoto && (
+              <button
+                type="button"
+                className="learners-projects-secondary-btn"
+                onClick={handlePhotoReset}
+                disabled={photoUploading}
+              >
+                Remove Photo
+              </button>
+            )}
             <button type="button" className="learners-projects-primary-btn" onClick={() => navigate('/academia/learner/account')}>
               Open Account
             </button>
           </div>
         </section>
+
+        {uploadError && (
+          <div className="learners-settings-feedback is-warning">
+            {uploadError}
+          </div>
+        )}
 
         {error && (
           <div className="learners-settings-feedback is-warning">
@@ -571,8 +842,25 @@ function LearnersSettings() {
           </div>
         )}
 
-        {feedback.visible && (
-          <div className={`learners-settings-feedback is-${feedback.tone}`}>
+        {feedback.message && (
+          <div
+            style={{
+              position: 'fixed',
+              top: 18,
+              right: 18,
+              zIndex: 9999,
+              background: feedback.type === 'error' ? '#FEE2E2' : '#DCFCE7',
+              color: feedback.type === 'error' ? '#991B1B' : '#166534',
+              border: `1px solid ${feedback.type === 'error' ? '#FCA5A5' : '#86EFAC'}`,
+              padding: '10px 12px',
+              borderRadius: 10,
+              maxWidth: 420,
+              fontSize: 13,
+              boxShadow: '0 10px 30px rgba(0,0,0,0.12)',
+            }}
+            role="status"
+            aria-live="polite"
+          >
             {feedback.message}
           </div>
         )}
@@ -599,7 +887,7 @@ function LearnersSettings() {
               <div className="learners-settings-side-list" style={{ marginTop: 14 }}>
                 <div><img src={leUe} alt="Role" /><span>{profile.role || 'Learner'}</span></div>
                 <div><img src={leEx} alt="Visibility" /><span>{profile.visibility === 'private' ? 'Private profile' : 'Public profile'}</span></div>
-                <div><img src={leLo} alt="Location" /><span>{profile.location || 'Location not set'}</span></div>
+                <div><img src={leLo} alt="Address" /><span>{profileAddressLabel}</span></div>
                 <div><img src={userIcon} alt="2FA" /><span>{is2FAEnabled ? 'Two-factor enabled' : 'Two-factor disabled'}</span></div>
               </div>
 
@@ -612,6 +900,10 @@ function LearnersSettings() {
                 <img src={userIcon} alt="Availability" />
                 <span>{basicDraft.availableToHire ? 'Available to hire' : 'Not available to hire'}</span>
               </button>
+
+              {basicDirty && (
+                <p className="learners-settings-side-hint">You have unsaved profile changes. Save them from Overview.</p>
+              )}
 
               <button type="button" className="learners-settings-email-btn" onClick={() => setActiveTab('overview')}>
                 View profile settings
@@ -639,10 +931,17 @@ function LearnersSettings() {
                     onChange={(event) => setBasicDraft((current) => ({ ...current, bio: event.target.value }))}
                   />
                   <div className="learners-settings-inline-actions">
-                    <button type="button" className="learners-settings-inline-save" onClick={saveBasicProfile} disabled={savingBasic}>
-                      {savingBasic ? 'Saving...' : 'Save'}
-                    </button>
-                    <button type="button" className="learners-settings-inline-cancel" onClick={() => setIsAboutEditing(false)}>
+                    <SettingsSaveButton onClick={saveBasicProfile} disabled={!basicDirty} saving={savingBasic} savingLabel="Saving bio...">
+                      Save bio
+                    </SettingsSaveButton>
+                    <button
+                      type="button"
+                      className="learners-settings-inline-cancel"
+                      onClick={() => {
+                        resetBasicDraft();
+                        setIsAboutEditing(false);
+                      }}
+                    >
                       Cancel
                     </button>
                   </div>
@@ -685,10 +984,17 @@ function LearnersSettings() {
                     </button>
                   </div>
                   <div className="learners-settings-inline-actions">
-                    <button type="button" className="learners-settings-inline-save" onClick={saveBasicProfile} disabled={savingBasic}>
-                      {savingBasic ? 'Saving...' : 'Save skills'}
-                    </button>
-                    <button type="button" className="learners-settings-inline-cancel" onClick={() => setIsSkillsEditing(false)}>
+                    <SettingsSaveButton onClick={saveBasicProfile} disabled={!basicDirty} saving={savingBasic} savingLabel="Saving skills...">
+                      Save skills
+                    </SettingsSaveButton>
+                    <button
+                      type="button"
+                      className="learners-settings-inline-cancel"
+                      onClick={() => {
+                        resetBasicDraft();
+                        setIsSkillsEditing(false);
+                      }}
+                    >
                       Cancel
                     </button>
                   </div>
@@ -775,7 +1081,10 @@ function LearnersSettings() {
                           <input
                             type="tel"
                             value={basicDraft.phone}
-                            onChange={(event) => setBasicDraft((current) => ({ ...current, phone: event.target.value }))}
+                            onChange={(event) => setBasicDraft((current) => ({
+                              ...current,
+                              phone: formatRwandaPhoneNumber(event.target.value),
+                            }))}
                             disabled={!isBasicEditing}
                           />
                         </label>
@@ -789,9 +1098,9 @@ function LearnersSettings() {
                         <input
                           type="text"
                           className="learners-settings-field-value learners-settings-field-control"
-                          value={basicDraft.role}
-                          onChange={(event) => setBasicDraft((current) => ({ ...current, role: event.target.value }))}
-                          disabled={!isBasicEditing}
+                          value={profile.role}
+                          readOnly
+                          disabled
                         />
                       </div>
 
@@ -829,17 +1138,80 @@ function LearnersSettings() {
                         </div>
                       </div>
 
-                      <div className="learners-settings-field">
+                      <div className="learners-settings-field is-full">
                         <div className="learners-settings-field-head">
-                          <label>Location</label>
+                          <label>Address</label>
                           <img src={acInn} alt="Info" />
                         </div>
                         <input
                           type="text"
                           className="learners-settings-field-value learners-settings-field-control"
-                          value={basicDraft.location}
-                          onChange={(event) => setBasicDraft((current) => ({ ...current, location: event.target.value }))}
+                          value={basicDraft.address}
+                          onChange={(event) => setBasicDraft((current) => ({ ...current, address: event.target.value }))}
                           disabled={!isBasicEditing}
+                          placeholder="Street address"
+                        />
+                      </div>
+
+                      <div className="learners-settings-field">
+                        <div className="learners-settings-field-head">
+                          <label>Country</label>
+                          <img src={acInn} alt="Info" />
+                        </div>
+                        <select
+                          className="learners-settings-field-value learners-settings-field-control"
+                          value={basicDraft.country}
+                          onChange={(event) => setBasicDraft((current) => ({ ...current, country: event.target.value }))}
+                          disabled={!isBasicEditing}
+                        >
+                          {COUNTRY_OPTIONS.map((option) => (
+                            <option key={option.code} value={option.code}>{option.name}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className="learners-settings-field">
+                        <div className="learners-settings-field-head">
+                          <label>State</label>
+                          <img src={acInn} alt="Info" />
+                        </div>
+                        <input
+                          type="text"
+                          className="learners-settings-field-value learners-settings-field-control"
+                          value={basicDraft.state}
+                          onChange={(event) => setBasicDraft((current) => ({ ...current, state: event.target.value }))}
+                          disabled={!isBasicEditing}
+                          placeholder="State"
+                        />
+                      </div>
+
+                      <div className="learners-settings-field">
+                        <div className="learners-settings-field-head">
+                          <label>City</label>
+                          <img src={acInn} alt="Info" />
+                        </div>
+                        <input
+                          type="text"
+                          className="learners-settings-field-value learners-settings-field-control"
+                          value={basicDraft.city}
+                          onChange={(event) => setBasicDraft((current) => ({ ...current, city: event.target.value }))}
+                          disabled={!isBasicEditing}
+                          placeholder="City"
+                        />
+                      </div>
+
+                      <div className="learners-settings-field">
+                        <div className="learners-settings-field-head">
+                          <label>Postcode</label>
+                          <img src={acInn} alt="Info" />
+                        </div>
+                        <input
+                          type="text"
+                          className="learners-settings-field-value learners-settings-field-control"
+                          value={basicDraft.postcode}
+                          onChange={(event) => setBasicDraft((current) => ({ ...current, postcode: event.target.value }))}
+                          disabled={!isBasicEditing}
+                          placeholder="Postcode"
                         />
                       </div>
 
@@ -855,6 +1227,7 @@ function LearnersSettings() {
                               className={`learners-settings-switch ${basicDraft.availableToHire ? 'is-on' : ''}`}
                               onClick={() => setBasicDraft((current) => ({ ...current, availableToHire: !current.availableToHire }))}
                               aria-pressed={basicDraft.availableToHire}
+                              disabled={!isBasicEditing}
                             />
                             <span>Available to hire</span>
                           </label>
@@ -864,6 +1237,7 @@ function LearnersSettings() {
                               className={`learners-settings-switch ${basicDraft.emailNotifications ? 'is-on' : ''}`}
                               onClick={() => setBasicDraft((current) => ({ ...current, emailNotifications: !current.emailNotifications }))}
                               aria-pressed={basicDraft.emailNotifications}
+                              disabled={!isBasicEditing}
                             />
                             <span>Email notifications</span>
                           </label>
@@ -872,10 +1246,17 @@ function LearnersSettings() {
                     </div>
 
                     <div className="learners-settings-inline-actions" style={{ marginTop: 18 }}>
-                      <button type="button" className="learners-settings-inline-save" onClick={saveBasicProfile} disabled={savingBasic}>
-                        {savingBasic ? 'Saving...' : 'Save profile'}
-                      </button>
-                      <button type="button" className="learners-settings-inline-cancel" onClick={() => setIsBasicEditing(false)}>
+                      <SettingsSaveButton onClick={saveBasicProfile} disabled={!basicDirty} saving={savingBasic} savingLabel="Saving profile...">
+                        Save profile
+                      </SettingsSaveButton>
+                      <button
+                        type="button"
+                        className="learners-settings-inline-cancel"
+                        onClick={() => {
+                          resetBasicDraft();
+                          setIsBasicEditing(false);
+                        }}
+                      >
                         Cancel
                       </button>
                     </div>
@@ -909,13 +1290,13 @@ function LearnersSettings() {
                             disabled={!isPreferencesEditing}
                           >
                             <div className="d-flex align-items-center gap-2">
-                              <span className="pref-icon">{languageOptions.find((o) => o.value === preferencesDraft.language)?.icon || '🌐'}</span>
-                              <span>{languageOptions.find((o) => o.value === preferencesDraft.language)?.label || 'Language'}</span>
+                              <span className="pref-icon">{LANGUAGE_OPTIONS.find((o) => o.value === preferencesDraft.language)?.icon || '🌐'}</span>
+                              <span>{LANGUAGE_OPTIONS.find((o) => o.value === preferencesDraft.language)?.label || 'Language'}</span>
                             </div>
                           </button>
                           {isPreferencesEditing && (
                             <ul className="dropdown-menu w-100 shadow-sm border-0">
-                              {languageOptions.map((option) => (
+                              {LANGUAGE_OPTIONS.map((option) => (
                                 <li key={option.value}>
                                   <button className="dropdown-item" type="button" onClick={() => setPreferencesDraft((c) => ({ ...c, language: option.value }))}>
                                     <span className="me-2">{option.icon}</span>
@@ -941,11 +1322,11 @@ function LearnersSettings() {
                             aria-expanded="false"
                             disabled={!isPreferencesEditing}
                           >
-                            <span>{timezoneOptions.find((o) => o.value === preferencesDraft.timezone)?.label || 'Timezone'}</span>
+                            <span>{TIMEZONE_OPTIONS.find((o) => o.value === preferencesDraft.timezone)?.label || 'Timezone'}</span>
                           </button>
                           {isPreferencesEditing && (
                             <ul className="dropdown-menu w-100 shadow-sm border-0">
-                              {timezoneOptions.map((option) => (
+                              {TIMEZONE_OPTIONS.map((option) => (
                                 <li key={option.value}>
                                   <button className="dropdown-item" type="button" onClick={() => setPreferencesDraft((c) => ({ ...c, timezone: option.value }))}>
                                     {option.label}
@@ -971,13 +1352,13 @@ function LearnersSettings() {
                             disabled={!isPreferencesEditing}
                           >
                             <div className="d-flex align-items-center gap-2">
-                              <span className="pref-icon currency-badge">{currencyOptions.find((o) => o.value === preferencesDraft.currency)?.icon || '$'}</span>
-                              <span>{currencyOptions.find((o) => o.value === preferencesDraft.currency)?.label || 'Currency'}</span>
+                              <span className="pref-icon currency-badge">{CURRENCY_OPTIONS.find((o) => o.value === preferencesDraft.currency)?.icon || '$'}</span>
+                              <span>{CURRENCY_OPTIONS.find((o) => o.value === preferencesDraft.currency)?.label || 'Currency'}</span>
                             </div>
                           </button>
                           {isPreferencesEditing && (
                             <ul className="dropdown-menu w-100 shadow-sm border-0">
-                              {currencyOptions.map((option) => (
+                              {CURRENCY_OPTIONS.map((option) => (
                                 <li key={option.value}>
                                   <button className="dropdown-item" type="button" onClick={() => setPreferencesDraft((c) => ({ ...c, currency: option.value }))}>
                                     <span className="me-2">{option.icon}</span>
@@ -1031,10 +1412,17 @@ function LearnersSettings() {
                     </div>
 
                     <div className="learners-settings-inline-actions" style={{ marginTop: 18 }}>
-                      <button type="button" className="learners-settings-inline-save" onClick={savePreferences} disabled={savingPreferences}>
-                        {savingPreferences ? 'Saving...' : 'Save preferences'}
-                      </button>
-                      <button type="button" className="learners-settings-inline-cancel" onClick={() => setIsPreferencesEditing(false)}>
+                      <SettingsSaveButton onClick={savePreferences} disabled={!preferencesDirty} saving={savingPreferences} savingLabel="Saving preferences...">
+                        Save preferences
+                      </SettingsSaveButton>
+                      <button
+                        type="button"
+                        className="learners-settings-inline-cancel"
+                        onClick={() => {
+                          resetPreferencesDraft();
+                          setIsPreferencesEditing(false);
+                        }}
+                      >
                         Cancel
                       </button>
                     </div>
@@ -1059,12 +1447,60 @@ function LearnersSettings() {
                           <label>Password</label>
                           <img src={acInn} alt="Info" />
                         </div>
-                        <div className="learners-settings-field-value learners-settings-password-value">
-                          <input type="password" className="learners-settings-field-control is-plain" value="Managed from your account settings" readOnly />
-                          <button type="button" className="learners-settings-icon-btn" onClick={() => navigate('/academia/learner/account')}>
-                            <img src={acEye} alt="Open account" />
-                          </button>
-                        </div>
+                        {!showPasswordForm ? (
+                          <div className="learners-settings-password-actions">
+                            <p className="learners-settings-about-copy">Update your account password securely.</p>
+                            <SettingsSaveButton
+                              className="learners-settings-inline-save"
+                              onClick={() => setShowPasswordForm(true)}
+                            >
+                              Change password
+                            </SettingsSaveButton>
+                          </div>
+                        ) : (
+                          <div className="learners-settings-side-form">
+                            <input
+                              type="password"
+                              className="learners-settings-field-value learners-settings-field-control"
+                              value={passwordForm.current}
+                              onChange={(event) => setPasswordForm((current) => ({ ...current, current: event.target.value }))}
+                              placeholder="Current password"
+                              autoComplete="current-password"
+                            />
+                            <input
+                              type="password"
+                              className="learners-settings-field-value learners-settings-field-control"
+                              value={passwordForm.next}
+                              onChange={(event) => setPasswordForm((current) => ({ ...current, next: event.target.value }))}
+                              placeholder="New password"
+                              autoComplete="new-password"
+                            />
+                            <input
+                              type="password"
+                              className="learners-settings-field-value learners-settings-field-control"
+                              value={passwordForm.confirm}
+                              onChange={(event) => setPasswordForm((current) => ({ ...current, confirm: event.target.value }))}
+                              placeholder="Confirm new password"
+                              autoComplete="new-password"
+                            />
+                            <div className="learners-settings-inline-actions" style={{ marginTop: 12 }}>
+                              <SettingsSaveButton onClick={handleChangePassword} saving={passwordSaving} savingLabel="Updating...">
+                                Update password
+                              </SettingsSaveButton>
+                              <button
+                                type="button"
+                                className="learners-settings-inline-cancel"
+                                onClick={() => {
+                                  setShowPasswordForm(false);
+                                  setPasswordForm({ current: '', next: '', confirm: '' });
+                                }}
+                                disabled={passwordSaving}
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        )}
                       </div>
 
                       <div className="learners-settings-field">
@@ -1087,11 +1523,54 @@ function LearnersSettings() {
                         <div className="learners-settings-callout is-security">
                           <div className="learners-settings-callout-icon">✓</div>
                           <div className="learners-settings-callout-copy">
-                            <strong>Security options summary</strong>
-                            <p>Password updates, 2FA changes, and recovery flows should be handled from the account page or the security options below.</p>
+                            <strong>Two-factor authentication</strong>
+                            <p>
+                              {is2FAEnabled
+                                ? 'Two-factor authentication is enabled on your account.'
+                                : 'Add an extra verification step when signing in.'}
+                            </p>
                           </div>
+                          {twoFactorStage === 'idle' && (
+                            <SettingsSaveButton
+                              className="learners-settings-inline-save"
+                              onClick={is2FAEnabled ? startDisableTwoFactor : startEnableTwoFactor}
+                              disabled={twoFactorProcessing}
+                              saving={twoFactorProcessing}
+                              savingLabel="Sending..."
+                            >
+                              {is2FAEnabled ? 'Disable 2FA' : 'Enable 2FA'}
+                            </SettingsSaveButton>
+                          )}
                         </div>
                       </div>
+
+                      {(twoFactorStage === 'enable-pending' || twoFactorStage === 'disable-pending') && (
+                        <div className="learners-settings-field is-full learners-settings-side-form">
+                          <div className="learners-settings-field-head">
+                            <label>Verification code</label>
+                          </div>
+                          <input
+                            type="text"
+                            className="learners-settings-field-value learners-settings-field-control"
+                            value={twoFactorOtp}
+                            onChange={(event) => setTwoFactorOtp(event.target.value.replace(/\D/g, '').slice(0, 6))}
+                            placeholder="Enter 6-digit code"
+                            maxLength={6}
+                          />
+                          <div className="learners-settings-inline-actions" style={{ marginTop: 12 }}>
+                            <SettingsSaveButton
+                              onClick={twoFactorStage === 'enable-pending' ? verifyEnableTwoFactor : verifyDisableTwoFactor}
+                              disabled={twoFactorOtp.length !== 6}
+                              saving={twoFactorProcessing}
+                            >
+                              Verify
+                            </SettingsSaveButton>
+                            <button type="button" className="learners-settings-inline-cancel" onClick={cancelTwoFactorFlow} disabled={twoFactorProcessing}>
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </article>
                 </section>
@@ -1182,6 +1661,14 @@ function LearnersSettings() {
           </div>
         </section>
       </section>
+
+      <ProfilePhotoCropModal
+        isOpen={cropModalOpen}
+        imageSrc={cropImageSrc}
+        onClose={closePhotoCropModal}
+        onConfirm={handlePhotoCropConfirm}
+        exporting={photoUploading}
+      />
     </LearnersPageShell>
   );
 }

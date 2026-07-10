@@ -787,11 +787,27 @@
     border-radius: 6px;
     font-size: 12.5px;
     font-weight: 500;
-    transition: all 0.2s;
+    transition: background 0.2s, color 0.2s;
 }
-.hoas-btn-discard:hover { background: #F8FAFC; color: #071437; }
+
+.hoas-btn-discard:hover:not(:disabled) {
+    background: #F8FAFC;
+    color: #071437;
+}
+
+.hoas-btn-discard:disabled,
+.hoas-btn-discard:disabled:hover {
+    opacity: 0.55;
+    cursor: not-allowed;
+    background: transparent;
+    color: #5E6278;
+}
 
 .hoas-btn-save {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
     background: #450468;
     color: #FFFFFF;
     border: none;
@@ -801,8 +817,34 @@
     font-weight: 600;
     transition: background 0.2s;
 }
-.hoas-btn-save:hover { background: #3a0358; }
-.hoas-btn-save:disabled { background: #885c9f; cursor: not-allowed; }
+
+.hoas-btn-save:hover:not(:disabled) {
+    background: #3a0358;
+}
+
+.hoas-btn-save:disabled,
+.hoas-btn-save:disabled:hover {
+    background: #885c9f;
+    color: #FFFFFF;
+    cursor: not-allowed;
+    opacity: 1;
+}
+
+.hoas-btn-spinner {
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(255, 255, 255, 0.35);
+    border-top-color: #FFFFFF;
+    border-radius: 50%;
+    animation: hoas-btn-spin 0.7s linear infinite;
+    flex-shrink: 0;
+}
+
+@keyframes hoas-btn-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
 
 /* =========================================
    FORMS & INPUTS
@@ -1130,6 +1172,10 @@
 }
 
 .hoas-photo-crop-submit {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
     width: 100%;
     padding: 12px 16px;
     border: none;
@@ -1139,10 +1185,18 @@
     font-size: 14px;
     font-weight: 600;
     cursor: pointer;
+    transition: background 0.2s;
 }
 
-.hoas-photo-crop-submit:disabled {
-    opacity: 0.6;
+.hoas-photo-crop-submit:hover:not(:disabled) {
+    background: #3a0358;
+}
+
+.hoas-photo-crop-submit:disabled,
+.hoas-photo-crop-submit:disabled:hover {
+    background: #885c9f;
+    color: #ffffff;
+    opacity: 1;
     cursor: not-allowed;
 }
 

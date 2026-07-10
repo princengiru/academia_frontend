@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { exportCroppedProfilePhoto, PROFILE_PHOTO_EXPORT_SIZE } from './profilePhotoUtils';
+import HoasButtonSpinner from './HoasButtonSpinner';
 
 const VIEWPORT_SIZE = 280;
 const MIN_ZOOM = 1;
@@ -214,7 +215,14 @@ const ProfilePhotoCropModal = ({ isOpen, imageSrc, onClose, onConfirm, exporting
           onClick={handleConfirm}
           disabled={!imageLoaded || exporting || isConfirming}
         >
-          {exporting || isConfirming ? 'Uploading...' : 'Set new profile picture'}
+          {exporting || isConfirming ? (
+            <>
+              <HoasButtonSpinner />
+              Uploading...
+            </>
+          ) : (
+            'Set new profile picture'
+          )}
         </button>
       </div>
     </div>

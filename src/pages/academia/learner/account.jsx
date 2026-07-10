@@ -26,6 +26,7 @@ import hoasmsnotifications from '../../../assets/icons/hoasmsnotifications.svg';
 import hoaemailnotifications from '../../../assets/icons/hoaemailnotifications.svg';
 import defaultProfileImage from '../../../assets/imgs/default-profile.png';
 import ProfilePhotoCropModal from './ProfilePhotoCropModal';
+import HoasButtonSpinner from './HoasButtonSpinner';
 import { getProfilePhotoDisplayUrl, isCustomProfilePhoto } from './profilePhotoUtils';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
@@ -970,7 +971,14 @@ const SectionCard = ({ id, title, children, onSave, sectionRef, showDiscard = tr
         <div className="hoas-section-footer">
           {showDiscard && <button type="button" className="hoas-btn-discard">Discard</button>}
           <button type="button" className="hoas-btn-save" onClick={onSave} disabled={saveDisabled || saving}>
-            {saving ? 'Saving...' : 'Save Changes'}
+            {saving ? (
+              <>
+                <HoasButtonSpinner />
+                Saving...
+              </>
+            ) : (
+              'Save Changes'
+            )}
           </button>
         </div>
       )}
@@ -2993,7 +3001,14 @@ const LearnerAccount = () => {
                           </button>
                         )}
                         <button type="button" className="hoas-btn-save" onClick={handlePaymentSave} disabled={!paymentDirty || paymentMethodsSaving}>
-                          {paymentMethodsSaving ? 'Saving...' : 'Save Changes'}
+                          {paymentMethodsSaving ? (
+                            <>
+                              <HoasButtonSpinner />
+                              Saving...
+                            </>
+                          ) : (
+                            'Save Changes'
+                          )}
                         </button>
                       </div>
                     </div>
@@ -3046,7 +3061,14 @@ const LearnerAccount = () => {
                           </button>
                         )}
                         <button type="button" className="hoas-btn-save" onClick={handlePaymentSave} disabled={!paymentDirty || paymentMethodsSaving}>
-                          {paymentMethodsSaving ? 'Saving...' : 'Save Changes'}
+                          {paymentMethodsSaving ? (
+                            <>
+                              <HoasButtonSpinner />
+                              Saving...
+                            </>
+                          ) : (
+                            'Save Changes'
+                          )}
                         </button>
                       </div>
                     </div>
@@ -3138,7 +3160,14 @@ const LearnerAccount = () => {
                           </button>
                         )}
                         <button type="button" className="hoas-btn-save" onClick={handlePaymentSave} disabled={!paymentDirty || paymentMethodsSaving}>
-                          {paymentMethodsSaving ? 'Saving...' : 'Save Changes'}
+                          {paymentMethodsSaving ? (
+                            <>
+                              <HoasButtonSpinner />
+                              Saving...
+                            </>
+                          ) : (
+                            'Save Changes'
+                          )}
                         </button>
                       </div>
                     </div>
