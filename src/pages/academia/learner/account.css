@@ -1020,6 +1020,132 @@
     stroke: #8C95AD;
 }
 
+.hoas-photo-inner--editable {
+    cursor: pointer;
+}
+
+.hoas-photo-crop-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: rgba(15, 23, 42, 0.55);
+}
+
+.hoas-photo-crop-modal {
+    width: min(100%, 420px);
+    padding: 20px;
+    border-radius: 12px;
+    background: #ffffff;
+    box-shadow: 0 24px 48px rgba(15, 23, 42, 0.18);
+}
+
+.hoas-photo-crop-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.hoas-photo-crop-header h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #071437;
+}
+
+.hoas-photo-crop-close {
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: #78829D;
+    font-size: 24px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.hoas-photo-crop-stage {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 16px;
+}
+
+.hoas-photo-crop-viewport {
+    position: relative;
+    width: 280px;
+    height: 280px;
+    overflow: hidden;
+    border-radius: 12px;
+    background: #111827;
+    touch-action: none;
+    cursor: grab;
+}
+
+.hoas-photo-crop-viewport:active {
+    cursor: grabbing;
+}
+
+.hoas-photo-crop-image {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    max-width: none;
+    user-select: none;
+    pointer-events: none;
+}
+
+.hoas-photo-crop-mask {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: radial-gradient(circle at center, transparent 124px, rgba(15, 23, 42, 0.72) 125px);
+}
+
+.hoas-photo-crop-controls {
+    display: grid;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.hoas-photo-crop-zoom-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: #78829D;
+}
+
+.hoas-photo-crop-controls input[type="range"] {
+    width: 100%;
+}
+
+.hoas-photo-crop-error {
+    margin: 0 0 12px;
+    color: #F8285A;
+    font-size: 12px;
+}
+
+.hoas-photo-crop-submit {
+    width: 100%;
+    padding: 12px 16px;
+    border: none;
+    border-radius: 8px;
+    background: #450468;
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.hoas-photo-crop-submit:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
 .hoas-availability-area {
     display: flex;
     align-items: center;

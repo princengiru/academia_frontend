@@ -15,6 +15,7 @@ import learnersLogoutIcon from '../../assets/icons/exit-right.svg';
 import learnersAppsIcon from '../../assets/icons/header-grid.svg';
 import learnersFlagIcon from '../../assets/icons/rwanda.svg';
 import learnersDropdownIcon from '../../assets/icons/drop1.svg';
+import { getProfilePhotoDisplayUrl } from '../../pages/academia/learner/profilePhotoUtils';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
@@ -108,18 +109,11 @@ function LearnersLayout() {
 
         const user = data?.data?.user || {};
 
-        const resolveAssetUrl = (value) => {
-          if (!value) return learnersProfileImage;
-          if (value.startsWith('http://') || value.startsWith('https://') || value.startsWith('data:')) return value;
-          if (value.startsWith('/')) return `${API_BASE_URL}${value}`;
-          return `${API_BASE_URL}/${value}`;
-        };
-
         setProfileSummary({
           name: user.name || user.email || 'Learner',
           email: user.email || '',
           role: user.role || 'learner',
-          avatar: resolveAssetUrl(user.avatar),
+          avatar: getProfilePhotoDisplayUrl(user.avatar, API_BASE_URL),
         });
         setProfileCompletion(Number(data?.data?.profilePercentage || 0));
         setProfileError('');
@@ -135,6 +129,11 @@ function LearnersLayout() {
     const interval = setInterval(loadProfile, 30000);
     return () => clearInterval(interval);
   }, [navigate, token]);
+
+  const handleProfileImageError = (event) => {
+    event.currentTarget.onerror = null;
+    event.currentTarget.src = learnersProfileImage;
+  };
 
   const truncateName = (name, max = 18) => {
     if (!name) return '';
@@ -250,7 +249,7 @@ function LearnersLayout() {
           <NavLink to="/academia/learner/account" className="learners-profile-link">
             <div className="learners-sidebar-profile-left">
               <div className="learners-sidebar-profile-img">
-                <img src={profileSummary.avatar} alt="Profile" />
+                <img src={profileSummary.avatar} alt="Profile" onError={handleProfileImageError} />
               </div>
               <div className="learners-sidebar-profile-text">
                 <h6>{profileLoading ? 'Loading...' : `Hi, ${truncateName(profileSummary.name)}`}</h6>
@@ -298,7 +297,7 @@ function LearnersLayout() {
             <NavLink to="/academia/learner/account" className="learners-user-link">
               <div className="learners-user">
                 <div className="learners-user-avatar">
-                  <img src={profileSummary.avatar} alt="User" />
+                  <img src={profileSummary.avatar} alt="User" onError={handleProfileImageError} />
                 </div>
                 <div className="learners-user-meta">
                   <h6>{profileLoading ? 'Loading...' : truncateName(profileSummary.name)}</h6>

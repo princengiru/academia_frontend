@@ -25,18 +25,14 @@ import hoa2faotp from '../../../assets/icons/hoa2faotp.svg';
 import hoasmsnotifications from '../../../assets/icons/hoasmsnotifications.svg';
 import hoaemailnotifications from '../../../assets/icons/hoaemailnotifications.svg';
 import defaultProfileImage from '../../../assets/imgs/default-profile.png';
+import ProfilePhotoCropModal from './ProfilePhotoCropModal';
+import { getProfilePhotoDisplayUrl, isCustomProfilePhoto } from './profilePhotoUtils';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 const MAX_DOCUMENT_BYTES = 5 * 1024 * 1024;
 const MAX_DOCUMENT_COUNT = 5;
-
-const resolveAssetUrl = (value) => {
-  if (!value) return defaultProfileImage;
-  if (value.startsWith('http://') || value.startsWith('https://') || value.startsWith('data:')) return value;
-  if (value.startsWith('/')) return `${API_BASE_URL}${value}`;
-  return value;
-};
+const MAX_PROFILE_PHOTO_BYTES = 5 * 1024 * 1024;
 
 // ─── Inline SVGs ──────────────────────────────────────────────────────────────
 const IconChecked = () => (
@@ -450,6 +446,40 @@ const getPaymentMethodForGateway = (methods, gateway) => {
   }
   return methods.find((method) => method.paymentType === 'bank_card');
 };
+
+const serializeSocialConnections = (connections) => JSON.stringify(
+  connections.map((connection) => ({
+    id: connection.id,
+    name: connection.name,
+    url: connection.url,
+    active: Boolean(connection.active),
+  })).sort((a, b) => String(a.id).localeCompare(String(b.id)))
+);
+
+const serializeDocuments = (files) => JSON.stringify(
+  files.map((file) => ({
+    id: file.id,
+    serverId: file.serverId || null,
+    name: file.name,
+    isPersisted: Boolean(file.isPersisted),
+  }))
+);
+
+const getPaymentFormSnapshot = (gateway, fields) => JSON.stringify(
+  gateway === 'card'
+    ? {
+      paymentCardName: fields.paymentCardName || '',
+      paymentCardNumber: fields.paymentCardNumber || '',
+      paymentExpiryMonth: fields.paymentExpiryMonth || '',
+      paymentCvv: fields.paymentCvv || '',
+      savePaymentMethod: Boolean(fields.savePaymentMethod),
+    }
+    : {
+      paymentSimName: fields.paymentSimName || '',
+      paymentPhoneNumber: fields.paymentPhoneNumber || '',
+      savePaymentMethod: Boolean(fields.savePaymentMethod),
+    }
+);
 
 const formatFileSize = (bytes) => {
   if (bytes === 0) return '0 B';
@@ -921,7 +951,7 @@ const AddressCountrySelect = ({ value, onChange }) => {
 };
 
 // ─── Section Card (defined OUTSIDE HOASettings to prevent remount on re-render) ─
-const SectionCard = ({ id, title, children, saved, onSave, sectionRef, showDiscard = true, showFooter = true, headerAction = null }) => (
+const SectionCard = ({ id, title, children, onSave, sectionRef, showDiscard = true, showFooter = true, headerAction = null, saveDisabled = false, saving = false }) => (
   <div
     className="hoas-section-card"
     id={id}
@@ -931,14 +961,6 @@ const SectionCard = ({ id, title, children, saved, onSave, sectionRef, showDisca
     <div className="hoas-section-header">
       <div className="hoas-section-title-row">
         <h2>{title}</h2>
-        {saved && (
-          <span className="hoas-saved-badge">
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-              <path d="M2 6.5L4.8 9.5L10 3" stroke="#17C653" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-            Saved
-          </span>
-        )}
         {headerAction}
       </div>
     </div>
@@ -947,8 +969,8 @@ const SectionCard = ({ id, title, children, saved, onSave, sectionRef, showDisca
       {showFooter && (
         <div className="hoas-section-footer">
           {showDiscard && <button type="button" className="hoas-btn-discard">Discard</button>}
-          <button type="button" className="hoas-btn-save" onClick={onSave}>
-            Save Changes
+          <button type="button" className="hoas-btn-save" onClick={onSave} disabled={saveDisabled || saving}>
+            {saving ? 'Saving...' : 'Save Changes'}
           </button>
         </div>
       )}
@@ -962,11 +984,14 @@ const LearnerAccount = () => {
   const [activeSection, setActiveSection] = useState('general');
   const sectionRefs = useRef({});
   const documentInputRef = useRef(null);
+  const photoInputRef = useRef(null);
   const socialMoreRef = useRef(null);
   const socialPopoverRef = useRef(null);
+  const sectionBaselinesRef = useRef({});
 
   const feedbackTimerRef = useRef(null);
   const [feedback, setFeedback] = useState({ type: '', message: '' });
+  const [baselineTick, setBaselineTick] = useState(0);
 
   const [profileLoading, setProfileLoading] = useState(true);
   const [profileSaving, setProfileSaving] = useState(false);
@@ -987,7 +1012,10 @@ const LearnerAccount = () => {
   const [twoFactorStage, setTwoFactorStage] = useState('idle'); // idle | enable-pending | disable-pending
   const [twoFactorOtp, setTwoFactorOtp] = useState('');
 
+  const [profileAvatarPath, setProfileAvatarPath] = useState('');
   const [uploadedPhoto, setUploadedPhoto] = useState(defaultProfileImage);
+  const [cropModalOpen, setCropModalOpen] = useState(false);
+  const [cropImageSrc, setCropImageSrc] = useState('');
   const [uploadError, setUploadError] = useState('');
   const [documentError, setDocumentError] = useState('');
 
@@ -1091,25 +1119,43 @@ const LearnerAccount = () => {
       throw new Error('Please sign in again.');
     }
 
-    const headers = new Headers(options.headers || {});
+    const { timeoutMs = 0, ...fetchOptions } = options;
+    const headers = new Headers(fetchOptions.headers || {});
     headers.set('Authorization', `Bearer ${token}`);
 
-    if (!(options.body instanceof FormData) && options.body && !headers.has('Content-Type')) {
+    if (!(fetchOptions.body instanceof FormData) && fetchOptions.body && !headers.has('Content-Type')) {
       headers.set('Content-Type', 'application/json');
     }
 
-    const response = await fetch(`${API_BASE_URL}${path}`, {
-      ...options,
-      headers,
-    });
+    const controller = timeoutMs > 0 ? new AbortController() : null;
+    const timeoutId = controller
+      ? window.setTimeout(() => controller.abort(), timeoutMs)
+      : null;
 
-    const json = await response.json().catch(() => null);
-    if (!response.ok) {
-      const message = json?.error?.message || json?.message || 'Request failed';
-      throw new Error(message);
+    try {
+      const response = await fetch(`${API_BASE_URL}${path}`, {
+        ...fetchOptions,
+        headers,
+        signal: controller?.signal,
+      });
+
+      const json = await response.json().catch(() => null);
+      if (!response.ok) {
+        const message = json?.error?.message || json?.message || 'Request failed';
+        throw new Error(message);
+      }
+
+      return json;
+    } catch (error) {
+      if (error?.name === 'AbortError') {
+        throw new Error('Upload timed out. Please try again.');
+      }
+      throw error;
+    } finally {
+      if (timeoutId) {
+        window.clearTimeout(timeoutId);
+      }
     }
-
-    return json;
   }, []);
 
   const normalizeDocuments = useCallback((docs) => (Array.isArray(docs) ? docs : []).map((d) => ({
@@ -1182,6 +1228,117 @@ const LearnerAccount = () => {
     Boolean(sectionCompleted[sectionId] || saved[sectionId])
   ), [saved, sectionCompleted]);
 
+  const markSectionSaved = useCallback((key, snapshot) => {
+    sectionBaselinesRef.current[key] = typeof snapshot === 'string' ? snapshot : JSON.stringify(snapshot);
+    setBaselineTick((tick) => tick + 1);
+  }, []);
+
+  const generalDirty = useMemo(() => {
+    void baselineTick;
+    const baseline = sectionBaselinesRef.current.general;
+    if (!baseline) return false;
+    return JSON.stringify({ fullName, phoneNumber, visibility, availableToHire }) !== baseline;
+  }, [baselineTick, fullName, phoneNumber, visibility, availableToHire]);
+
+  const emailDirty = useMemo(() => {
+    void baselineTick;
+    const baseline = sectionBaselinesRef.current.email;
+    if (!baseline) return false;
+    return JSON.stringify({ emailAddress, emailSystemUpdates }) !== baseline;
+  }, [baselineTick, emailAddress, emailSystemUpdates]);
+
+  const documentsDirty = useMemo(() => {
+    void baselineTick;
+    if (documentFiles.some((file) => !file.isPersisted)) return true;
+    const baseline = sectionBaselinesRef.current.documents;
+    if (!baseline) return false;
+    return serializeDocuments(documentFiles) !== baseline;
+  }, [baselineTick, documentFiles]);
+
+  const socialDirty = useMemo(() => {
+    void baselineTick;
+    const baseline = sectionBaselinesRef.current.social;
+    if (!baseline) return false;
+    return serializeSocialConnections(socialConnections) !== baseline;
+  }, [baselineTick, socialConnections]);
+
+  const preferencesDirty = useMemo(() => {
+    void baselineTick;
+    const baseline = sectionBaselinesRef.current.preferences;
+    if (!baseline) return false;
+    return JSON.stringify({
+      preferenceLanguage,
+      preferenceTimezone,
+      preferenceCurrency,
+      showListNames,
+      showLinkedTaskNames,
+      emailVisibility,
+    }) !== baseline;
+  }, [baselineTick, preferenceLanguage, preferenceTimezone, preferenceCurrency, showListNames, showLinkedTaskNames, emailVisibility]);
+
+  const notificationsDirty = useMemo(() => {
+    void baselineTick;
+    const baseline = sectionBaselinesRef.current.notifications;
+    if (!baseline) return false;
+    return JSON.stringify({
+      notificationEmailEnabled,
+      notificationMessageEnabled,
+      projectNotifications,
+      emailNotifications,
+      autoSubscribeTasks,
+    }) !== baseline;
+  }, [baselineTick, notificationEmailEnabled, notificationMessageEnabled, projectNotifications, emailNotifications, autoSubscribeTasks]);
+
+  const addressDirty = useMemo(() => {
+    void baselineTick;
+    const baseline = sectionBaselinesRef.current.address;
+    if (!baseline) return false;
+    return JSON.stringify({
+      addrAddress,
+      addrCountry,
+      addrState,
+      addrCity,
+      addrPostcode,
+    }) !== baseline;
+  }, [baselineTick, addrAddress, addrCountry, addrState, addrCity, addrPostcode]);
+
+  const appearanceDirty = useMemo(() => {
+    void baselineTick;
+    const baseline = sectionBaselinesRef.current.appearance;
+    if (!baseline) return false;
+    return JSON.stringify({
+      appearanceTheme,
+      transparentSidebar,
+      syncSystem,
+    }) !== baseline;
+  }, [baselineTick, appearanceTheme, transparentSidebar, syncSystem]);
+
+  const paymentDirty = useMemo(() => {
+    void baselineTick;
+    const baseline = sectionBaselinesRef.current.payment?.[selectedGateway];
+    if (!baseline) return false;
+    const current = getPaymentFormSnapshot(selectedGateway, {
+      paymentCardName,
+      paymentCardNumber,
+      paymentExpiryMonth,
+      paymentCvv,
+      savePaymentMethod,
+      paymentSimName,
+      paymentPhoneNumber,
+    });
+    return current !== baseline;
+  }, [
+    baselineTick,
+    selectedGateway,
+    paymentCardName,
+    paymentCardNumber,
+    paymentExpiryMonth,
+    paymentCvv,
+    savePaymentMethod,
+    paymentSimName,
+    paymentPhoneNumber,
+  ]);
+
   // Load profile + supporting account data
   useEffect(() => {
     let cancelled = false;
@@ -1193,7 +1350,7 @@ const LearnerAccount = () => {
         setDocumentsLoading(false);
         setPaymentMethodsLoading(false);
         setTwoFactorLoading(false);
-        pushFeedback('Please sign in again to load your account.', 'error');
+        pushFeedback('Please sign in again to continue.', 'error');
         return;
       }
 
@@ -1231,7 +1388,8 @@ const LearnerAccount = () => {
             : Boolean(user.email_notifications)
         );
 
-        setUploadedPhoto(resolveAssetUrl(user.avatar));
+        setProfileAvatarPath(user.avatar || '');
+        setUploadedPhoto(getProfilePhotoDisplayUrl(user.avatar, API_BASE_URL));
 
         setAddrAddress(user.address || '');
         setAddrCountry(user.country && COUNTRIES.some((c) => c.code === user.country) ? user.country : 'RW');
@@ -1256,7 +1414,7 @@ const LearnerAccount = () => {
 
         // Social links -> socialConnections list
         const links = Array.isArray(socialRes?.data?.links) ? socialRes.data.links : [];
-        setSocialConnections(links.map((link) => {
+        const socialItems = links.map((link) => {
           const platformKey = resolveSocialPlatformKey(link.platform_key) || link.platform_key;
           const config = getSocialPlatformConfig(platformKey);
           return {
@@ -1267,7 +1425,8 @@ const LearnerAccount = () => {
             active: Boolean(link.is_active),
             isCustom: !resolveSocialPlatformKey(link.platform_key),
           };
-        }));
+        });
+        setSocialConnections(socialItems);
 
         // Notifications
         const ns = notifRes?.data?.settings;
@@ -1288,8 +1447,57 @@ const LearnerAccount = () => {
           setTransparentSidebar(Boolean(ap.transparentSidebar));
           setSyncSystem(Boolean(ap.syncSystemTheme));
         }
+
+        const loadedDocs = normalizeDocuments(docsRes?.data?.documents);
+        const loadedPhone = user.phone ? formatRwandaPhoneNumber(String(user.phone)) : '';
+        const loadedEmailSystemUpdates = user.email_notifications === undefined || user.email_notifications === null
+          ? true
+          : Boolean(user.email_notifications);
+
+        sectionBaselinesRef.current = {
+          general: JSON.stringify({
+            fullName: user.name || '',
+            phoneNumber: loadedPhone,
+            visibility: user.visibility || 'public',
+            availableToHire: Boolean(user.available_to_hire),
+          }),
+          email: JSON.stringify({
+            emailAddress: user.email || '',
+            emailSystemUpdates: loadedEmailSystemUpdates,
+          }),
+          documents: serializeDocuments(loadedDocs),
+          social: serializeSocialConnections(socialItems),
+          preferences: JSON.stringify({
+            preferenceLanguage: user.language === 'fr' ? 'fr-fr' : 'en-us',
+            preferenceTimezone: user.timezone ? user.timezone : 'gmt-5-est',
+            preferenceCurrency: user.currency ? String(user.currency).toLowerCase() : 'usd',
+            showListNames: Boolean(user.show_list_names),
+            showLinkedTaskNames: user.show_linked_task_names !== 0 && user.show_linked_task_names !== false,
+            emailVisibility: Boolean(user.email_visibility),
+          }),
+          notifications: JSON.stringify({
+            notificationEmailEnabled: ns ? Boolean(ns.emailEnabled) : true,
+            notificationMessageEnabled: ns ? Boolean(ns.messagesEnabled) : true,
+            projectNotifications: ns?.projectNotifications || 'disabled',
+            emailNotifications: ns?.emailNotifications || 'unread-statuses',
+            autoSubscribeTasks: ns ? Boolean(ns.autoSubscribeTasks) : true,
+          }),
+          address: JSON.stringify({
+            addrAddress: user.address || '',
+            addrCountry: user.country && COUNTRIES.some((c) => c.code === user.country) ? user.country : 'RW',
+            addrState: user.state || '',
+            addrCity: user.city || '',
+            addrPostcode: user.postcode || '',
+          }),
+          appearance: JSON.stringify({
+            appearanceTheme: ap?.themeMode || 'dark',
+            transparentSidebar: ap ? Boolean(ap.transparentSidebar) : true,
+            syncSystem: ap ? Boolean(ap.syncSystemTheme) : true,
+          }),
+        };
+        setBaselineTick((tick) => tick + 1);
       } catch (e) {
-        if (!cancelled) pushFeedback(e.message || 'Failed to load account.', 'error');
+        if (!cancelled) pushFeedback(e.message || 'Couldn\'t load your settings. Please refresh and try again.', 'error');
       } finally {
         if (!cancelled) {
           setProfileLoading(false);
@@ -1319,13 +1527,14 @@ const LearnerAccount = () => {
       };
       await apiFetch('/api/profile/social-links', { method: 'PUT', body: JSON.stringify(payload) });
       handleSave('social');
+      markSectionSaved('social', serializeSocialConnections(socialConnections));
       pushFeedback('Social links saved.');
     } catch (e) {
-      pushFeedback(e.message || 'Failed to save social links.', 'error');
+      pushFeedback(e.message || 'Couldn\'t save social links. Please try again.', 'error');
     } finally {
       setProfileSaving(false);
     }
-  }, [apiFetch, handleSave, pushFeedback, socialConnections]);
+  }, [apiFetch, handleSave, markSectionSaved, pushFeedback, socialConnections]);
 
   const handleNotificationsSave = useCallback(async () => {
     try {
@@ -1341,13 +1550,20 @@ const LearnerAccount = () => {
         }),
       });
       handleSave('notifications');
-      pushFeedback('Notification settings saved.');
+      markSectionSaved('notifications', {
+        notificationEmailEnabled,
+        notificationMessageEnabled,
+        projectNotifications,
+        emailNotifications,
+        autoSubscribeTasks,
+      });
+      pushFeedback('Notification preferences saved.');
     } catch (e) {
-      pushFeedback(e.message || 'Failed to save notification settings.', 'error');
+      pushFeedback(e.message || 'Couldn\'t save notification preferences. Please try again.', 'error');
     } finally {
       setProfileSaving(false);
     }
-  }, [apiFetch, autoSubscribeTasks, emailNotifications, handleSave, notificationEmailEnabled, notificationMessageEnabled, projectNotifications, pushFeedback]);
+  }, [apiFetch, autoSubscribeTasks, emailNotifications, handleSave, markSectionSaved, notificationEmailEnabled, notificationMessageEnabled, projectNotifications, pushFeedback]);
 
   const handleAppearanceSave = useCallback(async () => {
     try {
@@ -1361,13 +1577,14 @@ const LearnerAccount = () => {
         }),
       });
       handleSave('appearance');
-      pushFeedback('Appearance saved.');
+      markSectionSaved('appearance', { appearanceTheme, transparentSidebar, syncSystem });
+      pushFeedback('Appearance settings saved.');
     } catch (e) {
-      pushFeedback(e.message || 'Failed to save appearance.', 'error');
+      pushFeedback(e.message || 'Couldn\'t save appearance settings. Please try again.', 'error');
     } finally {
       setProfileSaving(false);
     }
-  }, [apiFetch, appearanceTheme, handleSave, pushFeedback, syncSystem, transparentSidebar]);
+  }, [apiFetch, appearanceTheme, handleSave, markSectionSaved, pushFeedback, syncSystem, transparentSidebar]);
 
   const addDocumentFiles = useCallback((files) => {
     const incoming = Array.from(files).filter((file) => file && file.name);
@@ -1377,7 +1594,7 @@ const LearnerAccount = () => {
     const availableSlots = MAX_DOCUMENT_COUNT - documentFiles.length;
 
     if (availableSlots <= 0) {
-      setDocumentError(`You can upload up to ${MAX_DOCUMENT_COUNT} documents. Remove one to add another.`);
+      setDocumentError(`You can upload up to ${MAX_DOCUMENT_COUNT} documents. Remove one before adding another.`);
       return;
     }
 
@@ -1386,15 +1603,15 @@ const LearnerAccount = () => {
 
     for (const file of incoming) {
       if (accepted.length >= availableSlots) {
-        errors.push(`You can only have ${MAX_DOCUMENT_COUNT} documents in total.`);
+        errors.push(`You can only keep ${MAX_DOCUMENT_COUNT} documents on your account.`);
         break;
       }
       if (file.size > MAX_DOCUMENT_BYTES) {
-        errors.push(`"${file.name}" is larger than 5 MB.`);
+        errors.push(`"${file.name}" is too large. Each file must be 5 MB or smaller.`);
         continue;
       }
       if (seenNames.has(file.name.toLowerCase())) {
-        errors.push(`"${file.name}" is already added.`);
+        errors.push(`"${file.name}" is already in your list.`);
         continue;
       }
       seenNames.add(file.name.toLowerCase());
@@ -1450,18 +1667,20 @@ const LearnerAccount = () => {
     if (target.serverId && target.isPersisted) {
       try {
         const res = await apiFetch(`/api/profile/documents/${target.serverId}`, { method: 'DELETE' });
-        setDocumentFiles(normalizeDocuments(res?.data?.documents));
+        const latest = normalizeDocuments(res?.data?.documents);
+        setDocumentFiles(latest);
+        markSectionSaved('documents', serializeDocuments(latest));
         setDocumentError('');
         pushFeedback('Document removed.');
       } catch (e) {
-        pushFeedback(e.message || 'Failed to remove document.', 'error');
+        pushFeedback(e.message || 'Couldn\'t remove that document. Please try again.', 'error');
       }
       return;
     }
 
     setDocumentFiles((currentFiles) => currentFiles.filter((file) => file.id !== fileId));
     setDocumentError('');
-  }, [apiFetch, documentFiles, normalizeDocuments, pushFeedback]);
+  }, [apiFetch, documentFiles, markSectionSaved, normalizeDocuments, pushFeedback]);
 
   const openDocumentPicker = useCallback(() => {
     documentInputRef.current?.click();
@@ -1713,6 +1932,7 @@ const LearnerAccount = () => {
         }),
       });
       handleSave('general');
+      markSectionSaved('general', { fullName, phoneNumber, visibility, availableToHire });
       setProfileCompletion((current) => ({
         ...(current || {}),
         name_completed: 1,
@@ -1722,13 +1942,13 @@ const LearnerAccount = () => {
         hire_status_completed: 1,
         email_prefs_completed: 1,
       }));
-      pushFeedback('Your profile details were saved successfully.');
+      pushFeedback('Profile details saved.');
     } catch (e) {
-      pushFeedback(e.message || 'Failed to save basic settings.', 'error');
+      pushFeedback(e.message || 'Couldn\'t save profile details. Please try again.', 'error');
     } finally {
       setProfileSaving(false);
     }
-  }, [apiFetch, availableToHire, emailSystemUpdates, fullName, handleSave, phoneNumber, pushFeedback, role, visibility]);
+  }, [apiFetch, availableToHire, emailSystemUpdates, fullName, handleSave, markSectionSaved, phoneNumber, pushFeedback, role, visibility]);
 
   const handleEmailSave = useCallback(async () => {
     try {
@@ -1749,18 +1969,45 @@ const LearnerAccount = () => {
         }),
       });
       handleSave('email');
+      markSectionSaved('email', { emailAddress, emailSystemUpdates });
       pushFeedback('Email settings saved.');
     } catch (e) {
-      pushFeedback(e.message || 'Failed to save email settings.', 'error');
+      pushFeedback(e.message || 'Couldn\'t save email settings. Please try again.', 'error');
     } finally {
       setProfileSaving(false);
     }
-  }, [apiFetch, availableToHire, emailAddress, emailSystemUpdates, fullName, handleSave, phoneNumber, pushFeedback, role, visibility]);
+  }, [apiFetch, availableToHire, emailAddress, emailSystemUpdates, fullName, handleSave, markSectionSaved, phoneNumber, pushFeedback, role, visibility]);
 
-  const handlePhotoUpload = useCallback(async (file) => {
+  const closePhotoCropModal = useCallback(() => {
+    setCropModalOpen(false);
+    if (cropImageSrc) URL.revokeObjectURL(cropImageSrc);
+    setCropImageSrc('');
+  }, [cropImageSrc]);
+
+  const handlePhotoFileSelect = useCallback((file) => {
     if (!file) return;
-    if (file.size > 5 * 1024 * 1024) {
-      setUploadError('File size exceeds 5MB. Please choose a smaller image.');
+
+    if (!file.type.startsWith('image/')) {
+      setUploadError('Please choose a JPEG, PNG, or WebP image.');
+      return;
+    }
+
+    if (file.size > MAX_PROFILE_PHOTO_BYTES) {
+      setUploadError('This image is too large. Please choose an image under 5 MB.');
+      return;
+    }
+
+    setUploadError('');
+    const objectUrl = URL.createObjectURL(file);
+    setCropImageSrc(objectUrl);
+    setCropModalOpen(true);
+  }, []);
+
+  const handlePhotoUpload = useCallback(async (fileOrBlob, originalName = 'profile-photo.png') => {
+    if (!fileOrBlob) return;
+
+    if (fileOrBlob.size > MAX_PROFILE_PHOTO_BYTES) {
+      setUploadError('This image is too large. Please choose an image under 5 MB.');
       return;
     }
 
@@ -1768,31 +2015,51 @@ const LearnerAccount = () => {
       setPhotoUploading(true);
       setUploadError('');
       const formData = new FormData();
-      formData.append('photo', file);
-      const res = await apiFetch('/api/profile/photo', { method: 'POST', body: formData });
-      const nextUrl = res?.data?.photoUrl || res?.data?.user?.avatar;
-      setUploadedPhoto(resolveAssetUrl(nextUrl));
-      pushFeedback('Photo updated.');
+      const mimeType = fileOrBlob.type || 'image/png';
+      const uploadFile = fileOrBlob instanceof File
+        ? fileOrBlob
+        : new File([fileOrBlob], originalName, { type: mimeType });
+      formData.append('photo', uploadFile);
+      const res = await apiFetch('/api/profile/photo', {
+        method: 'POST',
+        body: formData,
+        timeoutMs: 45000,
+      });
+      const nextPath = res?.data?.photoUrl || res?.data?.avatar || res?.data?.user?.avatar || '';
+      setProfileAvatarPath(nextPath);
+      setUploadedPhoto(getProfilePhotoDisplayUrl(nextPath, API_BASE_URL));
+      pushFeedback('Profile photo updated.');
     } catch (e) {
-      pushFeedback(e.message || 'Failed to upload photo.', 'error');
+      pushFeedback(e.message || 'Couldn\'t upload photo. Use an image under 5 MB.', 'error');
+      throw e;
     } finally {
       setPhotoUploading(false);
     }
   }, [apiFetch, pushFeedback]);
 
+  const handlePhotoCropConfirm = useCallback((blob) => {
+    closePhotoCropModal();
+    handlePhotoUpload(blob, `profile-photo-${Date.now()}.png`).catch(() => {});
+  }, [closePhotoCropModal, handlePhotoUpload]);
+
   const handlePhotoReset = useCallback(async () => {
     try {
       setPhotoUploading(true);
-      const res = await apiFetch('/api/profile/photo', { method: 'DELETE' });
-      const nextUrl = res?.data?.photoUrl || res?.data?.user?.avatar;
-      setUploadedPhoto(resolveAssetUrl(nextUrl));
-      pushFeedback('Photo reset.');
+      await apiFetch('/api/profile/photo', { method: 'DELETE' });
+      setProfileAvatarPath('');
+      setUploadedPhoto(defaultProfileImage);
+      pushFeedback('Profile photo reset.');
     } catch (e) {
-      pushFeedback(e.message || 'Failed to reset photo.', 'error');
+      pushFeedback(e.message || 'Couldn\'t reset profile photo. Please try again.', 'error');
     } finally {
       setPhotoUploading(false);
     }
   }, [apiFetch, pushFeedback]);
+
+  const hasCustomProfilePhoto = useMemo(
+    () => isCustomProfilePhoto(profileAvatarPath),
+    [profileAvatarPath]
+  );
 
   const handleDocumentsSave = useCallback(async () => {
     const pending = documentFiles.filter((d) => d.file && !d.isPersisted);
@@ -1803,12 +2070,12 @@ const LearnerAccount = () => {
 
     const oversized = pending.find((doc) => doc.file.size > MAX_DOCUMENT_BYTES);
     if (oversized) {
-      setDocumentError(`"${oversized.name}" is larger than 5 MB.`);
+      setDocumentError(`"${oversized.name}" is too large. Each file must be 5 MB or smaller.`);
       return;
     }
 
     if (documentFiles.length > MAX_DOCUMENT_COUNT) {
-      setDocumentError(`You can upload up to ${MAX_DOCUMENT_COUNT} documents.`);
+      setDocumentError(`You can upload up to ${MAX_DOCUMENT_COUNT} documents on your account.`);
       return;
     }
 
@@ -1824,13 +2091,14 @@ const LearnerAccount = () => {
       }
       setDocumentFiles(latest);
       handleSave('documents');
+      markSectionSaved('documents', serializeDocuments(latest));
       pushFeedback('Documents saved.');
     } catch (e) {
-      pushFeedback(e.message || 'Failed to save documents.', 'error');
+      pushFeedback(e.message || 'Couldn\'t save documents. Please try again.', 'error');
     } finally {
       setDocumentsSaving(false);
     }
-  }, [apiFetch, documentFiles, handleSave, normalizeDocuments, pushFeedback]);
+  }, [apiFetch, documentFiles, handleSave, markSectionSaved, normalizeDocuments, pushFeedback]);
 
   const handlePreferencesSave = useCallback(async () => {
     try {
@@ -1852,13 +2120,21 @@ const LearnerAccount = () => {
       });
 
       handleSave('preferences');
+      markSectionSaved('preferences', {
+        preferenceLanguage,
+        preferenceTimezone,
+        preferenceCurrency,
+        showListNames,
+        showLinkedTaskNames,
+        emailVisibility,
+      });
       pushFeedback('Preferences saved.');
     } catch (e) {
-      pushFeedback(e.message || 'Failed to save preferences.', 'error');
+      pushFeedback(e.message || 'Couldn\'t save preferences. Please try again.', 'error');
     } finally {
       setProfileSaving(false);
     }
-  }, [apiFetch, emailVisibility, handleSave, preferenceCurrency, preferenceLanguage, preferenceTimezone, pushFeedback, showLinkedTaskNames, showListNames]);
+  }, [apiFetch, emailVisibility, handleSave, markSectionSaved, preferenceCurrency, preferenceLanguage, preferenceTimezone, pushFeedback, showLinkedTaskNames, showListNames]);
 
   const handleAddressSave = useCallback(async () => {
     try {
@@ -1880,13 +2156,14 @@ const LearnerAccount = () => {
         }),
       });
       handleSave('address');
+      markSectionSaved('address', { addrAddress, addrCountry, addrState, addrCity, addrPostcode });
       pushFeedback('Address saved.');
     } catch (e) {
-      pushFeedback(e.message || 'Failed to save address.', 'error');
+      pushFeedback(e.message || 'Couldn\'t save address. Please try again.', 'error');
     } finally {
       setProfileSaving(false);
     }
-  }, [addrAddress, addrCity, addrCountry, addrPostcode, addrState, apiFetch, availableToHire, emailSystemUpdates, fullName, handleSave, phoneNumber, pushFeedback, role, visibility]);
+  }, [addrAddress, addrCity, addrCountry, addrPostcode, addrState, apiFetch, availableToHire, emailSystemUpdates, fullName, handleSave, markSectionSaved, phoneNumber, pushFeedback, role, visibility]);
 
   const refreshPaymentMethods = useCallback(async () => {
     const res = await apiFetch('/api/profile/payment-methods');
@@ -1899,6 +2176,8 @@ const LearnerAccount = () => {
   );
 
   const applyPaymentMethodToForm = useCallback((method, gateway) => {
+    let snapshot;
+
     if (!method) {
       if (gateway === 'card') {
         setPaymentCardName('');
@@ -1908,30 +2187,59 @@ const LearnerAccount = () => {
         setPaymentCardBrand('unknown');
         setCardNumberIsMasked(false);
         setCvvIsMasked(false);
+        snapshot = getPaymentFormSnapshot('card', {
+          paymentCardName: '',
+          paymentCardNumber: '',
+          paymentExpiryMonth: '',
+          paymentCvv: '',
+          savePaymentMethod: false,
+        });
       } else {
         setPaymentSimName('');
         setPaymentPhoneNumber('');
         setPhoneNumberIsMasked(false);
+        snapshot = getPaymentFormSnapshot(gateway, {
+          paymentSimName: '',
+          paymentPhoneNumber: '',
+          savePaymentMethod: false,
+        });
       }
       setSavePaymentMethod(false);
-      return;
-    }
-
-    if (gateway === 'card') {
-      setPaymentCardName(method.accountHolderName || '');
-      setPaymentCardNumber(method.accountNumber || '');
-      setPaymentExpiryMonth(method.expiryDate || '');
-      setPaymentCvv(method.cardCvv || '');
+    } else if (gateway === 'card') {
+      const fields = {
+        paymentCardName: method.accountHolderName || '',
+        paymentCardNumber: method.accountNumber || '',
+        paymentExpiryMonth: method.expiryDate || '',
+        paymentCvv: method.cardCvv || '',
+        savePaymentMethod: Boolean(method.isPrimary),
+      };
+      setPaymentCardName(fields.paymentCardName);
+      setPaymentCardNumber(fields.paymentCardNumber);
+      setPaymentExpiryMonth(fields.paymentExpiryMonth);
+      setPaymentCvv(fields.paymentCvv);
       setPaymentCardBrand(method.paymentProvider && method.paymentProvider !== 'unknown' ? method.paymentProvider : 'unknown');
       setCardNumberIsMasked(isMaskedValue(method.accountNumber));
       setCvvIsMasked(isMaskedValue(method.cardCvv));
+      setSavePaymentMethod(fields.savePaymentMethod);
+      snapshot = getPaymentFormSnapshot('card', fields);
     } else {
-      setPaymentSimName(method.accountHolderName || '');
-      setPaymentPhoneNumber(method.phoneNumber || '');
+      const fields = {
+        paymentSimName: method.accountHolderName || '',
+        paymentPhoneNumber: method.phoneNumber || '',
+        savePaymentMethod: Boolean(method.isPrimary),
+      };
+      setPaymentSimName(fields.paymentSimName);
+      setPaymentPhoneNumber(fields.paymentPhoneNumber);
       setPhoneNumberIsMasked(isMaskedValue(method.phoneNumber));
+      setSavePaymentMethod(fields.savePaymentMethod);
+      snapshot = getPaymentFormSnapshot(gateway, fields);
     }
 
-    setSavePaymentMethod(Boolean(method.isPrimary));
+    if (!sectionBaselinesRef.current.payment) {
+      sectionBaselinesRef.current.payment = {};
+    }
+    sectionBaselinesRef.current.payment[gateway] = snapshot;
+    setBaselineTick((tick) => tick + 1);
   }, []);
 
   useEffect(() => {
@@ -1945,13 +2253,13 @@ const LearnerAccount = () => {
       const existingMethod = getPaymentMethodForGateway(savedPaymentMethods, selectedGateway);
 
       if (selectedGateway === 'card') {
-        if (!paymentCardName.trim()) throw new Error('Name on card is required.');
+        if (!paymentCardName.trim()) throw new Error('Enter the name on your card.');
         const digits = cardNumberIsMasked ? '' : extractPaymentDigits(paymentCardNumber);
         const cvvDigits = cvvIsMasked ? '' : extractPaymentDigits(paymentCvv);
 
-        if (!existingMethod && digits.length < 13) throw new Error('Card number is required.');
-        if (!paymentExpiryMonth || paymentExpiryMonth.length < 4) throw new Error('Expiry date is required.');
-        if (!existingMethod && cvvDigits.length < 3) throw new Error('CVV is required.');
+        if (!existingMethod && digits.length < 13) throw new Error('Enter a valid card number.');
+        if (!paymentExpiryMonth || paymentExpiryMonth.length < 4) throw new Error('Enter the card expiry date.');
+        if (!existingMethod && cvvDigits.length < 3) throw new Error('Enter the card security code.');
 
         const payload = {
           accountHolderName: paymentCardName.trim(),
@@ -1984,9 +2292,9 @@ const LearnerAccount = () => {
           });
         }
       } else {
-        if (!paymentSimName.trim()) throw new Error('SIM card name is required.');
+        if (!paymentSimName.trim()) throw new Error('Enter the name on your SIM card.');
         const phoneDigits = phoneNumberIsMasked ? '' : extractPaymentDigits(paymentPhoneNumber);
-        if (!existingMethod && !phoneDigits) throw new Error('Phone number is required.');
+        if (!existingMethod && !phoneDigits) throw new Error('Enter your mobile money number.');
 
         const payload = {
           accountHolderName: paymentSimName.trim(),
@@ -2033,7 +2341,7 @@ const LearnerAccount = () => {
       handleSave(selectedGateway === 'mtn' ? 'payment-mtn' : selectedGateway === 'airtel' ? 'payment-airtel' : 'payment-card');
       pushFeedback(existingMethod ? 'Payment method updated.' : 'Payment method saved.');
     } catch (e) {
-      pushFeedback(e.message || 'Failed to save payment method.', 'error');
+      pushFeedback(e.message || 'Couldn\'t save payment method. Please try again.', 'error');
     } finally {
       setPaymentMethodsSaving(false);
     }
@@ -2043,9 +2351,9 @@ const LearnerAccount = () => {
     try {
       await apiFetch(`/api/profile/payment-methods/${id}`, { method: 'DELETE' });
       await refreshPaymentMethods();
-      pushFeedback('Payment method deleted.');
+      pushFeedback('Payment method removed.');
     } catch (e) {
-      pushFeedback(e.message || 'Failed to delete payment method.', 'error');
+      pushFeedback(e.message || 'Couldn\'t remove payment method. Please try again.', 'error');
     }
   }, [apiFetch, pushFeedback, refreshPaymentMethods]);
 
@@ -2055,9 +2363,9 @@ const LearnerAccount = () => {
       await apiFetch('/api/auth/enable-2fa', { method: 'POST' });
       setTwoFactorStage('enable-pending');
       setTwoFactorOtp('');
-      pushFeedback('OTP sent to your email.');
+      pushFeedback('Verification code sent to your email.');
     } catch (e) {
-      pushFeedback(e.message || 'Failed to start 2FA.', 'error');
+      pushFeedback(e.message || 'Couldn\'t start two-factor setup. Please try again.', 'error');
     } finally {
       setTwoFactorProcessing(false);
     }
@@ -2065,7 +2373,7 @@ const LearnerAccount = () => {
 
   const verifyEnableTwoFactor = useCallback(async () => {
     try {
-      if (twoFactorOtp.trim().length !== 6) throw new Error('Enter the 6-digit OTP.');
+      if (twoFactorOtp.trim().length !== 6) throw new Error('Enter the 6-digit code from your email.');
       setTwoFactorProcessing(true);
       const res = await apiFetch('/api/auth/verify-otp-enable-2fa', {
         method: 'POST',
@@ -2075,9 +2383,9 @@ const LearnerAccount = () => {
       setTwoFactorSMS(true);
       setTwoFactorStage('idle');
       setTwoFactorOtp('');
-      pushFeedback('2FA enabled.');
+      pushFeedback('Two-factor authentication enabled.');
     } catch (e) {
-      pushFeedback(e.message || 'Failed to enable 2FA.', 'error');
+      pushFeedback(e.message || 'Couldn\'t enable two-factor authentication. Please try again.', 'error');
     } finally {
       setTwoFactorProcessing(false);
     }
@@ -2089,9 +2397,9 @@ const LearnerAccount = () => {
       await apiFetch('/api/auth/disable-2fa', { method: 'POST' });
       setTwoFactorStage('disable-pending');
       setTwoFactorOtp('');
-      pushFeedback('OTP sent to your email.');
+      pushFeedback('Verification code sent to your email.');
     } catch (e) {
-      pushFeedback(e.message || 'Failed to start disable 2FA.', 'error');
+      pushFeedback(e.message || 'Couldn\'t start two-factor disable. Please try again.', 'error');
     } finally {
       setTwoFactorProcessing(false);
     }
@@ -2099,7 +2407,7 @@ const LearnerAccount = () => {
 
   const verifyDisableTwoFactor = useCallback(async () => {
     try {
-      if (twoFactorOtp.trim().length !== 6) throw new Error('Enter the 6-digit OTP.');
+      if (twoFactorOtp.trim().length !== 6) throw new Error('Enter the 6-digit code from your email.');
       setTwoFactorProcessing(true);
       const res = await apiFetch('/api/auth/disable-2fa', {
         method: 'POST',
@@ -2109,9 +2417,9 @@ const LearnerAccount = () => {
       setTwoFactorSMS(false);
       setTwoFactorStage('idle');
       setTwoFactorOtp('');
-      pushFeedback('2FA disabled.');
+      pushFeedback('Two-factor authentication disabled.');
     } catch (e) {
-      pushFeedback(e.message || 'Failed to disable 2FA.', 'error');
+      pushFeedback(e.message || 'Couldn\'t disable two-factor authentication. Please try again.', 'error');
     } finally {
       setTwoFactorProcessing(false);
     }
@@ -2201,8 +2509,9 @@ const LearnerAccount = () => {
             <SectionCard
               id="general"
               title="Basic Settings"
-              saved={isSectionComplete('general')}
               onSave={handleGeneralSave}
+              saveDisabled={!generalDirty}
+              saving={profileSaving}
               sectionRef={el => sectionRefs.current['general'] = el}
               showDiscard={false}
             >
@@ -2218,25 +2527,50 @@ const LearnerAccount = () => {
                 <div className="hoas-form-horizontal-control">
                   <div style={{ width: '100%' }}>
                     <div className="hoas-photo-upload-area">
-                      <span className="hoas-photo-info">150×150px JPEG, PNG Image</span>
+                      <span className="hoas-photo-info">Square profile photo, saved at up to 512×512px</span>
                       <div className="hoas-photo-preview">
-                        <div className="hoas-photo-inner">
+                        <div
+                          className={`hoas-photo-inner${hasCustomProfilePhoto ? ' hoas-photo-inner--editable' : ''}`}
+                          onClick={hasCustomProfilePhoto ? () => photoInputRef.current?.click() : undefined}
+                          onKeyDown={hasCustomProfilePhoto ? (event) => {
+                            if (event.key === 'Enter' || event.key === ' ') {
+                              event.preventDefault();
+                              photoInputRef.current?.click();
+                            }
+                          } : undefined}
+                          role={hasCustomProfilePhoto ? 'button' : undefined}
+                          tabIndex={hasCustomProfilePhoto ? 0 : undefined}
+                          aria-label={hasCustomProfilePhoto ? 'Change profile photo' : undefined}
+                        >
                           <img src={uploadedPhoto || defaultProfileImage} alt="Profile" />
-                          <label className="hoas-photo-camera-overlay">
-                            <IconCamera />
-                            <input
-                              type="file"
-                              accept="image/png, image/jpeg"
-                              style={{ display: 'none' }}
-                              onChange={(e) => {
-                                const file = e.target.files && e.target.files[0];
-                                if (file) handlePhotoUpload(file);
-                              }}
-                            />
-                          </label>
+                          {!hasCustomProfilePhoto && (
+                            <label className="hoas-photo-camera-overlay" htmlFor="profile-photo-input">
+                              <IconCamera />
+                            </label>
+                          )}
+                          <input
+                            ref={photoInputRef}
+                            id="profile-photo-input"
+                            type="file"
+                            accept="image/png,image/jpeg,image/webp"
+                            style={{ display: 'none' }}
+                            onChange={(e) => {
+                              const file = e.target.files && e.target.files[0];
+                              handlePhotoFileSelect(file);
+                              e.target.value = '';
+                            }}
+                          />
                         </div>
-                        {uploadedPhoto && (
-                          <div className="hoas-photo-remove" onClick={handlePhotoReset} role="button" aria-label="Reset profile photo">
+                        {hasCustomProfilePhoto && (
+                          <div
+                            className="hoas-photo-remove"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              handlePhotoReset();
+                            }}
+                            role="button"
+                            aria-label="Reset profile photo"
+                          >
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
                               <line x1="18" y1="6" x2="6" y2="18"></line>
                               <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -2303,7 +2637,7 @@ const LearnerAccount = () => {
             </SectionCard>
 
             {/* ── Email ── */}
-            <SectionCard id="email" title="Email" saved={isSectionComplete('email')} onSave={handleEmailSave} sectionRef={el => sectionRefs.current['email'] = el} showDiscard={false}>
+            <SectionCard id="email" title="Email" onSave={handleEmailSave} saveDisabled={!emailDirty} saving={profileSaving} sectionRef={el => sectionRefs.current['email'] = el} showDiscard={false}>
               <div className="hoas-form-horizontal-row">
                 <label className="hoas-form-horizontal-label">Email</label>
                 <div className="hoas-form-horizontal-control">
@@ -2344,7 +2678,7 @@ const LearnerAccount = () => {
             </SectionCard>
 
             {/* ── 2. Documents and Files ── */}
-            <SectionCard id="documents" title="Documents and Files" saved={isSectionComplete('documents')} onSave={handleDocumentsSave} sectionRef={el => sectionRefs.current['documents'] = el} showDiscard={false}>
+            <SectionCard id="documents" title="Documents and Files" onSave={handleDocumentsSave} saveDisabled={!documentsDirty} saving={documentsSaving} sectionRef={el => sectionRefs.current['documents'] = el} showDiscard={false}>
               <input
                 ref={documentInputRef}
                 type="file"
@@ -2398,7 +2732,7 @@ const LearnerAccount = () => {
 
 
             {/* ── 3. Social Media Links ── */}
-            <SectionCard id="social" title="Social Media Links" saved={isSectionComplete('social')} onSave={handleSocialSave} sectionRef={el => sectionRefs.current['social'] = el} showDiscard={false}>
+            <SectionCard id="social" title="Social Media Links" onSave={handleSocialSave} saveDisabled={!socialDirty} saving={profileSaving} sectionRef={el => sectionRefs.current['social'] = el} showDiscard={false}>
               <div className="hoas-social-card-list">
                 {socialConnections.length === 0 ? (
                   <div style={{ padding: '8px 4px 12px', color: '#99A1B7' }}>No social profiles connected yet.</div>
@@ -2498,7 +2832,6 @@ const LearnerAccount = () => {
             <SectionCard
               id="twofactor"
               title="Two-Factor authentication(2FA)"
-              saved={saved['twofactor']}
               onSave={() => handleSave('twofactor')}
               sectionRef={el => sectionRefs.current['twofactor'] = el}
               showFooter={false}
@@ -2585,7 +2918,6 @@ const LearnerAccount = () => {
             <SectionCard
               id="payment"
               title="Payment Methods"
-              saved={isSectionComplete('payment-mtn') || isSectionComplete('payment-airtel') || isSectionComplete('payment-card')}
               onSave={() => handleSave(selectedGateway === 'mtn' ? 'payment-mtn' : selectedGateway === 'airtel' ? 'payment-airtel' : 'payment-card')}
               sectionRef={el => sectionRefs.current['payment'] = el}
               showFooter={false}
@@ -2660,7 +2992,7 @@ const LearnerAccount = () => {
                             Remove
                           </button>
                         )}
-                        <button type="button" className="hoas-btn-save" onClick={handlePaymentSave} disabled={paymentMethodsSaving}>
+                        <button type="button" className="hoas-btn-save" onClick={handlePaymentSave} disabled={!paymentDirty || paymentMethodsSaving}>
                           {paymentMethodsSaving ? 'Saving...' : 'Save Changes'}
                         </button>
                       </div>
@@ -2713,7 +3045,7 @@ const LearnerAccount = () => {
                             Remove
                           </button>
                         )}
-                        <button type="button" className="hoas-btn-save" onClick={handlePaymentSave} disabled={paymentMethodsSaving}>
+                        <button type="button" className="hoas-btn-save" onClick={handlePaymentSave} disabled={!paymentDirty || paymentMethodsSaving}>
                           {paymentMethodsSaving ? 'Saving...' : 'Save Changes'}
                         </button>
                       </div>
@@ -2805,7 +3137,7 @@ const LearnerAccount = () => {
                             Remove
                           </button>
                         )}
-                        <button type="button" className="hoas-btn-save" onClick={handlePaymentSave} disabled={paymentMethodsSaving}>
+                        <button type="button" className="hoas-btn-save" onClick={handlePaymentSave} disabled={!paymentDirty || paymentMethodsSaving}>
                           {paymentMethodsSaving ? 'Saving...' : 'Save Changes'}
                         </button>
                       </div>
@@ -2820,7 +3152,7 @@ const LearnerAccount = () => {
             </SectionCard>
 
             {/* ── 6. Preferences ── */}
-            <SectionCard id="preferences" title="Preferences" saved={saved['preferences']} onSave={handlePreferencesSave} sectionRef={el => sectionRefs.current['preferences'] = el} showDiscard={false}>
+            <SectionCard id="preferences" title="Preferences" onSave={handlePreferencesSave} saveDisabled={!preferencesDirty} saving={profileSaving} sectionRef={el => sectionRefs.current['preferences'] = el} showDiscard={false}>
               <div className="hoas-preferences-list">
                 <div className="hoas-form-horizontal-row hoas-preference-row">
                   <label className="hoas-form-horizontal-label">Language</label>
@@ -2905,7 +3237,7 @@ const LearnerAccount = () => {
             </SectionCard>
 
             {/* ── 7. Notifications ── */}
-            <SectionCard id="notifications" title="Notifications" saved={saved['notifications']} onSave={handleNotificationsSave} sectionRef={el => sectionRefs.current['notifications'] = el} showDiscard={false}>
+            <SectionCard id="notifications" title="Notifications" onSave={handleNotificationsSave} saveDisabled={!notificationsDirty} saving={profileSaving} sectionRef={el => sectionRefs.current['notifications'] = el} showDiscard={false}>
               <div className="hoas-notification-top-grid">
                 <div className="hoas-notification-channel-card">
                   <div className="hoas-notification-channel-main">
@@ -2989,7 +3321,7 @@ const LearnerAccount = () => {
 
 
             {/* ── 10. Address ── */}
-            <SectionCard id="address" title="Address" saved={saved['address']} onSave={handleAddressSave} sectionRef={el => sectionRefs.current['address'] = el} showDiscard={false}>
+            <SectionCard id="address" title="Address" onSave={handleAddressSave} saveDisabled={!addressDirty} saving={profileSaving} sectionRef={el => sectionRefs.current['address'] = el} showDiscard={false}>
               <div className="hoas-address-form">
                 <div className="hoas-address-row">
                   <label className="hoas-address-label">Address</label>
@@ -3052,7 +3384,7 @@ const LearnerAccount = () => {
             </SectionCard>
 
             {/* ── 11. Appearance ── */}
-            <SectionCard id="appearance" title="Appearance" saved={saved['appearance']} onSave={handleAppearanceSave} sectionRef={el => sectionRefs.current['appearance'] = el} showDiscard={false}>
+            <SectionCard id="appearance" title="Appearance" onSave={handleAppearanceSave} saveDisabled={!appearanceDirty} saving={profileSaving} sectionRef={el => sectionRefs.current['appearance'] = el} showDiscard={false}>
               <div className="hoas-appearance-intro">
                 <div className="hoas-appearance-intro-title">Theme mode</div>
                 <p>Select or customize your theme. Drop in your downloaded images below.</p>
@@ -3104,6 +3436,13 @@ const LearnerAccount = () => {
           </div>{/* end content-area */}
         </div>{/* end layout-container */}
       </div>{/* end page-wrapper */}
+      <ProfilePhotoCropModal
+        isOpen={cropModalOpen}
+        imageSrc={cropImageSrc}
+        onClose={closePhotoCropModal}
+        onConfirm={handlePhotoCropConfirm}
+        exporting={photoUploading}
+      />
     </LearnersPageShell>
   );
 };
