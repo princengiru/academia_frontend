@@ -7,6 +7,7 @@ import AcademiaCheckEmail from '../../../pages/academia/auth/check-email';
 import AcademiaCheckEmailSingle from '../../../pages/academia/auth/check-email-single';
 import AcademiaPasswordChanged from '../../../pages/academia/auth/password-changed';
 import AcademiaVerify from '../../../pages/academia/auth/verify';
+import AcademiaGoogleSuccess from '../../../pages/academia/auth/google-success';
 
 export default function AcademiaAuthRoutes() {
   return (
@@ -20,6 +21,7 @@ export default function AcademiaAuthRoutes() {
       <Route path="check-email-single" element={<AcademiaCheckEmailSingle />} />
       <Route path="password-changed" element={<AcademiaPasswordChanged />} />
       <Route path="verify" element={<AcademiaVerify />} />
+      <Route path="google/success" element={<AcademiaGoogleSuccess />} />
     </>
   );
 }

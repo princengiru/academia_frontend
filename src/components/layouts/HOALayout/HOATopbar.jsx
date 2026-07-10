@@ -9,6 +9,30 @@ import defaultProfileImage from '../../../assets/imgs/default-profile.png';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
+const PAGE_MAP = {
+  'index': { category: 'Dashboard', title: 'Home' },
+  'learners': { category: 'Dashboard', title: 'Learners' },
+  'tutors': { category: 'Dashboard', title: 'Tutors' },
+  'reports': { category: 'Dashboard', title: 'Reports' },
+  'settings': { category: 'Dashboard', title: 'Settings' },
+  'account': { category: 'Dashboard', title: 'Account' },
+
+  'assignments': { category: 'Management', title: 'Assignments' },
+  'passed-courses': { category: 'Management', title: 'Passed Courses' },
+  'retaken-courses': { category: 'Management', title: 'Retaken Courses' },
+  'failed-courses': { category: 'Management', title: 'Failed Courses' },
+
+  'syllabus': { category: 'Uploads', title: 'Syllabus' },
+  'online-courses': { category: 'Uploads', title: 'Online Courses' },
+  'projects': { category: 'Uploads', title: 'Projects' },
+  'certificates': { category: 'Uploads', title: 'Certificates' },
+
+  'events-planning': { category: 'Plannings', title: 'Events & Planning' },
+  'e-travel': { category: 'Plannings', title: 'E-Travel' },
+  'terms-conditions': { category: 'Plannings', title: 'Terms & Conditions' },
+  'community': { category: 'Plannings', title: 'Community' },
+};
+
 const languageOptions = [
   { label: 'RW', flag: '/assets/icons/rwanda.svg' },
   { label: 'EN', flag: hoausflag },
@@ -29,15 +53,24 @@ const HOATopbar = () => {
   });
 
   // --- Dynamic Breadcrumbs ---
-  const getPageName = () => {
-    const path = location.pathname;
-    if (path.includes('approvals')) return 'Course Approvals';
-    if (path.includes('users')) return 'User Management';
-    if (path.includes('finances')) return 'Financials';
-    if (path.includes('stories')) return 'Community Content';
-    if (path.includes('settings')) return 'Settings';
-    return 'Overview';
+  const getBreadcrumbs = () => {
+    const derivedPage = location.pathname.split('/').filter(Boolean).pop() || 'index';
+    const pageKey = derivedPage === 'hoa' ? 'index' : derivedPage;
+    
+    if (PAGE_MAP[pageKey]) {
+      return PAGE_MAP[pageKey];
+    }
+    
+    // Fallback: capitalize and format
+    const formattedTitle = pageKey
+      .split('-')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+      
+    return { category: 'Dashboard', title: formattedTitle };
   };
+
+  const { category, title } = getBreadcrumbs();
 
   // --- Close Dropdown on Outside Click ---
   useEffect(() => {
@@ -100,8 +133,8 @@ const HOATopbar = () => {
     <header className="hoa-topbar">
       {/* Left: Dynamic Breadcrumbs */}
       <div className="hoa-topbar-left">
-        <h2 style={{ textTransform: 'capitalize' }}>
-          Dashboard <span>/ {getPageName()}</span>
+        <h2>
+          {category} <span>/ {title}</span>
         </h2>
       </div>
 

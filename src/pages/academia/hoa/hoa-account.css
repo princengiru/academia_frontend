@@ -1,8 +1,12 @@
+/* =========================================
+   HOA SETTINGS — COMPLETE REDESIGN
+   ========================================= */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 .hoas-page-wrapper {
     font-family: 'Inter', 'Poppins', sans-serif;
     color: #071437;
+    min-height: 100%;
 }
 
 /* ── Utilities ── */
@@ -237,12 +241,6 @@
     gap: 10px;
     cursor: pointer;
     user-select: none;
-    width: 100%;
-    padding: 0;
-    border: none;
-    background: transparent;
-    text-align: left;
-    font: inherit;
 }
 
 .hoas-preference-checkbox input {
@@ -283,14 +281,12 @@
     left: 5px;
 }
 
-.hoas-preference-checkbox input:checked + .hoas-preference-checkbox-box,
-.hoas-preference-checkbox.is-checked .hoas-preference-checkbox-box {
+.hoas-preference-checkbox input:checked + .hoas-preference-checkbox-box {
     background: #51296b;
     border-color: #51296b;
 }
 
-.hoas-preference-checkbox input:checked + .hoas-preference-checkbox-box::after,
-.hoas-preference-checkbox.is-checked .hoas-preference-checkbox-box::after {
+.hoas-preference-checkbox input:checked + .hoas-preference-checkbox-box::after {
     opacity: 1;
 }
 
@@ -399,12 +395,6 @@
     font-weight: 500;
     cursor: pointer;
     user-select: none;
-    width: 100%;
-    padding: 0;
-    border: none;
-    background: transparent;
-    text-align: left;
-    font: inherit;
 }
 
 .hoas-notification-radio-item input {
@@ -423,8 +413,7 @@
     box-sizing: border-box;
 }
 
-.hoas-notification-radio-item input:checked + .hoas-notification-radio-dot,
-.hoas-notification-radio-item.is-selected .hoas-notification-radio-dot {
+.hoas-notification-radio-item input:checked + .hoas-notification-radio-dot {
     border: 4.5px solid #450468;
     background: #FFFFFF;
 }
@@ -438,11 +427,6 @@
     font-size: 12.5px;
     color: #51296b;
     font-weight: 500;
-    padding: 0;
-    border: none;
-    background: transparent;
-    text-align: left;
-    font: inherit;
 }
 
 .hoas-notification-checkbox input {
@@ -482,14 +466,12 @@
     left: 5px;
 }
 
-.hoas-notification-checkbox input:checked + .hoas-notification-checkbox-box,
-.hoas-notification-checkbox.is-checked .hoas-notification-checkbox-box {
+.hoas-notification-checkbox input:checked + .hoas-notification-checkbox-box {
     background: #A07DB3;
     border-color: #A07DB3;
 }
 
-.hoas-notification-checkbox input:checked + .hoas-notification-checkbox-box::after,
-.hoas-notification-checkbox.is-checked .hoas-notification-checkbox-box::after {
+.hoas-notification-checkbox input:checked + .hoas-notification-checkbox-box::after {
     opacity: 1;
 }
 
@@ -787,27 +769,11 @@
     border-radius: 6px;
     font-size: 12.5px;
     font-weight: 500;
-    transition: background 0.2s, color 0.2s;
+    transition: all 0.2s;
 }
-
-.hoas-btn-discard:hover:not(:disabled) {
-    background: #F8FAFC;
-    color: #071437;
-}
-
-.hoas-btn-discard:disabled,
-.hoas-btn-discard:disabled:hover {
-    opacity: 0.55;
-    cursor: not-allowed;
-    background: transparent;
-    color: #5E6278;
-}
+.hoas-btn-discard:hover { background: #F8FAFC; color: #071437; }
 
 .hoas-btn-save {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
     background: #450468;
     color: #FFFFFF;
     border: none;
@@ -817,34 +783,7 @@
     font-weight: 600;
     transition: background 0.2s;
 }
-
-.hoas-btn-save:hover:not(:disabled) {
-    background: #3a0358;
-}
-
-.hoas-btn-save:disabled,
-.hoas-btn-save:disabled:hover {
-    background: #885c9f;
-    color: #FFFFFF;
-    cursor: not-allowed;
-    opacity: 1;
-}
-
-.hoas-btn-spinner {
-    width: 14px;
-    height: 14px;
-    border: 2px solid rgba(255, 255, 255, 0.35);
-    border-top-color: #FFFFFF;
-    border-radius: 50%;
-    animation: hoas-btn-spin 0.7s linear infinite;
-    flex-shrink: 0;
-}
-
-@keyframes hoas-btn-spin {
-    to {
-        transform: rotate(360deg);
-    }
-}
+.hoas-btn-save:hover { background: #3a0358; }
 
 /* =========================================
    FORMS & INPUTS
@@ -946,6 +885,17 @@
 .hoas-section-card[data-section="email"] .hoas-form-horizontal-control {
     align-items: flex-start;
 }
+
+/*.hoas-section-card[data-section="email"] .hoas-form-horizontal-control input[type="email"] {
+    padding: 9px 12px;
+    border: 1px solid #DDE2EC;
+    border-radius: 2px;
+    background: #FFFFFF;
+    color: #1F2937;
+    font-size: 13px;
+    line-height: 1.35;
+    box-shadow: none;
+}*/
 
 .hoas-section-card[data-section="email"] .hoas-form-horizontal-control input[type="email"]::placeholder {
     color: #8791A7;
@@ -1060,144 +1010,6 @@
     width: 12px;
     height: 12px;
     stroke: #8C95AD;
-}
-
-.hoas-photo-inner--editable {
-    cursor: pointer;
-}
-
-.hoas-photo-crop-backdrop {
-    position: fixed;
-    inset: 0;
-    z-index: 1200;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 24px;
-    background: rgba(15, 23, 42, 0.55);
-}
-
-.hoas-photo-crop-modal {
-    width: min(100%, 420px);
-    padding: 20px;
-    border-radius: 12px;
-    background: #ffffff;
-    box-shadow: 0 24px 48px rgba(15, 23, 42, 0.18);
-}
-
-.hoas-photo-crop-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    margin-bottom: 16px;
-}
-
-.hoas-photo-crop-header h3 {
-    margin: 0;
-    font-size: 16px;
-    font-weight: 600;
-    color: #071437;
-}
-
-.hoas-photo-crop-close {
-    width: 32px;
-    height: 32px;
-    border: none;
-    border-radius: 8px;
-    background: transparent;
-    color: #78829D;
-    font-size: 24px;
-    line-height: 1;
-    cursor: pointer;
-}
-
-.hoas-photo-crop-stage {
-    display: flex;
-    justify-content: center;
-    margin-bottom: 16px;
-}
-
-.hoas-photo-crop-viewport {
-    position: relative;
-    width: 280px;
-    height: 280px;
-    overflow: hidden;
-    border-radius: 12px;
-    background: #111827;
-    touch-action: none;
-    cursor: grab;
-}
-
-.hoas-photo-crop-viewport:active {
-    cursor: grabbing;
-}
-
-.hoas-photo-crop-image {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    max-width: none;
-    user-select: none;
-    pointer-events: none;
-}
-
-.hoas-photo-crop-mask {
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    background: radial-gradient(circle at center, transparent 124px, rgba(15, 23, 42, 0.72) 125px);
-}
-
-.hoas-photo-crop-controls {
-    display: grid;
-    gap: 8px;
-    margin-bottom: 12px;
-}
-
-.hoas-photo-crop-zoom-label {
-    font-size: 12px;
-    font-weight: 500;
-    color: #78829D;
-}
-
-.hoas-photo-crop-controls input[type="range"] {
-    width: 100%;
-}
-
-.hoas-photo-crop-error {
-    margin: 0 0 12px;
-    color: #F8285A;
-    font-size: 12px;
-}
-
-.hoas-photo-crop-submit {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    width: 100%;
-    padding: 12px 16px;
-    border: none;
-    border-radius: 8px;
-    background: #450468;
-    color: #ffffff;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background 0.2s;
-}
-
-.hoas-photo-crop-submit:hover:not(:disabled) {
-    background: #3a0358;
-}
-
-.hoas-photo-crop-submit:disabled,
-.hoas-photo-crop-submit:disabled:hover {
-    background: #885c9f;
-    color: #ffffff;
-    opacity: 1;
-    cursor: not-allowed;
 }
 
 .hoas-availability-area {
@@ -1693,13 +1505,6 @@
 }
 .hoas-switch input:checked + .hoas-slider { background: #450468; }
 .hoas-switch input:checked + .hoas-slider:before { transform: translateX(16px); }
-.hoas-switch.is-disabled {
-    opacity: 0.7;
-    cursor: not-allowed;
-}
-.hoas-switch.is-disabled .hoas-slider {
-    cursor: not-allowed;
-}
 
 /* =========================================
    UPLOAD BOXES
@@ -2350,31 +2155,7 @@
     font-size: 13.5px;
     font-weight: 700;
     color: #071437;
-    margin: 0;
-}
-
-.hoas-payment-subtitle-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
     margin: 6px 0 16px;
-}
-
-.hoas-payment-primary-badge {
-    display: inline-flex;
-    align-items: center;
-    padding: 4px 10px;
-    border-radius: 999px;
-    background: #EEFBF3;
-    color: #17C653;
-    font-size: 11px;
-    font-weight: 700;
-}
-
-.hoas-payment-action-buttons {
-    display: flex;
-    align-items: center;
-    gap: 10px;
 }
 
 /* Payment card header (used in split per-method cards) */
@@ -2831,44 +2612,4 @@
     color: #A1A5B7;
     line-height: 1.6;
     margin: 0;
-}
-/* =========================================
-   FEEDBACK ALERTS
-   ========================================= */
-.learners-account-feedback {
-    margin: 0 0 18px;
-    padding: 12px 14px;
-    border-radius: 10px;
-    font-size: 13px;
-    line-height: 18px;
-    border: 1px solid transparent;
-}
-
-.learners-account-feedback.is-success {
-    background: #effaf2;
-    border-color: #c9e8d1;
-    color: #196a3b;
-}
-
-.learners-account-feedback.is-error {
-    background: #fff1f1;
-    border-color: #f5c2c7;
-    color: #b42318;
-}
-
-.learners-account-feedback-floating {
-    position: fixed;
-    top: 20px;
-    right: 24px;
-    z-index: 1300;
-    min-width: 280px;
-    max-width: min(420px, calc(100vw - 48px));
-    margin: 0;
-    box-shadow: 0 12px 30px rgba(16, 24, 40, 0.18);
-    animation: learnersToastIn 0.18s ease-out;
-}
-
-@keyframes learnersToastIn {
-    from { transform: translateY(-8px); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
 }
