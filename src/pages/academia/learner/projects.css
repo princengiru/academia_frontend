@@ -377,17 +377,33 @@
 }
 
 .learners-projects-page .learners-projects-availability {
-  min-height: 22px;
+  min-height: 24px;
   padding: 0 10px;
+  gap: 6px;
   border-radius: 999px;
+  border: 1px solid #86EFAC;
   background: #DCFCE7;
-  color: #16A34A;
+  color: #15803D;
   font-family: Inter, sans-serif;
   font-weight: 500;
   font-size: 11px;
   line-height: 14px;
   display: inline-flex;
   align-items: center;
+}
+
+.learners-projects-page .learners-projects-availability.is-unavailable {
+  border-color: #E2E8F0;
+  background: #F8FAFC;
+  color: #64748B;
+}
+
+.learners-projects-page .learners-projects-availability-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #22C55E;
+  flex: 0 0 auto;
 }
 
 .learners-projects-page .learners-projects-edit-btn,

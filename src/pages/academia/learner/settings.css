@@ -31,6 +31,17 @@
   border: 1.5px solid #C7D4E5;
   overflow: hidden;
   flex: 0 0 auto;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.learners-settings-page .learners-projects-profile-avatar:hover,
+.learners-settings-page .learners-projects-profile-avatar:focus-visible {
+  border-color: #520A80;
+  box-shadow: 0 0 0 3px rgba(82, 10, 128, 0.12);
+  outline: none;
 }
 
 .learners-settings-page .learners-projects-profile-avatar img {
@@ -219,7 +230,6 @@
 
 .learners-settings-page .learners-settings-callout.is-warning {
   margin-top: 0;
-  grid-template-columns: auto minmax(0, 1fr);
 }
 
 .learners-settings-page .learners-settings-side {
@@ -257,6 +267,11 @@
   font-family: Inter, sans-serif;
   font-weight: 600;
   color: #071437;
+  border-bottom: 2px solid #E1E7F0;
+  padding-bottom: 10px;
+  width: 100%;
+  display: inline-block;
+  box-sizing: border-box;
 }
 
 .learners-settings-page .learners-settings-side-head h2 {
@@ -475,9 +490,10 @@
 .learners-settings-page .learners-settings-textarea,
 .learners-settings-page .learners-settings-field-control {
   width: 100%;
-  border: 1px solid #E2E8F0;
+  border: 1px solid #DDE3EE;
   background: #FCFCFC;
-  border-radius: 8px;
+  border-radius: 0;
+  box-sizing: border-box;
   font-family: Inter, sans-serif;
   font-weight: 400;
   font-size: 12px;
@@ -488,14 +504,12 @@
 .learners-settings-page .learners-settings-inline-select,
 .learners-settings-page .learners-settings-inline-input {
   min-height: 42px;
-  padding: 10px 10px 12px;
-  border-bottom-color: #DDE3EE;
+  padding: 10px 12px;
 }
 
 .learners-settings-page .learners-settings-textarea {
   min-height: 110px;
-  padding: 10px 10px 12px;
-  border-bottom-color: #DDE3EE;
+  padding: 10px 12px;
   resize: vertical;
 }
 
@@ -775,8 +789,11 @@
 .learners-settings-page .learners-settings-field-value {
   min-height: 42px;
   margin-top: 10px;
-  padding: 10px 10px 12px;
-  border-bottom: 1px solid #DDE3EE;
+  padding: 10px 12px;
+  border: 1px solid #DDE3EE;
+  border-radius: 0;
+  background: #FCFCFC;
+  box-sizing: border-box;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -786,18 +803,11 @@
   color: #64748B;
 }
 
-.learners-settings-page .learners-settings-field-control {
-  appearance: none;
-  outline: none;
-}
-
 .learners-settings-page .learners-settings-field-control:disabled {
-  border: none;
-  border-bottom: 1px solid #DDE3EE;
-  background: transparent;
+  border: 1px solid #DDE3EE;
+  background: #FCFCFC;
   border-radius: 0;
-  padding-left: 0;
-  padding-right: 0;
+  padding: 10px 12px;
   cursor: default;
   color: #64748B;
 }
@@ -834,6 +844,108 @@
   box-shadow: none;
   padding: 0;
   min-height: auto;
+}
+
+.learners-settings-page .learners-settings-field-control {
+  appearance: none;
+  outline: none;
+}
+
+.learners-settings-page .learners-settings-display-input {
+  position: relative;
+  margin-top: 10px;
+  width: 100%;
+  min-height: 42px;
+  padding: 10px 72px 10px 12px;
+  border: 1px solid #DDE3EE;
+  border-radius: 0;
+  background: #FCFCFC;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+}
+
+.learners-settings-page .learners-settings-display-input-value {
+  width: 100%;
+  min-width: 0;
+  font-family: Inter, sans-serif;
+  font-weight: 400;
+  font-size: 12px;
+  line-height: 16px;
+  color: #475569;
+}
+
+.learners-settings-page .learners-settings-display-input-password {
+  padding-right: 96px;
+}
+
+.learners-settings-page .learners-settings-display-input-password .learners-settings-display-input-value {
+  letter-spacing: 0.08em;
+}
+
+.learners-settings-page .learners-settings-display-input .learners-settings-info-trigger {
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  transform: translateY(-50%);
+  z-index: 2;
+}
+
+.learners-settings-page .learners-settings-display-input .learners-settings-password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 36px;
+  transform: translateY(-50%);
+  z-index: 2;
+}
+
+.learners-settings-page .learners-settings-readonly-input-wrap {
+  position: relative;
+  margin-top: 10px;
+}
+
+.learners-settings-page .learners-settings-readonly-input {
+  width: 100%;
+  min-height: 42px;
+  padding: 10px 72px 10px 12px;
+  border: 1px solid #DDE3EE;
+  background: #FCFCFC;
+  border-radius: 0;
+  box-sizing: border-box;
+  font-family: Inter, sans-serif;
+  font-weight: 400;
+  font-size: 12px;
+  line-height: 16px;
+  color: #475569;
+  cursor: default;
+  outline: none;
+  box-shadow: none;
+}
+
+.learners-settings-page .learners-settings-readonly-input-password {
+  padding-right: 96px;
+  letter-spacing: 0.08em;
+}
+
+.learners-settings-page .learners-settings-readonly-input-wrap .learners-settings-info-trigger {
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  transform: translateY(-50%);
+  z-index: 2;
+}
+
+.learners-settings-page .learners-settings-readonly-input-wrap .learners-settings-info-trigger::after {
+  right: 0;
+  bottom: calc(100% + 8px);
+}
+
+.learners-settings-page .learners-settings-readonly-input-wrap .learners-settings-password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 36px;
+  transform: translateY(-50%);
+  z-index: 2;
 }
 
 .learners-settings-page .learners-settings-phone-value img {
@@ -941,46 +1053,57 @@
 
 .learners-settings-page .learners-settings-callout {
   margin-top: 20px;
-  padding: 14px 16px;
+  padding: 16px 18px;
   border-radius: 10px;
-  border: 1px dashed;
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  border-width: 2px;
+  border-style: dashed;
+  display: flex;
   align-items: center;
   gap: 14px;
 }
 
 .learners-settings-page .learners-settings-callout.is-security {
-  background: #FCF8FF;
-  border-color: #C9A7E6;
+  background: #F8F1FF;
+  border-color: #B88AD9;
 }
 
 .learners-settings-page .learners-settings-callout.is-warning {
-  background: #FFF8E6;
-  border-color: #F0D269;
+  background: #FFF9E6;
+  border-color: #E2B93B;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
 }
 
-.learners-settings-page .learners-settings-callout-icon {
-  width: 18px;
-  height: 18px;
-  border-radius: 6px;
+.learners-settings-page .learners-settings-callout.is-warning img {
+  width: 32px;
+  height: auto;
+  display: block;
+}
+
+.learners-settings-page .learners-settings-callout.is-security img {
+  width: 22px;
+  height: auto;
+  display: block;
+}
+
+.learners-settings-page .learners-settings-callout-icon-badge {
+  flex: 0 0 auto;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-family: Inter, sans-serif;
-  font-weight: 700;
-  font-size: 11px;
-  line-height: 12px;
 }
 
-.learners-settings-page .learners-settings-callout.is-security .learners-settings-callout-icon {
-  background: #DCC3EE;
-  color: #520A80;
+.learners-settings-page .learners-settings-callout-icon-badge.is-security {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: #EBD9F7;
 }
 
-.learners-settings-page .learners-settings-callout.is-warning .learners-settings-callout-icon {
-  background: #FFE089;
-  color: #A87A00;
+.learners-settings-page .learners-settings-callout-copy {
+  flex: 1;
+  min-width: 0;
 }
 
 .learners-settings-page .learners-settings-callout-copy strong {
@@ -998,15 +1121,19 @@
 }
 
 .learners-settings-page .learners-settings-callout-btn {
-  min-width: 60px;
+  flex: 0 0 auto;
+  margin-left: auto;
+  min-width: 72px;
   min-height: 36px;
-  padding: 0 16px;
-  border-radius: 6px;
+  padding: 0 18px;
+  border: none;
+  border-radius: 8px;
   background: #520A80;
   color: #FFFFFF;
   font-weight: 600;
   font-size: 12px;
   line-height: 16px;
+  cursor: pointer;
 }
 
 .learners-settings-page .learners-settings-callout-btn.is-active {
@@ -1346,7 +1473,17 @@
     grid-template-columns: 1fr;
   }
 
-  .learners-settings-page .learners-settings-callout {
+  .learners-settings-page .learners-settings-callout.is-security {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .learners-settings-page .learners-settings-callout.is-security .learners-settings-callout-btn {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .learners-settings-page .learners-settings-callout.is-warning {
     grid-template-columns: 1fr;
     align-items: flex-start;
   }

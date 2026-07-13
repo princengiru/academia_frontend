@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom';
 import LearnersPageShell from './LearnersPageShell';
 import ProfilePhotoCropModal from './ProfilePhotoCropModal';
+import ProfilePhotoViewModal from './ProfilePhotoViewModal';
 import HoasButtonSpinner from './HoasButtonSpinner';
 import { getProfilePhotoDisplayUrl, isCustomProfilePhoto } from './profilePhotoUtils';
 import {
@@ -34,6 +35,10 @@ import dotsVertical from '../../../assets/icons/dots-vertical.svg';
 import exitDown from '../../../assets/icons/exit-down.svg';
 import leEm from '../../../assets/icons/le-em.svg';
 import acEye from '../../../assets/icons/ac-eye.svg';
+import LearnerRefresh from '../../../assets/icons/LearnerRefresh.svg';
+import LearnerUpload from '../../../assets/icons/LearnerUpload.svg';
+import LearnerWarning from '../../../assets/icons/LearnerWarning.svg';
+import LearnerSuccess from '../../../assets/icons/LearnerSuccess.svg';
 import './projects.css';
 import './settings.css';
 
@@ -55,6 +60,18 @@ const FieldInfo = ({ tip }) => (
   <span className="learners-settings-info-trigger" data-tip={tip} tabIndex={0} role="button" aria-label={tip}>
     <img src={acInn} alt="" />
   </span>
+);
+
+const ReadOnlyField = ({ label, tip, value, className = '' }) => (
+  <div className={`learners-settings-field ${className}`.trim()}>
+    <div className="learners-settings-field-head">
+      <label>{label}</label>
+    </div>
+    <div className="learners-settings-display-input">
+      <span className="learners-settings-display-input-value">{value}</span>
+      {tip ? <FieldInfo tip={tip} /> : null}
+    </div>
+  </div>
 );
 
 const SettingsSaveButton = ({ children, disabled, saving, onClick, savingLabel = 'Saving...', className = 'learners-settings-inline-save' }) => (
@@ -147,6 +164,7 @@ function LearnersSettings() {
 
   const [profileAvatarPath, setProfileAvatarPath] = useState('');
   const [cropModalOpen, setCropModalOpen] = useState(false);
+  const [profilePhotoViewOpen, setProfilePhotoViewOpen] = useState(false);
   const [cropImageSrc, setCropImageSrc] = useState('');
   const [uploadError, setUploadError] = useState('');
 
@@ -944,9 +962,14 @@ function LearnersSettings() {
 
         <section className="learners-projects-profile-strip">
           <div className="learners-projects-profile-strip-main">
-            <div className="learners-projects-profile-avatar learners-settings-profile-avatar">
+            <button
+              type="button"
+              className="learners-projects-profile-avatar learners-settings-profile-avatar"
+              onClick={() => setProfilePhotoViewOpen(true)}
+              aria-label={`View ${profile.name || 'profile'} photo`}
+            >
               <img src={profile.avatar} alt={profile.name || 'Profile'} onError={handleProfileImageError} />
-            </div>
+            </button>
 
             <div className="learners-projects-profile-copy">
               <div className="learners-projects-profile-name-row">
@@ -961,7 +984,7 @@ function LearnersSettings() {
               </div>
 
               <div className="learners-projects-profile-meta">
-                <span>{userTypeLabel}</span>
+                <span>{jobTitleLabel !== '—' ? jobTitleLabel : userTypeLabel}</span>
                 <span>&bull;</span>
                 <span>{profile.email || 'No email on file'}</span>
               </div>
@@ -971,7 +994,7 @@ function LearnersSettings() {
           <div className="learners-projects-profile-actions">
             <button type="button" className="learners-projects-primary-btn" onClick={openProjectsUpload}>
               <span>Upload new project</span>
-              <img src={exitDown} alt="Upload" />
+              <img src={LearnerUpload} alt="Upload" />
             </button>
             <button type="button" className="learners-projects-secondary-btn" onClick={() => navigate('/academia/learner/account')}>
               View Profile
@@ -1026,7 +1049,7 @@ function LearnersSettings() {
             <div className="learners-projects-side-card learners-projects-side-card-profile">
               <div className="learners-projects-side-card-head">
                 <span
-                  className="learners-projects-availability"
+                  className={`learners-projects-availability${projectProfileDraft.availableToHire ? ' is-available' : ' is-unavailable'}`}
                   role="button"
                   tabIndex={0}
                   onClick={toggleAvailability}
@@ -1037,7 +1060,14 @@ function LearnersSettings() {
                     }
                   }}
                 >
-                  {projectProfileDraft.availableToHire ? 'Available Now' : 'Not available'}
+                  {projectProfileDraft.availableToHire ? (
+                    <>
+                      <span className="learners-projects-availability-dot" aria-hidden="true" />
+                      Available Now
+                    </>
+                  ) : (
+                    'Not available'
+                  )}
                 </span>
                 <button
                   type="button"
@@ -1258,45 +1288,36 @@ function LearnersSettings() {
                     </div>
 
                     <div className="learners-settings-form-grid">
-                      <div className="learners-settings-field is-full">
-                        <div className="learners-settings-field-head">
-                          <label>Full Name</label>
-                          <FieldInfo tip={FIELD_TOOLTIPS.fullName} />
-                        </div>
-                        <div className="learners-settings-field-value learners-settings-field-control is-plain">{profile.name || '—'}</div>
-                      </div>
+                      <ReadOnlyField
+                        label="Full Name"
+                        tip={FIELD_TOOLTIPS.fullName}
+                        value={profile.name || '—'}
+                        className="is-full"
+                      />
 
-                      <div className="learners-settings-field">
-                        <div className="learners-settings-field-head">
-                          <label>E-mail</label>
-                          <FieldInfo tip={FIELD_TOOLTIPS.email} />
-                        </div>
-                        <div className="learners-settings-field-value learners-settings-field-control is-plain">{profile.email || '—'}</div>
-                      </div>
+                      <ReadOnlyField
+                        label="E-mail"
+                        tip={FIELD_TOOLTIPS.email}
+                        value={profile.email || '—'}
+                      />
 
-                      <div className="learners-settings-field">
-                        <div className="learners-settings-field-head">
-                          <label>Telephone</label>
-                          <FieldInfo tip={FIELD_TOOLTIPS.telephone} />
-                        </div>
-                        <div className="learners-settings-field-value learners-settings-field-control is-plain">{telephoneDisplay}</div>
-                      </div>
+                      <ReadOnlyField
+                        label="Telephone"
+                        tip={FIELD_TOOLTIPS.telephone}
+                        value={telephoneDisplay}
+                      />
 
-                      <div className="learners-settings-field">
-                        <div className="learners-settings-field-head">
-                          <label>User Type</label>
-                          <FieldInfo tip={FIELD_TOOLTIPS.userType} />
-                        </div>
-                        <div className="learners-settings-field-value learners-settings-field-control is-plain">{userTypeLabel}</div>
-                      </div>
+                      <ReadOnlyField
+                        label="User Type"
+                        tip={FIELD_TOOLTIPS.userType}
+                        value={userTypeLabel}
+                      />
 
-                      <div className="learners-settings-field">
-                        <div className="learners-settings-field-head">
-                          <label>Role</label>
-                          <FieldInfo tip={FIELD_TOOLTIPS.role} />
-                        </div>
-                        <div className="learners-settings-field-value learners-settings-field-control is-plain">{jobTitleLabel}</div>
-                      </div>
+                      <ReadOnlyField
+                        label="Role"
+                        tip={FIELD_TOOLTIPS.role}
+                        value={jobTitleLabel}
+                      />
 
                       <div className="learners-settings-field is-full learners-settings-notification-field">
                         <div className="learners-settings-field-head">
@@ -1331,7 +1352,7 @@ function LearnersSettings() {
                     <div className="learners-settings-panel-head">
                       <h3>Security &amp; Privacy</h3>
                       <button type="button" className="learners-settings-ghost-btn" onClick={() => setShowPasswordForm(true)}>
-                        <img src={resetIcon} alt="Reset" />
+                        <img src={LearnerRefresh} alt="Reset" />
                         <span>Reset Password</span>
                       </button>
                     </div>
@@ -1340,12 +1361,14 @@ function LearnersSettings() {
                       <div className="learners-settings-field is-full">
                         <div className="learners-settings-field-head">
                           <label>Password</label>
-                          <FieldInfo tip={FIELD_TOOLTIPS.password} />
                         </div>
                         {!showPasswordForm ? (
-                          <div className="learners-settings-field-value learners-settings-field-control learners-settings-password-value">
-                            <span>{passwordVisible ? 'Your password is hidden for security' : '••••••••••••'}</span>
-                            <button type="button" className="learners-settings-icon-btn" onClick={() => setPasswordVisible((current) => !current)} aria-label="Toggle password visibility">
+                          <div className="learners-settings-display-input learners-settings-display-input-password">
+                            <span className="learners-settings-display-input-value">
+                              {passwordVisible ? 'Your password is hidden for security' : '••••••••••••'}
+                            </span>
+                            <FieldInfo tip={FIELD_TOOLTIPS.password} />
+                            <button type="button" className="learners-settings-icon-btn learners-settings-password-toggle" onClick={() => setPasswordVisible((current) => !current)} aria-label="Toggle password visibility">
                               <img src={acEye} alt="Show" />
                             </button>
                           </div>
@@ -1397,7 +1420,9 @@ function LearnersSettings() {
 
                       <div className="learners-settings-field is-full">
                         <div className="learners-settings-callout is-security">
-                          <div className="learners-settings-callout-icon">🛡</div>
+                          <div className="learners-settings-callout-icon-badge is-security" aria-hidden="true">
+                            <img src={LearnerSuccess} alt="" />
+                          </div>
                           <div className="learners-settings-callout-copy">
                             <strong>Secure Your Account</strong>
                             <p>
@@ -1455,7 +1480,7 @@ function LearnersSettings() {
                     </div>
 
                     <div className="learners-settings-callout is-warning">
-                      <div className="learners-settings-callout-icon">!</div>
+                      <img src={LearnerWarning} alt="Warning" />
                       <div className="learners-settings-callout-copy">
                         <strong>You Are Deactivating Your Account</strong>
                         <p>
@@ -1526,7 +1551,7 @@ function LearnersSettings() {
                     )}
 
                     <div className="learners-settings-callout is-warning" style={{ marginTop: 24 }}>
-                      <div className="learners-settings-callout-icon">!</div>
+                      <img src={LearnerWarning} alt="Warning" />
                       <div className="learners-settings-callout-copy">
                         <strong>Delete Account Permanently</strong>
                         <p>
@@ -1696,6 +1721,13 @@ function LearnersSettings() {
         onClose={closePhotoCropModal}
         onConfirm={handlePhotoCropConfirm}
         exporting={photoUploading}
+      />
+
+      <ProfilePhotoViewModal
+        isOpen={profilePhotoViewOpen}
+        imageSrc={profile.avatar}
+        userName={profile.name}
+        onClose={() => setProfilePhotoViewOpen(false)}
       />
     </LearnersPageShell>
   );
