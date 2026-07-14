@@ -26,6 +26,10 @@ import sha2Icon from '../../../assets/icons/sha2.svg';
 import pictureIcon from '../../../assets/icons/picture.svg';
 import learnersProfileImage from '../../../assets/imgs/default-profile.png';
 import './read-story.css';
+import { PublicLoadError, PublicLoading } from './PublicPageState';
+import { PublicNewsletterNotice, usePublicNewsletter } from './usePublicNewsletter.jsx';
+import { usePublicPageTitle } from './usePublicPageTitle.jsx';
+import { sharePublicPage } from './publicShare';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
@@ -91,6 +95,7 @@ const normalizeStory = (story) => {
     contentHtml: story.contents || story.contentHtml || story.content_html || '',
     thumbnail: story.thumbnail || story.thumbnail_url || story.image || null,
     author_name: story.author_name || story.uploaded_by_name || story.user_name || 'Author',
+    author_id: story.author_id || story.user_id || story.uploaded_by || story.uploaded_by_id || null,
     author_avatar: story.author_avatar || story.uploaded_by_avatar || story.user_avatar || null,
     author_role: story.author_role || story.role || 'Contributor',
     read_time: story.read_time || story.readTime || null,
@@ -124,7 +129,12 @@ function AcademiaReadStory() {
   const [newComment, setNewComment] = useState('');
   const [relatedStories, setRelatedStories] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [newsletterEmail, setNewsletterEmail] = useState('');
+  const [loadError, setLoadError] = useState('');
+  const [retryKey, setRetryKey] = useState(0);
+  const [commentNotice, setCommentNotice] = useState('');
+  const { email: newsletterEmail, setEmail: setNewsletterEmail, notice: newsletterNotice, handleSubmit: handleNewsletterSubmit } = usePublicNewsletter();
+
+  usePublicPageTitle(storyData?.title || 'Story');
 
   // --- Data Fetching ---
   // Depend on storyId so clicking a related story re-fetches the page seamlessly
@@ -133,45 +143,69 @@ function AcademiaReadStory() {
 
     const loadContent = async () => {
       setLoading(true);
+      setLoadError('');
 
-      // Scroll to top automatically when a new story loads
       window.scrollTo({ top: 0, behavior: 'smooth' });
 
       try {
+        if (!storyId) {
+          setStoryData(null);
+          setRelatedStories([]);
+          setComments([]);
+          setLoadError('No story selected.');
+          return;
+        }
+
         const [storyRes, storiesRes] = await Promise.all([
-          storyId ? fetch(`${API_BASE_URL}/api/community-stories/${storyId}`) : Promise.resolve(null),
+          fetch(`${API_BASE_URL}/api/community-stories/${storyId}`),
           fetch(`${API_BASE_URL}/api/community-stories?page=1&limit=8`),
         ]);
 
-        const storyBody = storyRes ? await storyRes.json().catch(() => ({})) : {};
+        const storyBody = await storyRes.json().catch(() => ({}));
         const storiesBody = await storiesRes.json().catch(() => ({}));
 
         if (!mounted) return;
 
-        const selectedStory = normalizeStory(storyBody?.data || storyBody || null);
         const publishedStories = Array.isArray(storiesBody?.data) ? storiesBody.data : (Array.isArray(storiesBody) ? storiesBody : []);
 
-        const activeStory = selectedStory || normalizeStory(publishedStories[0]) || null;
+        if (!storyRes.ok) {
+          setStoryData(null);
+          setRelatedStories(
+            publishedStories
+              .map((story) => normalizeStory(story))
+              .filter(Boolean)
+          );
+          setComments([]);
+          setLoadError(storyBody?.message || 'Story not found.');
+          return;
+        }
+
+        const activeStory = normalizeStory(storyBody?.data || storyBody || null);
+        if (!activeStory) {
+          setStoryData(null);
+          setRelatedStories([]);
+          setComments([]);
+          setLoadError('Story not found.');
+          return;
+        }
+
         setStoryData(activeStory);
 
-        // Filter out the current story from the related list
         setRelatedStories(
           publishedStories
             .map((story) => normalizeStory(story))
             .filter(Boolean)
-            .filter((story) => String(story.id) !== String(activeStory?.id))
+            .filter((story) => String(story.id) !== String(activeStory.id))
         );
 
-        // Fetch comments using the new API
-        if (activeStory?.id) {
-          await fetchComments(activeStory.id);
-        }
+        await fetchComments(activeStory.id);
       } catch (e) {
         console.error("Failed to load story:", e);
         if (mounted) {
           setStoryData(null);
           setRelatedStories([]);
           setComments([]);
+          setLoadError('Failed to load story. Check your connection and try again.');
         }
       } finally {
         if (mounted) setLoading(false);
@@ -180,7 +214,7 @@ function AcademiaReadStory() {
 
     loadContent();
     return () => { mounted = false; };
-  }, [storyId]);
+  }, [storyId, retryKey]);
 
   // Fetch comments from the new API
   const fetchComments = async (storyId) => {
@@ -210,12 +244,35 @@ function AcademiaReadStory() {
   };
 
   // Submit a new comment
+  const handleAuthor = () => {
+    const authorId = storyData?.author_id;
+    if (authorId) {
+      navigate(`/academia/author?authorId=${authorId}`);
+      return;
+    }
+    navigate('/academia/watch');
+  };
+
+  const handleShareStory = async () => {
+    const result = await sharePublicPage({
+      title: storyData?.title || 'Story',
+      text: storyData?.content || '',
+    });
+    if (result.ok && result.method === 'clipboard') {
+      setCommentNotice('Story link copied to clipboard.');
+    } else if (!result.ok && result.method === 'none') {
+      setCommentNotice('Unable to share from this browser.');
+    }
+    setTimeout(() => setCommentNotice(''), 4000);
+  };
+
   const handleSubmitComment = async () => {
     if (!newComment.trim() || !storyData?.id) return;
 
     const token = localStorage.getItem('token');
     if (!token) {
-      alert("Please log in to submit a comment.");
+      sessionStorage.setItem('redirectAfterLogin', window.location.pathname + window.location.search);
+      navigate('/academia/auth/signin');
       return;
     }
 
@@ -237,10 +294,12 @@ function AcademiaReadStory() {
       }
 
       setNewComment('');
+      setCommentNotice('');
       fetchComments(storyData.id);
     } catch (err) {
       console.error('Error submitting comment:', err);
-      alert('Failed to submit comment. Please try again.');
+      setCommentNotice('Failed to submit comment. Please try again.');
+      setTimeout(() => setCommentNotice(''), 4000);
     }
   };
 
@@ -293,22 +352,30 @@ function AcademiaReadStory() {
     navigate(`/academia/read-story?id=${id}`);
   };
 
-  const handleNewsletterSubmit = (e) => {
-    e.preventDefault();
-    if (!newsletterEmail.trim()) return;
-    console.log("Subscribing:", newsletterEmail);
-    setNewsletterEmail('');
-    alert("Subscribed to the newsletter successfully!");
-  };
-
   // --- Derived Variables ---
-  const currentStoryTitle = storyData?.title || storyData?.heading || 'Loading Story...';
+  const currentStoryTitle = storyData?.title || storyData?.heading || 'Untitled story';
   const currentStoryAuthor = storyData?.author_name || 'Academia Team';
   const currentStoryRole = storyData?.author_role || 'Contributor';
   const currentStoryImage = resolveStoryImage(storyData?.thumbnail);
   const currentStoryContent = storyData?.contentHtml || storyData?.content || '';
   const currentStoryReadTime = storyData?.read_time ? `${storyData.read_time} mins read` : '—';
   const currentStoryDate = storyData ? new Date(storyData.published_at || Date.now()).toLocaleDateString() : '';
+
+  if (loading) {
+    return <PublicLoading message="Loading story…" />;
+  }
+
+  if (loadError || !storyData) {
+    return (
+      <PublicLoadError
+        title="Story unavailable"
+        message={loadError || 'Story not found.'}
+        onRetry={() => setRetryKey((key) => key + 1)}
+        backTo="/academia/watch"
+        backLabel="Browse stories"
+      />
+    );
+  }
 
   return (
     <div className="academia-read-story-page">
@@ -329,7 +396,7 @@ function AcademiaReadStory() {
 
         {/* --- Header / Headline Section --- */}
         <div className="article-header">
-          <h1 className="article-title">{loading ? 'Loading…' : currentStoryTitle}</h1>
+          <h1 className="article-title">{currentStoryTitle}</h1>
           
           <div className="article-meta-row">
             <div className="story-author">
@@ -339,11 +406,11 @@ function AcademiaReadStory() {
               <div
                 className="story-author-name"
                 style={{ cursor: 'pointer' }}
-                onClick={() => navigate('/academia/author')}
+                onClick={handleAuthor}
                 role="button"
                 tabIndex={0}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') navigate('/academia/author');
+                  if (e.key === 'Enter' || e.key === ' ') handleAuthor();
                 }}
               >
                 <h6>{currentStoryAuthor}</h6>
@@ -352,18 +419,14 @@ function AcademiaReadStory() {
             </div>
 
             <div className="article-reading-info">
-              <span>{loading ? '—' : currentStoryReadTime}</span>
+              <span>{currentStoryReadTime}</span>
               <span className="meta-separator">•</span>
               <span>{currentStoryDate}</span>
             </div>
 
             <div className="story-footer-r">
-              <a href="#/" aria-label="Social 1"><img src={con5Icon} alt="Social" /></a>
-              <a href="#/" aria-label="Social 2"><img src={con6Icon} alt="Social" /></a>
-              <a href="#/" aria-label="Social 3"><img src={con4Icon} alt="Social" /></a>
-              <a href="#/" aria-label="Social 4"><img src={con3Icon} alt="Social" /></a>
               <div>
-                <button type="button">
+                <button type="button" onClick={handleShareStory}>
                   <img src={sha2Icon} alt="Share" />
                   <span>Share</span>
                 </button>
@@ -442,6 +505,9 @@ function AcademiaReadStory() {
                     </button>
                   </div>
                 </div>
+                {commentNotice ? (
+                  <p className="public-comment-notice" role="status">{commentNotice}</p>
+                ) : null}
               </div>
 
               <div className="mcnd-l-b">
@@ -606,8 +672,8 @@ function AcademiaReadStory() {
       {/* --- Newsletter Section --- */}
       <section className="newsletter-sec">
         <div className="newsletter-sec-l">
-          <h3>Newsletter - Stay tuned and get the latest update</h3>
-          <p>Join thousands of learners receiving weekly updates.</p>
+          <h3>Newsletter</h3>
+          <p>Product updates will be announced here when newsletter subscriptions open.</p>
         </div>
         <div className="newsletter-sec-r">
           <form onSubmit={handleNewsletterSubmit}>
@@ -623,6 +689,7 @@ function AcademiaReadStory() {
               <img src={acSendIcon} alt="Next" />
             </button>
           </form>
+          <PublicNewsletterNotice message={newsletterNotice} />
         </div>
       </section>
     </div>

@@ -12,14 +12,11 @@ import acMessIcon from '../../../assets/icons/ac-mess.svg';
 import acCalIcon from '../../../assets/icons/ac-cal.svg';
 import acShareIcon from '../../../assets/icons/ac-share.svg';
 import acNextIcon from '../../../assets/icons/ac-next.svg';
-import psIcon from '../../../assets/icons/ps.svg';
-import pvIcon from '../../../assets/icons/pv.svg';
-import pshIcon from '../../../assets/icons/psh.svg';
-import pfIcon from '../../../assets/icons/pf.svg';
 import learnersProfileImage from '../../../assets/imgs/default-profile.png';
 import journalImage from '../../../assets/imgs/journal.jpg';
-import video2 from '../../../assets/vids/video2.mp4';
 import './watch.css';
+import { PublicNewsletterNotice, usePublicNewsletter } from './usePublicNewsletter.jsx';
+import { usePublicPageTitle } from './usePublicPageTitle.jsx';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
@@ -49,194 +46,13 @@ const normalizeStory = (story) => {
 };
 
 function AcademiaWatch() {
+  usePublicPageTitle('Community Feed');
   const navigate = useNavigate();
 
   const [stories, setStories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [pagination, setPagination] = useState(null);
-
-  useEffect(() => {
-    document.querySelectorAll('.academia-watch-page .story-thumbnail').forEach((container) => {
-      const video = container.querySelector('video');
-      if (!video) return;
-
-      video.controls = false;
-      container.classList.add('paused');
-
-      const ui = document.createElement('div');
-      ui.classList.add('ui-layer');
-      ui.innerHTML = `
-        <div class="center-controls">
-          <button class="center-btn" data-action="rewind" type="button">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
-              <path d="M3 3v5h5" />
-              <text x="12" y="16" text-anchor="middle" font-size="8" fill="currentColor" stroke="none" font-weight="bold">10</text>
-            </svg>
-          </button>
-          <button class="center-btn big-play" data-action="toggle" type="button">
-            <svg class="icon-play" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-            <svg class="icon-pause" viewBox="0 0 24 24" fill="currentColor" style="display:none;"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
-          </button>
-          <button class="center-btn" data-action="forward" type="button">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M21 12a9 9 0 1 1-9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
-              <path d="M21 3v5h-5" />
-              <text x="12" y="16" text-anchor="middle" font-size="8" fill="currentColor" stroke="none" font-weight="bold">10</text>
-            </svg>
-          </button>
-        </div>
-        <div class="bottom-controls">
-          <div class="left-pill">
-            <button class="icon-btn" data-action="toggle-mini" type="button">
-              <img class="icon-play" src="${psIcon}" alt="Play" />
-              <svg class="icon-pause" viewBox="0 0 24 24" fill="currentColor" style="display:none;"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
-            </button>
-            <button class="icon-btn" data-action="mute" type="button">
-              <img class="icon-vol-on" src="${pvIcon}" alt="Sound on" />
-              <svg class="icon-vol-off" viewBox="0 0 24 24" fill="currentColor" style="display:none;"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>
-            </button>
-            <div class="time-text">0:00 / 0:00</div>
-          </div>
-          <div class="right-actions">
-            <button class="icon-btn" data-action="share" type="button">
-              <img class="icon-vol-on" src="${pshIcon}" alt="Share" />
-            </button>
-            <button class="icon-btn" data-action="fullscreen" type="button">
-              <img class="icon-vol-on" src="${pfIcon}" alt="Fullscreen" />
-            </button>
-          </div>
-          <div class="progress-area">
-            <div class="progress-fill"></div>
-          </div>
-        </div>
-      `;
-      container.querySelector('.video-container').appendChild(ui);
-
-      const toggleBtns = ui.querySelectorAll('[data-action="toggle"], [data-action="toggle-mini"]');
-      const rewindBtn = ui.querySelector('[data-action="rewind"]');
-      const forwardBtn = ui.querySelector('[data-action="forward"]');
-      const muteBtn = ui.querySelector('[data-action="mute"]');
-      const fsBtn = ui.querySelector('[data-action="fullscreen"]');
-      const timeDisplay = ui.querySelector('.time-text');
-      const progressArea = ui.querySelector('.progress-area');
-      const progressFill = ui.querySelector('.progress-fill');
-      let isDragging = false;
-
-      const formatTime = (value) => {
-        if (Number.isNaN(value) || !Number.isFinite(value)) return '0:00';
-        const minutes = Math.floor(value / 60);
-        const seconds = Math.floor(value % 60);
-        return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
-      };
-
-      const updateIcons = () => {
-        const paused = video.paused;
-        ui.querySelectorAll('.icon-play').forEach((icon) => {
-          icon.style.display = paused ? 'block' : 'none';
-        });
-        ui.querySelectorAll('.icon-pause').forEach((icon) => {
-          icon.style.display = paused ? 'none' : 'block';
-        });
-      };
-
-      const togglePlay = () => {
-        if (video.paused) {
-          video.play();
-          container.classList.remove('paused');
-          container.classList.add('playing');
-        } else {
-          video.pause();
-          container.classList.remove('playing');
-          container.classList.add('paused');
-        }
-        updateIcons();
-      };
-
-      const scrub = (event) => {
-        const rect = progressArea.getBoundingClientRect();
-        let position = (event.clientX - rect.left) / rect.width;
-        position = Math.max(0, Math.min(1, position));
-        progressFill.style.width = `${position * 100}%`;
-        const targetTime = position * video.duration;
-        timeDisplay.textContent = `${formatTime(targetTime)} / ${formatTime(video.duration)}`;
-        return targetTime;
-      };
-
-      toggleBtns.forEach((button) => button.addEventListener('click', togglePlay));
-      video.addEventListener('click', togglePlay);
-      rewindBtn.addEventListener('click', (event) => {
-        event.stopPropagation();
-        video.currentTime -= 10;
-      });
-      forwardBtn.addEventListener('click', (event) => {
-        event.stopPropagation();
-        video.currentTime += 10;
-      });
-      muteBtn.addEventListener('click', (event) => {
-        event.stopPropagation();
-        video.muted = !video.muted;
-        ui.querySelector('.icon-vol-on').style.display = video.muted ? 'none' : 'block';
-        ui.querySelector('.icon-vol-off').style.display = video.muted ? 'block' : 'none';
-      });
-      fsBtn.addEventListener('click', (event) => {
-        event.stopPropagation();
-        if (!document.fullscreenElement) {
-          container.requestFullscreen().catch((error) => console.log(error));
-        } else {
-          document.exitFullscreen();
-        }
-      });
-
-      video.addEventListener('ended', () => {
-        container.classList.remove('playing');
-        container.classList.add('paused');
-        video.currentTime = 0;
-        progressFill.style.width = '0%';
-        updateIcons();
-      });
-
-      video.addEventListener('loadedmetadata', () => {
-        timeDisplay.textContent = `${formatTime(video.currentTime)} / ${formatTime(video.duration)}`;
-      });
-
-      if (video.readyState >= 1) {
-        timeDisplay.textContent = `${formatTime(video.currentTime)} / ${formatTime(video.duration)}`;
-      }
-
-      video.addEventListener('timeupdate', () => {
-        if (!isDragging) {
-          const percent = (video.currentTime / video.duration) * 100;
-          progressFill.style.width = `${percent}%`;
-          timeDisplay.textContent = `${formatTime(video.currentTime)} / ${formatTime(video.duration)}`;
-        }
-      });
-
-      progressArea.addEventListener('mousedown', (event) => {
-        isDragging = true;
-        progressFill.classList.add('no-transition');
-        scrub(event);
-      });
-
-      document.addEventListener('mousemove', (event) => {
-        if (isDragging) {
-          scrub(event);
-        }
-      });
-
-      document.addEventListener('mouseup', (event) => {
-        if (isDragging) {
-          const targetTime = scrub(event);
-          video.currentTime = targetTime;
-          isDragging = false;
-          setTimeout(() => {
-            progressFill.classList.remove('no-transition');
-          }, 50);
-        }
-      });
-    });
-  }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -263,6 +79,10 @@ function AcademiaWatch() {
     return () => { mounted = false; };
   }, [page]);
 
+  const { email: newsletterEmail, setEmail: setNewsletterEmail, notice: newsletterNotice, handleSubmit: handleNewsletterSubmit } = usePublicNewsletter();
+  const featuredStory = stories[0] || null;
+  const totalStories = pagination?.total ?? pagination?.totalItems ?? stories.length;
+
   return (
     <div className="academia-watch-page">
       <section className="stats-sec">
@@ -271,8 +91,8 @@ function AcademiaWatch() {
             <img src={acStat1Icon} alt="Stats Icon" />
           </div>
           <div>
-            <h5>20,000+</h5>
-            <p>Enrolled Students</p>
+            <h5>{loading ? '…' : String(stories.length)}</h5>
+            <p>Stories on this page</p>
           </div>
         </div>
         <div className="stats-sec-item">
@@ -280,26 +100,8 @@ function AcademiaWatch() {
             <img src={acStat2Icon} alt="Stats Icon" />
           </div>
           <div>
-            <h5>20,000+</h5>
-            <p>Trusted Tutors</p>
-          </div>
-        </div>
-        <div className="stats-sec-item">
-          <div>
-            <img src={acStat3Icon} alt="Stats Icon" />
-          </div>
-          <div>
-            <h5>20,000+</h5>
-            <p>Schedules</p>
-          </div>
-        </div>
-        <div className="stats-sec-item">
-          <div>
-            <img src={acStat4Icon} alt="Stats Icon" />
-          </div>
-          <div>
-            <h5>20,000+</h5>
-            <p>Courses</p>
+            <h5>{loading ? '…' : String(totalStories)}</h5>
+            <p>Published stories</p>
           </div>
         </div>
       </section>
@@ -307,48 +109,37 @@ function AcademiaWatch() {
       <section className="hero-sec">
         <div className="main-content-grid">
           <div className="story-thumbnail">
-            <div className="video-container">
-              <video className="js-player" controls preload="metadata">
-                <source src={video2} type="video/mp4" />
-              </video>
-            </div>
+            <img
+              src={resolveStoryImage(featuredStory?.thumbnail) || journalImage}
+              alt={featuredStory?.title || 'Community stories'}
+              style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '12px' }}
+            />
           </div>
           <div className="main-content-grid-l">
             <div className="watch-content">
-              <h2>Expert & experienced instructors</h2>
+              <h2>{featuredStory?.title || 'Community stories'}</h2>
               <p>
-                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut elit tellus, luctus nec ullamcorper
-                mattis, pulvinar dapibus leo.Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut elit tellus,
-                luctus nec ullamcorper mattis, pulvinar dapibus leo.Lorem ipsum dolor sit amet, consectetur elit.
+                {featuredStory?.description || featuredStory?.excerpt || 'Read learning updates and stories published by the Academia community. Counts above reflect what is currently published on this page.'}
               </p>
-              <p>
-                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut elit tellus, luctus nec ullamcorper
-                mattis, pulvinar dapibus leo.Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut elit tellus,
-                luctus nec ullamcorper mattis, pulvinar dapibus leo.Lorem ipsum dolor sit amet, consectetur elit.
-              </p>
+              {featuredStory ? (
+                <button type="button" onClick={() => navigate(`/academia/read-story?id=${featuredStory.id}`)}>
+                  Read featured story
+                </button>
+              ) : null}
             </div>
 
             <div className="watch-cta">
               <div className="watch-cta-l">
                 <div className="watch-cta-stack">
                   <div className="watch-cta-thumb main-thumb">
-                    <img src={journalImage} alt="Courses" />
-                    <div className="watch-cta-overlay">
-                      <span>200+<br />Courses</span>
-                    </div>
-                  </div>
-                  <div className="watch-cta-thumb sub-thumb one">
-                    <img src={journalImage} alt="Courses preview" />
-                  </div>
-                  <div className="watch-cta-thumb sub-thumb two">
-                    <img src={journalImage} alt="Courses preview" />
+                    <img src={resolveStoryImage(featuredStory?.thumbnail) || journalImage} alt="Featured story" />
                   </div>
                 </div>
               </div>
               <div className="watch-cta-r">
-                <button type="button">
-                  <img src={acNextIcon} alt="Watch more" />
-                  <span>Watch more youtube</span>
+                <button type="button" onClick={() => navigate('/academia/courses')}>
+                  <img src={acNextIcon} alt="Browse courses" />
+                  <span>Browse courses</span>
                 </button>
               </div>
             </div>
@@ -361,8 +152,8 @@ function AcademiaWatch() {
         <div className="new-content-l">
           <img src={acMailIcon} alt="Mail" />
           <div>
-            <h6>Subscribe to our Newsletter</h6>
-            <p>Once every day</p>
+            <h6>Newsletter</h6>
+            <p>Subscriptions open soon</p>
           </div>
         </div>
       </section>
@@ -428,17 +219,24 @@ function AcademiaWatch() {
 
       <section className="newsletter-sec">
         <div className="newsletter-sec-l">
-          <h3>Newsletter - Stay tune and get the latest update</h3>
-          <p>Far far away, behind the word mountains</p>
+          <h3>Newsletter</h3>
+          <p>Product updates will be announced here when newsletter subscriptions open.</p>
         </div>
         <div className="newsletter-sec-r">
-          <form>
+          <form onSubmit={handleNewsletterSubmit}>
             <img src={acSmsIcon} alt="Message" className="ac-sms" />
-            <input type="email" placeholder="Enter email address" />
+            <input
+              type="email"
+              placeholder="Enter email address"
+              value={newsletterEmail}
+              onChange={(e) => setNewsletterEmail(e.target.value)}
+              required
+            />
             <button type="submit">
               <img src={acSendIcon} alt="Next" />
             </button>
           </form>
+          <PublicNewsletterNotice message={newsletterNotice} />
         </div>
       </section>
     </div>

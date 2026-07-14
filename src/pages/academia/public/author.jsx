@@ -23,6 +23,9 @@ import itemImage from '../../../assets/imgs/item.jpg';
 import acSmsIcon from '../../../assets/icons/ac-sms.svg';
 import acSendIcon from '../../../assets/icons/ac-send.svg';
 import './author.css';
+import { PublicLoadError, PublicLoading } from './PublicPageState';
+import { PublicNewsletterNotice, usePublicNewsletter } from './usePublicNewsletter.jsx';
+import { usePublicPageTitle } from './usePublicPageTitle.jsx';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
@@ -77,22 +80,14 @@ function AcademiaAuthor() {
   // --- Loading States ---
   const [loading, setLoading] = useState(true);
   const [projectsLoading, setProjectsLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
+  const [retryKey, setRetryKey] = useState(0);
   const [actionLoading, setActionLoading] = useState(false);
-  
-  // --- Newsletter State ---
-  const [newsletterEmail, setNewsletterEmail] = useState('');
+  const { email: newsletterEmail, setEmail: setNewsletterEmail, notice: newsletterNotice, handleSubmit: handleNewsletterSubmit } = usePublicNewsletter();
 
-  // --- Handlers ---
+  usePublicPageTitle(authorProfile?.name || 'Author');
+
   const preventDefault = (e) => e.preventDefault();
-
-  const handleNewsletterSubmit = (e) => {
-    e.preventDefault();
-    if (!newsletterEmail.trim()) return;
-    // TODO: Connect to backend newsletter endpoint
-    console.log("Subscribing email:", newsletterEmail);
-    setNewsletterEmail('');
-    alert("Subscribed successfully!"); // Replace with custom pushFeedback if you have it implemented globally
-  };
 
   // --- Swiper Initialization ---
   useEffect(() => {
@@ -133,61 +128,64 @@ function AcademiaAuthor() {
     const loadAuthor = async () => {
       setLoading(true);
       setProjectsLoading(true);
+      setLoadError('');
 
       try {
         const requestedAuthorId = searchParams.get('authorId') || searchParams.get('userId') || searchParams.get('id');
 
-        let resolvedAuthorId = requestedAuthorId;
-        let fetchedProjects = [];
-        let seedProject = null;
-
-        if (resolvedAuthorId) {
-          const userProjectsRes = await fetch(`${API_BASE_URL}/api/projects/user/${resolvedAuthorId}`);
-          const userProjectsBody = await userProjectsRes.json().catch(() => ({}));
-          fetchedProjects = Array.isArray(userProjectsBody?.data)
-            ? userProjectsBody.data.map((project) => normalizeProject(project)).filter(Boolean)
-            : [];
-        } else {
-          const publicProjectsRes = await fetch(`${API_BASE_URL}/api/projects`);
-          const publicProjectsBody = await publicProjectsRes.json().catch(() => ({}));
-          const publicProjects = Array.isArray(publicProjectsBody?.data)
-            ? publicProjectsBody.data
-            : Array.isArray(publicProjectsBody)
-              ? publicProjectsBody
-              : [];
-
-          seedProject = normalizeProject(publicProjects[0]);
-          resolvedAuthorId = seedProject?.user_id || seedProject?.author_id || seedProject?.userId || null;
-
-          if (resolvedAuthorId) {
-            const userProjectsRes = await fetch(`${API_BASE_URL}/api/projects/user/${resolvedAuthorId}`);
-            const userProjectsBody = await userProjectsRes.json().catch(() => ({}));
-            fetchedProjects = Array.isArray(userProjectsBody?.data)
-              ? userProjectsBody.data.map((project) => normalizeProject(project)).filter(Boolean)
-              : [];
-          } else {
-            fetchedProjects = publicProjects.map((project) => normalizeProject(project)).filter(Boolean);
-          }
+        if (!requestedAuthorId) {
+          setAuthorProfile(null);
+          setAuthorProjects([]);
+          setLoadError('No author selected.');
+          return;
         }
+
+        const userProjectsRes = await fetch(`${API_BASE_URL}/api/projects/user/${requestedAuthorId}`);
+        const userProjectsBody = await userProjectsRes.json().catch(() => ({}));
+
+        if (!userProjectsRes.ok) {
+          setAuthorProfile(null);
+          setAuthorProjects([]);
+          setLoadError(userProjectsBody?.message || 'Author not found.');
+          return;
+        }
+
+        const fetchedProjects = Array.isArray(userProjectsBody?.data)
+          ? userProjectsBody.data.map((project) => normalizeProject(project)).filter(Boolean)
+          : [];
 
         if (!mounted) return;
 
-        const primaryProject = fetchedProjects[0] || seedProject || null;
         setAuthorProjects(fetchedProjects);
-        
+
+        const primaryProject = fetchedProjects[0] || null;
         if (primaryProject) {
           setAuthorProfile({
-            id: primaryProject.user_id || resolvedAuthorId || null,
-            name: primaryProject.user_name || 'Xavera KABARANGA',
-            role: primaryProject.user_role || 'UI/UX Designer',
+            id: primaryProject.user_id || requestedAuthorId,
+            name: primaryProject.user_name || 'Author',
+            role: primaryProject.user_role || 'Contributor',
             avatar: primaryProject.user_avatar || null,
-            location: primaryProject.location || 'Kigali, Rwanda',
+            location: primaryProject.location || '',
             about: primaryProject.abstract || primaryProject.description || '',
             memberSince: formatMemberSince(primaryProject.created_at),
-            availability: primaryProject.availability || 'Available Now',
-            experience: primaryProject.experience || '6 yrs experience',
+            availability: primaryProject.availability || '',
+            experience: primaryProject.experience || '',
+          });
+        } else {
+          setAuthorProfile({
+            id: requestedAuthorId,
+            name: 'Author',
+            role: 'Contributor',
+            avatar: null,
+            location: '',
+            about: '',
+            memberSince: '',
+            availability: '',
+            experience: '',
           });
         }
+
+        const resolvedAuthorId = primaryProject?.user_id || requestedAuthorId;
 
         // Fetch Follower Stats safely
         if (resolvedAuthorId) {
@@ -223,6 +221,7 @@ function AcademiaAuthor() {
           setAuthorProfile(null);
           setAuthorProjects([]);
           setFollowerStats({ followers: 0, following: 0 });
+          setLoadError('Failed to load author profile. Check your connection and try again.');
         }
       } finally {
         if (mounted) {
@@ -237,17 +236,17 @@ function AcademiaAuthor() {
     return () => {
       mounted = false;
     };
-  }, [searchParams]);
+  }, [searchParams, retryKey]);
 
   // --- Derived Variables ---
-  const authorName = authorProfile?.name || 'Xavera KABARANGA';
-  const authorRole = authorProfile?.role || 'UI/UX Designer';
+  const authorName = authorProfile?.name || 'Author';
+  const authorRole = authorProfile?.role || 'Contributor';
   const authorAvatar = resolveAuthorImage(authorProfile?.avatar, learnersProfileImage);
-  const authorLocation = authorProfile?.location || 'Kigali, Rwanda';
-  const authorAvailability = authorProfile?.availability || 'Available Now';
-  const authorExperience = authorProfile?.experience || '6 yrs experience';
+  const authorLocation = authorProfile?.location || '—';
+  const authorAvailability = authorProfile?.availability || '—';
+  const authorExperience = authorProfile?.experience || '—';
   const authorBio = authorProfile?.about || '';
-  const memberSince = authorProfile?.memberSince || 'January 24, 2021';
+  const memberSince = authorProfile?.memberSince || '—';
   const primaryProject = authorProjects[0] || null;
 
   const totals = authorProjects.reduce((accumulator, project) => {
@@ -260,7 +259,7 @@ function AcademiaAuthor() {
   // --- Action Handlers ---
   const handleOpenProject = (projectId) => {
     if (!projectId) return;
-    navigate(`/academia/read-journal?id=${projectId}`);
+    navigate(`/academia/read-project?id=${projectId}`);
   };
 
   const handleToggleFollow = async () => {
@@ -301,10 +300,10 @@ function AcademiaAuthor() {
 
   const handleGetInTouch = () => {
     if (primaryProject?.id) {
-      navigate(`/academia/read-journal?id=${primaryProject.id}`);
+      navigate(`/academia/read-project?id=${primaryProject.id}`);
       return;
     }
-    navigate('/academia/journals');
+    navigate('/academia/projects');
   };
 
   const handleHireUs = () => {
@@ -312,6 +311,22 @@ function AcademiaAuthor() {
   };
 
   // --- Render ---
+  if (loading) {
+    return <PublicLoading message="Loading author profile…" />;
+  }
+
+  if (loadError || !authorProfile) {
+    return (
+      <PublicLoadError
+        title="Author unavailable"
+        message={loadError || 'Author not found.'}
+        onRetry={() => setRetryKey((key) => key + 1)}
+        backTo="/academia/projects"
+        backLabel="Browse projects"
+      />
+    );
+  }
+
   return (
     <div className="academia-author-page">
       
@@ -325,27 +340,19 @@ function AcademiaAuthor() {
             backgroundPosition: 'center'
           }}
         >
-          {loading ? (
-            <div className="hsi-text" style={{ padding: '2rem', textAlign: 'center', width: '100%' }}>
-              <p style={{ color: '#fff', fontSize: '1.2rem' }}>Loading author profile...</p>
+          <div className="hsi-img">
+            <img src={authorAvatar} alt={authorName} />
+          </div>
+          <div className="hsi-text">
+            <div>
+              <h6>{authorName}</h6>
+              <p>|</p>
+              <p>{authorRole}</p>
             </div>
-          ) : (
-            <>
-              <div className="hsi-img">
-                <img src={authorAvatar} alt={authorName} />
-              </div>
-              <div className="hsi-text">
-                <div>
-                  <h6>{authorName}</h6>
-                  <p>|</p>
-                  <p>{authorRole}</p>
-                </div>
-                <div>
-                  <p>Member Since: {memberSince}</p>
-                </div>
-              </div>
-            </>
-          )}
+            <div>
+              <p>Member Since: {memberSince}</p>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -393,7 +400,7 @@ function AcademiaAuthor() {
                 <p>
                   {authorBio}
                   {primaryProject?.id && (
-                    <a href={`/academia/read-journal?id=${primaryProject.id}`} style={{ marginLeft: '8px' }}>Read more</a>
+                    <a href={`/academia/read-project?id=${primaryProject.id}`} style={{ marginLeft: '8px' }}>Read more</a>
                   )}
                 </p>
               ) : (
@@ -567,8 +574,8 @@ function AcademiaAuthor() {
       {/* Newsletter Section */}
       <section className="newsletter-sec">
         <div className="newsletter-sec-l">
-          <h3>Newsletter - Stay tuned and get the latest updates</h3>
-          <p>Subscribe to our newsletter to receive the latest projects directly in your inbox.</p>
+          <h3>Newsletter</h3>
+          <p>Product updates will be announced here when newsletter subscriptions open.</p>
         </div>
         <div className="newsletter-sec-r">
           <form onSubmit={handleNewsletterSubmit}>
@@ -584,6 +591,7 @@ function AcademiaAuthor() {
               <img src={acSendIcon} alt="Subscribe" />
             </button>
           </form>
+          <PublicNewsletterNotice message={newsletterNotice} />
         </div>
       </section>
     </div>
