@@ -1,0 +1,42 @@
+/* Public Academia — mobile polish (Sprint F) */
+
+@media (max-width: 768px) {
+  .app-shell .content {
+    margin: 12px auto;
+    overflow-x: hidden;
+  }
+
+  .public-info-page,
+  .public-not-found-page {
+    padding: 20px 16px 36px;
+  }
+
+  .public-courses-directory-page .courses-page-h {
+    padding: 0 16px;
+  }
+
+  .academia-read-project-page .main-content,
+  .academia-read-story-page .main-content {
+    padding: 12px;
+  }
+
+  .academia-read-project-page .journal-body,
+  .academia-read-project-page .journal-content,
+  .academia-read-story-page .story-body {
+    overflow-x: auto;
+    word-break: break-word;
+  }
+
+  .academia-read-project-page img,
+  .academia-read-story-page img,
+  .public-courses-directory-page img {
+    max-width: 100%;
+    height: auto;
+  }
+
+  .academia-page .ss-swiper,
+  .academia-page .psc-swiper {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+}
