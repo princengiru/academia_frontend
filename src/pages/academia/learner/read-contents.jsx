@@ -3,11 +3,31 @@ import { useLocation, useSearchParams, useNavigate } from 'react-router-dom';
 import LearnersPageShell from './LearnersPageShell';
 import Sidebar from './read-contents/Sidebar';
 import LessonView from './read-contents/LessonView';
-import WorkspaceModal from './read-contents/WorkspaceModal';
+import LessonWorkspacePanels from './read-contents/LessonWorkspacePanels';
+import { findWeekIdForOutlineItem, isSameOutlineItemId, countOutlineProgress, getNextOutlineItem, getNextAssessment, isOutlineItemUnlocked, getFirstUnlockedOutlineItem, resolveReaderChapterTarget, iterateOutlineItems } from './read-contents/sidebarUtils';
+import { getStoredChapterId, setStoredChapterId, resolveCourseProgressPercent } from './homeDashboardUtils';
+import LearnerLoadError from './LearnerLoadError';
+import CourseCompleteCelebration, { hasSeenCourseCelebration, markCourseCelebrationSeen } from './read-contents/CourseCompleteCelebration';
+import {
+  buildAccountPaymentHref,
+  computeCertificateTotalHours,
+  getPaymentMethodLabel,
+  hasSavedPaymentMethods,
+  isEnrollmentRoleAllowed,
+} from './enrollmentPaymentUtils';
 import AssessmentView from './read-contents/AssessmentView';
 
 // Icons & Images
-import acSav from '../../../assets/icons/ac-sav.svg';
+import SavedLibraryButton from './SavedLibraryButton';
+import EnrollmentPaymentPicker from './EnrollmentPaymentPicker';
+import {
+  buildAvailablePaymentChoices,
+  enrollInCourse,
+  fetchSavedPaymentMethods,
+  isCourseFree,
+  pickDefaultPaymentValue,
+} from './enrollmentPaymentUtils';
+import { learnerPageTitle, LEARNER_PRODUCT_NAME } from './learnerBrand';
 import hoagoto from '../../../assets/icons/hoagoto.svg';
 import acLe from '../../../assets/icons/ac-le.svg';
 import acOnImg from '../../../assets/imgs/ac-on.jpg';
@@ -23,12 +43,6 @@ import wAcBook from '../../../assets/icons/w-ac-book.svg';
 import leTec from '../../../assets/icons/le-tec.svg';
 import leftIcon from '../../../assets/icons/left.svg';
 import doneIcon from '../../../assets/icons/done.svg';
-import dtiktok from '../../../assets/icons/dtiktok.svg';
-import dwhat from '../../../assets/icons/dwhat.svg';
-import dfaceb from '../../../assets/icons/dfaceb.svg';
-import dinstagram from '../../../assets/icons/dinstagram.svg';
-import acSms from '../../../assets/icons/ac-sms.svg';
-import acSend from '../../../assets/icons/ac-send.svg';
 import acFf from '../../../assets/icons/ac-ff.svg';
 import acFi from '../../../assets/icons/ac-fi.svg';
 import './read-contents.css';
@@ -46,6 +60,8 @@ const apexCourseMeta = {
   weekly: '',
   level: '',
   price: '',
+  rawPrice: 0,
+  isFree: false,
   discount: '',
   intro: '',
   audience: '',
@@ -197,16 +213,17 @@ function LearnersReadContents() {
 
   // Layout State
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [expandedWeeks, setExpandedWeeks] = useState({ 'week-1': true });
-  const [activeChapterId, setActiveChapterId] = useState('chapter-1');
+  const [expandedWeeks, setExpandedWeeks] = useState({});
+  const [activeChapterId, setActiveChapterId] = useState(null);
   const [isAudienceExpanded, setIsAudienceExpanded] = useState(false);
   const [activePdfIndex, setActivePdfIndex] = useState(0);
   const [activeTextPageIndex, setActiveTextPageIndex] = useState(0);
-  const [isWorkspaceOpen, setIsWorkspaceOpen] = useState(false);
 
   // Router params
   const location = useLocation();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const legacyStateId = location.state?.courseId;
+  const legacyChapterId = location.state?.chapterId;
 
   // Backend-driven content state (fallback to local mocks)
   const [courseMetaState, setCourseMetaState] = useState(apexCourseMeta);
@@ -222,23 +239,10 @@ function LearnersReadContents() {
   const [exerciseGradedList, setExerciseGradedList] = useState({});
   const [completedChapters, setCompletedChapters] = useState([]);
   const [courseAvgScore, setCourseAvgScore] = useState('0.0%');
-
-  const viewedPercentage = useMemo(() => {
-    let total = 0;
-    let completed = 0;
-    outlineWeeksState.forEach(w => {
-      if (Array.isArray(w.chapters)) {
-        total += w.chapters.length;
-        completed += w.chapters.filter(ch => ch.completed).length;
-      }
-    });
-
-    if (total > 0) {
-      return Math.round((completed / total) * 100);
-    }
-
-    return 0;
-  }, [outlineWeeksState, completedChapters]);
+  const [courseProgressPercentage, setCourseProgressPercentage] = useState(null);
+  const [courseLoadError, setCourseLoadError] = useState('');
+  const [chapterLoadError, setChapterLoadError] = useState('');
+  const [showCourseCelebration, setShowCourseCelebration] = useState(false);
 
   const [loadingCourse, setLoadingCourse] = useState(false);
 
@@ -290,6 +294,17 @@ function LearnersReadContents() {
   const timerIntervalRef = useRef(null);
   const submitRef = useRef(null);
   const contentLoadTokenRef = useRef(0);
+  const outlineWeeksRef = useRef(outlineWeeksState);
+  const isSummativeCompleteRef = useRef(isSummativeComplete);
+  const sequenceRedirectedToRef = useRef(null);
+
+  useEffect(() => {
+    outlineWeeksRef.current = outlineWeeksState;
+  }, [outlineWeeksState]);
+
+  useEffect(() => {
+    isSummativeCompleteRef.current = isSummativeComplete;
+  }, [isSummativeComplete]);
 
   const bumpLoadToken = () => {
     contentLoadTokenRef.current += 1;
@@ -364,6 +379,7 @@ function LearnersReadContents() {
     passingScore,
     token,
     exhaustedAttempts = false,
+    currentItemId = null,
   }) => {
     if (!attemptId) return;
 
@@ -406,6 +422,10 @@ function LearnersReadContents() {
     if (!passed && scorePct >= passingScore) passed = true;
 
     const isSummative = type === 'summative';
+    const nextItem = passed && !isSummative
+      ? getNextOutlineItem(outlineWeeksState, currentItemId || activeChapterId, isSummativeComplete)
+      : null;
+
     setAssessmentResult({
       score: `${Number(scorePct || 0).toFixed(1)}%`,
       headline: passed ? 'Congratulations!' : (answered > 0 ? 'Submitted for Review' : (isSummative ? 'Assessment Completed' : 'Quiz Completed')),
@@ -419,8 +439,10 @@ function LearnersReadContents() {
             ? `Your essay/text answers will be reviewed by the instructor. Auto-graded score: ${Number(scorePct || 0).toFixed(1)}%`
             : 'You did not achieve the required passing score.',
       buttonLabel: passed
-        ? (isSummative ? 'Claim Certificate' : '')
+        ? (isSummative ? 'Claim Certificate' : (nextItem ? 'Continue' : ''))
         : (exhaustedAttempts ? 'No attempt left' : 'Retry Quiz'),
+      continueChapterId: nextItem?.id || null,
+      continueLabel: nextItem?.title || '',
       stats: [
         { value: String(questionCount || 0), label: 'Questions' },
         { value: String(correct), label: 'Correct' },
@@ -699,9 +721,107 @@ function LearnersReadContents() {
   // Enrollment State
   const [isEnrolled, setIsEnrolled] = useState(false);
   const [isEnrolling, setIsEnrolling] = useState(false);
+  const [paymentChoices, setPaymentChoices] = useState([]);
+  const [selectedPaymentValue, setSelectedPaymentValue] = useState('credit_card');
+  const [paymentsLoading, setPaymentsLoading] = useState(false);
+  const [savedPaymentMethods, setSavedPaymentMethods] = useState([]);
 
-  const inboundId = location.state?.courseId || searchParams.get('id');
-  const initialChapterId = location.state?.chapterId || searchParams.get('chapterId');
+  const inboundId = searchParams.get('id') || legacyStateId;
+  const initialChapterId = searchParams.get('chapterId')
+    || legacyChapterId
+    || (inboundId ? getStoredChapterId(inboundId) : null);
+
+  useEffect(() => {
+    if (!inboundId || loadingCourse) return;
+    if (searchParams.get('chapterId')) return;
+
+    const storedChapterId = getStoredChapterId(inboundId);
+    if (!storedChapterId) return;
+
+    const next = new URLSearchParams(searchParams);
+    next.set('id', String(inboundId));
+    next.set('chapterId', storedChapterId);
+    setSearchParams(next, { replace: true });
+  }, [inboundId, loadingCourse, searchParams, setSearchParams]);
+
+  useEffect(() => {
+    if (!legacyStateId && !legacyChapterId) return;
+
+    const next = new URLSearchParams(searchParams);
+    let changed = false;
+
+    if (legacyStateId && !next.get('id')) {
+      next.set('id', String(legacyStateId));
+      changed = true;
+    }
+    if (legacyChapterId && !next.get('chapterId')) {
+      next.set('chapterId', String(legacyChapterId));
+      changed = true;
+    }
+
+    if (changed) setSearchParams(next, { replace: true });
+  }, [legacyChapterId, legacyStateId, searchParams, setSearchParams]);
+
+  useEffect(() => {
+    const urlChapterId = searchParams.get('chapterId');
+    if (!urlChapterId || loadingCourse) return;
+
+    setActiveChapterId((current) => (
+      isSameOutlineItemId(current, urlChapterId) ? current : urlChapterId
+    ));
+  }, [loadingCourse, searchParams]);
+
+  useEffect(() => {
+    const urlChapterId = searchParams.get('chapterId');
+    if (!urlChapterId || outlineWeeksState.length === 0) return;
+
+    const weekId = findWeekIdForOutlineItem(outlineWeeksState, urlChapterId);
+    if (weekId) {
+      setExpandedWeeks((prev) => (prev[weekId] ? prev : { ...prev, [weekId]: true }));
+    }
+  }, [searchParams, outlineWeeksState]);
+
+  const outlineUnlockKey = useMemo(
+    () => iterateOutlineItems(outlineWeeksState, isSummativeComplete)
+      .map((item) => `${item.id}:${item.completed ? 1 : 0}`)
+      .join('|'),
+    [outlineWeeksState, isSummativeComplete]
+  );
+
+  useEffect(() => {
+    if (loadingCourse || !activeChapterId || outlineWeeksState.length === 0) return;
+
+    const weeks = outlineWeeksRef.current;
+    if (isOutlineItemUnlocked(weeks, activeChapterId, isSummativeCompleteRef.current)) {
+      sequenceRedirectedToRef.current = null;
+      return;
+    }
+
+    const allowed = getFirstUnlockedOutlineItem(weeks, isSummativeCompleteRef.current);
+    if (!allowed || isSameOutlineItemId(allowed.id, activeChapterId)) return;
+
+    const allowedId = String(allowed.id);
+    if (sequenceRedirectedToRef.current === allowedId) return;
+
+    sequenceRedirectedToRef.current = allowedId;
+    setActiveChapterId(allowed.id);
+    setContentReloadKey((k) => k + 1);
+
+    const weekId = findWeekIdForOutlineItem(weeks, allowed.id);
+    if (weekId) {
+      setExpandedWeeks((prev) => ({ ...prev, [weekId]: true }));
+    }
+
+    if (inboundId) {
+      setStoredChapterId(inboundId, allowed.id);
+      const next = new URLSearchParams(searchParams);
+      next.set('id', String(inboundId));
+      next.set('chapterId', String(allowed.id));
+      setSearchParams(next, { replace: true });
+    }
+
+    showToast('Complete earlier lessons to unlock this section.', 'error');
+  }, [loadingCourse, activeChapterId, outlineUnlockKey, inboundId, searchParams, setSearchParams, outlineWeeksState.length]);
 
   useEffect(() => {
     const checkEnrollmentStatus = async () => {
@@ -726,6 +846,52 @@ function LearnersReadContents() {
     };
     checkEnrollmentStatus();
   }, [inboundId]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadPaymentChoices = async () => {
+      if (!courseMetaState?.title || isEnrolled) {
+        setPaymentChoices([]);
+        return;
+      }
+
+      const courseIsFree = isCourseFree(courseMetaState);
+      if (courseIsFree) {
+        const freeChoices = buildAvailablePaymentChoices([], true);
+        if (!cancelled) {
+          setPaymentChoices(freeChoices);
+          setSelectedPaymentValue('free');
+          setPaymentsLoading(false);
+        }
+        return;
+      }
+
+      setPaymentsLoading(true);
+      try {
+        const token = localStorage.getItem('token');
+        const methods = await fetchSavedPaymentMethods(API_BASE_URL, token);
+        const choices = buildAvailablePaymentChoices(methods, false);
+        if (!cancelled) {
+          setSavedPaymentMethods(methods);
+          setPaymentChoices(choices);
+          setSelectedPaymentValue(pickDefaultPaymentValue(choices, methods));
+        }
+      } catch (err) {
+        console.error('Failed to load payment methods:', err);
+        if (!cancelled) {
+          setSavedPaymentMethods([]);
+          setPaymentChoices([]);
+          setSelectedPaymentValue('credit_card');
+        }
+      } finally {
+        if (!cancelled) setPaymentsLoading(false);
+      }
+    };
+
+    loadPaymentChoices();
+    return () => { cancelled = true; };
+  }, [courseMetaState.title, courseMetaState.isFree, courseMetaState.rawPrice, courseMetaState.price, isEnrolled]);
 
   const loadSummativeAssessment = async (courseId, loadToken) => {
     if (isStaleLoad(loadToken)) return;
@@ -1171,17 +1337,20 @@ function LearnersReadContents() {
     const token = localStorage.getItem('token');
     if (!token || !inboundId) return false;
     try {
+      const totalHours = computeCertificateTotalHours(courseMetaState);
+      const payload = {
+        final_score: score,
+        formative_score: score,
+      };
+      if (totalHours) payload.total_hours = totalHours;
+
       const res = await fetch(`${API_BASE_URL}/api/courses/${inboundId}/certificates/issue`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({
-          final_score: score,
-          formative_score: score,
-          total_hours: 10
-        })
+        body: JSON.stringify(payload)
       });
       if (res.ok) return true;
       const body = await res.json().catch(() => ({}));
@@ -1200,9 +1369,11 @@ function LearnersReadContents() {
     const loadCourse = async (id) => {
       if (!id) return;
       setLoadingCourse(true);
+      setCourseLoadError('');
       try {
         const res = await fetch(`${API_BASE_URL}/api/courses/${id}`);
         const body = await res.json();
+        if (!res.ok) throw new Error(body.message || 'Failed to load course');
         const data = extractBody(body);
         const courseData = data?.data || data?.course || data || {};
 
@@ -1219,9 +1390,14 @@ function LearnersReadContents() {
           summary: courseData.description || prev.summary,
           image: courseData.thumbnail && (courseData.thumbnail.startsWith('/') ? `${API_BASE_URL}${courseData.thumbnail}` : courseData.thumbnail) || prev.image,
           duration: courseData.duration_weeks ? `${courseData.duration_weeks} weeks` : prev.duration,
+          duration_weeks: courseData.duration_weeks || prev.duration_weeks,
+          required_hours_per_week: courseData.required_hours_per_week || prev.required_hours_per_week,
+          total_hours: courseData.total_hours || courseData.totalHours || prev.total_hours,
           weekly: courseData.required_hours_per_week ? `${courseData.required_hours_per_week} hours` : prev.weekly,
           level: courseData.level || prev.level,
           price: courseData.price ? `$${courseData.price}` : (courseData.is_free ? 'Free' : prev.price),
+          rawPrice: Number(courseData.price) || 0,
+          isFree: Boolean(courseData.is_free) || Number(courseData.price) === 0,
           intro: courseData.intro_message || courseData.description || prev.intro,
           audience: courseData.target_audience || prev.audience,
           category: courseData.category || prev.category,
@@ -1272,27 +1448,15 @@ function LearnersReadContents() {
 
           setOutlineWeeksState(weeksWithAssessments);
 
-          let activeChId = initialChapterId;
-          let targetWeekId = null;
-          if (activeChId) {
-            const foundWeek = weeksWithAssessments.find(w =>
-              w.chapters.some(c => String(c.id) === String(activeChId)) ||
-              (w.assessments && w.assessments.some(a => String(a.id) === String(activeChId)))
-            );
-            if (foundWeek) {
-              targetWeekId = foundWeek.id;
-            } else {
-              const firstWeekWithCh = weeksWithAssessments.find(w => w.chapters && w.chapters.length > 0);
-              activeChId = firstWeekWithCh ? firstWeekWithCh.chapters[0].id : (chapters[0]?.id || `ch-0`);
-              if (firstWeekWithCh) targetWeekId = firstWeekWithCh.id;
-            }
-          } else {
-            const firstWeekWithCh = weeksWithAssessments.find(w => w.chapters && w.chapters.length > 0);
-            activeChId = firstWeekWithCh ? firstWeekWithCh.chapters[0].id : (chapters[0]?.id || `ch-0`);
-            if (firstWeekWithCh) targetWeekId = firstWeekWithCh.id;
-          }
+          const { id: activeChId, weekId: targetWeekId } = resolveReaderChapterTarget(
+            weeksWithAssessments,
+            initialChapterId,
+            false
+          );
 
-          setActiveChapterId(activeChId);
+          if (activeChId) {
+            setActiveChapterId(activeChId);
+          }
           if (targetWeekId) {
             setExpandedWeeks((prev) => ({ ...prev, [targetWeekId]: true }));
           }
@@ -1328,24 +1492,15 @@ function LearnersReadContents() {
           const mappedWeeks = Object.values(groupedWeeksMap).sort((a, b) => a.title.localeCompare(b.title));
           setOutlineWeeksState(mappedWeeks);
 
-          let activeChId = initialChapterId;
-          let targetWeekId = null;
-          if (activeChId) {
-            const foundWeek = mappedWeeks.find(w => w.chapters.some(c => String(c.id) === String(activeChId)));
-            if (foundWeek) {
-              targetWeekId = foundWeek.id;
-            } else {
-              const firstWeekWithCh = mappedWeeks.find(w => w.chapters && w.chapters.length > 0);
-              activeChId = firstWeekWithCh ? firstWeekWithCh.chapters[0].id : (chapters[0]?.id || `ch-0`);
-              if (firstWeekWithCh) targetWeekId = firstWeekWithCh.id;
-            }
-          } else {
-            const firstWeekWithCh = mappedWeeks.find(w => w.chapters && w.chapters.length > 0);
-            activeChId = firstWeekWithCh ? firstWeekWithCh.chapters[0].id : (chapters[0]?.id || `ch-0`);
-            if (firstWeekWithCh) targetWeekId = firstWeekWithCh.id;
-          }
+          const { id: activeChId, weekId: targetWeekId } = resolveReaderChapterTarget(
+            mappedWeeks,
+            initialChapterId,
+            false
+          );
 
-          setActiveChapterId(activeChId);
+          if (activeChId) {
+            setActiveChapterId(activeChId);
+          }
           if (targetWeekId) {
             setExpandedWeeks((prev) => ({ ...prev, [targetWeekId]: true }));
           }
@@ -1368,7 +1523,9 @@ function LearnersReadContents() {
           refreshSummativeCompletionStatus(courseId).catch(() => { });
         }
       } catch (err) {
-        // keep fallbacks
+        if (!cancelled) {
+          setCourseLoadError(err?.message || 'Could not load this course.');
+        }
       } finally {
         if (!cancelled) setLoadingCourse(false);
       }
@@ -1526,7 +1683,36 @@ function LearnersReadContents() {
   const isAssessmentView = activeChapterId === 'assessment' || (typeof activeChapterId === 'string' && activeChapterId.startsWith('formative-'));
   const hasOutline = Array.isArray(outlineWeeksState) && outlineWeeksState.length > 0;
   const hasOutcomes = Array.isArray(outcomesState) && outcomesState.length > 0;
-  const showContentSections = !loadingCourse && (hasOutline || hasOutcomes);
+  const showContentSections = !loadingCourse && inboundId && (hasOutline || hasOutcomes);
+
+  const outlineProgress = useMemo(
+    () => countOutlineProgress(outlineWeeksState, isSummativeComplete),
+    [outlineWeeksState, isSummativeComplete]
+  );
+
+  const courseProgressPercent = useMemo(
+    () => resolveCourseProgressPercent({
+      progressPercentage: courseProgressPercentage,
+      outlineProgress,
+    }),
+    [courseProgressPercentage, outlineProgress]
+  );
+
+  const nextAssessment = useMemo(
+    () => getNextAssessment(outlineWeeksState, isSummativeComplete),
+    [outlineWeeksState, isSummativeComplete]
+  );
+
+  const readerEnrollmentReturnPath = inboundId
+    ? `/academia/learner/read-contents?id=${inboundId}`
+    : '/academia/learner/courses';
+  const requiresPaymentSetup = Boolean(
+    inboundId
+    && courseMetaState?.title
+    && !isCourseFree(courseMetaState)
+    && !paymentsLoading
+    && !hasSavedPaymentMethods(savedPaymentMethods)
+  );
 
   const toggleWeek = (weekId) => {
     setExpandedWeeks((prev) => ({ ...prev, [weekId]: !prev[weekId] }));
@@ -1544,6 +1730,10 @@ function LearnersReadContents() {
         const progressList = data.progress || [];
         const completedIds = progressList.map(p => Number(p.chapter_id));
         const completedAssessments = (data.completedAssessments || []).filter((id) => id !== 'assessment');
+        const pct = data.progress_percentage ?? data.progressPercentage ?? data.course_progress_percentage;
+        if (pct != null && !Number.isNaN(Number(pct))) {
+          setCourseProgressPercentage(Number(pct));
+        }
         
         setCompletedChapters((prev) => {
           const localMocks = prev.filter(id =>
@@ -1647,6 +1837,7 @@ function LearnersReadContents() {
         
         return next;
       });
+      showToast('Lesson marked complete.', 'success');
       return;
     }
 
@@ -1663,11 +1854,15 @@ function LearnersReadContents() {
         })
       });
       if (res.ok) {
-        // Refresh progress!
         await fetchCourseProgress(inboundId);
+        showToast('Lesson marked complete.', 'success');
+      } else {
+        const body = await res.json().catch(() => ({}));
+        showToast(body?.message || 'Could not mark lesson complete.', 'error');
       }
     } catch (err) {
       console.error("Failed to mark chapter complete:", err);
+      showToast('Could not mark lesson complete. Please try again.', 'error');
     }
   };
 
@@ -1678,6 +1873,8 @@ function LearnersReadContents() {
     const chapterMeta = targetWeek?.chapters?.find((c) => String(c.id) === String(chapterId));
     const weekLabel = targetWeek?.title || (chapterData?.week_number ? `Week ${chapterData.week_number}` : '');
     const title = chapterData?.title || chapterData?.name || chapterMeta?.title || 'Chapter';
+    const description = chapterData?.description || chapterData?.summary || '';
+    const bodyContent = chapterData?.content || '';
 
     return {
       id: chapterId,
@@ -1685,13 +1882,13 @@ function LearnersReadContents() {
       chapterLabel: title,
       progressLabel: 'Viewed : 0%',
       headline: title,
-      summary: chapterData?.description || chapterData?.summary || '',
+      summary: description,
       image: chapterData?.thumbnail
         ? (chapterData.thumbnail.startsWith('/') ? `${API_BASE_URL}${chapterData.thumbnail}` : chapterData.thumbnail)
         : acOnImg,
       video_url: chapterData?.video_url || '',
       introTitle: 'Introduction',
-      introBody: chapterData?.description || chapterData?.content || '',
+      introBody: bodyContent || (description.length <= 400 ? description : ''),
       introLinkLabel: 'Read more',
       audienceTitle: 'Who is the course for?',
       audienceBody: chapterData?.target_audience || courseData?.target_audience || '',
@@ -1777,6 +1974,7 @@ function LearnersReadContents() {
   const loadChapterContent = async (chapterId, loadToken) => {
     if (!chapterId || isStaleLoad(loadToken)) return;
     setLoadingChapterContent(true);
+    setChapterLoadError('');
     setActiveChapterContent(null);
     try {
       const isMockId = typeof chapterId === 'string' && (chapterId.startsWith('ch-') || chapterId.startsWith('chapter-') || isNaN(Number(chapterId)));
@@ -1787,6 +1985,10 @@ function LearnersReadContents() {
         if (res.ok) {
           const body = await res.json();
           chapterData = extractBody(body);
+        } else if (!isStaleLoad(loadToken)) {
+          const body = await res.json().catch(() => ({}));
+          setChapterLoadError(body?.message || 'Could not load this lesson.');
+          return;
         }
       }
 
@@ -1817,30 +2019,71 @@ function LearnersReadContents() {
       console.error('Failed to load chapter content:', err);
       if (!isStaleLoad(loadToken)) {
         setActiveChapterContent(null);
+        setChapterLoadError(err?.message || 'Could not load this lesson.');
       }
     } finally {
       if (!isStaleLoad(loadToken)) setLoadingChapterContent(false);
     }
   };
 
-  const handleChapterSelect = (chapterId) => {
+  const handleChapterSelect = (chapterId, { silent = false } = {}) => {
+    const weeks = outlineWeeksRef.current;
+    if (
+      weeks.length > 0
+      && !isOutlineItemUnlocked(weeks, chapterId, isSummativeCompleteRef.current)
+    ) {
+      if (!silent) {
+        showToast(
+          chapterId === 'assessment'
+            ? 'Complete all lessons before the final assessment.'
+            : 'Complete earlier lessons to unlock this section.',
+          'error'
+        );
+      }
+      return false;
+    }
+
+    let chapterChanged = false;
+    setActiveChapterId((current) => {
+      if (isSameOutlineItemId(current, chapterId)) return current;
+      chapterChanged = true;
+      return chapterId;
+    });
+
+    if (!chapterChanged) return true;
+
     setContentReloadKey((k) => k + 1);
-    setActiveChapterId(chapterId);
+    sequenceRedirectedToRef.current = null;
+
+    const weekId = findWeekIdForOutlineItem(weeks, chapterId);
+    if (weekId) {
+      setExpandedWeeks((prev) => ({ ...prev, [weekId]: true }));
+    }
+
+    if (inboundId) {
+      setStoredChapterId(inboundId, chapterId);
+      const next = new URLSearchParams(searchParams);
+      next.set('id', String(inboundId));
+      next.set('chapterId', String(chapterId));
+      setSearchParams(next, { replace: true });
+    }
     if (window.innerWidth <= 991) setIsSidebarOpen(false);
     setIsAudienceExpanded(false);
     setActivePdfIndex(0);
     setActiveTextPageIndex(0);
-    setIsWorkspaceOpen(false);
+    return true;
   };
 
   useEffect(() => {
     if (!activeChapterId || loadingCourse) return;
 
+    const weeks = outlineWeeksRef.current;
     const loadToken = bumpLoadToken();
     const isSummative = activeChapterId === 'assessment';
     const isFormative = typeof activeChapterId === 'string' && activeChapterId.startsWith('formative-');
 
     if (isSummative) {
+      if (!isOutlineItemUnlocked(weeks, 'assessment', isSummativeCompleteRef.current)) return;
       resetChapterState();
       setLoadingChapterContent(false);
       resetAssessmentState();
@@ -1849,6 +2092,7 @@ function LearnersReadContents() {
     }
 
     if (isFormative) {
+      if (!isOutlineItemUnlocked(weeks, activeChapterId, isSummativeCompleteRef.current)) return;
       resetChapterState();
       setLoadingChapterContent(false);
       resetAssessmentState();
@@ -1858,8 +2102,8 @@ function LearnersReadContents() {
     }
 
     resetAssessmentState();
-    setLoadingAssessment(false);
     resetChapterState();
+    if (!isOutlineItemUnlocked(weeks, activeChapterId, isSummativeCompleteRef.current)) return;
     loadChapterContent(activeChapterId, loadToken).catch(() => {});
   }, [activeChapterId, inboundId, loadingCourse, contentReloadKey]);
 
@@ -2079,8 +2323,16 @@ function LearnersReadContents() {
             ? `Your essay/text answers will be reviewed by the instructor. Auto-graded score: ${scorePct.toFixed(1)}%`
             : 'You did not achieve the required passing score. Please try again.',
         buttonLabel: passed
-          ? (currentAssessmentDetails.type === 'summative' ? 'Claim Certificate' : '')
+          ? (currentAssessmentDetails.type === 'summative'
+            ? 'Claim Certificate'
+            : (getNextOutlineItem(outlineWeeksState, activeChapterId, isSummativeComplete) ? 'Continue' : ''))
           : (hasAttemptsLeft ? 'Retry Quiz' : 'No attempt left'),
+        continueChapterId: passed && currentAssessmentDetails.type === 'formative'
+          ? getNextOutlineItem(outlineWeeksState, activeChapterId, isSummativeComplete)?.id || null
+          : null,
+        continueLabel: passed && currentAssessmentDetails.type === 'formative'
+          ? getNextOutlineItem(outlineWeeksState, activeChapterId, isSummativeComplete)?.title || ''
+          : '',
         stats: [
           { value: String(total), label: 'Questions' },
           { value: String(correct), label: 'Correct' },
@@ -2144,8 +2396,21 @@ function LearnersReadContents() {
   submitRef.current = handleAssessmentSubmit;
 
   const handleAssessmentCompleteButton = () => {
-    // Only used for Retry Quiz — reload assessment for a fresh attempt
+    if (assessmentResult?.continueChapterId) {
+      handleChapterSelect(assessmentResult.continueChapterId);
+      resetAssessmentState();
+      setIsAssessmentComplete(false);
+      return;
+    }
     setContentReloadKey((k) => k + 1);
+  };
+
+  const handleLessonComplete = async (chapterId) => {
+    await markChapterCompleteOnBackend(chapterId);
+    const nextItem = getNextOutlineItem(outlineWeeksState, chapterId, isSummativeComplete);
+    if (nextItem?.id) {
+      handleChapterSelect(nextItem.id);
+    }
   };
 
   const handleEnrollFromReader = async () => {
@@ -2156,23 +2421,30 @@ function LearnersReadContents() {
       return;
     }
 
+    const userObj = JSON.parse(localStorage.getItem('user') || '{}');
+    const userRole = (userObj.role || '').toLowerCase().trim();
+    if (!isEnrollmentRoleAllowed(userRole)) {
+      showToast("Only learner accounts can enroll in courses.", "error");
+      return;
+    }
+
+    if (!isCourseFree(courseMetaState) && !hasSavedPaymentMethods(savedPaymentMethods)) {
+      showToast('Add a payment method in Account before enrolling.', 'error');
+      navigate(buildAccountPaymentHref(readerEnrollmentReturnPath));
+      return;
+    }
+
     setIsEnrolling(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/courses/${inboundId}/enroll`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          payment_method: 'credit_card'
-        })
+      await enrollInCourse({
+        apiBaseUrl: API_BASE_URL,
+        token,
+        courseId: inboundId,
+        course: courseMetaState,
+        selectedPaymentValue,
       });
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.message || 'Failed to enroll in the course.');
-      }
       setIsEnrolled(true);
+      showToast(`Enrollment confirmed via ${getPaymentMethodLabel(selectedPaymentValue)}.`, 'success');
     } catch (err) {
       showToast(err.message || 'Failed to enroll in the course.', "error");
     } finally {
@@ -2180,17 +2452,35 @@ function LearnersReadContents() {
     }
   };
 
+  useEffect(() => {
+    const courseTitle = stripHtml(courseMetaState.title);
+    const lessonTitle = stripHtml(activeContent?.headline);
+    const tabTitle = lessonTitle && courseTitle
+      ? `${lessonTitle} · ${courseTitle}`
+      : (courseTitle || lessonTitle || 'Course reader');
+    document.title = learnerPageTitle(tabTitle);
+    return () => {
+      document.title = LEARNER_PRODUCT_NAME;
+    };
+  }, [activeContent?.headline, courseMetaState.title, loadingCourse]);
+
+  useEffect(() => {
+    if (!inboundId || !isSummativeComplete || !isAssessmentComplete) return;
+    if (outlineProgress.total > 0 && outlineProgress.completed >= outlineProgress.total) {
+      if (!hasSeenCourseCelebration(inboundId)) {
+        setShowCourseCelebration(true);
+      }
+    }
+  }, [inboundId, isSummativeComplete, isAssessmentComplete, outlineProgress]);
+
   return (
     <LearnersPageShell>
       <section className="learners-read-contents-page">
         <section className="learners-home-title">
           <div className="learners-home-title-top">
-            <h1>Courses</h1>
+            <h1>Course reader</h1>
             <div className="learners-home-title-actions">
-              <a className="learners-btn learners-btn-secondary" href="/" onClick={preventDefault}>
-                <img src={acSav} alt="Save" />
-                <span>Saved Library</span>
-              </a>
+              <SavedLibraryButton />
               <a className="learners-btn learners-btn-primary" href="/academia/index" target="_blank" rel="noopener noreferrer">
                 <span>Go to website</span>
                 <img src={hoagoto} alt="Go" />
@@ -2200,11 +2490,11 @@ function LearnersReadContents() {
         </section>
 
         <div className="filters-grid-b-h">
-          <button type="button" onClick={() => navigate(`/academia/learner/course-part?id=${inboundId}`, { state: { courseId: inboundId } })}>
+          <button type="button" onClick={() => navigate(`/academia/learner/course-part?id=${inboundId}`)}>
             <img src={acLe} alt="Left" />
           </button>
           <div>
-            <p>{stripHtml(courseMetaState.category) || 'Courses'}</p>
+            <p>{stripHtml(courseMetaState.category) || 'Course catalog'}</p>
             <span>/</span>
             <span>{stripHtml(courseMetaState.title)}</span>
             <span>/</span>
@@ -2223,6 +2513,10 @@ function LearnersReadContents() {
             handleChapterSelect={handleChapterSelect}
             stripHtml={stripHtml}
             isSummativeComplete={isSummativeComplete}
+            outlineProgress={outlineProgress}
+            loadingOutline={loadingCourse}
+            nextAssessment={nextAssessment}
+            courseProgressPercent={courseProgressPercent}
           />
 
           <main className="learners-read-contents-main">
@@ -2250,17 +2544,43 @@ function LearnersReadContents() {
               </div>
               <div className="learners-read-contents-summary-side">
                 <h3>Progress</h3>
-                <p>Viewed : {viewedPercentage}%</p>
+                <p>Progress : {courseProgressPercent}%</p>
               </div>
             </section>
 
             <article className="learners-read-article">
-              {loadingCourse ? (
+              {!inboundId ? (
+                <div className="learners-card learners-empty-state learners-empty-state--compact">
+                  <h3>Select a course</h3>
+                  <p>Open a course from your library or catalog to start reading.</p>
+                  <button type="button" className="learners-btn learners-btn-primary" onClick={() => navigate('/academia/learner/courses')}>
+                    Browse courses
+                  </button>
+                </div>
+              ) : courseLoadError ? (
+                <LearnerLoadError
+                  title="Could not load course"
+                  message={courseLoadError}
+                  onRetry={() => {
+                    setCourseLoadError('');
+                    setContentReloadKey((k) => k + 1);
+                  }}
+                />
+              ) : loadingCourse ? (
                 <div className="learners-loading">Loading course content…</div>
               ) : showContentSections ? (
                 <>
                   {loadingChapterContent && !isAssessmentView ? (
                     <div className="learners-loading">Loading chapter content…</div>
+                  ) : chapterLoadError && !isAssessmentView ? (
+                    <LearnerLoadError
+                      title="Could not load lesson"
+                      message={chapterLoadError}
+                      onRetry={() => {
+                        setChapterLoadError('');
+                        setContentReloadKey((k) => k + 1);
+                      }}
+                    />
                   ) : (
                   <LessonView
                     activeContent={activeContent}
@@ -2270,46 +2590,59 @@ function LearnersReadContents() {
                     navigate={navigate}
                     inboundId={inboundId}
                     isAssessmentView={isAssessmentView}
-                    setIsWorkspaceOpen={setIsWorkspaceOpen}
                     stripHtml={stripHtml}
-                  />
+                    paymentChoices={paymentChoices}
+                    selectedPaymentValue={selectedPaymentValue}
+                    onPaymentChange={setSelectedPaymentValue}
+                    paymentsLoading={paymentsLoading}
+                    courseIsFree={isCourseFree(courseMetaState)}
+                    requiresPaymentSetup={requiresPaymentSetup}
+                    accountHref={buildAccountPaymentHref(readerEnrollmentReturnPath)}
+                  >
+                    {isEnrolled && !isAssessmentView ? (
+                      <LessonWorkspacePanels
+                        key={activeChapterId}
+                        activeContent={activeContent}
+                        courseId={inboundId}
+                        pdfUrl={pdfUrl}
+                        pdfAttachments={pdfAttachments}
+                        activePdfIndex={activePdfIndex}
+                        setActivePdfIndex={setActivePdfIndex}
+                        textPages={textPages}
+                        activeTextPageIndex={activeTextPageIndex}
+                        setActiveTextPageIndex={setActiveTextPageIndex}
+                        formatHtmlContent={formatHtmlContent}
+                        stripHtml={stripHtml}
+                        attachmentsList={attachmentsList}
+                        API_BASE_URL={API_BASE_URL}
+                        exerciseQuestionsState={exerciseQuestionsState}
+                        currentExerciseIndex={currentExerciseIndex}
+                        setCurrentExerciseIndex={setCurrentExerciseIndex}
+                        exerciseStates={exerciseStates}
+                        exerciseAnswers={exerciseAnswers}
+                        exerciseGradedList={exerciseGradedList}
+                        handleExerciseOptionSelect={handleExerciseOptionSelect}
+                        handleExerciseAction={handleExerciseAction}
+                        isCurrentChapterCompleted={isCurrentChapterCompleted}
+                        markChapterCompleteOnBackend={handleLessonComplete}
+                        activeChapterId={activeChapterId}
+                      />
+                    ) : null}
+                  </LessonView>
                   )}
-
-                  <WorkspaceModal
-                    key={activeChapterId}
-                    isWorkspaceOpen={isWorkspaceOpen}
-                    setIsWorkspaceOpen={setIsWorkspaceOpen}
-                    activeContent={activeContent}
-                    courseId={inboundId}
-                    pdfUrl={pdfUrl}
-                    pdfAttachments={pdfAttachments}
-                    activePdfIndex={activePdfIndex}
-                    setActivePdfIndex={setActivePdfIndex}
-                    textPages={textPages}
-                    activeTextPageIndex={activeTextPageIndex}
-                    setActiveTextPageIndex={setActiveTextPageIndex}
-                    formatHtmlContent={formatHtmlContent}
-                    stripHtml={stripHtml}
-                    attachmentsList={attachmentsList}
-                    API_BASE_URL={API_BASE_URL}
-                    exerciseQuestionsState={exerciseQuestionsState}
-                    currentExerciseIndex={currentExerciseIndex}
-                    setCurrentExerciseIndex={setCurrentExerciseIndex}
-                    exerciseStates={exerciseStates}
-                    exerciseAnswers={exerciseAnswers}
-                    exerciseGradedList={exerciseGradedList}
-                    handleExerciseOptionSelect={handleExerciseOptionSelect}
-                    handleExerciseAction={handleExerciseAction}
-                    isCurrentChapterCompleted={isCurrentChapterCompleted}
-                    markChapterCompleteOnBackend={markChapterCompleteOnBackend}
-                    activeChapterId={activeChapterId}
-                  />
 
                   <AssessmentView
                     key={activeChapterId}
                     isAssessmentView={isAssessmentView}
                     currentAssessmentDetails={currentAssessmentDetails}
                     courseId={inboundId}
+                    courseMeta={courseMetaState}
+                    showCourseCelebration={showCourseCelebration}
+                    courseTitle={courseMetaState.title}
+                    onDismissCourseCelebration={() => {
+                      markCourseCelebrationSeen(inboundId);
+                      setShowCourseCelebration(false);
+                    }}
                     maxAttempts={maxAttempts}
                     attemptNumber={attemptNumber}
                     assessmentTimerActive={assessmentTimerActive}
@@ -2351,8 +2684,9 @@ function LearnersReadContents() {
                   <h3>No content published</h3>
                   <p className="visually-hidden">There are no chapters or learning outcomes for this course yet.</p>
                   <div>
-                    <button className="learners-btn learners-btn-primary" disabled>Browse courses</button>
-                    <button className="learners-btn learners-btn-secondary" disabled>Contact author</button>
+                    <button type="button" className="learners-btn learners-btn-primary" onClick={() => navigate('/academia/learner/courses')}>
+                      Browse courses
+                    </button>
                   </div>
                 </div>
               )}
@@ -2376,38 +2710,6 @@ function LearnersReadContents() {
               <span>{courseMetaState.publishedOn}</span>
             </div>
           </div>
-        </div>
-      </section>
-      <section className="learners-course-specific-newsletter" aria-label="Newsletter signup">
-        <div className="learners-course-specific-newsletter-column learners-course-specific-newsletter-column-copy">
-          <h3>Find the right course for you</h3>
-          <p>See your personalised recommendations based on your interests and goals.</p>
-          <div className="learners-course-specific-newsletter-socials">
-            <a href="/" onClick={preventDefault} aria-label="TikTok">
-              <img src={dtiktok} alt="TikTok" />
-            </a>
-            <a href="/" onClick={preventDefault} aria-label="WhatsApp">
-              <img src={dwhat} alt="WhatsApp" />
-            </a>
-            <a href="/" onClick={preventDefault} aria-label="Facebook">
-              <img src={dfaceb} alt="Facebook" />
-            </a>
-            <a href="/" onClick={preventDefault} aria-label="Instagram">
-              <img src={dinstagram} alt="Instagram" />
-            </a>
-          </div>
-        </div>
-
-        <div className="learners-course-specific-newsletter-column learners-course-specific-newsletter-column-form">
-          <h3>Stay tune and get the latest update</h3>
-          <p>See your personalised recommendations based on your interests and goals.</p>
-          <form className="learners-course-specific-newsletter-form" onSubmit={preventDefault}>
-            <img src={acSms} alt="Mail" className="learners-course-specific-newsletter-mail" />
-            <input type="email" placeholder="Enter email address" aria-label="Enter email address" />
-            <button type="submit" aria-label="Submit email">
-              <img src={acSend} alt="Send" />
-            </button>
-          </form>
         </div>
       </section>
       {/* Floating Toast Notification */}
