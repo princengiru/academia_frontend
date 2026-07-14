@@ -2,12 +2,14 @@ import { Navigate, Route } from 'react-router-dom';
 import AcademiaLayout from '../../layouts/academia/AcademiaLayout';
 import AcademiaPublicLayout from '../../layouts/academia/AcademiaLayout';
 import AcademiaLearnerLayout from '../../layouts/academia/LearnersLayout';
+import ProfessorLayout from '../../components/layouts/ProfessorLayout/ProfessorLayout';
 import AcademiaAuthLayout from '../../layouts/academia/AuthLayout';
 import AcademiaAuthRoutes from './auth';
 import AcademiaPublicRoutes from './public';
 import AcademiaLearnerRoutes from './learner';
 import AcademiaProfessorRoutes from './professor';
 import AcademiaHOARoutes from './hoa';
+import AcademiaNotFound from '../../pages/academia/public/NotFoundPage';
 
 function AcademiaRoutes() {
   return (
@@ -30,11 +32,18 @@ function AcademiaRoutes() {
         {AcademiaAuthRoutes()}
       </Route>
 
-      {/* Professor pages — top-level so ProfessorLayout controls header */}
-      {AcademiaProfessorRoutes()}
+      {/* Professor pages — same route pattern as learner */}
+      <Route path="academia/professor" element={<ProfessorLayout />}>
+        {AcademiaProfessorRoutes()}
+      </Route>
 
       {/* HOA pages — top-level so HOALayout controls header */}
       {AcademiaHOARoutes()}
+
+      {/* Unknown paths outside registered academia areas */}
+      <Route path="*" element={<AcademiaLayout />}>
+        <Route path="*" element={<AcademiaNotFound />} />
+      </Route>
     </>
   );
 }

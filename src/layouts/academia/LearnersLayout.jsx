@@ -1,5 +1,5 @@
-import { useEffect, useLayoutEffect, useState } from 'react';
-import { NavLink, Outlet, Navigate, useNavigate } from 'react-router-dom';
+import { useEffect, useLayoutEffect, useState, useCallback, useRef } from 'react';
+import { NavLink, Outlet, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import './learners-layout.css';
 import learnersBrandIcon from '../../assets/icons/Favicon.svg';
 import learnersSearchIcon from '../../assets/icons/magnifier.svg';
@@ -12,17 +12,21 @@ import learnersCertificatesIcon from '../../assets/icons/lea5.svg';
 import learnersSettingsIcon from '../../assets/icons/setting-2.svg';
 import learnersProfileImage from '../../assets/imgs/default-profile.png';
 import learnersLogoutIcon from '../../assets/icons/exit-right.svg';
-import learnersAppsIcon from '../../assets/icons/header-grid.svg';
-import learnersFlagIcon from '../../assets/icons/rwanda.svg';
-import learnersDropdownIcon from '../../assets/icons/drop1.svg';
+import barsIcon from '../../assets/icons/bars.svg';
+import accMinus from '../../assets/icons/acc-minus.svg';
 import { getProfilePhotoDisplayUrl } from '../../pages/academia/learner/profilePhotoUtils';
+import { formatRoleLabel } from '../../pages/academia/learner/learnerProfileShared';
+import { LEARNER_PRODUCT_TAGLINE } from '../../pages/academia/learner/learnerBrand';
+import acSav from '../../assets/icons/ac-sav.svg';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 function LearnersLayout() {
   const navigate = useNavigate();
+  const location = useLocation();
   const token = localStorage.getItem('token');
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [profileLoading, setProfileLoading] = useState(true);
   const [isSuspended, setIsSuspended] = useState(false);
   const [profileSummary, setProfileSummary] = useState({
@@ -34,6 +38,13 @@ function LearnersLayout() {
   const [profileCompletion, setProfileCompletion] = useState(0);
   const [profileError, setProfileError] = useState('');
   const [projectsCount, setProjectsCount] = useState(0);
+  const [searchQuery, setSearchQuery] = useState('');
+  const mainScrollRef = useRef(null);
+
+  useLayoutEffect(() => {
+    const main = mainScrollRef.current;
+    if (main) main.scrollTop = 0;
+  }, [location.pathname]);
 
   const openLogoutModal = (event) => {
     if (event && event.preventDefault) event.preventDefault();
@@ -52,6 +63,150 @@ function LearnersLayout() {
     navigate('/academia/auth/signin');
   };
   const linkClassName = ({ isActive }) => (isActive ? 'active-menu' : '');
+
+  useEffect(() => {
+    if (!location.pathname.startsWith('/academia/learner/courses')) return;
+    const query = new URLSearchParams(location.search).get('search') || '';
+    setSearchQuery(query);
+  }, [location.pathname, location.search]);
+
+  const openSidebar = () => setIsSidebarOpen(true);
+  const closeSidebar = useCallback(() => setIsSidebarOpen(false), []);
+
+  const handleSearchSubmit = (event) => {
+    event.preventDefault();
+    const query = searchQuery.trim();
+    closeSidebar();
+    if (!query) {
+      navigate('/academia/learner/courses');
+      return;
+    }
+    navigate(`/academia/learner/courses?search=${encodeURIComponent(query)}`);
+  };
+
+  useEffect(() => {
+    closeSidebar();
+  }, [location.pathname, closeSidebar]);
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth > 768) closeSidebar();
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [closeSidebar]);
+
+  useEffect(() => {
+    if (!isSidebarOpen) return undefined;
+    const handleEscape = (event) => {
+      if (event.key === 'Escape') closeSidebar();
+    };
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [isSidebarOpen, closeSidebar]);
+
+  useEffect(() => {
+    if (!token) {
+      setProfileLoading(false);
+      return undefined;
+    }
+
+    const loadProfile = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/profile`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (response.status === 403) {
+          localStorage.clear();
+          navigate('/academia/auth/signin', {
+            replace: true,
+            state: { error: 'This account has been deactivated. Please contact support.' }
+          });
+          return;
+        }
+
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.error?.message || data.message || 'Failed to load profile');
+        }
+
+        const user = data?.data?.user || {};
+
+        if (user.is_active === false || user.status === 'suspended' || user.deactivated === true) {
+          setIsSuspended(true);
+          setProfileLoading(false);
+          return;
+        }
+
+        setProfileSummary({
+          name: user.name || user.email || 'Learner',
+          email: user.email || '',
+          role: formatRoleLabel(user.role || 'learner'),
+          avatar: getProfilePhotoDisplayUrl(user.avatar, API_BASE_URL),
+        });
+        setProfileCompletion(Number(data?.data?.profilePercentage || 0));
+        setProfileError('');
+      } catch (error) {
+        setProfileError(error.message || 'Failed to load profile');
+      }
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/projects/my`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        const data = await response.json();
+        if (response.ok) {
+          const list = Array.isArray(data?.data) ? data.data : [];
+          setProjectsCount(list.length);
+        }
+      } catch (error) {
+        console.error('Failed to load projects count:', error);
+      } finally {
+        setProfileLoading(false);
+      }
+    };
+
+    loadProfile();
+
+    const interval = setInterval(loadProfile, 30000);
+    return () => clearInterval(interval);
+  }, [navigate, token]);
+
+  useLayoutEffect(() => {
+    const html = document.documentElement;
+    const body = document.body;
+    const previousHtmlHeight = html.style.height;
+    const previousHtmlOverflow = html.style.overflow;
+    const previousHtmlRole = html.getAttribute('data-role');
+    const previousBodyRole = body.getAttribute('data-role');
+
+    html.style.height = '100%';
+    html.style.overflow = 'hidden';
+    html.setAttribute('data-role', 'learners');
+    body.setAttribute('data-role', 'learners');
+
+    return () => {
+      html.style.height = previousHtmlHeight;
+      html.style.overflow = previousHtmlOverflow;
+
+      if (previousHtmlRole === null) {
+        html.removeAttribute('data-role');
+      } else {
+        html.setAttribute('data-role', previousHtmlRole);
+      }
+
+      if (previousBodyRole === null) {
+        body.removeAttribute('data-role');
+      } else {
+        body.setAttribute('data-role', previousBodyRole);
+      }
+    };
+  }, []);
 
   if (!token) {
     return <Navigate to="/academia/auth/signin" replace />;
@@ -85,68 +240,6 @@ function LearnersLayout() {
     );
   }
 
-  useEffect(() => {
-    const loadProfile = async () => {
-      try {
-        const response = await fetch(`${API_BASE_URL}/api/profile`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        if (response.status === 403) {
-          localStorage.clear();
-          navigate('/academia/auth/signin', {
-            replace: true,
-            state: { error: 'This account has been deactivated. Please contact support.' }
-          });
-          return;
-        }
-
-        const data = await response.json();
-        if (!response.ok) {
-          throw new Error(data.error?.message || data.message || 'Failed to load profile');
-        }
-
-        const user = data?.data?.user || {};
-
-        setProfileSummary({
-          name: user.name || user.email || 'Learner',
-          email: user.email || '',
-          role: user.role || 'learner',
-          avatar: getProfilePhotoDisplayUrl(user.avatar, API_BASE_URL),
-        });
-        setProfileCompletion(Number(data?.data?.profilePercentage || 0));
-        setProfileError('');
-      } catch (error) {
-        setProfileError(error.message || 'Failed to load profile');
-      }
-
-      // Fetch Projects count
-      try {
-        const response = await fetch(`${API_BASE_URL}/api/projects/my`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        const data = await response.json();
-        if (response.ok) {
-          const list = Array.isArray(data?.data) ? data.data : [];
-          setProjectsCount(list.length);
-        }
-      } catch (error) {
-        console.error('Failed to load projects count:', error);
-      } finally {
-        setProfileLoading(false);
-      }
-    };
-
-    loadProfile();
-
-    const interval = setInterval(loadProfile, 30000);
-    return () => clearInterval(interval);
-  }, [navigate, token]);
-
   const handleProfileImageError = (event) => {
     event.currentTarget.onerror = null;
     event.currentTarget.src = learnersProfileImage;
@@ -158,92 +251,89 @@ function LearnersLayout() {
     return `${name.slice(0, max - 1).trimEnd()}…`;
   };
 
-  useLayoutEffect(() => {
-    const html = document.documentElement;
-    const body = document.body;
-    const previousHtmlHeight = html.style.height;
-    const previousHtmlOverflow = html.style.overflow;
-    const previousHtmlRole = html.getAttribute('data-role');
-    const previousBodyRole = body.getAttribute('data-role');
-
-    html.style.height = '100%';
-    html.style.overflow = 'hidden';
-    html.setAttribute('data-role', 'learners');
-    body.setAttribute('data-role', 'learners');
-
-    return () => {
-      html.style.height = previousHtmlHeight;
-      html.style.overflow = previousHtmlOverflow;
-
-      if (previousHtmlRole === null) {
-        html.removeAttribute('data-role');
-      } else {
-        html.setAttribute('data-role', previousHtmlRole);
-      }
-
-      if (previousBodyRole === null) {
-        body.removeAttribute('data-role');
-      } else {
-        body.setAttribute('data-role', previousBodyRole);
-      }
-    };
-  }, []);
-
   return (
     <div className="dashboard" data-role="learners">
-      <section className="sidebar" id="sidebar">
+      {isSidebarOpen && (
+        <button
+          type="button"
+          className="learners-sidebar-backdrop"
+          onClick={closeSidebar}
+          aria-label="Close menu"
+        />
+      )}
+
+      <section className={`sidebar ${isSidebarOpen ? 'open' : ''}`} id="sidebar">
         <div className="sidebar-header learners-sidebar-header">
           <div className="learners-brand">
             <img src={learnersBrandIcon} alt="Gonaraza" className="learners-brand-icon" />
             <div className="learners-brand-text">
               <h6>Gonaraza.com</h6>
-              <p>All in one digital marketing</p>
+              <p>{LEARNER_PRODUCT_TAGLINE}</p>
             </div>
           </div>
+          <button
+            type="button"
+            className="learners-sidebar-close"
+            onClick={closeSidebar}
+            aria-label="Close menu"
+          >
+            <img src={accMinus} alt="" />
+          </button>
         </div>
 
         <div className="sidebar-body learners-sidebar-body">
-          <form className="learners-sidebar-search" role="search" onSubmit={(event) => event.preventDefault()}>
-            <input type="search" placeholder="Search" aria-label="Search" />
-            <img src={learnersSearchIcon} alt="Search" />
+          <form className="learners-sidebar-search" role="search" onSubmit={handleSearchSubmit}>
+            <input
+              type="search"
+              placeholder="Search courses..."
+              aria-label="Search courses"
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+            />
+            <img src={learnersSearchIcon} alt="" />
           </form>
 
-          <NavLink to="/academia/learner" end className={linkClassName}>
+          <NavLink to="/academia/learner" end className={linkClassName} onClick={closeSidebar}>
             <img src={learnersHomeIcon} alt="Home" />
             <span>Home</span>
           </NavLink>
 
-          <NavLink to="/academia/learner/courses" className={linkClassName}>
+          <NavLink to="/academia/learner/courses" className={linkClassName} onClick={closeSidebar}>
             <img src={learnersCoursesIcon} alt="Courses" />
             <span>Courses</span>
           </NavLink>
 
-          <NavLink to="/academia/learner/performance" className={linkClassName}>
+          <NavLink to="/academia/learner/performance" className={linkClassName} onClick={closeSidebar}>
             <img src={learnersPerformanceIcon} alt="My Performance" />
             <span>My Performance</span>
           </NavLink>
 
-          <NavLink to="/academia/learner/available-test" className={linkClassName}>
-            <img src={learnersTestIcon} alt="Available Test" />
-            <span>Available Test</span>
+          <NavLink to="/academia/learner/available-test" className={linkClassName} onClick={closeSidebar}>
+            <img src={learnersTestIcon} alt="Assessments" />
+            <span>Assessments</span>
           </NavLink>
 
-          <NavLink to="/academia/learner/projects" className={linkClassName}>
+          <NavLink to="/academia/learner/saved-library" className={linkClassName} onClick={closeSidebar}>
+            <img src={acSav} alt="Saved Library" />
+            <span>Saved Library</span>
+          </NavLink>
+
+          <NavLink to="/academia/learner/projects" className={linkClassName} onClick={closeSidebar}>
             <img src={learnersProjectsIcon} alt="My Projects" />
             <span>My Projects</span>
-            <span className="learners-sidebar-badge" aria-label={`${projectsCount} notifications`}>
+            <span className="learners-sidebar-badge" aria-label={`${projectsCount} projects`}>
               {projectsCount >= 9 ? '9+' : projectsCount}
             </span>
           </NavLink>
 
-          <NavLink to="/academia/learner/certificates" className={linkClassName}>
+          <NavLink to="/academia/learner/certificates" className={linkClassName} onClick={closeSidebar}>
             <img src={learnersCertificatesIcon} alt="My Certificates" />
             <span>My Certificates</span>
           </NavLink>
 
           <div className="my-line"></div>
 
-          <NavLink to="/academia/learner/settings" className={linkClassName}>
+          <NavLink to="/academia/learner/settings" className={linkClassName} onClick={closeSidebar}>
             <img src={learnersSettingsIcon} alt="Settings" />
             <span>Settings</span>
           </NavLink>
@@ -256,8 +346,8 @@ function LearnersLayout() {
           </div>
           <p>
             {profileLoading
-              ? 'Loading profile data from the backend.'
-              : profileError || 'Backed by your saved profile data.'}
+              ? 'Loading your profile summary…'
+              : profileError || 'Complete your profile to unlock the full learning experience.'}
           </p>
           <div className="progress" role="progressbar" aria-label="Profile completion" aria-valuenow={profileCompletion} aria-valuemin="0" aria-valuemax="100">
             <div className="progress-bar" style={{ width: `${profileCompletion}%` }}></div>
@@ -265,13 +355,13 @@ function LearnersLayout() {
         </div>
 
           <div className="learners-sidebar-profile">
-          <NavLink to="/academia/learner/account" className="learners-profile-link">
+          <NavLink to="/academia/learner/account" className="learners-profile-link" onClick={closeSidebar}>
             <div className="learners-sidebar-profile-left">
               <div className="learners-sidebar-profile-img">
                 <img src={profileSummary.avatar} alt="Profile" onError={handleProfileImageError} />
               </div>
               <div className="learners-sidebar-profile-text">
-                <h6>{profileLoading ? 'Loading...' : `Hi, ${truncateName(profileSummary.name)}`}</h6>
+                <h6>{profileLoading ? 'Loading…' : `Hi, ${truncateName(profileSummary.name)}`}</h6>
                 <p>{profileLoading ? 'Please wait' : profileSummary.role}</p>
               </div>
             </div>
@@ -287,39 +377,36 @@ function LearnersLayout() {
       <section className="right-container">
         <header className="learners-topbar" role="banner">
           <div className="learners-topbar-left">
-            <form className="learners-topbar-search" role="search" onSubmit={(event) => event.preventDefault()}>
-              <img src={learnersSearchIcon} alt="Search" />
-              <input type="search" placeholder="Search videos..." aria-label="Search videos" />
+            <button
+              type="button"
+              className="learners-mobile-menu-btn"
+              onClick={openSidebar}
+              aria-expanded={isSidebarOpen}
+              aria-controls="sidebar"
+              aria-label="Open menu"
+            >
+              <img src={barsIcon} alt="" />
+            </button>
+            <form className="learners-topbar-search" role="search" onSubmit={handleSearchSubmit}>
+              <img src={learnersSearchIcon} alt="" />
+              <input
+                type="search"
+                placeholder="Search courses..."
+                aria-label="Search courses"
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+              />
             </form>
           </div>
 
           <div className="learners-topbar-right">
-            <button type="button" className="learners-topbar-icon" aria-label="Apps" onClick={(event) => event.preventDefault()}>
-              <img src={learnersAppsIcon} alt="Apps" />
-            </button>
-
-            <div className="dropdown learners-lang">
-              <button className="dropdown-toggle learners-lang-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                <img src={learnersFlagIcon} alt="RW" />
-                <span>RW</span>
-                <span className="learners-lang-sep">|</span>
-                <span>EN</span>
-                <img src={learnersDropdownIcon} alt="Open" />
-              </button>
-              <ul className="dropdown-menu learners-lang-menu">
-                <li><a className="dropdown-item" href="#" onClick={(event) => event.preventDefault()}>RW</a></li>
-                <li><a className="dropdown-item" href="#" onClick={(event) => event.preventDefault()}>EN</a></li>
-                <li><a className="dropdown-item" href="#" onClick={(event) => event.preventDefault()}>FR</a></li>
-              </ul>
-            </div>
-
             <NavLink to="/academia/learner/account" className="learners-user-link">
               <div className="learners-user">
                 <div className="learners-user-avatar">
                   <img src={profileSummary.avatar} alt="User" onError={handleProfileImageError} />
                 </div>
                 <div className="learners-user-meta">
-                  <h6>{profileLoading ? 'Loading...' : truncateName(profileSummary.name)}</h6>
+                  <h6>{profileLoading ? 'Loading…' : truncateName(profileSummary.name)}</h6>
                   <p>{profileLoading ? 'Please wait' : profileSummary.email || profileSummary.role}</p>
                 </div>
               </div>
@@ -327,16 +414,16 @@ function LearnersLayout() {
           </div>
         </header>
 
-        <div className="learners-main">
+        <div className="learners-main" ref={mainScrollRef}>
           <Outlet />
 
           <footer className="learners-footer" role="contentinfo">
             <div className="learners-footer-inner">
               <p>{new Date().getFullYear()}© gonaraza.com</p>
               <nav className="learners-footer-links" aria-label="Footer">
-                <a href="#" onClick={(event) => event.preventDefault()}>About</a>
-                <a href="#" onClick={(event) => event.preventDefault()}>Support</a>
-                <a href="#" onClick={(event) => event.preventDefault()}>Purchase</a>
+                <a href="/academia/index">About</a>
+                <a href="/academia/learner/courses">Courses</a>
+                <a href="/academia/learner/account">Account</a>
               </nav>
             </div>
           </footer>

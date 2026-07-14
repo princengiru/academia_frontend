@@ -11,6 +11,7 @@ import LearnersViewProject from '../../../pages/academia/learner/view-project';
 import LearnersCertificates from '../../../pages/academia/learner/certificates';
 import LearnersSettings from '../../../pages/academia/learner/settings';
 import LearnersAccount from '../../../pages/academia/learner/account';
+import LearnersSavedLibrary from '../../../pages/academia/learner/saved-library';
 
 export default function AcademiaLearnerRoutes() {
   return (
@@ -23,6 +24,7 @@ export default function AcademiaLearnerRoutes() {
       <Route path="performance" element={<LearnersPerformance />} />
       <Route path="available-test" element={<LearnersAvailableTest />} />
       <Route path="projects" element={<LearnersProjects />} />
+      <Route path="saved-library" element={<LearnersSavedLibrary />} />
       <Route path="view-project" element={<LearnersViewProject />} />
       <Route path="certificates" element={<LearnersCertificates />} />
       <Route path="account" element={<LearnersAccount />} />
