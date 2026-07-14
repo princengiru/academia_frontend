@@ -1,0 +1,78 @@
+.learners-enrollment-payment-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 14px 0;
+}
+
+.learners-enrollment-payment-label {
+  margin: 0;
+  font-family: Inter, sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 16px;
+  color: #4B5675;
+}
+
+.learners-enrollment-payment-note {
+  margin: 14px 0;
+  font-family: Inter, sans-serif;
+  font-size: 12px;
+  line-height: 18px;
+  color: #22C55E;
+}
+
+.learners-enrollment-payment-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.learners-enrollment-payment-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid #E2E8F0;
+  border-radius: 8px;
+  background: #FCFCFC;
+  cursor: pointer;
+}
+
+.learners-enrollment-payment-option.is-selected {
+  border-color: #D7C6E2;
+  background: #F6EFFA;
+}
+
+.learners-enrollment-payment-option input {
+  margin-top: 2px;
+  accent-color: #450468;
+}
+
+.learners-enrollment-payment-option-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.learners-enrollment-payment-option-copy strong {
+  font-family: Inter, sans-serif;
+  font-size: 12px;
+  line-height: 16px;
+  color: #071437;
+}
+
+.learners-enrollment-payment-option-copy small {
+  font-family: Inter, sans-serif;
+  font-size: 11px;
+  line-height: 15px;
+  color: #667085;
+}
+
+.learners-enrollment-payment-manage {
+  font-family: Inter, sans-serif;
+  font-size: 11px;
+  line-height: 16px;
+  color: #450468;
+  text-decoration: underline;
+}
