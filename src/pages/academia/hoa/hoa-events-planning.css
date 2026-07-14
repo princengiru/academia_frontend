@@ -416,3 +416,114 @@
     top: auto;
     margin-bottom: 4px;
 }
+
+.hoae-confirm-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    background: rgba(15, 23, 42, 0.45);
+}
+
+.hoae-confirm-dialog {
+    width: min(420px, 100%);
+    background: #FFFFFF;
+    border: 1px solid #EEF1F6;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 16px 40px rgba(15, 23, 42, 0.16);
+}
+
+.hoae-confirm-dialog h3 {
+    margin: 0 0 8px;
+    font-size: 18px;
+    color: #0F172A;
+}
+
+.hoae-confirm-dialog p {
+    margin: 0 0 20px;
+    font-size: 13px;
+    line-height: 1.5;
+    color: #64748B;
+}
+
+.hoae-confirm-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.hoae-btn-danger {
+    height: 36px;
+    padding: 0 14px;
+    border: none;
+    border-radius: 6px;
+    background: #EF4444;
+    color: #FFFFFF;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+@media (max-width: 900px) {
+    .hoae-stats-container {
+        flex-direction: column;
+        padding: 8px 0;
+    }
+
+    .hoae-stat-block {
+        padding: 16px 12px;
+        border-right: none;
+        border-bottom: 1px solid #EEF1F6;
+    }
+
+    .hoae-stat-block:last-child {
+        border-bottom: none;
+    }
+
+    .hoae-page-wrapper .rep-table-header-area {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+
+    .hoae-page-wrapper .rep-table-actions {
+        width: 100%;
+        flex-wrap: wrap;
+    }
+
+    .hoae-page-wrapper .rep-table-wrap,
+    .hoae-page-wrapper .hoa-list-container,
+    .hoae-page-wrapper .hoa-table-scroll {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .hoae-page-wrapper table {
+        min-width: 720px;
+    }
+
+    .create-event-modal-content,
+    .hoae-confirm-dialog {
+        max-height: min(90vh, 100%);
+    }
+}
+
+@media (max-width: 640px) {
+    .hoae-page-wrapper .hoa-page-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .hoae-confirm-actions {
+        width: 100%;
+    }
+
+    .hoae-confirm-actions button {
+        flex: 1;
+    }
+}

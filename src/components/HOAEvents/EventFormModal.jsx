@@ -41,10 +41,14 @@ const EventFormModal = ({ isOpen, onClose, onSuccess, event = null }) => {
         if (isOpen) {
             const fetchCourses = async () => {
                 try {
-                    const res = await fetch(`${API_BASE_URL}/api/courses/admin/approved?limit=100`);
+                    const token = localStorage.getItem('token');
+                    const res = await fetch(`${API_BASE_URL}/api/courses/admin/approved?limit=100`, {
+                        headers: token ? { Authorization: `Bearer ${token}` } : {}
+                    });
                     const result = await res.json();
-                    if (res.ok && result.success && result.data && Array.isArray(result.data.data)) {
-                        setCourses(result.data.data);
+                    if (res.ok && result.success) {
+                        const list = result.data?.data || result.data || [];
+                        setCourses(Array.isArray(list) ? list : []);
                     }
                 } catch (err) {
                     console.error('Failed to fetch courses:', err);
@@ -75,7 +79,10 @@ const EventFormModal = ({ isOpen, onClose, onSuccess, event = null }) => {
 
         const delayDebounce = setTimeout(async () => {
             try {
-                const res = await fetch(`${API_BASE_URL}/api/users/search?q=${encodeURIComponent(studentSearch)}`);
+                const token = localStorage.getItem('token');
+                const res = await fetch(`${API_BASE_URL}/api/users/search?q=${encodeURIComponent(studentSearch)}`, {
+                    headers: token ? { Authorization: `Bearer ${token}` } : {}
+                });
                 const result = await res.json();
                 if (res.ok && result.success && Array.isArray(result.data)) {
                     setSearchResults(result.data);

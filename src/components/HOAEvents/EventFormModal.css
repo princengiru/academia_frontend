@@ -340,3 +340,32 @@
     color: #F8285A;
 }
 
+@media (max-width: 640px) {
+    .create-event-modal-overlay {
+        align-items: flex-end;
+        padding: 0;
+    }
+
+    .create-event-modal-content {
+        width: 100%;
+        max-width: none;
+        max-height: 92vh;
+        border-radius: 16px 16px 0 0;
+        padding: 20px 16px 24px;
+    }
+
+    .create-event-row,
+    .create-event-row-sub {
+        flex-direction: column;
+    }
+
+    .create-event-form-actions {
+        flex-direction: column-reverse;
+        align-items: stretch;
+    }
+
+    .create-event-form-actions .create-event-btn {
+        width: 100%;
+    }
+}
+

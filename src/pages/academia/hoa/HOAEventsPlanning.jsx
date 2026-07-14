@@ -93,6 +93,8 @@ const HOAEventsPlanning = () => {
     // Modal state
     const [isFormModalOpen, setIsFormModalOpen] = useState(false);
     const [editingEvent, setEditingEvent] = useState(null);
+    const [deleteConfirmId, setDeleteConfirmId] = useState(null);
+    const [deleteLoading, setDeleteLoading] = useState(false);
 
     const pageSizeOptions = ['5', '10', '25'];
     const pageSizeRef = useRef(null);
@@ -166,23 +168,34 @@ const HOAEventsPlanning = () => {
         }
     };
 
-    const handleDeleteEvent = async (id) => {
-        if (!window.confirm('Are you sure you want to delete this event?')) return;
+    const handleDeleteEvent = (id) => {
+        setDeleteConfirmId(id);
+        setActiveActionMenu(null);
+    };
+
+    const confirmDeleteEvent = async () => {
+        if (!deleteConfirmId || deleteLoading) return;
+        setDeleteLoading(true);
+        const snapshot = events;
+        setEvents((prev) => prev.filter((event) => String(event.id) !== String(deleteConfirmId)));
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch(`${API_BASE_URL}/api/events/${id}`, {
+            const res = await fetch(`${API_BASE_URL}/api/events/${deleteConfirmId}`, {
                 method: 'DELETE',
                 headers: token ? { Authorization: `Bearer ${token}` } : {}
             });
             const result = await res.json();
             if (res.ok) {
                 setToast({ message: 'Event deleted successfully', type: 'success' });
-                fetchEvents();
+                setDeleteConfirmId(null);
             } else {
                 throw new Error(result.message || 'Failed to delete event');
             }
         } catch (err) {
+            setEvents(snapshot);
             setToast({ message: err.message, type: 'error' });
+        } finally {
+            setDeleteLoading(false);
         }
     };
 
@@ -917,6 +930,41 @@ const HOAEventsPlanning = () => {
                     onSuccess={handleFormSuccess}
                     event={editingEvent}
                 />
+
+                {deleteConfirmId && (
+                    <div
+                        className="hoae-confirm-overlay"
+                        onClick={() => !deleteLoading && setDeleteConfirmId(null)}
+                    >
+                        <div
+                            className="hoae-confirm-dialog"
+                            role="dialog"
+                            aria-modal="true"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <h3>Delete event?</h3>
+                            <p>This removes the event from the schedule. Learners will no longer see it.</p>
+                            <div className="hoae-confirm-actions">
+                                <button
+                                    type="button"
+                                    className="hoae-btn-outline"
+                                    disabled={deleteLoading}
+                                    onClick={() => setDeleteConfirmId(null)}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="button"
+                                    className="hoae-btn-danger"
+                                    disabled={deleteLoading}
+                                    onClick={confirmDeleteEvent}
+                                >
+                                    {deleteLoading ? 'Deleting…' : 'Delete event'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 {toast && (
                     <Toast
