@@ -1,0 +1,118 @@
+/* Header course search — isolated from Bootstrap / global form styles */
+
+.site-header .second-part-h-links form.header-search {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    display: block;
+    flex-shrink: 0;
+}
+
+.site-header .second-part-h-links .header-search-inner {
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 260px;
+    max-width: 42vw;
+    height: 36px;
+    padding: 0 10px;
+    border: 1px solid #e3e8f2;
+    border-radius: 8px;
+    background: #ffffff;
+}
+
+.site-header .second-part-h-links .header-search-inner:focus-within {
+    border-color: #45046866;
+    box-shadow: 0 0 0 3px #45046814;
+}
+
+.site-header .second-part-h-links .header-search-inner > img {
+    flex: 0 0 14px;
+    width: 14px;
+    height: 14px;
+    opacity: 0.78;
+    display: block;
+    pointer-events: none;
+}
+
+.site-header .second-part-h-links .header-search-input {
+    all: unset;
+    box-sizing: border-box;
+    flex: 1 1 auto;
+    min-width: 0;
+    width: 100%;
+    display: block;
+    font-family: Inter, sans-serif;
+    font-weight: 500;
+    font-size: 12px;
+    line-height: 16px;
+    color: #071437;
+    cursor: text;
+}
+
+.site-header .second-part-h-links .header-search-input::placeholder {
+    color: #8c97ae;
+}
+
+.site-header .second-part-h-links .header-search-clear {
+    all: unset;
+    box-sizing: border-box;
+    flex: 0 0 22px;
+    width: 22px;
+    height: 22px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    color: #78829d;
+    cursor: pointer;
+}
+
+.site-header .second-part-h-links .header-search-clear:hover {
+    background: #f3f4f6;
+    color: #4b5675;
+}
+
+.site-header .second-part-h-links .header-search-clear:focus-visible {
+    outline: 2px solid #45046866;
+    outline-offset: 1px;
+}
+
+@media (max-width: 768px) {
+    .site-header .second-part-h {
+        position: relative;
+    }
+
+    .site-header .second-part-h-links form.header-search {
+        position: absolute;
+        left: 12px;
+        right: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 30;
+    }
+
+    .site-header .second-part-h-links .header-search-inner {
+        width: 100%;
+        max-width: none;
+    }
+}
+
+.site-header .header-language-static {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 8px;
+    color: #4b5675;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.site-header .header-language-static img {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    object-fit: cover;
+}

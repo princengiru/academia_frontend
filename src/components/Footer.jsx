@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import logoIcon from '../assets/icons/logo.svg';
 import follow1Icon from '../assets/icons/follow1.svg';
 import follow2Icon from '../assets/icons/follow2.svg';
@@ -12,6 +13,14 @@ import visaPayIcon from '../assets/icons/VISA-pay.svg';
 import masterPayIcon from '../assets/icons/MASTER-pay.svg';
 import eeIcon from '../assets/icons/ee.svg';
 import './Footer.css';
+
+const footerLinkMap = {
+  'Help center': '/academia/help',
+  'Submit a ticket': 'mailto:support@gonaraza.com?subject=Support%20ticket',
+  'Report Abuse': 'mailto:support@gonaraza.com?subject=Report%20abuse',
+  'Report Problem': 'mailto:support@gonaraza.com?subject=Report%20a%20problem',
+  'About Gonaraza.com': '/academia/index',
+};
 
 function Footer() {
   const currentYear = new Date().getFullYear();
@@ -56,6 +65,25 @@ function Footer() {
     { href: 'https://www.facebook.com/Gonaraza.comOfficial', icon: follow7Icon, alt: 'Facebook' },
   ];
 
+  const renderFooterLink = (linkText) => {
+    const href = footerLinkMap[linkText] || 'mailto:support@gonaraza.com';
+    const isExternal = href.startsWith('http') || href.startsWith('mailto:');
+
+    if (isExternal) {
+      return (
+        <a key={linkText} href={href} {...(href.startsWith('http') ? { target: '_blank', rel: 'noreferrer' } : {})}>
+          {linkText}
+        </a>
+      );
+    }
+
+    return (
+      <Link key={linkText} to={href}>
+        {linkText}
+      </Link>
+    );
+  };
+
   return (
     <footer className="footer">
       <div className="footer-p1">
@@ -85,11 +113,7 @@ function Footer() {
           <div className="footer-p2-item" key={section.title}>
             <h4>{section.title}</h4>
             <div className="footer-links">
-              {section.links.map((linkText) => (
-                <a key={linkText} href="#">
-                  {linkText}
-                </a>
-              ))}
+              {section.links.map((linkText) => renderFooterLink(linkText))}
             </div>
           </div>
         ))}
@@ -109,23 +133,23 @@ function Footer() {
           <img src={eeIcon} alt="" />
           <label>Contact Us</label>
           <div className="divider">|</div>
-          <a href="#">support@gonaraza.com</a>
+          <a href="mailto:support@gonaraza.com">support@gonaraza.com</a>
           <div className="divider">|</div>
-          <a href="#">info@gonaraza.com</a>
+          <a href="mailto:info@gonaraza.com">info@gonaraza.com</a>
         </div>
       </div>
 
       <div className="footer-p4">
         <div className="footer-p4-l">
-          <a href="#">Terms and Conditions of use </a>
+          <Link to="/academia/terms">Terms and Conditions of use</Link>
           <div className="divider">|</div>
-          <a href="#">Privacy policy</a>
+          <Link to="/academia/privacy">Privacy policy</Link>
           <div className="divider">|</div>
-          <a href="#">Ad policy</a>
+          <Link to="/academia/ad-policy">Ad policy</Link>
         </div>
         <div className="footer-p4-divider" />
         <div className="footer-p4-r">
-          <a href="#">Sitemap</a>
+          <Link to="/academia/sitemap">Sitemap</Link>
           <div className="divider">|</div>
           <p>
             {currentYear} &copy; Gonaraza.com All Rights Reserved

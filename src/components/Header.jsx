@@ -16,15 +16,13 @@ import rwandaIcon from '../assets/icons/rwanda.svg';
 import ccIcon from '../assets/icons/cc.svg';
 import dropIcon from '../assets/icons/drop1.svg';
 import rightIcon from '../assets/icons/right1.svg';
-import ln1Icon from '../assets/icons/ln1.svg';
-import ln2Icon from '../assets/icons/ln2.svg';
-import ln3Icon from '../assets/icons/ln3.svg';
 import opIcon from '../assets/icons/op.svg';
 import bbrIcon from '../assets/icons/bbr.svg';
 import bblIcon from '../assets/icons/bbl.svg';
 import casttIcon from '../assets/icons/castt.svg';
 import bannerVideo from '../assets/vids/banner1.mp4';
-import './Header.css';
+import './header.css';
+import './header-search.css';
 import defaultProfile from '../assets/imgs/default-profile.png';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
@@ -34,9 +32,32 @@ const categories = ['Business', 'Academia', 'News', 'Jobs', 'Marketing'];
 function Header() {
   const [activeCourseGroup, setActiveCourseGroup] = useState(0);
   const [fetchedCategories, setFetchedCategories] = useState([]);
+  const [headerSearchOpen, setHeaderSearchOpen] = useState(false);
+  const [headerSearchQuery, setHeaderSearchQuery] = useState('');
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const token = localStorage.getItem('token');
+
+  const handleHeaderSearchSubmit = (event) => {
+    event.preventDefault();
+    const query = headerSearchQuery.trim();
+    if (!query) return;
+    navigate(`/academia/courses?search=${encodeURIComponent(query)}`);
+    setHeaderSearchOpen(false);
+    setHeaderSearchQuery('');
+  };
+
+  useEffect(() => {
+    if (!headerSearchOpen) return undefined;
+    const handleEscape = (event) => {
+      if (event.key === 'Escape') {
+        setHeaderSearchOpen(false);
+        setHeaderSearchQuery('');
+      }
+    };
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [headerSearchOpen]);
 
   // Load and refresh user profile details
   useEffect(() => {
@@ -243,31 +264,60 @@ function Header() {
               </div>
             </div>
 
-            <NavLink to="/academia/journals">Projects</NavLink>
+            <NavLink to="/academia/projects">Projects</NavLink>
             <NavLink to="/academia/syllabuses">Syllabuses</NavLink>
             <NavLink to="/academia/watch">Community Feed</NavLink>
-            <NavLink to="/academia/rewards">Rewards</NavLink>
+            <NavLink to="/academia/certificates">Certificates</NavLink>
           </nav>
 
           <div className="second-part-h-links" aria-label="Header actions">
-            <button type="button" className="header-action" aria-label="Search">
-              <img src={headerSearchIcon} alt="" />
-            </button>
+            {headerSearchOpen ? (
+              <form className="header-search" onSubmit={handleHeaderSearchSubmit} noValidate>
+                <div className="header-search-inner">
+                  <img src={headerSearchIcon} alt="" aria-hidden="true" />
+                  <input
+                    className="header-search-input"
+                    type="text"
+                    value={headerSearchQuery}
+                    onChange={(event) => setHeaderSearchQuery(event.target.value)}
+                    placeholder="Search courses..."
+                    aria-label="Search courses"
+                    autoFocus
+                  />
+                  <button
+                    type="button"
+                    className="header-search-clear"
+                    aria-label="Close search"
+                    onClick={() => {
+                      setHeaderSearchOpen(false);
+                      setHeaderSearchQuery('');
+                    }}
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
+                      <line x1="18" y1="6" x2="6" y2="18" />
+                      <line x1="6" y1="6" x2="18" y2="18" />
+                    </svg>
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <button
+                type="button"
+                className="header-action"
+                aria-label="Search courses"
+                onClick={() => setHeaderSearchOpen(true)}
+              >
+                <img src={headerSearchIcon} alt="" />
+              </button>
+            )}
             <button type="button" className="header-action" aria-label="App grid">
               <img src={headerGridIcon} alt="" />
             </button>
 
-            <div className="dropdown custom-header-select-dropdown d-flex align-items-center">
-              <button className="dropdown-toggle center header-action header-language" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                <img src={rwandaIcon} alt="" />
-                <span className="selected-option">KN</span>
-              </button>
-              <ul className="dropdown-menu shadow header-language-menu">
-                <li><a className="dropdown-item active" href="#"><img src={ln1Icon || rwandaIcon} alt="" /><span>Kinyarwanda</span></a></li>
-                <li><a className="dropdown-item" href="#"><img src={ln2Icon || rwandaIcon} alt="" /><span>English</span></a></li>
-                <li><a className="dropdown-item" href="#"><img src={ln3Icon || rwandaIcon} alt="" /><span>French</span></a></li>
-              </ul>
-            </div>
+            <span className="header-language-static" aria-label="Language: English">
+              <img src={rwandaIcon} alt="" />
+              <span className="selected-option">EN</span>
+            </span>
 
             {user ? (
               <div className="dropdown custom-header-select-dropdown d-flex align-items-center">
@@ -289,7 +339,7 @@ function Header() {
                        type="button" 
                        className="dropdown-item d-flex align-items-center gap-2" 
                        onClick={() => {
-                         navigate('/academia/journals');
+                         navigate('/academia/projects');
                        }}
                        style={{ fontSize: '13px', color: '#4B5675' }}
                      >

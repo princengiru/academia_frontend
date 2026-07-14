@@ -134,7 +134,7 @@ function Header() {
             </div>
           </div>
 
-          <a href="/gonaraza/academia/journals">Journals &amp; Projects</a>
+          <a href="/gonaraza/academia/projects">Projects</a>
           <a href="#">Community Feed</a>
           <a href="/gonaraza/academia/rewards">Rewards</a>
         </nav>
