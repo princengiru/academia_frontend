@@ -15,14 +15,23 @@ import acUs from '../../../assets/icons/ac-us.svg';
 import acBook from '../../../assets/icons/ac-book.svg';
 import hoabasics from '../../../assets/icons/hoabasics.svg';
 import hoagoto from '../../../assets/icons/hoagoto.svg';
-import playIcon from '../../../assets/icons/play.svg';
+import SavedLibraryButton from './SavedLibraryButton';
+import EnrollmentPaymentPicker from './EnrollmentPaymentPicker';
+import {
+  buildAvailablePaymentChoices,
+  buildAccountPaymentHref,
+  enrollInCourse,
+  fetchSavedPaymentMethods,
+  getPaymentMethodLabel,
+  hasSavedPaymentMethods,
+  isCourseFree,
+  isEnrollmentRoleAllowed,
+  pickDefaultPaymentValue,
+} from './enrollmentPaymentUtils';
+import { learnerPageTitle, LEARNER_PRODUCT_NAME } from './learnerBrand';
+import { buildReaderUrl, resolveCourseProgressPercent } from './homeDashboardUtils';
+import LearnerLoadError from './LearnerLoadError';
 import jo1 from '../../../assets/icons/jo1.svg';
-import dtiktok from '../../../assets/icons/dtiktok.svg';
-import dwhat from '../../../assets/icons/dwhat.svg';
-import dfaceb from '../../../assets/icons/dfaceb.svg';
-import dinstagram from '../../../assets/icons/dinstagram.svg';
-import acSms from '../../../assets/icons/ac-sms.svg';
-import acSend from '../../../assets/icons/ac-send.svg';
 import './course-part.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
@@ -31,7 +40,9 @@ const extractBody = (body) => body?.data?.data || body?.data || body;
 
 function CoursePart() {
   const location = useLocation();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const legacyStateId = location.state?.courseId;
+  const inboundId = searchParams.get('id') || legacyStateId;
 
   const [loading, setLoading] = useState(true);
   const [course, setCourse] = useState(null);
@@ -42,6 +53,11 @@ function CoursePart() {
   const [isEnrolling, setIsEnrolling] = useState(false);
   const [toast, setToast] = useState({ message: '', visible: false, tone: 'success' });
   const [isSummaryExpanded, setIsSummaryExpanded] = useState(false);
+  const [paymentChoices, setPaymentChoices] = useState([]);
+  const [selectedPaymentValue, setSelectedPaymentValue] = useState('credit_card');
+  const [paymentsLoading, setPaymentsLoading] = useState(false);
+  const [savedPaymentMethods, setSavedPaymentMethods] = useState([]);
+  const [courseProgressPercent, setCourseProgressPercent] = useState(0);
 
   const resolveAssetUrl = (value) => {
     if (!value) return acOn;
@@ -64,8 +80,13 @@ function CoursePart() {
     }, 4000);
   };
 
-  const inboundId = location.state?.courseId || searchParams.get('id');
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!searchParams.get('id') && legacyStateId) {
+      setSearchParams({ id: String(legacyStateId) }, { replace: true });
+    }
+  }, [legacyStateId, searchParams, setSearchParams]);
 
   useEffect(() => {
     const checkEnrollmentStatus = async () => {
@@ -88,6 +109,74 @@ function CoursePart() {
     checkEnrollmentStatus();
   }, [inboundId]);
 
+  useEffect(() => {
+    const loadCourseProgress = async () => {
+      const token = localStorage.getItem('token');
+      if (!token || !inboundId || !isEnrolled) return;
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/progress/${inboundId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) return;
+        const body = await res.json();
+        const data = extractBody(body) || {};
+        setCourseProgressPercent(resolveCourseProgressPercent({
+          progressPercentage: data.progress_percentage ?? data.progressPercentage,
+          outlineProgress: null,
+        }));
+      } catch {
+        // keep default
+      }
+    };
+    loadCourseProgress();
+  }, [inboundId, isEnrolled]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadPaymentChoices = async () => {
+      if (!course || isEnrolled) {
+        setPaymentChoices([]);
+        return;
+      }
+
+      const courseIsFree = isCourseFree(course);
+      if (courseIsFree) {
+        const freeChoices = buildAvailablePaymentChoices([], true);
+        if (!cancelled) {
+          setPaymentChoices(freeChoices);
+          setSelectedPaymentValue('free');
+          setPaymentsLoading(false);
+        }
+        return;
+      }
+
+      setPaymentsLoading(true);
+      try {
+        const token = localStorage.getItem('token');
+        const methods = await fetchSavedPaymentMethods(API_BASE_URL, token);
+        const choices = buildAvailablePaymentChoices(methods, false);
+        if (!cancelled) {
+          setSavedPaymentMethods(methods);
+          setPaymentChoices(choices);
+          setSelectedPaymentValue(pickDefaultPaymentValue(choices, methods));
+        }
+      } catch (err) {
+        console.error('Failed to load payment methods:', err);
+        if (!cancelled) {
+          const fallbackChoices = buildAvailablePaymentChoices([], false);
+          setPaymentChoices(fallbackChoices);
+          setSelectedPaymentValue(pickDefaultPaymentValue(fallbackChoices, []));
+        }
+      } finally {
+        if (!cancelled) setPaymentsLoading(false);
+      }
+    };
+
+    loadPaymentChoices();
+    return () => { cancelled = true; };
+  }, [course, isEnrolled]);
+
   const handleJoinToday = async (e) => {
     e.preventDefault();
     if (!course?.id) return;
@@ -101,32 +190,33 @@ function CoursePart() {
       return;
     }
 
-    // Role check validation to prevent admins and instructors from enrolling
     const userObj = JSON.parse(localStorage.getItem('user') || '{}');
     const userRole = (userObj.role || '').toLowerCase().trim();
-    if (userRole && userRole !== 'student') {
-      showToast("Only student accounts can enroll in courses.", "warning");
+    if (!isEnrollmentRoleAllowed(userRole)) {
+      showToast("Only learner accounts can enroll in courses.", "warning");
+      return;
+    }
+
+    const courseIsFree = isCourseFree(course);
+    if (!courseIsFree && !hasSavedPaymentMethods(savedPaymentMethods)) {
+      const returnPath = `/academia/learner/course-part?id=${course.id}`;
+      showToast('Add a payment method in Account before enrolling.', 'warning');
+      navigate(buildAccountPaymentHref(returnPath));
       return;
     }
     
     setIsEnrolling(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/courses/${course.id}/enroll`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          payment_method: 'credit_card'
-        })
+      await enrollInCourse({
+        apiBaseUrl: API_BASE_URL,
+        token,
+        courseId: course.id,
+        course,
+        selectedPaymentValue,
       });
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.message || 'Failed to enroll in the course.');
-      }
       setIsEnrolled(true);
-      navigate(`/academia/learner/read-contents?id=${course.id}`, { state: { courseId: course.id } });
+      showToast(`Enrollment confirmed via ${getPaymentMethodLabel(selectedPaymentValue)}.`, 'success');
+      navigate(buildReaderUrl(course.id));
     } catch (err) {
       showToast(err.message || 'Failed to enroll in the course.', 'danger');
     } finally {
@@ -165,6 +255,8 @@ function CoursePart() {
           weekly: courseData.required_hours_per_week ? `${courseData.required_hours_per_week} hours` : '',
           level: courseData.level || '',
           price: courseData.price ? `$${courseData.price}` : (courseData.is_free ? 'Free' : ''),
+          rawPrice: Number(courseData.price) || 0,
+          isFree: Boolean(courseData.is_free) || Number(courseData.price) === 0,
           discount: '',
           intro: courseData.intro_message || courseData.description || '',
           audience: courseData.target_audience || '',
@@ -192,20 +284,7 @@ function CoursePart() {
 
     const init = async () => {
       if (inboundId) return loadCourse(inboundId);
-
-      // fallback: load first available course
-      try {
-        const res = await fetch(`${API_BASE_URL}/api/courses/public/available?page=1&limit=1`);
-        const body = await res.json();
-        const list = extractBody(body);
-        const first = Array.isArray(list) ? list[0] : list?.data?.[0] || null;
-        if (first && first.id) {
-          return loadCourse(first.id);
-        }
-        setLoading(false);
-      } catch (err) {
-        setLoading(false);
-      }
+      setLoading(false);
     };
 
     init();
@@ -252,19 +331,29 @@ function CoursePart() {
   const hasBreakdown = breakdownWeeks.length > 0;
   const hasOutcomes = !!course?.objectives;
   const hasAudience = !!course?.audience;
-  const showContentSections = !loading && (hasBreakdown || hasOutcomes || hasAudience);
+  const showContentSections = !loading && inboundId && (hasBreakdown || hasOutcomes || hasAudience);
+  const missingCourseId = !inboundId;
+  const enrollmentReturnPath = inboundId ? `/academia/learner/course-part?id=${inboundId}` : '/academia/learner/courses';
+  const requiresPaymentSetup = Boolean(course && !isCourseFree(course) && !paymentsLoading && !hasSavedPaymentMethods(savedPaymentMethods));
+
+  useEffect(() => {
+    const courseTitle = course?.title?.trim();
+    document.title = courseTitle
+      ? learnerPageTitle(`${courseTitle} · Course details`)
+      : learnerPageTitle('Course details');
+    return () => {
+      document.title = LEARNER_PRODUCT_NAME;
+    };
+  }, [course?.title]);
 
   return (
     <section className="learners-course-part-page">
       <section className="learners-home-title">
         <div className="learners-home-title-top">
-          <h1>Courses</h1>
+          <h1>Course details</h1>
 
           <div className="learners-home-title-actions">
-            <a className="learners-btn learners-btn-secondary" href="#" onClick={(e) => e.preventDefault()}>
-              <img src={fe1} alt="" />
-              <span>Saved Library</span>
-            </a>
+            <SavedLibraryButton />
             <a className="learners-btn learners-btn-primary" href="/academia/index" target="_blank" rel="noopener noreferrer">
               <span>Go to website</span>
               <img src={hoagoto} alt="Go" />
@@ -278,7 +367,7 @@ function CoursePart() {
           <img src={acLe} alt="back" />
         </button>
         <div>
-          <p>{course?.category || 'Courses'}</p>
+          <p>{course?.category || 'Course catalog'}</p>
           <span>/</span>
           <span>{course?.title || 'Details'}</span>
           <span>/</span>
@@ -292,8 +381,19 @@ function CoursePart() {
             <p>
               Prepared by <strong>{loading ? '...' : course?.author || 'Author'}</strong>
             </p>
+            {isEnrolled && !loading ? (
+              <p className="learners-course-specific-progress">{courseProgressPercent}% complete</p>
+            ) : null}
           </div>
         </div>
+
+        {error ? (
+          <LearnerLoadError
+            title="Could not load course"
+            message={error}
+            onRetry={() => window.location.reload()}
+          />
+        ) : null}
 
         <div className="learners-course-specific-grid">
           <div className="learners-course-specific-main">
@@ -326,7 +426,17 @@ function CoursePart() {
               </div>
             </section>
 
-            {showContentSections ? (
+            {missingCourseId ? (
+              <div className="learners-card learners-empty-state learners-empty-state--compact">
+                <h3>Select a course</h3>
+                <p>Open a course from the catalog to view its details, syllabus, and enrollment options.</p>
+                <div>
+                  <button type="button" className="learners-btn learners-btn-primary" onClick={() => navigate('/academia/learner/courses')}>
+                    Browse courses
+                  </button>
+                </div>
+              </div>
+            ) : showContentSections ? (
               <>
                 <section className="learners-course-specific-section">
                   <h3>Introduction</h3>
@@ -372,32 +482,40 @@ function CoursePart() {
                                   <div className="oc-bd-icon"><img src={hoabasics} alt="" /></div>
                                   {week.chapters && week.chapters.length > 0 && <div className="oc-bd-line"></div>}
                                 </div>
-                                <div className="oc-bd-content" style={{ paddingBottom: 24 }}>
-                                  <h4 style={{
-                                    margin: '0 0 4px 0',
-                                    fontSize: 14,
-                                    color: '#071437',
-                                    fontWeight: 600,
-                                    display: '-webkit-box',
-                                    WebkitLineClamp: '2',
-                                    WebkitBoxOrient: 'vertical',
-                                    overflow: 'hidden',
-                                    textOverflow: 'ellipsis'
-                                  }}>
-                                    {week.description || 'Weekly study plan & objectives'}
-                                  </h4>
-                                  <p style={{
-                                    margin: 0,
-                                    fontSize: 13,
-                                    color: '#4B5675',
-                                    display: '-webkit-box',
-                                    WebkitLineClamp: '3',
-                                    WebkitBoxOrient: 'vertical',
-                                    overflow: 'hidden',
-                                    textOverflow: 'ellipsis'
-                                  }}>
-                                    {week.learning_objectives ? week.learning_objectives.replace(/"/g, '') : 'Learn new skills, pursue your interests or advance your career.'}
-                                  </p>
+                                <div className="oc-bd-content" style={{ paddingBottom: (week.description || week.learning_objectives) ? 24 : 0 }}>
+                                  {(week.description || week.learning_objectives) ? (
+                                    <>
+                                      {week.description ? (
+                                        <h4 style={{
+                                          margin: '0 0 4px 0',
+                                          fontSize: 14,
+                                          color: '#071437',
+                                          fontWeight: 600,
+                                          display: '-webkit-box',
+                                          WebkitLineClamp: '2',
+                                          WebkitBoxOrient: 'vertical',
+                                          overflow: 'hidden',
+                                          textOverflow: 'ellipsis'
+                                        }}>
+                                          {week.description}
+                                        </h4>
+                                      ) : null}
+                                      {week.learning_objectives ? (
+                                        <p style={{
+                                          margin: 0,
+                                          fontSize: 13,
+                                          color: '#4B5675',
+                                          display: '-webkit-box',
+                                          WebkitLineClamp: '3',
+                                          WebkitBoxOrient: 'vertical',
+                                          overflow: 'hidden',
+                                          textOverflow: 'ellipsis'
+                                        }}>
+                                          {week.learning_objectives.replace(/"/g, '')}
+                                        </p>
+                                      ) : null}
+                                    </>
+                                  ) : null}
                                 </div>
                               </div>
 
@@ -411,7 +529,7 @@ function CoursePart() {
                                   </div>
                                   <div className="oc-bd-content" style={{ display: 'flex', alignItems: 'center', gap: 16, paddingBottom: cIdx !== week.chapters.length - 1 ? 24 : 0, cursor: isEnrolled ? 'pointer' : 'default' }} onClick={() => {
                                     if (isEnrolled) {
-                                      navigate('/academia/learner/read-contents', { state: { courseId: course?.id, chapterId: chap.id } });
+                                      navigate(`/academia/learner/read-contents?id=${course?.id}&chapterId=${encodeURIComponent(chap.id)}`);
                                     }
                                   }}>
                                     {chap.thumbnail ? (
@@ -422,7 +540,7 @@ function CoursePart() {
                                     <div>
                                       <h4 style={{ margin: '0 0 4px 0', fontSize: 14, color: '#071437', fontWeight: 600 }}>{chap.title}</h4>
                                       <p style={{ margin: 0, fontSize: 11, color: '#A1A5B7' }}>
-                                        {chap.subtitle || 'Chapter lecture'} • {chap.duration ? `${chap.duration} mins` : 'Video content'}
+                                        {[chap.subtitle, chap.duration ? `${chap.duration} mins` : ''].filter(Boolean).join(' • ') || 'Lesson content'}
                                       </p>
                                     </div>
                                   </div>
@@ -457,8 +575,9 @@ function CoursePart() {
                 <h3>No content published</h3>
                 <p className="visually-hidden">No course breakdown or outcomes available for this course.</p>
                 <div>
-                  <button className="learners-btn learners-btn-primary" disabled>Browse courses</button>
-                  <button className="learners-btn learners-btn-secondary" disabled>Contact author</button>
+                  <button type="button" className="learners-btn learners-btn-primary" onClick={() => navigate('/academia/learner/courses')}>
+                    Browse courses
+                  </button>
                 </div>
               </div>
             )}
@@ -477,38 +596,28 @@ function CoursePart() {
                 ))}
               </div>
 
-              {hasBreakdown ? (
-                <a 
-                  className="learners-course-specific-cta learners-course-specific-cta-secondary" 
-                  href="/academia/learner/read-contents" 
-                  onClick={(e) => { 
-                    e.preventDefault(); 
-                    if (isEnrolled) {
-                      navigate('/academia/learner/read-contents', { state: { courseId: course?.id } }); 
-                    } else {
-                      handleJoinToday(e);
-                    }
-                  }}
-                >
-                  <span>Course breakdown</span>
-                  <img src={playIcon} alt="Course contents" />
-                </a>
-              ) : (
-                <div className="learners-course-specific-no-contents">
-                  <small>No breakdown published yet</small>
-                </div>
-              )}
-
               {isEnrolled ? (
-                <button type="button" className="learners-course-specific-cta" onClick={() => navigate(`/academia/learner/read-contents?id=${course.id}`, { state: { courseId: course.id } })}>
-                  <span>Go to Course</span>
+                <button type="button" className="learners-course-specific-cta" onClick={() => navigate(buildReaderUrl(course.id))}>
+                  <span>Continue learning</span>
                   <img src={hoagoto} alt="Go" />
                 </button>
               ) : (
-                <button type="button" className="learners-course-specific-cta" onClick={handleJoinToday} disabled={isEnrolling}>
-                  <span>{isEnrolling ? 'Joining...' : 'Join Today'}</span>
-                  <img src={jo1} alt="Join" />
-                </button>
+                <>
+                  {!isEnrolled && (
+                    <EnrollmentPaymentPicker
+                      choices={paymentChoices}
+                      value={selectedPaymentValue}
+                      onChange={setSelectedPaymentValue}
+                      loading={paymentsLoading}
+                      requiresPaymentSetup={requiresPaymentSetup}
+                      accountHref={buildAccountPaymentHref(enrollmentReturnPath)}
+                    />
+                  )}
+                  <button type="button" className="learners-course-specific-cta" onClick={handleJoinToday} disabled={isEnrolling || paymentsLoading || requiresPaymentSetup}>
+                    <span>{isEnrolling ? 'Joining...' : (isCourseFree(course) ? 'Enroll for free' : 'Join Today')}</span>
+                    <img src={jo1} alt="Join" />
+                  </button>
+                </>
               )}
             </div>
           </aside>
@@ -533,40 +642,6 @@ function CoursePart() {
           </div>
         </section>
 
-        <section className="learners-course-specific-newsletter" aria-label="Newsletter signup">
-          <div className="learners-course-specific-newsletter-column learners-course-specific-newsletter-column-copy">
-            <h3>Find the right course for you</h3>
-            <p>See your personalised recommendations based on your interests and goals.</p>
-
-            <div className="learners-course-specific-newsletter-socials">
-              <a href="#" onClick={(e) => e.preventDefault()} aria-label="TikTok">
-                <img src={dtiktok} alt="" />
-              </a>
-              <a href="#" onClick={(e) => e.preventDefault()} aria-label="WhatsApp">
-                <img src={dwhat} alt="" />
-              </a>
-              <a href="#" onClick={(e) => e.preventDefault()} aria-label="Facebook">
-                <img src={dfaceb} alt="" />
-              </a>
-              <a href="#" onClick={(e) => e.preventDefault()} aria-label="Instagram">
-                <img src={dinstagram} alt="" />
-              </a>
-            </div>
-          </div>
-
-          <div className="learners-course-specific-newsletter-column learners-course-specific-newsletter-column-form">
-            <h3>Stay tune and get the latest update</h3>
-            <p>See your personalised recommendations based on your interests and goals.</p>
-
-            <form className="learners-course-specific-newsletter-form" onSubmit={(e) => e.preventDefault()}>
-              <img src={acSms} alt="" className="learners-course-specific-newsletter-mail" />
-              <input type="email" placeholder="Enter email address" aria-label="Enter email address" />
-              <button type="submit" aria-label="Submit email">
-                <img src={acSend} alt="" />
-              </button>
-            </form>
-          </div>
-        </section>
       </section>
       {toast.visible && (
         <div className={`toast-notification is-${toast.tone}`} role="alert" aria-live="assertive">

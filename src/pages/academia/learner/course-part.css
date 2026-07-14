@@ -108,6 +108,12 @@
   font-weight: 600;
 }
 
+.learners-course-specific-progress {
+  margin-top: 8px !important;
+  font-weight: 600;
+  color: #5B0A86 !important;
+}
+
 .learners-course-specific-grid {
   display: grid;
   grid-template-columns: 1fr 300px;

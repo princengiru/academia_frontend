@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import LearnersPageShell from './LearnersPageShell';
 
 // Icons & Images
@@ -55,6 +55,43 @@ function timeAgo(dateString) {
   const days = Math.floor(hours / 24);
   if (days === 1) return 'Yesterday';
   return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function normalizeProjectComment(comment) {
+  if (!comment) return null;
+
+  const createdAt = comment.created_at || comment.createdAt || null;
+  const postedDate = createdAt
+    ? new Date(createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+    : (comment.posted || '');
+
+  return {
+    id: comment.id || comment.comment_id,
+    name: comment.user_name || comment.author_name || comment.name || 'Learner',
+    avatar: normalizeAssetUrl(comment.user_avatar || comment.author_avatar || comment.avatar) || defaultProfile,
+    message: comment.content || comment.comment || comment.message || '',
+    time: createdAt ? timeAgo(createdAt) : (comment.time || ''),
+    posted: postedDate,
+  };
+}
+
+function parseProjectTools(raw) {
+  if (!raw) return [];
+  if (Array.isArray(raw)) {
+    return raw
+      .map((item) => (typeof item === 'string' ? item : item?.name || item?.label || item?.title || ''))
+      .map((item) => String(item).trim())
+      .filter(Boolean);
+  }
+  if (typeof raw === 'string') {
+    try {
+      const parsed = JSON.parse(raw);
+      return parseProjectTools(parsed);
+    } catch {
+      return raw.split(',').map((item) => item.trim()).filter(Boolean);
+    }
+  }
+  return [];
 }
 
 function LearnersViewProject() {
@@ -132,9 +169,7 @@ function LearnersViewProject() {
     };
   }, []);
 
-  const location = useLocation();
-
-  // Active user states
+  const [searchParams] = useSearchParams();
   const [likesCount, setLikesCount] = useState(0);
   const [savesCount, setSavesCount] = useState(0);
   const [commentsCount, setCommentsCount] = useState(0);
@@ -142,9 +177,15 @@ function LearnersViewProject() {
   const [hasSaved, setHasSaved] = useState(false);
   const [commentsList, setCommentsList] = useState([]);
   const [newCommentText, setNewCommentText] = useState('');
+  const [toolsExpanded, setToolsExpanded] = useState(false);
+  const [teamExpanded, setTeamExpanded] = useState(false);
+  const [replyingToCommentId, setReplyingToCommentId] = useState(null);
+  const [actionNotice, setActionNotice] = useState('');
+  const composerRef = useRef(null);
+  const commentsListRef = useRef(null);
 
   const preventDefault = (e) => e.preventDefault();
-  const projectFromState = location.state?.project || null;
+  const projectId = searchParams.get('id');
 
   const refreshProjects = async () => {
     const token = localStorage.getItem('token');
@@ -169,9 +210,6 @@ function LearnersViewProject() {
 
     return list;
   };
-
-  const queryParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
-  const projectId = useMemo(() => queryParams.get('id') || projectFromState?.id, [queryParams, projectFromState]);
 
   useEffect(() => {
     if (!projectId) {
@@ -204,7 +242,10 @@ function LearnersViewProject() {
         const commentsRes = await fetch(`${API_BASE_URL}/api/projects/${projectId}/comments`);
         if (commentsRes.ok) {
           const commentsData = await commentsRes.json();
-          if (!cancelled) setCommentsList(commentsData?.data || []);
+          const rawComments = Array.isArray(commentsData?.data) ? commentsData.data : [];
+          if (!cancelled) {
+            setCommentsList(rawComments.map(normalizeProjectComment).filter(Boolean));
+          }
         }
 
         // 3. Fetch check likes/saves status if token exists
@@ -277,43 +318,112 @@ function LearnersViewProject() {
     }
   };
 
+  const refreshComments = async () => {
+    if (!projectId) return;
+    const commentsRes = await fetch(`${API_BASE_URL}/api/projects/${projectId}/comments`);
+    if (!commentsRes.ok) return;
+    const commentsData = await commentsRes.json();
+    const rawComments = Array.isArray(commentsData?.data) ? commentsData.data : [];
+    setCommentsList(rawComments.map(normalizeProjectComment).filter(Boolean));
+  };
+
   const handleCommentSubmit = async (e) => {
     e.preventDefault();
     if (!newCommentText.trim()) return;
     const token = localStorage.getItem('token');
     if (!token) return;
     try {
-      const res = await fetch(`${API_BASE_URL}/api/projects/${projectId}/comments`, {
+      const payload = { content: newCommentText.trim() };
+      if (replyingToCommentId) {
+        payload.parent_id = replyingToCommentId;
+      }
+
+      let res = await fetch(`${API_BASE_URL}/api/projects/${projectId}/comments`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`
         },
-        body: JSON.stringify({ content: newCommentText.trim() })
+        body: JSON.stringify(payload)
       });
-      if (res.ok) {
-        setNewCommentText('');
-        // Refresh comments list
-        const commentsRes = await fetch(`${API_BASE_URL}/api/projects/${projectId}/comments`);
-        if (commentsRes.ok) {
-          const commentsData = await commentsRes.json();
-          setCommentsList(commentsData?.data || []);
-          setCommentsCount(prev => prev + 1);
-        }
+
+      if (!res.ok && replyingToCommentId) {
+        const fallbackPayload = { content: newCommentText.trim() };
+        res = await fetch(`${API_BASE_URL}/api/projects/${projectId}/comments`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify(fallbackPayload)
+        });
       }
+
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body?.message || 'Could not post comment.');
+      }
+
+      setNewCommentText('');
+      setReplyingToCommentId(null);
+      await refreshComments();
+      setCommentsCount((prev) => prev + 1);
     } catch (err) {
       console.error('Comment submit failed', err);
+      setActionNotice(err?.message || 'Could not post comment.');
     }
   };
 
-  const activeProject = project || projectFromState || null;
+  const handleShareProject = async () => {
+    if (!projectId) return;
+    const url = `${window.location.origin}/academia/learner/view-project?id=${projectId}`;
+    const title = project?.title || 'Project';
+
+    try {
+      if (navigator.share) {
+        await navigator.share({ title, url });
+        return;
+      }
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(url);
+        setActionNotice('Project link copied to clipboard.');
+        return;
+      }
+      setActionNotice(url);
+    } catch (err) {
+      if (err?.name !== 'AbortError') {
+        setActionNotice('Could not share this project.');
+      }
+    }
+  };
+
+  const startReply = (comment) => {
+    if (!comment?.id) return;
+    setReplyingToCommentId(comment.id);
+    setNewCommentText(`@${comment.name} `);
+    composerRef.current?.focus();
+    composerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  };
+
+  const cancelReply = () => {
+    setReplyingToCommentId(null);
+    setNewCommentText('');
+  };
+
+  const scrollToComments = () => {
+    commentsListRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  const activeProject = project;
 
   const genesisCollaborators = useMemo(() => {
     return activeProject?.collaborators?.map((item) => ({
       name: typeof item === 'string' ? item : item?.name || item?.label || 'Collaborator',
-      avatar: defaultProfile,
+      avatar: normalizeAssetUrl(item?.avatar) || defaultProfile,
     })) || [];
   }, [activeProject]);
+
+  const displayTools = useMemo(() => parseProjectTools(activeProject?.tools), [activeProject]);
 
   const openUploadModal = () => setIsModalOpen(true);
   const closeUploadModal = () => {
@@ -428,7 +538,7 @@ function LearnersViewProject() {
     avatar: normalizeAssetUrl(project.user_avatar) || defaultProfile,
     status: project.approval_status || 'Active',
     projects: project.user_projects_count || '1',
-  } : { name: 'loading...', role: '', email: '', avatar: defaultProfile, status: 'loading...', projects: '0' };
+  } : { name: 'Loading…', role: '', email: '', avatar: defaultProfile, status: 'Loading…', projects: '0' };
 
   const zenithProject = project ? {
     title: project.title,
@@ -449,13 +559,19 @@ function LearnersViewProject() {
       .map((img, index) => ({ image: normalizeAssetUrl(img), alt: project.title || 'Project image', class: galleryItemClass(index) })),
   } : null;
 
-  const displayTitle = zenithProject?.title || (loading ? 'loading...' : 'empty');
+  const displayTitle = zenithProject?.title || (loading ? 'Loading project…' : 'Untitled project');
   const displaySubtitle = zenithProject?.subtitle || '';
   const displayAbstract = zenithProject?.abstract || '';
   const displayGallery = zenithProject?.gallery || [];
   const displayTeam = zenithProject?.team || '';
   const displayEngagement = zenithProject?.engagement || [];
   const displayComments = zenithProject?.comments || [];
+
+  useEffect(() => {
+    if (!actionNotice) return undefined;
+    const timer = window.setTimeout(() => setActionNotice(''), 4000);
+    return () => window.clearTimeout(timer);
+  }, [actionNotice]);
 
   return (
     <LearnersPageShell>
@@ -477,9 +593,9 @@ function LearnersViewProject() {
               </div>
 
               <div className="learners-projects-profile-meta">
-                <span>{apexProfile.role}</span>
-                <span>&bull;</span>
-                <span>{apexProfile.email}</span>
+                {apexProfile.role ? <span>{apexProfile.role}</span> : null}
+                {apexProfile.role && apexProfile.email ? <span>&bull;</span> : null}
+                {apexProfile.email ? <span>{apexProfile.email}</span> : null}
               </div>
             </div>
           </div>
@@ -499,7 +615,7 @@ function LearnersViewProject() {
           <div className="learners-view-project-main">
             {error === 'empty' ? (
               <div className="learners-view-project-empty-state learners-view-project-empty-state--full">
-                <h3>empty</h3>
+                <h3>Project not found</h3>
                 <p>Select a project from the Projects page to view it here.</p>
                 <button type="button" className="learners-projects-primary-btn" onClick={() => navigate('/academia/learner/projects')}>
                   Back to Projects
@@ -513,26 +629,44 @@ function LearnersViewProject() {
                     <span>Back to Projects</span>
                   </button>
                   <h2>{displayTitle}</h2>
-                  <p>{displaySubtitle || (loading ? 'Fetching project details from the backend.' : 'No project data available.')}</p>
+                  <p>{displaySubtitle || (loading ? 'Loading project details…' : 'No project data available.')}</p>
                 </div>
 
                 <section className="learners-view-project-abstract-card">
                   <h3>Abstract</h3>
-                  {loading ? <p>loading...</p> : <p>{displayAbstract || 'empty'}</p>}
+                  {loading ? <p>Loading abstract…</p> : <p>{displayAbstract || 'No abstract provided.'}</p>}
 
-                  <button type="button" className="learners-view-project-tools-toggle" onClick={preventDefault}>
+                  <button
+                    type="button"
+                    className={`learners-view-project-tools-toggle ${toolsExpanded ? 'is-expanded' : ''}`}
+                    onClick={() => setToolsExpanded((value) => !value)}
+                    aria-expanded={toolsExpanded}
+                    aria-controls="learners-view-project-tools-panel"
+                  >
                     <span className="learners-view-project-tools-toggle-icon">
                       <img src={acSd1} alt="Tools" />
                     </span>
                     <span>Tools Used</span>
                     <span className="learners-view-project-tools-toggle-caret"></span>
                   </button>
+
+                  {toolsExpanded && (
+                    <div id="learners-view-project-tools-panel" className="learners-view-project-tools-panel">
+                      {displayTools.length > 0 ? (
+                        displayTools.map((tool) => (
+                          <span key={tool} className="learners-view-project-tools-chip">{tool}</span>
+                        ))
+                      ) : (
+                        <p className="learners-view-project-tools-empty">No tools were listed for this project.</p>
+                      )}
+                    </div>
+                  )}
                 </section>
 
                 <section className="learners-view-project-gallery" aria-label="Project gallery">
                   {loading ? (
                     <div className="learners-view-project-empty-state">
-                      <h3>loading...</h3>
+                      <h3>Loading gallery…</h3>
                       <p>Preparing the project gallery.</p>
                     </div>
                   ) : displayGallery.length > 0 ? (
@@ -543,7 +677,7 @@ function LearnersViewProject() {
                     ))
                   ) : (
                     <div className="learners-view-project-empty-state">
-                      <h3>empty</h3>
+                      <h3>No images</h3>
                       <p>No gallery images were uploaded for this project.</p>
                     </div>
                   )}
@@ -557,16 +691,41 @@ function LearnersViewProject() {
               <div className="learners-view-project-comments-head">
                 <div>
                   <h3>{displayTitle}</h3>
-                  <button type="button" className="learners-view-project-team-toggle" onClick={preventDefault}>
+                  <button
+                    type="button"
+                    className={`learners-view-project-team-toggle ${teamExpanded ? 'is-expanded' : ''}`}
+                    onClick={() => setTeamExpanded((value) => !value)}
+                    aria-expanded={teamExpanded}
+                    aria-controls="learners-view-project-team-panel"
+                  >
                     <span>{displayTeam}</span>
                     <span className="learners-view-project-team-caret"></span>
                   </button>
+
+                  {teamExpanded && (
+                    <div id="learners-view-project-team-panel" className="learners-view-project-team-panel">
+                      {genesisCollaborators.length > 0 ? (
+                        genesisCollaborators.map((member) => (
+                          <div key={member.name} className="learners-view-project-team-chip">
+                            <img src={member.avatar} alt={member.name} />
+                            <span>{member.name}</span>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="learners-view-project-team-empty">No collaborators listed for this project.</p>
+                      )}
+                    </div>
+                  )}
                 </div>
 
-                <button type="button" className="learners-view-project-share-btn" onClick={preventDefault} aria-label="Share project">
+                <button type="button" className="learners-view-project-share-btn" onClick={handleShareProject} aria-label="Share project">
                   <img src={acShare} alt="Share" />
                 </button>
               </div>
+
+              {actionNotice ? (
+                <p className="learners-view-project-action-notice" role="status">{actionNotice}</p>
+              ) : null}
 
               <div className="learners-view-project-engagement-row">
                 {displayEngagement.length > 0 ? displayEngagement.map((husk, idx) => (
@@ -578,23 +737,24 @@ function LearnersViewProject() {
                       e.preventDefault();
                       if (husk.id === 'likes') handleLikeToggle();
                       if (husk.id === 'saves') handleSaveToggle();
+                      if (husk.id === 'comments') scrollToComments();
                     }}
                   >
                     <img src={husk.icon} alt={husk.label} />
                     <span>{husk.value} {husk.label}</span>
                   </button>
-                )) : <div className="learners-view-project-empty-state"><h3>empty</h3><p>No engagement stats yet.</p></div>}
+                )) : <div className="learners-view-project-empty-state"><h3>No engagement yet</h3><p>No engagement stats yet.</p></div>}
               </div>
 
-              <div className="learners-view-project-comments-list">
+              <div className="learners-view-project-comments-list" ref={commentsListRef}>
                 {loading ? (
                   <div className="learners-view-project-empty-state">
-                    <h3>loading...</h3>
+                    <h3>Loading comments…</h3>
                     <p>Loading comments.</p>
                   </div>
                 ) : displayComments.length > 0 ? (
-                  displayComments.map((husk, idx) => (
-                    <article key={idx} className="learners-view-project-comment">
+                  displayComments.map((husk) => (
+                    <article key={husk.id || `${husk.name}-${husk.time}`} className="learners-view-project-comment">
                       <div className="learners-view-project-comment-avatar">
                         <img src={husk.avatar} alt={husk.name} />
                       </div>
@@ -608,29 +768,36 @@ function LearnersViewProject() {
                         <p>{husk.message}</p>
 
                         <div className="learners-view-project-comment-foot">
-                          <button type="button" className="learners-view-project-comment-reply" onClick={preventDefault}>
+                          <button type="button" className="learners-view-project-comment-reply" onClick={() => startReply(husk)}>
                             <img src={acRep} alt="Reply" />
                             <span>Reply</span>
                           </button>
-                          <span>Posted on <strong>{husk.posted}</strong></span>
+                          <span>Posted on <strong>{husk.posted || husk.time}</strong></span>
                         </div>
                       </div>
                     </article>
                   ))
                 ) : (
                   <div className="learners-view-project-empty-state">
-                    <h3>empty</h3>
-                    <p>No comments yet.</p>
+                    <h3>No comments yet</h3>
+                    <p>Be the first to leave a comment on this project.</p>
                   </div>
                 )}
               </div>
 
               {/* Add Comment Form */}
               <div className="learners-view-project-comment-composer">
+                {replyingToCommentId ? (
+                  <div className="learners-view-project-reply-banner">
+                    <span>Replying to a comment</span>
+                    <button type="button" onClick={cancelReply}>Cancel</button>
+                  </div>
+                ) : null}
                 <form onSubmit={handleCommentSubmit} className="learners-view-project-comment-form">
-                  <textarea 
-                    placeholder="Write a comment..." 
-                    value={newCommentText} 
+                  <textarea
+                    ref={composerRef}
+                    placeholder="Write a comment..."
+                    value={newCommentText}
                     onChange={(e) => setNewCommentText(e.target.value)}
                     required
                   />

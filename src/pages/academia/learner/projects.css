@@ -254,12 +254,23 @@
   gap: 8px;
 }
 
-.learners-projects-page .learners-project-card-author,
 .learners-projects-page .learners-project-card-actions button {
   font-family: Inter, sans-serif;
   font-weight: 400;
   font-size: 12px;
   line-height: 18px;
+  color: #999999;
+}
+
+.learners-projects-page .learners-project-card-action-btn--static {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: none;
+  background: transparent;
+  padding: 0;
+  cursor: default;
+  pointer-events: none;
   color: #999999;
 }
 
@@ -496,8 +507,16 @@
   color: #78829D;
 }
 
-.learners-projects-page .learners-projects-side-paragraph a {
+.learners-projects-page .learners-projects-side-paragraph a,
+.learners-projects-page .learners-projects-read-more {
   color: #450468;
+  background: none;
+  border: none;
+  padding: 0;
+  margin-left: 4px;
+  font: inherit;
+  cursor: pointer;
+  text-decoration: underline;
 }
 
 .learners-projects-page .learners-projects-stats-list {

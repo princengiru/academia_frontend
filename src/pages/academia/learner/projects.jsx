@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import LearnersPageShell from './LearnersPageShell';
+import LearnerLoadError from './LearnerLoadError';
 
 // Icons & Images
 import defaultProfile from '../../../assets/imgs/default-profile.png';
@@ -19,7 +20,6 @@ import bPencil from '../../../assets/icons/b-pencil.svg';
 import leUe from '../../../assets/icons/le-ue.svg';
 import leEx from '../../../assets/icons/le-ex.svg';
 import leLo from '../../../assets/icons/le-lo.svg';
-import userIcon from '../../../assets/icons/user.svg';
 import leEm from '../../../assets/icons/le-em.svg';
 import popupClose from '../../../assets/icons/popup-close.svg';
 import acSee from '../../../assets/icons/ac-see.svg';
@@ -191,10 +191,10 @@ function LearnersProjects() {
   const approvedProjects = useMemo(() => projects.filter((project) => project.approval_status === 'approved').length, [projects]);
   const profileName = activeProject?.user_name || 'My Projects';
   const profileAvatar = normalizeAssetUrl(activeProject?.user_avatar) || defaultProfile;
-  const profileStatus = loadingProjects ? 'loading...' : projects.length ? 'Active' : 'empty';
+  const profileStatus = loadingProjects ? 'Loading…' : projects.length ? 'Active' : 'No projects';
   const profileMetaLeft = projects.length ? projectLabel(projects.length, 'project', 'projects') : 'No projects yet';
   const profileMetaRight = totalImages ? projectLabel(totalImages, 'file', 'files') : 'No files uploaded';
-  const aboutText = activeProject?.abstract || 'Upload your first project to populate this section with real work from the backend.';
+  const aboutText = activeProject?.abstract || 'Upload your first project to showcase your work here.';
   const skills = activeProject?.collaborators?.length
     ? activeProject.collaborators.slice(0, 4).map((item) => (typeof item === 'string' ? item : item?.name || item?.label || 'Collaborator'))
     : ['Add collaborators from the upload form'];
@@ -312,7 +312,7 @@ function LearnersProjects() {
 
   const handleViewProject = (project) => {
     if (!project?.id) return;
-    navigate(`/academia/learner/view-project?id=${project.id}`, { state: { project } });
+    navigate(`/academia/learner/view-project?id=${project.id}`);
   };
 
   const handleCollaboratorKeyDown = (event) => {
@@ -518,25 +518,21 @@ function LearnersProjects() {
             <div className="learners-projects-section-head">
               <div>
                 <h2>My Projects</h2>
-                <p>{loadingProjects ? 'Loading projects from the backend...' : projectLabel(projects.length, 'project', 'projects')}</p>
+                <p>{loadingProjects ? 'Loading your projects…' : projectLabel(projects.length, 'project', 'projects')}</p>
               </div>
             </div>
 
             {loadingProjects ? (
               <div className="learners-projects-empty-state learners-projects-loading-state">
-                <h3>loading...</h3>
-                <p>Fetching your project list from the backend.</p>
+                <h3>Loading projects…</h3>
+                <p>Fetching your project list.</p>
               </div>
             ) : projectsError ? (
-              <div className="learners-projects-empty-state learners-projects-error-state">
-                <h3>Projects could not load</h3>
-                <p>{projectsError}</p>
-                <div className="learners-projects-empty-actions">
-                  <button type="button" className="learners-projects-primary-btn" onClick={handleRetryLoad}>
-                    Retry
-                  </button>
-                </div>
-              </div>
+              <LearnerLoadError
+                title="Projects could not load"
+                message={projectsError}
+                onRetry={handleRetryLoad}
+              />
             ) : projects.length > 0 ? (
               <>
                 <div className="learners-projects-grid">
@@ -568,10 +564,10 @@ function LearnersProjects() {
                               <img src={likedProjects[project.id] ? acHer2 : heartIcon} alt="Like" />
                               <span>{formatCount(project.likes_count || 0)}</span>
                             </button>
-                            <button type="button" onClick={preventDefault}>
+                            <span className="learners-project-card-action-btn learners-project-card-action-btn--static">
                               <img src={acEye} alt="Views" />
                               <span>{formatCount(project.views_count || 0)}</span>
-                            </button>
+                            </span>
                             <button 
                               type="button" 
                               onClick={(e) => handleSaveToggle(project.id, e)}
@@ -610,7 +606,7 @@ function LearnersProjects() {
             ) : (
               <div className="learners-projects-empty-state">
                 <h3>No projects yet</h3>
-                <p>Upload your first project and it will appear here from the backend.</p>
+                <p>Completed a course? Upload a project to showcase what you learned and build your portfolio.</p>
                 <div className="learners-projects-empty-actions">
                   <button type="button" className="learners-projects-primary-btn" onClick={openUploadModal}>
                     Upload new project
@@ -627,7 +623,7 @@ function LearnersProjects() {
             <div className="learners-projects-section-head learners-projects-section-head-side">
               <div>
                 <h2>Profile</h2>
-                <p>Bio &amp; backend project summary</p>
+                <p>Your public learning profile</p>
               </div>
             </div>
 
@@ -646,11 +642,6 @@ function LearnersProjects() {
                 <div><img src={leLo} alt="Location" /><span>{projectLabel(totalImages, 'file', 'files')} attached</span></div>
               </div>
 
-              <div className="learners-projects-followers-row">
-                <img src={userIcon} alt="Followers" />
-                <span>{projectLabel(projects.length * 3, 'follower', 'followers')}</span>
-              </div>
-
               <button type="button" className="learners-projects-email-btn" onClick={() => navigate('/academia/learner/account')}>
                 <span>View account</span>
                 <img src={leEm} alt="Email" />
@@ -665,7 +656,12 @@ function LearnersProjects() {
                 </button>
               </div>
               <p className="learners-projects-side-paragraph">
-                {aboutText} <a href="/" onClick={preventDefault}>Read more</a>
+                {aboutText}
+                {activeProject ? (
+                  <button type="button" className="learners-projects-read-more" onClick={() => handleViewProject(activeProject)}>
+                    View featured project
+                  </button>
+                ) : null}
               </p>
             </div>
 
