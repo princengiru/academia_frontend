@@ -39,7 +39,7 @@ const languageOptions = [
   { label: 'FR', flag: '/assets/icons/france.svg' },
 ];
 
-const HOATopbar = () => {
+const HOATopbar = ({ isSidebarOpen = false, onOpenSidebar }) => {
   const location = useLocation();
   const dropdownRef = useRef(null);
 
@@ -133,6 +133,16 @@ const HOATopbar = () => {
     <header className="hoa-topbar">
       {/* Left: Dynamic Breadcrumbs */}
       <div className="hoa-topbar-left">
+        <button
+          type="button"
+          className="hoa-mobile-menu-btn"
+          onClick={onOpenSidebar}
+          aria-expanded={isSidebarOpen}
+          aria-controls="hoa-sidebar"
+          aria-label="Open menu"
+        >
+          <img src="/assets/icons/bars.svg" alt="" />
+        </button>
         <h2>
           {category} <span>/ {title}</span>
         </h2>

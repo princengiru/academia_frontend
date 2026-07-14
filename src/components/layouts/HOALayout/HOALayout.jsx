@@ -1,72 +1,157 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import HOASidebar from './HOASidebar';
 import HOATopbar from './HOATopbar';
 import HOAFooter from './HOAFooter';
+import { getHoaPageLabel, hoaPageTitle, resolveHoaCurrentPage } from '../../../pages/academia/hoa/hoaBrand';
 import './hoa-layout.css';
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
+function resolveRoleRedirect(role) {
+  const normalized = String(role || '').toLowerCase().trim();
+  if (normalized === 'instructor') return '/academia/professor';
+  if (normalized === 'student') return '/academia/learner/';
+  if (normalized === 'admin') return null;
+  return '/academia/index';
+}
+
+function readStoredRole() {
+  try {
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    return user?.role || '';
+  } catch {
+    return '';
+  }
+}
 
 const HOALayout = ({ children, currentPage: propCurrentPage }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const contentScrollRef = useRef(null);
+  const [authState, setAuthState] = useState('checking');
   const [showLogoutModal, setShowLogoutModal] = useState(false);
-  const [isSuspended, setIsSuspended] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  // --- Authentication Guard ---
+  const derivedPage = resolveHoaCurrentPage(location.pathname);
+  const currentPage = propCurrentPage || derivedPage;
+
+  const openSidebar = useCallback(() => setIsSidebarOpen(true), []);
+  const closeSidebar = useCallback(() => setIsSidebarOpen(false), []);
+
+  useLayoutEffect(() => {
+    window.scrollTo(0, 0);
+    const content = contentScrollRef.current;
+    if (content) content.scrollTop = 0;
+  }, [location.pathname, location.search]);
+
   useEffect(() => {
-    const checkAuth = () => {
+    closeSidebar();
+  }, [location.pathname, closeSidebar]);
+
+  useEffect(() => {
+    document.title = hoaPageTitle(getHoaPageLabel(currentPage));
+  }, [currentPage]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const verifyAccess = async () => {
       const token = localStorage.getItem('token');
-      // If there is no token, immediately redirect to the sign-in page
       if (!token) {
         navigate('/academia/auth/signin', { replace: true });
-      } else {
-        // Safe to render the protected layout
-        setIsAuthenticated(true);
+        return;
+      }
+
+      const storedRole = readStoredRole();
+      const storedRedirect = resolveRoleRedirect(storedRole);
+      if (storedRedirect) {
+        navigate(storedRedirect, { replace: true });
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/profile`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (cancelled) return;
+
+        if (response.status === 401) {
+          localStorage.clear();
+          navigate('/academia/auth/signin', { replace: true });
+          return;
+        }
+
+        if (response.status === 403) {
+          localStorage.clear();
+          navigate('/academia/auth/signin', {
+            replace: true,
+            state: { error: 'This account has been deactivated. Please contact support.' },
+          });
+          return;
+        }
+
+        if (response.ok) {
+          const body = await response.json().catch(() => ({}));
+          const user = body?.data?.user || body?.data || body?.user || {};
+          if (user && typeof user === 'object') {
+            localStorage.setItem('user', JSON.stringify(user));
+          }
+
+          const apiRole = user?.role || storedRole;
+          const apiRedirect = resolveRoleRedirect(apiRole);
+          if (apiRedirect) {
+            navigate(apiRedirect, { replace: true });
+            return;
+          }
+        }
+      } catch {
+        if (resolveRoleRedirect(storedRole)) {
+          navigate(resolveRoleRedirect(storedRole), { replace: true });
+          return;
+        }
+      }
+
+      if (!cancelled) {
+        setAuthState('allowed');
       }
     };
 
-    checkAuth();
+    verifyAccess();
+
+    return () => {
+      cancelled = true;
+    };
   }, [navigate]);
 
-  // --- Account Status Guard / Polling ---
   useEffect(() => {
     const token = localStorage.getItem('token');
-    if (!token) return;
+    if (!token || authState !== 'allowed') return undefined;
 
     const checkAccountStatus = async () => {
       try {
         const response = await fetch(`${API_BASE_URL}/api/profile`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { Authorization: `Bearer ${token}` },
         });
 
         if (response.status === 403) {
           localStorage.clear();
           navigate('/academia/auth/signin', {
             replace: true,
-            state: { error: 'This account has been deactivated. Please contact support.' }
+            state: { error: 'This account has been deactivated. Please contact support.' },
           });
-          return;
         }
-      } catch (error) {
-        // Silently ignore network errors during background check
+      } catch {
+        // Ignore background polling errors
       }
     };
 
     checkAccountStatus();
     const interval = setInterval(checkAccountStatus, 30000);
     return () => clearInterval(interval);
-  }, []);
+  }, [authState, navigate]);
 
-  // --- Auto-detect Current Page ---
-  // If a prop isn't passed, it intelligently reads the URL to tell the sidebar what's active.
-  const derivedPage = location.pathname.split('/').filter(Boolean).pop();
-
-  // If the path is exactly '/academia/hoa', set it to 'index' for the sidebar matching logic
-  const currentPage = propCurrentPage || (derivedPage === 'hoa' ? 'index' : derivedPage);
-
-  // --- Scoped Body Styling ---
   useEffect(() => {
     document.body.setAttribute('data-role', 'hoa');
     return () => {
@@ -74,35 +159,21 @@ const HOALayout = ({ children, currentPage: propCurrentPage }) => {
     };
   }, []);
 
-  // --- Loading State ---
-  // Prevent the layout from flashing on the screen for a split second before the redirect kicks in
-  if (!isAuthenticated) {
-    return null; // Or return a <LoadingSpinner /> if you prefer
-  }
+  useEffect(() => {
+    if (!isSidebarOpen) return undefined;
+    const onKeyDown = (event) => {
+      if (event.key === 'Escape') closeSidebar();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [isSidebarOpen, closeSidebar]);
 
-  if (isSuspended) {
+  if (authState === 'checking') {
     return (
-      <div className="modal-overlay" role="dialog" aria-modal="true" aria-label="Account Suspended">
-        <div className="logout-modal suspension-modal" style={{ borderTop: '4px solid #EF4444' }}>
-          <h4 style={{ color: '#EF4444', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '20px' }}>⚠️</span> Account Deactivated
-          </h4>
-          <p style={{ marginTop: '12px', lineHeight: '1.5' }}>
-            Your account has been deactivated or suspended. You can no longer access this platform. Please contact support if you believe this is an error.
-          </p>
-          <div className="logout-modal-buttons" style={{ marginTop: '20px' }}>
-            <button
-              type="button"
-              className="logout-confirm"
-              style={{ background: '#EF4444', color: '#fff', width: '100%', padding: '10px' }}
-              onClick={() => {
-                localStorage.clear();
-                navigate('/academia/auth/signin');
-              }}
-            >
-              Return to Sign In
-            </button>
-          </div>
+      <div className="hoa-auth-loading" role="status" aria-live="polite" aria-busy="true">
+        <div className="hoa-auth-loading-card">
+          <div className="hoa-auth-loading-spinner" aria-hidden="true" />
+          <p>Loading HOA workspace…</p>
         </div>
       </div>
     );
@@ -110,15 +181,28 @@ const HOALayout = ({ children, currentPage: propCurrentPage }) => {
 
   return (
     <div className="hoa-dashboard-wrapper animate-fade-in">
+      {isSidebarOpen ? (
+        <button
+          type="button"
+          className="hoa-sidebar-backdrop"
+          aria-label="Close menu"
+          onClick={closeSidebar}
+        />
+      ) : null}
 
-      {/* Sidebar */}
-      <HOASidebar currentPage={currentPage} onLogout={() => setShowLogoutModal(true)} />
+      <HOASidebar
+        currentPage={currentPage}
+        isOpen={isSidebarOpen}
+        onClose={closeSidebar}
+        onLogout={() => setShowLogoutModal(true)}
+      />
 
-      {/* Main Content Area */}
-      <div className="hoa-main-container">
-        <HOATopbar />
+      <div className="hoa-main-container" ref={contentScrollRef}>
+        <HOATopbar
+          isSidebarOpen={isSidebarOpen}
+          onOpenSidebar={openSidebar}
+        />
 
-        {/* Render explicitly passed children OR dynamically load via React Router Outlet */}
         <main className="hoa-content-area">
           {children || <Outlet />}
         </main>
@@ -148,7 +232,6 @@ const HOALayout = ({ children, currentPage: propCurrentPage }) => {
           </div>
         </div>
       )}
-
     </div>
   );
 };

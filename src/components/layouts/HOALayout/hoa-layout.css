@@ -614,3 +614,203 @@ body[data-role="hoa"] .logout-confirm {
 body[data-role="hoa"] .logout-confirm:hover {
   background: #390356;
 }
+
+.hoa-auth-loading {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f6f6f9;
+  padding: 24px;
+}
+
+.hoa-auth-loading-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 28px 32px;
+  border-radius: 12px;
+  border: 1px solid #e4e6ef;
+  background: #ffffff;
+  box-shadow: 0 8px 24px rgba(7, 20, 55, 0.06);
+}
+
+.hoa-auth-loading-card p {
+  margin: 0;
+  font-family: Inter, sans-serif;
+  font-size: 14px;
+  color: #4b5675;
+}
+
+.hoa-auth-loading-spinner {
+  width: 28px;
+  height: 28px;
+  border: 3px solid #e4e6ef;
+  border-top-color: #450468;
+  border-radius: 50%;
+  animation: hoaAuthSpin 0.8s linear infinite;
+}
+
+@keyframes hoaAuthSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* =========================================
+   MOBILE SHELL + TABLE SCROLL (Sprint F)
+   ========================================= */
+
+.hoa-mobile-menu-btn {
+  display: none;
+  border: none;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.hoa-mobile-menu-btn img {
+  width: 20px;
+  height: 20px;
+}
+
+.hoa-sidebar-backdrop {
+  display: none;
+}
+
+@media (max-width: 992px) {
+  body[data-role="hoa"] .hoa-topbar {
+    padding: 0 16px;
+  }
+
+  body[data-role="hoa"] .hoa-content-area {
+    padding: 0 16px 24px;
+  }
+
+  body[data-role="hoa"] .hoa-topbar-center .hoa-topbar-search {
+    width: 220px;
+  }
+}
+
+@media (max-width: 768px) {
+  .hoa-mobile-menu-btn {
+    display: inline-flex;
+  }
+
+  .hoa-sidebar-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 90;
+    border: none;
+    padding: 0;
+    background: rgba(7, 20, 55, 0.34);
+    cursor: pointer;
+  }
+
+  body[data-role="hoa"] .hoa-topbar-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+  }
+
+  body[data-role="hoa"] .hoa-topbar-left h2 {
+    font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  body[data-role="hoa"] .hoa-topbar-center {
+    display: none;
+  }
+
+  body[data-role="hoa"] .hoa-user-info {
+    display: none;
+  }
+
+  body[data-role="hoa"] .hoa-main-container {
+    width: 100%;
+  }
+
+  body[data-role="hoa"] .hoa-sidebar {
+    width: min(320px, 88vw);
+    max-width: min(320px, 88vw);
+    min-width: 280px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 100;
+    height: 100vh;
+    min-height: 100vh;
+    background: #F6F6F9;
+    border-right: 1px solid #F1F1F4;
+    box-shadow: 1px 0 4px rgba(0, 0, 0, 0.14);
+    opacity: 0;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease, opacity 0.3s ease;
+    pointer-events: none;
+  }
+
+  body[data-role="hoa"] .hoa-sidebar.open {
+    opacity: 1;
+    transform: translateX(0);
+    pointer-events: auto;
+  }
+
+  body[data-role="hoa"] .hoa-sidebar-close {
+    display: inline-flex;
+  }
+
+  body[data-role="hoa"] .hoa-footer {
+    flex-wrap: wrap !important;
+    gap: 10px;
+    padding: 14px 16px;
+  }
+
+  body[data-role="hoa"] .hoa-footer-links {
+    flex-wrap: wrap;
+    white-space: normal;
+  }
+
+  /* Large tables: horizontal scroll + sticky action column */
+  body[data-role="hoa"] .hoa-list-container,
+  body[data-role="hoa"] .rep-table-wrapper,
+  body[data-role="hoa"] .hoa-table-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  body[data-role="hoa"] .hoa-list-table,
+  body[data-role="hoa"] .rep-table,
+  body[data-role="hoa"] .learners-table {
+    min-width: 720px;
+  }
+
+  body[data-role="hoa"] .hoa-list-table th:last-child,
+  body[data-role="hoa"] .hoa-list-table td:last-child,
+  body[data-role="hoa"] .rep-table th:last-child,
+  body[data-role="hoa"] .rep-table td:last-child {
+    position: sticky;
+    right: 0;
+    z-index: 2;
+    background: #FFFFFF;
+    box-shadow: -6px 0 10px rgba(15, 23, 42, 0.06);
+  }
+
+  body[data-role="hoa"] .hoa-list-table th:last-child,
+  body[data-role="hoa"] .rep-table th:last-child {
+    background: #F9F9FC;
+  }
+}
+
+@media (min-width: 769px) {
+  body[data-role="hoa"] .hoa-sidebar-close {
+    display: none;
+  }
+}
