@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { usePublicPageTitle } from '../public/usePublicPageTitle.jsx';
 
 // Assets (Update paths to match your React project structure)
 import googleIcon from '../../../assets/icons/google.svg';
@@ -10,6 +11,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 function AcademiaSignUp() {
+  usePublicPageTitle('Sign up');
   const navigate = useNavigate();
   const dropdownRef = useRef(null);
   
@@ -567,7 +569,12 @@ function AcademiaSignUp() {
                 disabled={isLoading}
                 required
               />
-              <span>I accept the Terms &amp; Conditions</span>
+              <span>
+                I accept the{' '}
+                <Link to="/academia/terms" target="_blank" rel="noreferrer">
+                  Terms &amp; Conditions
+                </Link>
+              </span>
             </label>
 
             <button 

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { usePublicPageTitle } from '../public/usePublicPageTitle.jsx';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 // Assets (Update paths to match your React project structure)
@@ -9,6 +10,7 @@ import bgVisual from '../../../assets/imgs/bg.png';
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 function AcademiaSignIn() {
+  usePublicPageTitle('Sign in');
   const navigate = useNavigate();
   const location = useLocation();
   
@@ -19,6 +21,7 @@ function AcademiaSignIn() {
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(location.state?.error || new URLSearchParams(location.search).get('error') || '');
+  const [returnPath] = useState(() => sessionStorage.getItem('redirectAfterLogin'));
 
   // --- Auto-redirect if already logged in ---
   useEffect(() => {
@@ -420,6 +423,22 @@ function AcademiaSignIn() {
             <p className="signin-subtitle">
               Need an account? <a href="/academia/auth/signup">Sign up</a>
             </p>
+
+            {returnPath ? (
+              <div style={{
+                marginTop: '16px',
+                padding: '12px',
+                backgroundColor: '#F5F3FF',
+                border: '1px solid #DDD6FE',
+                borderRadius: '8px',
+                color: '#450468',
+                fontSize: '13px',
+                lineHeight: '1.5',
+                textAlign: 'left',
+              }}>
+                You will return to your previous page after signing in.
+              </div>
+            ) : null}
 
             {error && (
               <div style={{
