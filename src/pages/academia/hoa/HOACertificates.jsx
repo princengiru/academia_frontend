@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import HOALayout from '../../../components/layouts/HOALayout/HOALayout';
+import { HOALoadError, HOALoading, HOAEmptyState } from './HOAPageState';
 import './hoa-certificates.css';
 
 // Reusing standard project icons
@@ -86,6 +87,7 @@ const HOACertificates = () => {
     const [certificates, setCertificates] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const [retryKey, setRetryKey] = useState(0);
     const [searchQuery, setSearchQuery] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 6;
@@ -134,10 +136,26 @@ const HOACertificates = () => {
         }
     };
 
+    const [approvingId, setApprovingId] = useState(null);
+
+    const handleDownloadCertificate = (cert) => {
+        if (!cert?.certificate_number) {
+            showToast('Download is not available until this certificate has a certificate number.', 'error');
+            return;
+        }
+        window.open(`${API_BASE_URL}/api/certificates/${cert.certificate_number}/download`, '_blank', 'noopener,noreferrer');
+    };
+
     const handleApprove = async (certId) => {
         const token = localStorage.getItem('token');
-        if (!token) return;
-        
+        if (!token || approvingId) return;
+
+        setApprovingId(certId);
+        const previous = certificates;
+        setCertificates((prev) =>
+            prev.map((c) => (c.id === certId ? { ...c, is_verified: 1 } : c))
+        );
+
         try {
             const res = await fetch(`${API_BASE_URL}/api/certificates/${certId}/verify`, {
                 method: 'PUT',
@@ -152,13 +170,16 @@ const HOACertificates = () => {
             showToast("Certificate approved and verified successfully!", "success");
             fetchCertificates();
         } catch (err) {
+            setCertificates(previous);
             showToast(err.message, "error");
+        } finally {
+            setApprovingId(null);
         }
     };
 
     useEffect(() => {
         fetchCertificates();
-    }, []);
+    }, [retryKey]);
 
     useEffect(() => {
         setCurrentPage(1);
@@ -237,7 +258,7 @@ const HOACertificates = () => {
                 <div className="hoace-sub-header">
                     <div className="hoace-sub-title">
                         <h2>Manage Claims</h2>
-                        <p>{filteredCertificates.length} Rewards</p>
+                        <p>{filteredCertificates.length} {filteredCertificates.length === 1 ? 'Certificate' : 'Certificates'}</p>
                     </div>
                 </div>
 
@@ -330,16 +351,31 @@ const HOACertificates = () => {
 
                 {/* Certificates Grid */}
                 <div className="hoace-grid">
-                    {loading ? (
-                        <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '40px', color: '#4B5675' }}>
-                            Loading certificate requests...
+                    {loading && certificates.length === 0 ? (
+                        <div style={{ gridColumn: '1 / -1' }}>
+                            <HOALoading message="Loading certificate requests…" />
+                        </div>
+                    ) : error && certificates.length === 0 ? (
+                        <div style={{ gridColumn: '1 / -1' }}>
+                            <HOALoadError
+                                title="Could not load certificates"
+                                message={error}
+                                onRetry={() => setRetryKey((key) => key + 1)}
+                            />
                         </div>
                     ) : paginatedCertificates.length === 0 ? (
-                        <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '40px', color: '#4B5675' }}>
-                            No certificate requests found.
+                        <div style={{ gridColumn: '1 / -1' }}>
+                            <HOAEmptyState
+                                title="No certificate requests found"
+                                message={searchQuery || selectedCategory !== 'All Categories' || selectedDateFilter !== 'All Time'
+                                    ? 'Try adjusting your search or filters.'
+                                    : 'Certificate claims will appear here once learners complete courses.'}
+                            />
                         </div>
                     ) : paginatedCertificates.map(cert => {
-                        const scoreStr = cert.final_score !== undefined && cert.final_score !== null ? `${parseFloat(cert.final_score).toFixed(1)}%` : '75.0%';
+                        const scoreStr = cert.final_score !== undefined && cert.final_score !== null
+                            ? `${parseFloat(cert.final_score).toFixed(1)}%`
+                            : '—';
                         const dateStr = cert.issue_date ? formatCertDate(new Date(cert.issue_date)) : 'N/A';
                         
                         return (
@@ -364,11 +400,7 @@ const HOACertificates = () => {
                                         {cert.is_verified === 1 ? (
                                             <button 
                                                 className="hoace-download-btn"
-                                                onClick={() => {
-                                                    if (cert.certificate_number) {
-                                                        window.open(`${API_BASE_URL}/api/certificates/${cert.certificate_number}/download`, '_blank');
-                                                    }
-                                                }}
+                                                onClick={() => handleDownloadCertificate(cert)}
                                             >
                                                 <img src={hoadownloadall} alt="" /> Download
                                             </button>
@@ -387,6 +419,7 @@ const HOACertificates = () => {
                                         ) : (
                                             <button 
                                                 onClick={() => handleApprove(cert.id)}
+                                                disabled={approvingId === cert.id}
                                                 style={{
                                                     backgroundColor: '#10B981',
                                                     color: '#FFFFFF',
@@ -395,10 +428,11 @@ const HOACertificates = () => {
                                                     padding: '6px 12px',
                                                     fontSize: '11px',
                                                     fontWeight: '600',
-                                                    cursor: 'pointer'
+                                                    cursor: approvingId === cert.id ? 'wait' : 'pointer',
+                                                    opacity: approvingId === cert.id ? 0.7 : 1
                                                 }}
                                             >
-                                                Approve Claim
+                                                {approvingId === cert.id ? 'Approving…' : 'Approve Claim'}
                                             </button>
                                         )}
                                     </div>
