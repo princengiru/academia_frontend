@@ -73,6 +73,14 @@
     border-radius: 2px;
 }
 
+.hoac-community-page .hoac-stats-note {
+    grid-column: 1 / -1;
+    margin: 0 0 4px;
+    font-size: 12px;
+    line-height: 18px;
+    color: #78829d;
+}
+
 .hoac-community-page .hoac-stat-block {
     background: #FFFFFF;
     border-radius: 8px;

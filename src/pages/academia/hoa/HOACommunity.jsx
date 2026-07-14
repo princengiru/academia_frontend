@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import HOALayout from '../../../components/layouts/HOALayout/HOALayout';
 import CreateStoryModal from '../../../components/HOACommunity/CreateStoryModal';
+import { HOALoadError, HOALoading, HOAEmptyState } from './HOAPageState';
+import { HOAToast, useHOAToast } from './useHOAToast';
 import './hoa-community.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
@@ -125,6 +127,11 @@ const resolveYoutubeEmbedUrl = (url) => {
   return url;
 };
 
+const formatEngagementStat = (value) => {
+    const num = Number(value);
+    return Number.isFinite(num) ? num : 0;
+};
+
 const HOACommunity = () => {
     // Top-level state
     const [isCategoryOpen, setIsCategoryOpen] = useState(false);
@@ -136,14 +143,7 @@ const HOACommunity = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [editingStory, setEditingStory] = useState(null);
-    const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
-    
-    const showToast = (message, type = 'success') => {
-        setToast({ show: true, message, type });
-        setTimeout(() => {
-            setToast(prev => ({ ...prev, show: false }));
-        }, 3000);
-    };
+    const { toast, showToast, hideToast } = useHOAToast();
     const [activeTab, setActiveTab] = useState('overview'); // 'overview' or 'comments'
     
     // Comments state
@@ -159,6 +159,7 @@ const HOACommunity = () => {
     const [allStories, setAllStories] = useState([]); // Store all stories for client-side filtering
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [retryKey, setRetryKey] = useState(0);
     const [stats, setStats] = useState({
         totalStories: 0,
         totalLikes: 0,
@@ -180,6 +181,14 @@ const HOACommunity = () => {
     const [selectedStory, setSelectedStory] = useState(null);
     const [loadingStory, setLoadingStory] = useState(false);
 
+    const categoryOptions = useMemo(() => {
+        const statuses = [...new Set(allStories.map((story) => story.status).filter(Boolean))];
+        return ['All Categories', ...statuses.map((status) => {
+            const label = String(status);
+            return label.charAt(0).toUpperCase() + label.slice(1);
+        })];
+    }, [allStories]);
+
     // Fetch all community stories from backend
     const fetchStories = async () => {
         try {
@@ -199,12 +208,15 @@ const HOACommunity = () => {
             
             if (result.success && result.data) {
                 // Transform backend data to match frontend structure
-                const transformedStories = result.data.map((story, idx) => ({
+                const transformedStories = result.data.map((story) => ({
                     id: story.id,
                     title: story.title,
                     excerpt: story.description || 'No description available',
                     author: story.uploaded_by_name || 'ADMIN',
-                    comments: 0,
+                    comments: formatEngagementStat(story.comment_count ?? story.comments_count ?? 0),
+                    likes_count: formatEngagementStat(story.likes_count ?? story.likes ?? 0),
+                    views_count: formatEngagementStat(story.views_count ?? story.views ?? 0),
+                    shares_count: formatEngagementStat(story.shares_count ?? story.shares ?? 0),
                     date: new Date(story.created_at).toLocaleDateString('en-US', {
                         month: 'short',
                         day: 'numeric',
@@ -212,7 +224,7 @@ const HOACommunity = () => {
                         hour: '2-digit',
                         minute: '2-digit'
                     }),
-                    rawDate: new Date(story.created_at), // Store raw date for filtering
+                    rawDate: new Date(story.created_at),
                     img: story.thumbnail_url.startsWith('http') 
                         ? story.thumbnail_url 
                         : `${API_BASE_URL}${story.thumbnail_url}`,
@@ -221,15 +233,14 @@ const HOACommunity = () => {
                 }));
                 
                 setAllStories(transformedStories);
-                setTotalStoriesCount(result.data.length);
+                setTotalStoriesCount(transformedStories.length);
                 
-                // Update stats based on real data
                 setStats({
-                    totalStories: result.data.length,
-                    totalLikes: Math.floor(Math.random() * 100) + 10, // Placeholder until backend provides
-                    totalFeedbacks: '+ 2.8K', // Placeholder
-                    totalShares: Math.floor(Math.random() * 500) + 100, // Placeholder
-                    totalReads: '1.8K' // Placeholder
+                    totalStories: transformedStories.length,
+                    totalLikes: transformedStories.reduce((sum, story) => sum + story.likes_count, 0),
+                    totalFeedbacks: transformedStories.reduce((sum, story) => sum + story.comments, 0),
+                    totalShares: transformedStories.reduce((sum, story) => sum + story.shares_count, 0),
+                    totalReads: transformedStories.reduce((sum, story) => sum + story.views_count, 0),
                 });
             }
         } catch (err) {
@@ -242,7 +253,7 @@ const HOACommunity = () => {
 
     useEffect(() => {
         fetchStories();
-    }, []);
+    }, [retryKey]);
 
     // Client-side filtering
     useEffect(() => {
@@ -257,14 +268,10 @@ const HOACommunity = () => {
             );
         }
 
-        // Apply category filter (mock - since backend doesn't have category field)
+        // Category filter uses story status from the API.
         if (selectedCategory !== 'All Categories') {
-            // For now, this is a placeholder - you'd need a category field in the database
-            // We'll just filter by title containing the category name as a demo
-            const categoryLower = selectedCategory.toLowerCase();
             filtered = filtered.filter(story =>
-                story.title.toLowerCase().includes(categoryLower) ||
-                story.excerpt.toLowerCase().includes(categoryLower)
+                String(story.status || '').toLowerCase() === selectedCategory.toLowerCase()
             );
         }
 
@@ -322,10 +329,8 @@ const HOACommunity = () => {
         }
 
         if (selectedCategory !== 'All Categories') {
-            const categoryLower = selectedCategory.toLowerCase();
             filtered = filtered.filter(story =>
-                story.title.toLowerCase().includes(categoryLower) ||
-                story.excerpt.toLowerCase().includes(categoryLower)
+                String(story.status || '').toLowerCase() === selectedCategory.toLowerCase()
             );
         }
 
@@ -549,10 +554,11 @@ const HOACommunity = () => {
                 // Update storiesData locally to reflect status changes in the grid
                 setStoriesData(prev => prev.map(s => s.id === storyId ? { ...s, status: newStatus } : s));
                 setAllStories(prev => prev.map(s => s.id === storyId ? { ...s, status: newStatus } : s));
+                showToast(`Story marked as ${newStatus}.`, 'success');
             }
         } catch (err) {
             console.error('Error updating story status:', err);
-            alert(err.message);
+            showToast(err.message || 'Failed to update story status.', 'error');
         }
     };
 
@@ -578,10 +584,11 @@ const HOACommunity = () => {
                 setIsModalOpen(false);
                 setSelectedStory(null);
                 setAllStories(prev => prev.filter(s => s.id !== storyId));
+                showToast('Story deleted successfully.', 'success');
             }
         } catch (err) {
             console.error('Error deleting story:', err);
-            alert(err.message);
+            showToast(err.message || 'Failed to delete story.', 'error');
         }
     };
 
@@ -605,10 +612,11 @@ const HOACommunity = () => {
             if (result.success) {
                 // Remove comment from local comments list
                 setComments(prev => prev.filter(c => c.id !== commentId));
+                showToast('Comment deleted.', 'success');
             }
         } catch (err) {
             console.error('Error deleting comment:', err);
-            alert(err.message);
+            showToast(err.message || 'Failed to delete comment.', 'error');
         }
     };
 
@@ -637,10 +645,11 @@ const HOACommunity = () => {
                 }));
                 // Decrease reply_count in comments list
                 setComments(prev => prev.map(c => c.id === commentId ? { ...c, reply_count: Math.max(0, (c.reply_count || 1) - 1) } : c));
+                showToast('Reply deleted.', 'success');
             }
         } catch (err) {
             console.error('Error deleting reply:', err);
-            alert(err.message);
+            showToast(err.message || 'Failed to delete reply.', 'error');
         }
     };
 
@@ -661,6 +670,7 @@ const HOACommunity = () => {
                 </div>
 
                 <div className="hoac-stats-container">
+                    <p className="hoac-stats-note">Engagement totals are summed from story records returned by the API.</p>
                     <div className="hoac-stat-block">
                         <div className="hoac-stat-icon "><IconStories /></div>
                         <div className="hoac-stat-text">
@@ -717,7 +727,7 @@ const HOACommunity = () => {
                         </div>
                         {isCategoryOpen && (
                             <div className="hoac-dropdown-menu">
-                                {['All Categories', 'Software', 'Engineering', 'Lifestyle'].map(opt => (
+                                {categoryOptions.map(opt => (
                                     <button
                                         key={opt}
                                         className="hoac-dropdown-item"
@@ -795,16 +805,25 @@ const HOACommunity = () => {
 
                 <div className="hoac-grid">
                     {loading ? (
-                        <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '40px' }}>
-                            <p>Loading community stories...</p>
+                        <div style={{ gridColumn: '1/-1' }}>
+                            <HOALoading message="Loading community stories…" />
                         </div>
                     ) : error ? (
-                        <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '40px' }}>
-                            <p style={{ color: '#EF4444' }}>Error: {error}</p>
+                        <div style={{ gridColumn: '1/-1' }}>
+                            <HOALoadError
+                                title="Could not load community stories"
+                                message={error}
+                                onRetry={() => setRetryKey((key) => key + 1)}
+                            />
                         </div>
                     ) : storiesData.length === 0 ? (
-                        <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '40px' }}>
-                            <p>No community stories found.</p>
+                        <div style={{ gridColumn: '1/-1' }}>
+                            <HOAEmptyState
+                                title="No community stories found"
+                                message={searchQuery || selectedCategory !== 'All Categories' || selectedDateFilter !== 'All Time'
+                                    ? 'Try adjusting your search or filters.'
+                                    : 'Published stories will appear here once admins add community content.'}
+                            />
                         </div>
                     ) : (
                         storiesData.map(story => (
@@ -1210,6 +1229,7 @@ const HOACommunity = () => {
                     story={editingStory}
                 />
 
+                <HOAToast toast={toast} onDismiss={hideToast} />
             </div>
         </HOALayout>
     );
