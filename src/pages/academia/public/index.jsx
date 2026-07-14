@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Swiper from 'swiper';
 import { EffectCoverflow, Navigation, Pagination } from 'swiper/modules';
@@ -20,7 +20,6 @@ import acStat3Icon from '../../../assets/icons/ac-stat3.svg';
 import acStat4Icon from '../../../assets/icons/ac-stat4.svg';
 import acWshIcon from '../../../assets/icons/ac-wsh.svg';
 import acP1Icon from '../../../assets/icons/ac-p1.svg';
-import dummyIcon from '../../../assets/icons/dummy.svg';
 import acNextIcon from '../../../assets/icons/ac-next.svg';
 import acEnIcon from '../../../assets/icons/ac-en.svg';
 import acLIcon from '../../../assets/icons/ac-l.svg';
@@ -42,11 +41,11 @@ import acaImg from '../../../assets/imgs/aca.png';
 import jrImg from '../../../assets/imgs/jr.jpg';
 import acOnImg from '../../../assets/imgs/ac-on.jpg';
 import acStrImg from '../../../assets/imgs/ac-str.jpg';
-import defaultProfile from '../../../assets/imgs/default-profile.png';
-import glImage from '../../../assets/imgs/gl.jpg';
-import itemImage from '../../../assets/imgs/item.jpg';
+import journalImage from '../../../assets/imgs/journal.jpg';
 
 import './index.css';
+import { PublicNewsletterNotice, usePublicNewsletter } from './usePublicNewsletter.jsx';
+import { usePublicPageTitle } from './usePublicPageTitle.jsx';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
@@ -58,16 +57,16 @@ const resolveStoryImage = (value) => {
   return `${API_BASE_URL}${value}`;
 };
 
-// --- Static Data for Journals (Backend not ready) ---
-const STATIC_JOURNALS = [
-  { id: 'j1', title: 'The Future of AI in Education', date: 'October 12, 2025', image: jrImg },
-  { id: 'j2', title: 'Sustainable Engineering Practices', date: 'November 05, 2025', image: acOnImg },
-  { id: 'j3', title: 'Modern Medical Research Advances', date: 'December 01, 2025', image: acStrImg },
-  { id: 'j4', title: 'Quantum Computing Fundamentals', date: 'January 15, 2026', image: itemImage },
-  { id: 'j5', title: 'Global Economic Trends Post-2025', date: 'February 20, 2026', image: glImage },
-];
+const resolveProjectImage = (value, fallback = journalImage) => {
+  if (!value) return fallback;
+  if (value.startsWith('http://') || value.startsWith('https://') || value.startsWith('data:') || value.startsWith('blob:')) {
+    return value;
+  }
+  return `${API_BASE_URL}${value}`;
+};
 
 function AcademiaIndex() {
+  usePublicPageTitle('Home');
   const navigate = useNavigate();
   const swiperInstancesRef = useRef([]);
 
@@ -76,17 +75,16 @@ function AcademiaIndex() {
   const [freeData, setFreeData] = useState([]);
   const [syllabusesData, setSyllabusesData] = useState([]);
   const [storiesData, setStoriesData] = useState([]);
+  const [projectsData, setProjectsData] = useState([]);
   const [dataLoading, setDataLoading] = useState(true);
-  
-  // --- Form State ---
-  const [newsletterEmail, setNewsletterEmail] = useState('');
+  const { email: newsletterEmail, setEmail: setNewsletterEmail, notice: newsletterNotice, handleSubmit: handleNewsletterSubmit } = usePublicNewsletter();
 
   // --- Initialize Swipers ---
   useEffect(() => {
     // Destroy previous instances safely
     swiperInstancesRef.current.forEach((instance) => instance?.destroy(true, true));
 
-    // 1. Journals (Coverflow)
+    // 1. Projects (Coverflow)
     const journalsSwiper = new Swiper('.journalsSwiper', {
       modules: [Navigation, EffectCoverflow],
       spaceBetween: 20,
@@ -151,31 +149,13 @@ function AcademiaIndex() {
       },
     });
 
-    // 4. Testimonials
-    const tscSwiper = new Swiper('.tsc-swiper', {
-      modules: [Pagination],
-      spaceBetween: 20,
-      loop: false,
-      grabCursor: true,
-      observer: true,
-      observeParents: true,
-      pagination: {
-        el: '.tsc-swiper .swiper-pagination',
-        clickable: true,
-      },
-      breakpoints: {
-        0: { slidesPerView: 1 },
-        769: { slidesPerView: 3 },
-      },
-    });
-
-    swiperInstancesRef.current = [journalsSwiper, pscSwiper, ssSwiper, tscSwiper];
+    swiperInstancesRef.current = [journalsSwiper, pscSwiper, ssSwiper];
 
     return () => {
       swiperInstancesRef.current.forEach((instance) => instance?.destroy(true, true));
       swiperInstancesRef.current = [];
     };
-  }, [syllabusesData, popularData, storiesData]); // Re-bind swipers when data arrives
+  }, [syllabusesData, popularData, storiesData, projectsData]);
 
   // --- Fetch API Data ---
   useEffect(() => {
@@ -183,17 +163,19 @@ function AcademiaIndex() {
 
     const loadPublicData = async () => {
       try {
-        const [storiesRes, popularRes, freeRes, syllabusesRes] = await Promise.all([
+        const [storiesRes, popularRes, freeRes, syllabusesRes, projectsRes] = await Promise.all([
           fetch(`${API_BASE_URL}/api/community-stories`),
           fetch(`${API_BASE_URL}/api/courses/public/popular`),
           fetch(`${API_BASE_URL}/api/courses/public/free`),
           fetch(`${API_BASE_URL}/api/syllabuses?status_approval=approved`),
+          fetch(`${API_BASE_URL}/api/projects`),
         ]);
 
         const storiesBody = await storiesRes.json().catch(() => ({}));
         const popularBody = await popularRes.json().catch(() => ({}));
         const freeBody = await freeRes.json().catch(() => ({}));
         const syllabusesBody = await syllabusesRes.json().catch(() => ({}));
+        const projectsBody = await projectsRes.json().catch(() => ({}));
 
         if (!mounted) return;
 
@@ -201,6 +183,13 @@ function AcademiaIndex() {
         setPopularData(Array.isArray(popularBody?.data?.data) ? popularBody.data.data : (Array.isArray(popularBody?.data) ? popularBody.data : (Array.isArray(popularBody) ? popularBody : [])));
         setFreeData(Array.isArray(freeBody?.data?.data) ? freeBody.data.data : (Array.isArray(freeBody?.data) ? freeBody.data : (Array.isArray(freeBody) ? freeBody : [])));
         setSyllabusesData(Array.isArray(syllabusesBody?.data) ? syllabusesBody.data : (Array.isArray(syllabusesBody) ? syllabusesBody : []));
+        setProjectsData(
+          Array.isArray(projectsBody?.data?.projects)
+            ? projectsBody.data.projects
+            : Array.isArray(projectsBody?.data)
+              ? projectsBody.data
+              : (Array.isArray(projectsBody) ? projectsBody : []),
+        );
       } catch (err) {
         console.error("Error loading public data:", err);
       } finally {
@@ -213,34 +202,34 @@ function AcademiaIndex() {
     return () => { mounted = false; };
   }, []);
 
-  // --- Handlers ---
-  const handleNewsletterSubmit = (e) => {
-    e.preventDefault();
-    if (!newsletterEmail.trim()) return;
-    console.log("Subscribing to newsletter:", newsletterEmail);
-    // TODO: Send to backend
-    setNewsletterEmail('');
-    alert("Thanks for subscribing!");
-  };
+  const platformStats = useMemo(() => {
+    if (dataLoading) {
+      return [
+        { icon: acStat1Icon, value: '…', label: 'Approved syllabuses' },
+        { icon: acStat2Icon, value: '…', label: 'Featured courses' },
+        { icon: acStat3Icon, value: '…', label: 'Public projects' },
+        { icon: acStat4Icon, value: '…', label: 'Community stories' },
+      ];
+    }
 
-  // --- Static Component Data ---
-  const stats = [
-    { icon: acStat1Icon, value: '20,000+', label: 'Enrolled Students' },
-    { icon: acStat2Icon, value: '20,000+', label: 'Trusted Tutors' },
-    { icon: acStat3Icon, value: '20,000+', label: 'Schedules' },
-    { icon: acStat4Icon, value: '20,000+', label: 'Syllabuses' },
-  ];
+    return [
+      { icon: acStat1Icon, value: String(syllabusesData.length), label: 'Approved syllabuses' },
+      { icon: acStat2Icon, value: String(popularData.length), label: 'Featured courses' },
+      { icon: acStat3Icon, value: String(projectsData.length), label: 'Public projects' },
+      { icon: acStat4Icon, value: String(storiesData.length), label: 'Community stories' },
+    ];
+  }, [dataLoading, syllabusesData.length, popularData.length, projectsData.length, storiesData.length]);
 
   const features = [
-    { icon: ac1Icon, title: 'Online Syllabuses', desc: 'Secure, fast, and comprehensive access to online learning modules.' },
-    { icon: ac2Icon, title: 'Earn Certificates', desc: 'Get verified certificates to boost your professional resume.' },
-    { icon: ac3Icon, title: 'Learn with Expert', desc: 'Direct interaction with industry leaders and experienced tutors.' },
+    { icon: ac1Icon, title: 'Online Syllabuses', desc: 'Browse approved syllabuses and open papers published on Academia.' },
+    { icon: ac2Icon, title: 'Earn Certificates', desc: 'Complete courses and track certificates through your learner account.' },
+    { icon: ac3Icon, title: 'Learn with experts', desc: 'Courses and projects are published by instructors and researchers on the platform.' },
   ];
 
   const whyChoose = [
-    { icon: acAca2Icon, title: 'Expert & experienced instructors', desc: 'Our instructors are experts in their fields and have years of experience teaching.' },
-    { icon: acAca3Icon, title: 'Lifetime free access', desc: 'Once enrolled, you maintain access to the syllabus materials forever.' },
-    { icon: acAca4Icon, title: 'Dedicated support', desc: 'Our support team is available 24/7 to help you with your learning journey.' },
+    { icon: acAca2Icon, title: 'Verified academic content', desc: 'Syllabuses, courses, and projects come from real contributors on Gonaraza Academia.' },
+    { icon: acAca3Icon, title: 'Free and paid courses', desc: 'Explore free catalog items or enroll in paid programs when you are ready.' },
+    { icon: acAca4Icon, title: 'Support resources', desc: 'Use the Help page for guidance and contact support when you need assistance.' },
   ];
 
   return (
@@ -255,7 +244,7 @@ function AcademiaIndex() {
             </div>
             <div className="hero-sec-inner-r">
               <div className="hero-sec-inner-r-t">
-                <button type="button" onClick={() => navigate('/academia/journals')}>
+                <button type="button" onClick={() => navigate('/academia/projects')}>
                   <img src={acPlusIcon} alt="Plus Icon" />
                   <span>Post your project</span>
                 </button>
@@ -292,7 +281,7 @@ function AcademiaIndex() {
 
       {/* Stats Section */}
       <section className="stats-sec">
-        {stats.map((stat) => (
+        {platformStats.map((stat) => (
           <div key={stat.label} className="stats-sec-item">
             <div>
               <img src={stat.icon} alt={stat.label} />
@@ -305,33 +294,61 @@ function AcademiaIndex() {
         ))}
       </section>
 
-      {/* Journals Section (Using Static Data) */}
+      {/* Projects Section */}
       <section className="journals-sec">
         <div className="sec-h">
-          <p>Orientation Guide projects</p>
-          <h1>All Syllabuses & Journals</h1>
+          <p>Research & projects</p>
+          <h1>Public projects</h1>
         </div>
         
         <div className="swiper journalsSwiper">
           <div className="swiper-wrapper">
-            {STATIC_JOURNALS.map((story) => (
-              <div key={story.id} className="swiper-slide">
-                <div className="js-item" onClick={() => navigate('/academia/read-story')} style={{ cursor: 'pointer' }}>
+            {dataLoading && (
+              <div className="swiper-slide">
+                <div className="js-item js-empty" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '200px', background: '#F8FAFC', borderRadius: '12px' }}>
+                  <p style={{ color: '#64748B' }}>Loading projects…</p>
+                </div>
+              </div>
+            )}
+
+            {!dataLoading && projectsData.length > 0 && projectsData.slice(0, 8).map((project) => (
+              <div key={project.id || project._id} className="swiper-slide">
+                <div
+                  className="js-item"
+                  onClick={() => navigate(`/academia/read-project?id=${project.id || project._id}`)}
+                  style={{ cursor: 'pointer' }}
+                >
                   <div className="js-item-img">
-                    <img src={story.image} alt={story.title} style={{ objectFit: 'cover', width: '100%', height: '100%' }} />
+                    <img
+                      src={resolveProjectImage(project.thumbnail_url || project.thumbnail)}
+                      alt={project.title || 'Project'}
+                      style={{ objectFit: 'cover', width: '100%', height: '100%' }}
+                    />
                   </div>
                   <div className="js-item-text">
-                    <h6>{story.title}</h6>
+                    <h6>{project.title || 'Project'}</h6>
                     <div>
-                      <span>{story.date}</span>
-                      <button type="button" onClick={(e) => { e.stopPropagation(); /* handle share */ }}>
-                        <img src={acWshIcon} alt="Share" />
+                      <span>{project.created_at ? new Date(project.created_at).toLocaleDateString() : 'Published project'}</span>
+                      <button type="button" onClick={(e) => e.stopPropagation()} aria-label="Share project">
+                        <img src={acWshIcon} alt="" />
                       </button>
                     </div>
                   </div>
                 </div>
               </div>
             ))}
+
+            {!dataLoading && projectsData.length === 0 && (
+              <div className="swiper-slide" style={{ width: '100%' }}>
+                <div className="js-item js-empty" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '200px', background: '#F8FAFC', borderRadius: '12px' }}>
+                  <h4 style={{ fontWeight: 600 }}>No public projects yet</h4>
+                  <p style={{ color: '#64748B', marginBottom: '16px' }}>Published projects will appear here.</p>
+                  <button type="button" onClick={() => navigate('/academia/projects')} style={{ background: '#450468', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: '8px' }}>
+                    Browse projects
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
           <div className="swiper-button-next js-btn"></div>
           <div className="swiper-button-prev js-btn"></div>
@@ -407,14 +424,16 @@ function AcademiaIndex() {
               {/* Browse All / CTA Card */}
               {!dataLoading && syllabusesData && syllabusesData.length > 0 && (
                 <div className="swiper-slide psc-last-card">
-                  <h3>100+ Syllabuses</h3>
+                  <h3>{syllabusesData.length} {syllabusesData.length === 1 ? 'Syllabus' : 'Syllabuses'}</h3>
                   <div className="psc-last-card-imgs">
-                    {[...Array(3)].map((_, i) => (
-                      <div key={i} className="psc-last-card-img">
-                        <img src={dummyIcon} alt="Icon" />
+                    {syllabusesData.slice(0, 3).map((syllabus, i) => (
+                      <div key={syllabus.id || i} className="psc-last-card-img">
+                        <span>{(syllabus.title || 'S').charAt(0)}</span>
                       </div>
                     ))}
-                    <div className="psc-last-card-number">9+</div>
+                    {syllabusesData.length > 3 ? (
+                      <div className="psc-last-card-number">{syllabusesData.length - 3}+</div>
+                    ) : null}
                   </div>
                   <div className="psc-last-card-btn">
                     <button type="button" onClick={() => navigate('/academia/syllabuses')}>Explore Syllabuses</button>
@@ -553,10 +572,10 @@ function AcademiaIndex() {
               <img src={acAcaIcon} alt="Academia Icon" />
             </div>
             <div>
-              <h4>Get access to millions of research papers and stay informed with the important topics around the world.</h4>
+              <h4>Browse public projects, syllabuses, and community stories published on Gonaraza Academia.</h4>
             </div>
             <div>
-              <button type="button" onClick={() => navigate('/academia/journals')}>
+              <button type="button" onClick={() => navigate('/academia/projects')}>
                 <span>Explore More</span>
                 <img src={acNnexIcon} alt="View" />
               </button>
@@ -660,42 +679,11 @@ function AcademiaIndex() {
         </div>
       </section>
 
-      {/* Testimonials Section */}
-      <section className="testimonials-sec">
-        <div className="sec-h">
-          <p>Testimonials</p>
-          <h1>Our Successful stories</h1>
-        </div>
-        <div className="testimonials-sec-contents">
-          <div className="swiper tsc-swiper">
-            <div className="swiper-wrapper">
-              {[...Array(5)].map((_, i) => (
-                <div key={i} className="swiper-slide tsc-card">
-                  <div className="tsc-card-h">
-                    <div className="tsc-card-h-l">
-                      <img src={defaultProfile} alt="User" />
-                    </div>
-                    <div className="tsc-card-h-r">
-                      <h5>Roger Scott</h5>
-                      <p>Student</p>
-                    </div>
-                  </div>
-                  <div className="tsc-card-text">
-                    <p>"The courses here completely transformed my career path. The instructors are incredibly knowledgeable and the platform is so easy to use."</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="swiper-pagination tsc-pages"></div>
-          </div>
-        </div>
-      </section>
-
       {/* Newsletter Section */}
       <section className="newsletter-sec">
         <div className="newsletter-sec-l">
-          <h3>Newsletter - Stay tuned and get the latest updates</h3>
-          <p>Join thousands of learners receiving weekly updates on new courses and research.</p>
+          <h3>Newsletter</h3>
+          <p>Product updates will be announced here when newsletter subscriptions open.</p>
         </div>
         <div className="newsletter-sec-r">
           <form onSubmit={handleNewsletterSubmit}>
@@ -711,6 +699,7 @@ function AcademiaIndex() {
               <img src={acSendIcon} alt="Send" />
             </button>
           </form>
+          <PublicNewsletterNotice message={newsletterNotice} />
         </div>
       </section>
     </div>
