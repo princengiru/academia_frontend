@@ -1,42 +1,5 @@
 import React from 'react';
-
-// Icons & Images
-import wAcBook from '../../../../assets/icons/w-ac-book.svg';
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-
-const resolveYoutubeEmbedUrl = (url) => {
-  if (!url) return '';
-  if (url.includes('youtube.com/embed/')) {
-    return url;
-  }
-  let videoId = '';
-  if (url.includes('youtu.be/')) {
-    const parts = url.split('youtu.be/');
-    if (parts[1]) {
-      videoId = parts[1].split(/[?#]/)[0];
-    }
-  } else if (url.includes('v=')) {
-    const parts = url.split('v=');
-    if (parts[1]) {
-      videoId = parts[1].split(/[&#]/)[0];
-    }
-  } else if (url.includes('youtube.com/v/')) {
-    const parts = url.split('youtube.com/v/');
-    if (parts[1]) {
-      videoId = parts[1].split(/[?#]/)[0];
-    }
-  }
-  if (videoId) {
-    return `https://www.youtube.com/embed/${videoId}`;
-  }
-  return url;
-};
-
-const isYoutubeUrl = (url) => {
-  if (!url) return false;
-  return url.includes('youtube.com') || url.includes('youtu.be');
-};
+import EnrollmentPaymentPicker from '../EnrollmentPaymentPicker';
 
 const LessonView = ({
   activeContent,
@@ -46,8 +9,15 @@ const LessonView = ({
   navigate,
   inboundId,
   isAssessmentView,
-  setIsWorkspaceOpen,
-  stripHtml
+  stripHtml,
+  paymentChoices,
+  selectedPaymentValue,
+  onPaymentChange,
+  paymentsLoading,
+  courseIsFree,
+  requiresPaymentSetup = false,
+  accountHref,
+  children,
 }) => {
   if (!isEnrolled) {
     return (
@@ -69,19 +39,31 @@ const LessonView = ({
               </div>
               <h3>Enroll to unlock this lesson</h3>
               <p>Join the course today to get access to all the lectures, interactive quizzes, student discussions, and earn your digital certificate.</p>
+              <EnrollmentPaymentPicker
+                choices={paymentChoices}
+                value={selectedPaymentValue}
+                onChange={onPaymentChange}
+                loading={paymentsLoading}
+                requiresPaymentSetup={requiresPaymentSetup}
+                accountHref={accountHref}
+              />
               <div className="learners-read-lock-actions">
                 <button
                   type="button"
                   className="learners-btn learners-btn-primary learners-read-lock-enroll-btn"
                   onClick={handleEnrollFromReader}
-                  disabled={isEnrolling}
+                  disabled={isEnrolling || paymentsLoading || requiresPaymentSetup}
                 >
-                  <span>{isEnrolling ? 'Enrolling...' : 'Join Course Today'}</span>
+                  <span>
+                    {isEnrolling
+                      ? 'Enrolling...'
+                      : (courseIsFree ? 'Enroll for free' : 'Join Course Today')}
+                  </span>
                 </button>
                 <button
                   type="button"
                   className="learners-btn learners-btn-secondary"
-                  onClick={() => navigate(`/academia/learner/course-part?id=${inboundId}`, { state: { courseId: inboundId } })}
+                  onClick={() => navigate(`/academia/learner/course-part?id=${inboundId}`)}
                 >
                   <span>Back to Details</span>
                 </button>
@@ -97,31 +79,13 @@ const LessonView = ({
 
   return (
     <div className="learners-read-lesson-view">
-      <h2 className="learners-read-article-title">{stripHtml(activeContent.headline)}</h2>
-
-      {/* cover / thumbnail */}
-      {activeContent.image && (
-        <div className="learners-read-article-media" style={{ borderRadius: '12px', overflow: 'hidden', marginBottom: '24px' }}>
-          <img src={activeContent.image} alt={activeContent.headline} style={{ width: '100%', height: 'auto', borderRadius: '12px' }} />
+      {activeContent.image ? (
+        <div className="learners-read-article-media learners-lesson-cover-image">
+          <img src={activeContent.image} alt={stripHtml(activeContent.headline)} />
         </div>
-      )}
+      ) : null}
 
-      <section className="learners-workspace-launch-section" style={{ marginTop: '30px' }}>
-        <div className="learners-workspace-launch-banner">
-          <div className="learners-workspace-launch-copy">
-            <h3>Interactive Workspace & Quiz</h3>
-            <p>Open the interactive book reader workspace to observe past papers, download slides, ask questions, and complete this chapter's exercises.</p>
-          </div>
-          <button
-            type="button"
-            className="learners-btn learners-btn-primary learners-workspace-launch-btn"
-            onClick={() => setIsWorkspaceOpen(true)}
-          >
-            <span>Open Workspace</span>
-            <img src={wAcBook} alt="Workspace" style={{ width: '16px', height: '16px', marginLeft: '8px' }} />
-          </button>
-        </div>
-      </section>
+      {children}
     </div>
   );
 };

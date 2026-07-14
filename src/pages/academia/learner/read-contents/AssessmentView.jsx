@@ -9,10 +9,17 @@ import leftIcon from '../../../../assets/icons/left.svg';
 import doneIcon from '../../../../assets/icons/done.svg';
 import right1 from '../../../../assets/icons/right1.svg';
 
+import { computeCertificateTotalHours } from '../enrollmentPaymentUtils';
+import CourseCompleteCelebration from './CourseCompleteCelebration';
+
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 const AssessmentView = ({
   courseId,
+  courseMeta = {},
+  showCourseCelebration = false,
+  courseTitle = '',
+  onDismissCourseCelebration,
   isAssessmentView,
   currentAssessmentDetails,
   maxAttempts,
@@ -125,17 +132,20 @@ const AssessmentView = ({
     
     try {
       const scoreVal = assessmentResult?.score ? parseFloat(assessmentResult.score.replace('%', '')) : 75;
+      const totalHours = computeCertificateTotalHours(courseMeta);
+      const payload = {
+        final_score: scoreVal,
+        formative_score: scoreVal,
+      };
+      if (totalHours) payload.total_hours = totalHours;
+
       const res = await fetch(`${API_BASE_URL}/api/courses/${courseId}/certificates/issue`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({
-          final_score: scoreVal,
-          formative_score: scoreVal,
-          total_hours: 10
-        })
+        body: JSON.stringify(payload)
       });
       
       const body = await res.json();
@@ -150,7 +160,7 @@ const AssessmentView = ({
       }
       
       setHasClaimed(true);
-      setClaimMessage("Certificate request submitted! Pending HOA approval.");
+      setClaimMessage('Certificate request submitted! We will notify you when it is approved.');
     } catch (err) {
       setClaimMessage(err.message || "Could not claim certificate.");
     } finally {
@@ -164,7 +174,7 @@ const AssessmentView = ({
     return (
       <section className="learners-read-assessment-view">
         <div className="learners-loading" style={{ padding: '80px 40px', textAlign: 'center', fontSize: '15px', color: '#5B0A86', fontWeight: '500' }}>
-          Loading assessment details...
+          Loading assessment…
         </div>
       </section>
     );
@@ -217,7 +227,7 @@ const AssessmentView = ({
         {(isAssessmentStarted || isAssessmentReviewMode) && (
           <div className="learners-read-assessment-tracker">
             {assessmentTracker.length === 0 ? (
-              <div className="learners-empty">No assessment tracker available.</div>
+              <div className="learners-empty learners-empty-state--compact">No question tracker available.</div>
             ) : (
               assessmentTracker.map((huskState, idx) => (
                 <button
@@ -609,10 +619,17 @@ const AssessmentView = ({
         )
       ) : !assessmentResult?.score && !assessmentResult?.headline ? (
         <div className="learners-loading" style={{ padding: '80px 40px', textAlign: 'center', fontSize: '15px', color: '#5B0A86', fontWeight: '500' }}>
-          Loading assessment results...
+          Loading assessment results…
         </div>
       ) : (
         <section className="learners-read-assessment-complete">
+          {showCourseCelebration ? (
+            <CourseCompleteCelebration
+              courseId={courseId}
+              courseTitle={courseTitle}
+              onDismiss={onDismissCourseCelebration}
+            />
+          ) : null}
           {/* Score Display (only if showScoreImmediately is true) */}
           {(currentAssessmentDetails.showScoreImmediately || assessmentResult.status === 'graded') ? (
             <>
@@ -707,6 +724,17 @@ const AssessmentView = ({
               }
               return null;
             })()}
+
+            {assessmentResult.buttonLabel === 'Continue' && (
+              <button
+                type="button"
+                className="learners-read-assessment-complete-button"
+                onClick={handleAssessmentCompleteButton}
+              >
+                <span>{assessmentResult.continueLabel ? `Continue to ${assessmentResult.continueLabel}` : 'Continue'}</span>
+                <img src={right1} alt="Continue" />
+              </button>
+            )}
 
             {assessmentResult.buttonLabel === 'Retry Quiz' && (
               <button
