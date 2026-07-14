@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import HOALayout from '../../../components/layouts/HOALayout/HOALayout';
 import { useCurrency, flagOptions } from '../../../hooks/useCurrency';
 import './hoa-online-courses.css';// Reuse standard project icons
@@ -84,9 +85,17 @@ const IconReply = () => (
 const HOAOnlineCourses = () => {
     // API Configuration
     const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+    const [searchParams, setSearchParams] = useSearchParams();
+    const deepLinkHandledRef = useRef(null);
 
     // Moderation Mode: 'explorer' (Approved), 'pending', 'rejected'
-    const [mode, setMode] = useState('explorer');
+    const [mode, setMode] = useState(() => {
+        const params = new URLSearchParams(window.location.search);
+        const modeParam = params.get('mode');
+        return modeParam === 'pending' || modeParam === 'rejected' || modeParam === 'explorer'
+            ? modeParam
+            : (params.get('id') ? 'pending' : 'explorer');
+    });
 
     // Search and Filters
     const [searchQuery, setSearchQuery] = useState('');
@@ -335,6 +344,30 @@ const HOAOnlineCourses = () => {
     useEffect(() => {
         fetchCourses();
     }, []);
+
+    useEffect(() => {
+        const deepLinkId = searchParams.get('id');
+        if (!deepLinkId || deepLinkHandledRef.current === String(deepLinkId) || loading) return;
+
+        const matchId = (item) => String(item?.id ?? item?._id) === String(deepLinkId);
+        const match =
+            pendingCourses.find(matchId) ||
+            approvedCourses.find(matchId) ||
+            rejectedCourses.find(matchId);
+
+        if (!match) return;
+
+        deepLinkHandledRef.current = String(deepLinkId);
+        if (pendingCourses.some(matchId) && mode !== 'pending') setMode('pending');
+        else if (rejectedCourses.some(matchId) && mode !== 'rejected') setMode('rejected');
+        else if (approvedCourses.some(matchId) && mode !== 'explorer') setMode('explorer');
+
+        loadCourseDetails(match);
+
+        const next = new URLSearchParams(searchParams);
+        next.delete('id');
+        setSearchParams(next, { replace: true });
+    }, [searchParams, pendingCourses, approvedCourses, rejectedCourses, loading, mode, setSearchParams]);
 
     const filteredCourses = useMemo(() => {
         const currentList = mode === 'explorer'
@@ -699,8 +732,28 @@ const HOAOnlineCourses = () => {
                             <h2>Course Preview</h2>
 
                             {/* Moderator Actions in Header */}
-                            {selectedCourse?.status_approval === 'pending' && (
-                                <div style={{ display: 'flex', gap: '8px', marginLeft: 'auto', marginRight: '16px' }}>
+                            <div style={{ display: 'flex', gap: '8px', marginLeft: 'auto', marginRight: '16px', alignItems: 'center' }}>
+                                {selectedCourse?.id && (
+                                    <button
+                                        type="button"
+                                        onClick={() => window.open(`/academia/course-details?id=${selectedCourse.id}`, '_blank', 'noopener,noreferrer')}
+                                        style={{
+                                            padding: '8px 16px',
+                                            borderRadius: '8px',
+                                            background: '#F5F8FF',
+                                            border: '1px solid #E1E9FF',
+                                            color: '#450468',
+                                            fontSize: '12px',
+                                            fontWeight: 600,
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s'
+                                        }}
+                                    >
+                                        Public preview
+                                    </button>
+                                )}
+                                {selectedCourse?.status_approval === 'pending' && (
+                                    <>
                                     <button 
                                         onClick={() => handleRejectCourse(selectedCourse.id)}
                                         style={{
@@ -733,10 +786,11 @@ const HOAOnlineCourses = () => {
                                     >
                                         Approve
                                     </button>
-                                </div>
-                            )}
+                                    </>
+                                )}
+                            </div>
 
-                            <span className="oc-update-status" style={{ border: '1px solid #EEF1F6', marginLeft: selectedCourse?.status_approval === 'pending' ? '0' : 'auto' }}>
+                            <span className="oc-update-status" style={{ border: '1px solid #EEF1F6', marginLeft: '0' }}>
                                 <img src={hoarefresh} alt="Refresh" className="sync-icon" />
                                 Data updated every 1 hr
                                 <span className="dot" style={{ background: '#17C653' }}></span>

@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import HOALayout from '../../../components/layouts/HOALayout/HOALayout';
 import { useCurrency, flagOptions } from '../../../hooks/useCurrency';
 import './hoa-projects.css';
@@ -102,9 +103,17 @@ const IconCommentsTab = () => (
 const HOAProjects = () => {
     // API Configuration
     const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+    const [searchParams, setSearchParams] = useSearchParams();
+    const deepLinkHandledRef = useRef(null);
 
     // Moderation Mode: 'explorer' (Approved), 'pending', 'rejected'
-    const [mode, setMode] = useState('explorer');
+    const [mode, setMode] = useState(() => {
+        const params = new URLSearchParams(window.location.search);
+        const modeParam = params.get('mode');
+        return modeParam === 'pending' || modeParam === 'rejected' || modeParam === 'explorer'
+            ? modeParam
+            : (params.get('id') ? 'pending' : 'explorer');
+    });
 
     // Search and Filters
     const [searchQuery, setSearchQuery] = useState('');
@@ -298,6 +307,30 @@ const HOAProjects = () => {
     useEffect(() => {
         fetchProjects();
     }, []);
+
+    useEffect(() => {
+        const deepLinkId = searchParams.get('id');
+        if (!deepLinkId || deepLinkHandledRef.current === String(deepLinkId) || loading) return;
+
+        const matchId = (item) => String(item?.id ?? item?._id) === String(deepLinkId);
+        const match =
+            pendingProjects.find(matchId) ||
+            approvedProjects.find(matchId) ||
+            rejectedProjects.find(matchId);
+
+        if (!match) return;
+
+        deepLinkHandledRef.current = String(deepLinkId);
+        if (pendingProjects.some(matchId) && mode !== 'pending') setMode('pending');
+        else if (rejectedProjects.some(matchId) && mode !== 'rejected') setMode('rejected');
+        else if (approvedProjects.some(matchId) && mode !== 'explorer') setMode('explorer');
+
+        loadProjectDetails(match);
+
+        const next = new URLSearchParams(searchParams);
+        next.delete('id');
+        setSearchParams(next, { replace: true });
+    }, [searchParams, pendingProjects, approvedProjects, rejectedProjects, loading, mode, setSearchParams]);
 
     const filteredProjects = useMemo(() => {
         const currentList = mode === 'explorer'

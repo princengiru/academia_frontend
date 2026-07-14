@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import HOALayout from '../../../components/layouts/HOALayout/HOALayout';
+import { HOALoadError, HOALoading, HOATableEmptyRow } from './HOAPageState';
+import { HOAToast, useHOAToast } from './useHOAToast';
 import './hoa-assignments.css';
 import './hoa-reports.css';
 
@@ -23,11 +25,14 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 const HOAAssignments = () => {
   const navigate = useNavigate();
+  const { toast, showToast, hideToast } = useHOAToast();
 
   // --- Data State ---
   const [statsData, setStatsData] = useState(null);
   const [assignmentsData, setAssignmentsData] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [fetchError, setFetchError] = useState('');
+  const [retryKey, setRetryKey] = useState(0);
 
   // --- UI/Filter State ---
   const [selectedRows, setSelectedRows] = useState([]);
@@ -67,6 +72,7 @@ const HOAAssignments = () => {
   // --- Data Fetching ---
   const fetchAssignmentsData = async (mounted = true) => {
     setIsLoading(true);
+    setFetchError('');
     try {
       const token = localStorage.getItem('token');
       if (!token) {
@@ -132,7 +138,8 @@ const HOAAssignments = () => {
                      : 'failed'
         })));
       } else {
-        setAssignmentsData([]);
+        const errorBody = await assignmentsRes?.json().catch(() => ({}));
+        throw new Error(errorBody?.message || errorBody?.error?.message || 'Failed to load assignments.');
       }
 
     } catch (error) {
@@ -140,6 +147,7 @@ const HOAAssignments = () => {
       if (mounted) {
         setStatsData({});
         setAssignmentsData([]);
+        setFetchError(error.message || 'Failed to load assignments.');
       }
     } finally {
       if (mounted) setIsLoading(false);
@@ -150,7 +158,7 @@ const HOAAssignments = () => {
     let mounted = true;
     fetchAssignmentsData(mounted);
     return () => { mounted = false; };
-  }, []);
+  }, [retryKey]);
 
   // --- Memoized Sorting & Filtering ---
   const processedData = useMemo(() => {
@@ -226,36 +234,16 @@ const HOAAssignments = () => {
   };
 
   const handleAction = async (id, actionType) => {
-    // Scaffolded API triggers based on Action
-    try {
-      const token = localStorage.getItem('token');
-      const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
-      
-      let url = '';
-      let method = 'PUT';
-      
-      if (actionType === 'Delete') {
-          method = 'DELETE';
-          // url = `${API_BASE_URL}/api/admin/assessments/${id}`;
-      } else if (actionType === 'Approve') {
-          // url = `${API_BASE_URL}/api/admin/assessments/${id}/approve`;
-      } else if (actionType === 'Disapprove') {
-          // url = `${API_BASE_URL}/api/admin/assessments/${id}/disapprove`;
-      }
+    setActiveActionMenu(null);
 
-      console.log(`Triggering ${actionType} for Assignment ID: ${id}`);
-      // await fetch(url, { method, headers });
-      
-      // Update local state temporarily (remove if API refresh handles it)
-      if (actionType === 'Delete') {
-         setAssignmentsData(prev => prev.filter(item => item.id !== id));
-      }
+    const unavailableMessages = {
+      Approve: 'Assessment approval is not available until the admin assessments API is connected.',
+      Disapprove: 'Assessment disapproval is not available until the admin assessments API is connected.',
+      Edit: 'Editing assessments from HOA is not available yet.',
+      Delete: 'Deleting assessments from HOA is not available yet.',
+    };
 
-    } catch (error) {
-      console.error(`Failed to execute ${actionType} action`, error);
-    } finally {
-      setActiveActionMenu(null);
-    }
+    showToast(unavailableMessages[actionType] || 'This action is not available yet.', 'error');
   };
 
   return (
@@ -366,6 +354,16 @@ const HOAAssignments = () => {
         </div>
 
         {/* Table */}
+        {isLoading && assignmentsData.length === 0 ? (
+          <HOALoading message="Loading assignments…" />
+        ) : fetchError ? (
+          <HOALoadError
+            title="Could not load assignments"
+            message={fetchError}
+            onRetry={() => setRetryKey((key) => key + 1)}
+          />
+        ) : (
+        <>
         <div className="rep-table-wrapper">
           <table className="rep-table">
             <thead>
@@ -452,11 +450,11 @@ const HOAAssignments = () => {
                 </tr>
               ))}
               {paginatedData.length === 0 && !isLoading && (
-                <tr>
-                  <td colSpan="9" style={{ textAlign: 'center', padding: '30px', color: '#64748B' }}>
-                    No assignments match your search or filter criteria.
-                  </td>
-                </tr>
+                <HOATableEmptyRow
+                  colSpan={9}
+                  title="No assignments found"
+                  message={searchQuery || selectedFilter !== 'All Status' ? 'Try adjusting your search or filters.' : 'Assessment assignments will appear here once they are created.'}
+                />
               )}
             </tbody>
           </table>
@@ -513,8 +511,11 @@ const HOAAssignments = () => {
             </button>
           </div>
         </div>
+        </>
+        )}
 
       </div>
+      <HOAToast toast={toast} onDismiss={hideToast} />
     </HOALayout>
   );
 };

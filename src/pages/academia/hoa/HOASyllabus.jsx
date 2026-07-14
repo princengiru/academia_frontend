@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import HOALayout from '../../../components/layouts/HOALayout/HOALayout';
 import './hoa-syllabus.css';
 
@@ -82,8 +83,16 @@ const stripHtml = (html) => {
 };
 
 const HOASyllabus = () => {
+    const [searchParams, setSearchParams] = useSearchParams();
+    const deepLinkHandledRef = useRef(null);
+
     // Mode switcher: 'explorer', 'pending', 'rejected'
-    const [mode, setMode] = useState('explorer');
+    const [mode, setMode] = useState(() => {
+        const modeParam = new URLSearchParams(window.location.search).get('mode');
+        return modeParam === 'pending' || modeParam === 'rejected' || modeParam === 'explorer'
+            ? modeParam
+            : (new URLSearchParams(window.location.search).get('id') ? 'pending' : 'explorer');
+    });
 
     // Navigation view: 1 = Topics Grid, 2 = Outlines/Papers List, 3 = Outline Detail
     const [currentView, setCurrentView] = useState(1);
@@ -178,8 +187,15 @@ const HOASyllabus = () => {
                 }
             });
             const result = await res.json();
-            if (result.success && Array.isArray(result.data)) {
-                setPendingSyllabuses(result.data);
+            if (result.success) {
+                const list = Array.isArray(result.data?.syllabuses)
+                    ? result.data.syllabuses
+                    : Array.isArray(result.data?.data)
+                        ? result.data.data
+                        : Array.isArray(result.data)
+                            ? result.data
+                            : [];
+                setPendingSyllabuses(list);
             }
         } catch (err) {
             console.error('Failed to fetch pending syllabuses:', err);
@@ -313,6 +329,31 @@ const HOASyllabus = () => {
             fetchRejectedSyllabuses();
         }
     }, [mode]);
+
+    useEffect(() => {
+        const deepLinkId = searchParams.get('id');
+        if (!deepLinkId || deepLinkHandledRef.current === String(deepLinkId)) return;
+
+        const matchId = (item) => String(item?.id ?? item?._id) === String(deepLinkId);
+        const pendingList = Array.isArray(pendingSyllabuses) ? pendingSyllabuses : [];
+        const rejectedRaw = rejectedSyllabuses?.data || rejectedSyllabuses;
+        const rejectedList = Array.isArray(rejectedRaw) ? rejectedRaw : [];
+
+        const match = pendingList.find(matchId) || rejectedList.find(matchId);
+        if (!match) return;
+
+        deepLinkHandledRef.current = String(deepLinkId);
+        if (rejectedList.some(matchId) && mode !== 'rejected') {
+            setMode('rejected');
+        } else if (pendingList.some(matchId) && mode !== 'pending') {
+            setMode('pending');
+        }
+        loadSyllabusDetails(match);
+
+        const next = new URLSearchParams(searchParams);
+        next.delete('id');
+        setSearchParams(next, { replace: true });
+    }, [searchParams, pendingSyllabuses, rejectedSyllabuses, mode, setSearchParams]);
 
     useEffect(() => {
         const handleClickOutside = (event) => {
