@@ -1,0 +1,49 @@
+.learners-saved-library-page .learners-home-title p {
+  margin-top: 8px;
+  color: #4B5675;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.learners-saved-library-grid {
+  margin-top: 20px;
+}
+
+.learners-saved-library-card-link {
+  border: none;
+  padding: 0;
+  background: transparent;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+}
+
+.learners-saved-library-card-link img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.learners-saved-library-title {
+  border: none;
+  background: transparent;
+  padding: 0;
+  margin: 8px 0 6px;
+  text-align: left;
+  cursor: pointer;
+  font-family: "Inter", sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+  color: #071437;
+}
+
+.learners-saved-library-abstract {
+  margin: 0;
+  color: #4B5675;
+  font-size: 12px;
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
