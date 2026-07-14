@@ -1,9 +1,29 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import ProfessorLayout from '../../../components/layouts/ProfessorLayout/ProfessorLayout';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import LearnerLoadError from '../learner/LearnerLoadError';
 import './performance.css';
 import hoagoto from '../../../assets/icons/hoagoto.svg';
+import certt from '../../../assets/icons/certt.svg';
+import right1 from '../../../assets/icons/right1.svg';
+import calendar2 from '../../../assets/icons/calendar2.svg';
+import filtersIcon from '../../../assets/icons/filters-icon.svg';
+import hoadowncaret from '../../../assets/icons/hoadowncaret.svg';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
+const padSeries = (value, length = 12) => {
+  const source = Array.isArray(value) ? value : [];
+  return Array.from({ length }, (_, index) => {
+    const n = Number(source[index]);
+    if (!Number.isFinite(n)) return 0;
+    return Math.max(0, Math.min(100, Math.round(n)));
+  });
+};
+
+const averageBucket = (values, start, end) => {
+  const slice = values.slice(start, end);
+  if (!slice.length) return 0;
+  return Math.round(slice.reduce((sum, value) => sum + value, 0) / slice.length);
+};
 
 const normalizePaymentRow = (row, index) => ({
   id: row?.id ?? row?._id ?? `pay-${index}`,
@@ -19,121 +39,198 @@ const normalizePaymentRow = (row, index) => ({
   statusTone: String(row?.status || '').toLowerCase() === 'paid' || String(row?.status || '').toLowerCase() === 'completed' ? 'passed' : 'progress',
 });
 
-const Performance = () => {
-  const preventDefault = (e) => e.preventDefault();
+const mapDashboardToAnalytics = (dashboard = {}) => {
+  const metrics = dashboard.assessmentMetrics || {};
+  const earnings = Array.isArray(dashboard.courseEarnings) ? dashboard.courseEarnings : [];
+  const courses = Array.isArray(dashboard.courses) ? dashboard.courses : [];
+  const courseRevenueTotal = earnings.reduce((sum, item) => sum + Number(item.course_revenue || 0), 0);
 
+  let topCourse = dashboard.topCourse || metrics.topCourse;
+  if (!topCourse && earnings.length > 0) {
+    const best = [...earnings].sort((a, b) => Number(b.course_revenue || 0) - Number(a.course_revenue || 0))[0];
+    const course = courses.find((c) => c.id === best.id) || {};
+    topCourse = {
+      title: course.title || 'Top course',
+      completed: Number(best.students || 0),
+      total: Number(best.students || 0),
+      score: 0,
+    };
+  }
+
+  return {
+    totalRevenue: Number(dashboard.totalRevenue ?? courseRevenueTotal),
+    courseRevenue: Number(dashboard.courseRevenue ?? courseRevenueTotal),
+    syllabusRevenue: Number(dashboard.syllabusRevenue ?? 0),
+    averageScore: Number(dashboard.averageScore ?? metrics.averageScore ?? 0),
+    certificatesIssued: Number(metrics.totalCertificatesEarned ?? 0),
+    failedCount: Number(metrics.failedStudents ?? 0),
+    triedCount: Number(metrics.totalRetakes ?? 0),
+    passedCount: Number(metrics.passedStudents ?? 0),
+    chartSyllabus: dashboard.chartSyllabus || metrics.chartSyllabus,
+    chartOnline: dashboard.chartOnline || metrics.chartOnline,
+    topCourse,
+    revenueTrend: dashboard.revenueTrend,
+    scoreTrend: dashboard.scoreTrend,
+  };
+};
+
+const Performance = () => {
   // --- Global UI State ---
   const [analytics, setAnalytics] = useState(null);
   const [analyticsLoading, setAnalyticsLoading] = useState(true);
+  const [analyticsError, setAnalyticsError] = useState('');
+  const [analyticsReloadKey, setAnalyticsReloadKey] = useState(0);
 
-  
   const [events, setEvents] = useState([]);
   const [eventsLoading, setEventsLoading] = useState(true);
+  const [eventsError, setEventsError] = useState('');
+  const [eventsReloadKey, setEventsReloadKey] = useState(0);
 
   // --- Payment History State ---
   const [payments, setPayments] = useState([]);
   const [paymentsLoading, setPaymentsLoading] = useState(true);
+  const [paymentsError, setPaymentsError] = useState('');
+  const [paymentsReloadKey, setPaymentsReloadKey] = useState(0);
   const [totalPayments, setTotalPayments] = useState(0);
-  const [paymentPeriod, setPaymentPeriod] = useState('Today');
+  const [paymentPeriod, setPaymentPeriod] = useState('All Time');
   const [paymentStatusFilter, setPaymentStatusFilter] = useState('All Statuses');
   const [pageSize, setPageSize] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedRowIds, setSelectedRowIds] = useState(() => new Set());
   const selectAllRef = useRef(null);
+  const [areaChartPeriod, setAreaChartPeriod] = useState('Monthly');
+  const [activeAreaIndex, setActiveAreaIndex] = useState(new Date().getMonth());
+  const areaWrapRef = useRef(null);
 
-  // --- Chart UI State ---
-  const [chartPeriod, setChartPeriod] = useState('Monthly');
-
-  // --- Fetch Analytics (Stats & Charts) ---
-  useEffect(() => {
-    const controller = new AbortController();
+  const loadAnalytics = useCallback(async (signal) => {
     const token = localStorage.getItem('token');
+    if (!token) {
+      setAnalyticsError('Please sign in to view analytics.');
+      setAnalyticsLoading(false);
+      return;
+    }
 
-    const fetchAnalytics = async () => {
-      if (!token) return;
-      setAnalyticsLoading(true);
-      try {
-        const res = await fetch(`${API_BASE_URL}/api/instructor/analytics`, {
-          headers: { Authorization: `Bearer ${token}` },
-          signal: controller.signal
-        });
-        const body = await res.json();
-        if (res.ok) setAnalytics(body?.data || {});
-      } catch (err) {
-        if (err.name !== 'AbortError') console.error('Failed to load analytics:', err);
-      } finally {
-        setAnalyticsLoading(false);
+    setAnalyticsLoading(true);
+    setAnalyticsError('');
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/dashboard/instructor`, {
+        headers: { Authorization: `Bearer ${token}` },
+        signal,
+      });
+      const body = await res.json();
+      if (res.ok) {
+        setAnalytics(mapDashboardToAnalytics(body?.data || {}));
+      } else {
+        setAnalytics(null);
+        setAnalyticsError(body?.message || body?.error?.message || 'Could not load analytics.');
       }
-    };
-    fetchAnalytics();
-    return () => controller.abort();
+    } catch (err) {
+      if (err.name !== 'AbortError') {
+        setAnalytics(null);
+        setAnalyticsError(err.message || 'Could not load analytics.');
+      }
+    } finally {
+      setAnalyticsLoading(false);
+    }
   }, []);
 
-  // --- Fetch Events (Schedule) ---
   useEffect(() => {
     const controller = new AbortController();
-    const token = localStorage.getItem('token');
-
-    const fetchEvents = async () => {
-      if (!token) return;
-      setEventsLoading(true);
-      try {
-        const res = await fetch(`${API_BASE_URL}/api/events/created/my?limit=5&sort=upcoming`, {
-          headers: { Authorization: `Bearer ${token}` },
-          signal: controller.signal
-        });
-        const body = await res.json();
-        if (res.ok) setEvents(Array.isArray(body?.data) ? body.data : []);
-      } catch (err) {
-        if (err.name !== 'AbortError') console.error('Failed to load events:', err);
-      } finally {
-        setEventsLoading(false);
-      }
-    };
-    fetchEvents();
+    loadAnalytics(controller.signal);
     return () => controller.abort();
+  }, [loadAnalytics, analyticsReloadKey]);
+
+  const loadEvents = useCallback(async (signal) => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setEventsError('Please sign in to view your schedule.');
+      setEventsLoading(false);
+      return;
+    }
+
+    setEventsLoading(true);
+    setEventsError('');
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/events/created/my?limit=5&sort=upcoming`, {
+        headers: { Authorization: `Bearer ${token}` },
+        signal,
+      });
+      const body = await res.json();
+      if (res.ok) {
+        setEvents(Array.isArray(body?.data) ? body.data : []);
+      } else {
+        setEvents([]);
+        setEventsError(body?.message || 'Could not load upcoming events.');
+      }
+    } catch (err) {
+      if (err.name !== 'AbortError') {
+        setEvents([]);
+        setEventsError(err.message || 'Could not load upcoming events.');
+      }
+    } finally {
+      setEventsLoading(false);
+    }
   }, []);
 
-  // --- Fetch Payment History ---
   useEffect(() => {
     const controller = new AbortController();
-    const token = localStorage.getItem('token');
-
-    const fetchPayments = async () => {
-      if (!token) return;
-      setPaymentsLoading(true);
-      try {
-        const offset = (currentPage - 1) * pageSize;
-        const q = new URLSearchParams({
-          limit: String(pageSize),
-          offset: String(offset),
-          period: paymentPeriod.toLowerCase().replace(' ', '_'),
-        });
-        if (paymentStatusFilter !== 'All Statuses') {
-          q.set('status', paymentStatusFilter.toLowerCase().replace(' ', '_'));
-        }
-
-        const res = await fetch(`${API_BASE_URL}/api/instructor/payment-history?${q.toString()}`, {
-          headers: { Authorization: `Bearer ${token}` },
-          signal: controller.signal
-        });
-        const body = await res.json();
-        
-        if (res.ok) {
-          const rawPayments = Array.isArray(body?.data?.payments) ? body.data.payments : (Array.isArray(body?.data) ? body.data : []);
-          setPayments(rawPayments.map(normalizePaymentRow));
-          setTotalPayments(body?.data?.pagination?.total || rawPayments.length);
-          setSelectedRowIds(new Set()); // Reset selections on page change
-        }
-      } catch (err) {
-        if (err.name !== 'AbortError') console.error('Failed to load payments:', err);
-      } finally {
-        setPaymentsLoading(false);
-      }
-    };
-    fetchPayments();
+    loadEvents(controller.signal);
     return () => controller.abort();
+  }, [loadEvents, eventsReloadKey]);
+
+  const loadPayments = useCallback(async (signal) => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setPaymentsError('Please sign in to view payment history.');
+      setPaymentsLoading(false);
+      return;
+    }
+
+    setPaymentsLoading(true);
+    setPaymentsError('');
+    try {
+      const offset = (currentPage - 1) * pageSize;
+      const q = new URLSearchParams({
+        limit: String(pageSize),
+        offset: String(offset),
+        period: paymentPeriod.toLowerCase().replace(' ', '_'),
+      });
+      if (paymentStatusFilter !== 'All Statuses') {
+        q.set('status', paymentStatusFilter.toLowerCase().replace(' ', '_'));
+      }
+
+      const res = await fetch(`${API_BASE_URL}/api/instructor/payment-history?${q.toString()}`, {
+        headers: { Authorization: `Bearer ${token}` },
+        signal,
+      });
+      const body = await res.json();
+
+      if (res.ok) {
+        const rawPayments = Array.isArray(body?.data?.payments) ? body.data.payments : (Array.isArray(body?.data) ? body.data : []);
+        setPayments(rawPayments.map(normalizePaymentRow));
+        setTotalPayments(body?.data?.pagination?.total || rawPayments.length);
+        setSelectedRowIds(new Set());
+      } else {
+        setPayments([]);
+        setTotalPayments(0);
+        setPaymentsError(body?.message || 'Payment history is not available yet.');
+      }
+    } catch (err) {
+      if (err.name !== 'AbortError') {
+        setPayments([]);
+        setTotalPayments(0);
+        setPaymentsError(err.message || 'Could not load payment history.');
+      }
+    } finally {
+      setPaymentsLoading(false);
+    }
   }, [currentPage, pageSize, paymentPeriod, paymentStatusFilter]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    loadPayments(controller.signal);
+    return () => controller.abort();
+  }, [loadPayments, paymentsReloadKey]);
 
   // --- Derived Analytics State ---
   const performanceStats = useMemo(() => [
@@ -158,31 +255,79 @@ const Performance = () => {
     });
   }, [events]);
 
-  // --- Bar Chart Logic ---
-  const chartMonths = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  const chartSyllabusValues = analytics?.chartSyllabus || [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-  const chartOnlineValues = analytics?.chartOnline || [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-  const chartMax = Math.max(10, ...chartSyllabusValues, ...chartOnlineValues) * 1.1; // Dynamic ceiling
+  // --- Area Chart Logic (matches learner design) ---
+  const currentMonthIndex = new Date().getMonth();
+  const currentDayIndex = (new Date().getDay() + 6) % 7;
+  const currentQuarterIndex = Math.floor(currentMonthIndex / 3);
 
-  // Check if chart actually has data to display vs being totally flat
-  const hasChartData = chartSyllabusValues.some(v => v > 0) || chartOnlineValues.some(v => v > 0);
-
-  const [activeBarIndex, setActiveBarIndex] = useState(new Date().getMonth());
-  const chartWrapRef = useRef(null);
-
-  const handleBarHover = (index) => setActiveBarIndex(index);
-
-  const handleChartMouseMove = (e) => {
-    if (!chartWrapRef.current || !hasChartData) return;
-    const canvasRect = chartWrapRef.current.getBoundingClientRect();
-    const localX = e.clientX - canvasRect.left;
-    const width = canvasRect.width;
-    let closestIndex = Math.floor((localX / width) * chartMonths.length);
-    closestIndex = Math.max(0, Math.min(closestIndex, chartMonths.length - 1));
-    setActiveBarIndex(closestIndex);
+  const getDefaultActiveIndex = (period, dataLength) => {
+    let idx = 0;
+    if (period === 'Monthly') idx = currentMonthIndex;
+    else if (period === 'Weekly') idx = currentDayIndex;
+    else if (period === 'Quarterly') idx = currentQuarterIndex;
+    return Math.max(0, Math.min(idx, dataLength - 1));
   };
 
-  const handleChartMouseLeave = () => setActiveBarIndex(new Date().getMonth());
+  const getStudyChartData = useMemo(() => {
+    const syllabusMonthly = padSeries(analytics?.chartSyllabus, 12);
+    const onlineMonthly = padSeries(analytics?.chartOnline, 12);
+
+    if (areaChartPeriod === 'Weekly') {
+      return {
+        labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+        syllabus: Array(7).fill(0),
+        online: Array(7).fill(0),
+      };
+    }
+
+    if (areaChartPeriod === 'Quarterly') {
+      return {
+        labels: ['Q1', 'Q2', 'Q3', 'Q4'],
+        syllabus: [0, 1, 2, 3].map((quarter) => averageBucket(syllabusMonthly, quarter * 3, quarter * 3 + 3)),
+        online: [0, 1, 2, 3].map((quarter) => averageBucket(onlineMonthly, quarter * 3, quarter * 3 + 3)),
+      };
+    }
+
+    return {
+      labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+      syllabus: syllabusMonthly,
+      online: onlineMonthly,
+    };
+  }, [analytics?.chartSyllabus, analytics?.chartOnline, areaChartPeriod]);
+
+  useEffect(() => {
+    setActiveAreaIndex(getDefaultActiveIndex(areaChartPeriod, getStudyChartData.labels.length));
+  }, [areaChartPeriod, getStudyChartData.labels.length]);
+
+  const handleAreaMouseMove = (e) => {
+    if (!areaWrapRef.current) return;
+    const rect = areaWrapRef.current.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const numPoints = getStudyChartData.labels.length - 1;
+    let index = Math.round((x / rect.width) * numPoints);
+    setActiveAreaIndex(Math.max(0, Math.min(index, numPoints)));
+  };
+
+  const handleAreaMouseLeave = () => {
+    setActiveAreaIndex(getDefaultActiveIndex(areaChartPeriod, getStudyChartData.labels.length));
+  };
+
+  const generateSmoothPath = (values) => {
+    if (!values || values.length === 0) return '';
+    const segments = values.length - 1;
+    const xStep = 110 / Math.max(1, segments);
+    const points = values.map((val, i) => [i * xStep, 100 - val]);
+    let d = `M${points[0][0]},${points[0][1]}`;
+    for (let i = 1; i < points.length; i++) {
+      const prev = points[i - 1];
+      const curr = points[i];
+      const cpDist = xStep * 0.4;
+      d += ` C${prev[0] + cpDist},${prev[1]} ${curr[0] - cpDist},${curr[1]} ${curr[0]},${curr[1]}`;
+    }
+    return d;
+  };
+
+  const preventDefault = (e) => e.preventDefault();
 
   // --- Donut Chart Logic ---
   const donutRef = useRef(null);
@@ -196,9 +341,9 @@ const Performance = () => {
   const hasDonutData = donutStats.failed > 0 || donutStats.tried > 0 || donutStats.passed > 0;
 
   const performanceLegend = [
-    { color: '#F23C72', range: '0-59', status: `FAIL (${donutStats.failed})` },
-    { color: '#F2C335', range: '60 - 79', status: `TRIED (${donutStats.tried})` },
-    { color: '#22C55E', range: '80 - 100', status: `PASS (${donutStats.passed})` },
+    { color: '#F23C72', range: '0–59%', status: hasDonutData ? `Below passing · ${donutStats.failed}` : 'Below passing' },
+    { color: '#F2C335', range: '60–79%', status: hasDonutData ? `Almost there · ${donutStats.tried}` : 'Almost there' },
+    { color: '#22C55E', range: '80–100%', status: hasDonutData ? `Passed · ${donutStats.passed}` : 'Passed' },
   ];
 
   const handleDonutMove = (e) => {
@@ -225,9 +370,9 @@ const Performance = () => {
     const triedPct = (donutStats.tried / totalDonut) * 100;
 
     let label = '';
-    if (percent >= 0 && percent < failPct) label = `${donutStats.failed} Failed`;
-    else if (percent >= failPct && percent < (failPct + triedPct)) label = `${donutStats.tried} Tried`;
-    else label = `${donutStats.passed} Passed`;
+    if (percent >= 0 && percent < failPct) label = `${donutStats.failed} below 60%`;
+    else if (percent >= failPct && percent < (failPct + triedPct)) label = `${donutStats.tried} at 60-79%`;
+    else label = `${donutStats.passed} at 80%+`;
 
     const wrapRect = donutRef.current.parentElement.getBoundingClientRect();
     setDonutTooltip({
@@ -271,7 +416,6 @@ const Performance = () => {
   };
 
   return (
-    <ProfessorLayout currentPage="performance">
       <section className="learners-performance-page">
         
         {/* Header */}
@@ -279,10 +423,6 @@ const Performance = () => {
           <div className="learners-home-title-top">
             <h1>Analytics & Payments</h1>
             <div className="learners-home-title-actions">
-              <a className="learners-btn learners-btn-secondary" href="#" onClick={preventDefault}>
-                <img src="/assets/icons/ac-sav.svg" alt="" />
-                <span>Saved Library</span>
-              </a>
               <a className="learners-btn learners-btn-primary" href="/academia/index" target="_blank" rel="noopener noreferrer">
                 <span>Go to website</span>
                 <img src={hoagoto} alt="Go" />
@@ -290,6 +430,14 @@ const Performance = () => {
             </div>
           </div>
         </section>
+
+        {analyticsError ? (
+          <LearnerLoadError
+            title="Could not load analytics"
+            message={analyticsError}
+            onRetry={analyticsError.includes('sign in') ? undefined : () => setAnalyticsReloadKey((key) => key + 1)}
+          />
+        ) : null}
 
         {/* Top KPI Stats */}
         <section className="learners-performance-stats-card" aria-label="Performance summary">
@@ -314,106 +462,154 @@ const Performance = () => {
             <div className="learners-performance-panel-head">
               <div>
                 <h2>Performance Statistics</h2>
-                <p>Course Available to learn</p>
+                <p>Course performance overview</p>
               </div>
             </div>
 
             <div className="learners-performance-board-grid">
               
-              {/* --- Bar Chart Area --- */}
+              {/* --- Area Chart (matches learner) --- */}
               <section className="learners-performance-chart-card">
-                <div className="learners-performance-chart-top">
-                  <div className="learners-performance-chart-badge-row">
-                    <span className="learners-performance-score-badge">{analytics?.averageScore || 0}%</span>
-                    <h3>Average score</h3>
+                <div className="rep-chart-header">
+                  <div className="rep-chart-title">
+                    <span className="rep-badge-purple">
+                      {analyticsLoading ? '…' : `${Number(analytics?.averageScore || 0)}%`}
+                    </span>
+                    Syllabus & Online
                   </div>
-
                   <div className="dropdown learners-performance-period-dropdown">
-                    <button className="dropdown-toggle learners-performance-period-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                      <span>{chartPeriod}</span>
-                      <img src="/assets/icons/drop1.svg" alt="" />
+                    <button className="dropdown-toggle rep-dropdown-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                      <span>{areaChartPeriod}</span>
+                      <img src={hoadowncaret} alt="" />
                     </button>
                     <ul className="dropdown-menu learners-performance-period-menu">
-                      <li><a className={`dropdown-item ${chartPeriod === 'Monthly' ? 'active' : ''}`} href="#" onClick={(e) => { preventDefault(e); setChartPeriod('Monthly'); }}>Monthly</a></li>
-                      <li><a className={`dropdown-item ${chartPeriod === 'Weekly' ? 'active' : ''}`} href="#" onClick={(e) => { preventDefault(e); setChartPeriod('Weekly'); }}>Weekly</a></li>
-                      <li><a className={`dropdown-item ${chartPeriod === 'Quarterly' ? 'active' : ''}`} href="#" onClick={(e) => { preventDefault(e); setChartPeriod('Quarterly'); }}>Quarterly</a></li>
+                      <li>
+                        <a
+                          className={`dropdown-item ${areaChartPeriod === 'Monthly' ? 'active' : ''}`}
+                          href="#"
+                          onClick={(e) => {
+                            preventDefault(e);
+                            setAreaChartPeriod('Monthly');
+                            setActiveAreaIndex(getDefaultActiveIndex('Monthly', 12));
+                          }}
+                        >
+                          Monthly
+                        </a>
+                      </li>
+                      <li>
+                        <a
+                          className={`dropdown-item ${areaChartPeriod === 'Weekly' ? 'active' : ''}`}
+                          href="#"
+                          onClick={(e) => {
+                            preventDefault(e);
+                            setAreaChartPeriod('Weekly');
+                            setActiveAreaIndex(getDefaultActiveIndex('Weekly', 7));
+                          }}
+                        >
+                          Weekly
+                        </a>
+                      </li>
+                      <li>
+                        <a
+                          className={`dropdown-item ${areaChartPeriod === 'Quarterly' ? 'active' : ''}`}
+                          href="#"
+                          onClick={(e) => {
+                            preventDefault(e);
+                            setAreaChartPeriod('Quarterly');
+                            setActiveAreaIndex(getDefaultActiveIndex('Quarterly', 4));
+                          }}
+                        >
+                          Quarterly
+                        </a>
+                      </li>
                     </ul>
                   </div>
                 </div>
 
-                {!hasChartData && !analyticsLoading ? (
-                  <div className="learners-card learners-empty-state learners-empty-state--compact" style={{ border: 'none', boxShadow: 'none', minHeight: '260px' }}>
-                    <h3>No chart data yet</h3>
-                    <p>Your performance trends will show up after students interact with your courses.</p>
+                <div style={{ display: 'flex', marginTop: '20px', height: '220px', position: 'relative', width: '100%', paddingBottom: '20px' }}>
+                  <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', pointerEvents: 'none' }}>
+                    {[...Array(10)].map((_, i) => (
+                      <div key={i} style={{ borderBottom: '1.5px dashed #EEF1F6', width: '100%', height: '1px' }} />
+                    ))}
                   </div>
-                ) : (
-                  <>
-                    <div className="learners-performance-chart-wrap">
-                      <div className="learners-performance-chart-yaxis">
-                        {Array.from({ length: 6 }).map((_, i) => (
-                          <span key={i}>{Math.round(chartMax - (i * (chartMax / 5)))}</span>
-                        ))}
+
+                  <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', color: '#A1A5B7', fontSize: '10px', paddingRight: '12px', position: 'relative', height: '100%' }}>
+                    {[100, 90, 80, 70, 60, 50, 40, 30, 20, 10, 0].map((y, idx) => (
+                      <span key={y} style={{ lineHeight: '10px', marginTop: idx === 0 ? '-4px' : 0, marginBottom: idx === 10 ? '-4px' : 0, backgroundColor: 'white', zIndex: 1 }}>{y}</span>
+                    ))}
+                  </div>
+
+                  <div
+                    style={{ position: 'relative', flex: 1, height: '100%', cursor: 'default' }}
+                    ref={areaWrapRef}
+                    onMouseMove={handleAreaMouseMove}
+                    onMouseLeave={handleAreaMouseLeave}
+                  >
+                    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, pointerEvents: 'none' }}>
+                      <svg width="100%" height="100%" viewBox="0 0 110 100" preserveAspectRatio="none" style={{ overflow: 'visible' }}>
+                        <defs>
+                          <linearGradient id="profAreaGreen" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="rgba(34, 197, 94, 0.15)" />
+                            <stop offset="100%" stopColor="rgba(34, 197, 94, 0)" />
+                          </linearGradient>
+                          <linearGradient id="profAreaPurple" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="rgba(185, 152, 206, 0.25)" />
+                            <stop offset="100%" stopColor="rgba(185, 152, 206, 0)" />
+                          </linearGradient>
+                        </defs>
+
+                        <path d={`${generateSmoothPath(getStudyChartData.online)} L110,100 L0,100 Z`} fill="url(#profAreaGreen)" />
+                        <path d={generateSmoothPath(getStudyChartData.online)} fill="none" stroke="#22C55E" strokeWidth="2" vectorEffect="non-scaling-stroke" />
+
+                        <path d={`${generateSmoothPath(getStudyChartData.syllabus)} L110,100 L0,100 Z`} fill="url(#profAreaPurple)" />
+                        <path d={generateSmoothPath(getStudyChartData.syllabus)} fill="none" stroke="#B998CE" strokeWidth="2" vectorEffect="non-scaling-stroke" />
+                      </svg>
+
+                      <div style={{ position: 'absolute', left: `${(activeAreaIndex / Math.max(1, getStudyChartData.labels.length - 1)) * 100}%`, top: `${100 - getStudyChartData.syllabus[activeAreaIndex]}%`, bottom: '-25px', width: '1px', backgroundColor: '#374151', transform: 'translateX(-50%)' }} />
+                      <div style={{ position: 'absolute', left: `${(activeAreaIndex / Math.max(1, getStudyChartData.labels.length - 1)) * 100}%`, top: `${100 - getStudyChartData.syllabus[activeAreaIndex]}%`, width: '14px', height: '14px', backgroundColor: '#450468', border: '3px solid white', borderRadius: '50%', transform: 'translate(-50%, -50%)', zIndex: 5 }} />
+                      <div style={{ position: 'absolute', left: `${(activeAreaIndex / Math.max(1, getStudyChartData.labels.length - 1)) * 100}%`, top: `${100 - getStudyChartData.online[activeAreaIndex]}%`, width: '14px', height: '14px', backgroundColor: '#22C55E', border: '3px solid white', borderRadius: '50%', transform: 'translate(-50%, -50%)', zIndex: 5 }} />
+                    </div>
+
+                    <div style={{ position: 'absolute', left: `${(activeAreaIndex / Math.max(1, getStudyChartData.labels.length - 1)) * 100}%`, top: '52%', transform: `translate(-${(activeAreaIndex / Math.max(1, getStudyChartData.labels.length - 1)) * 100}%, -100%)`, '--caret-pos': `${(activeAreaIndex / Math.max(1, getStudyChartData.labels.length - 1)) * 100}%`, paddingBottom: '12px', zIndex: 10, pointerEvents: 'none', transition: 'left 180ms cubic-bezier(0.22, 1, 0.36, 1), transform 180ms ease' }}>
+                      <div className="rep-chart-tooltip" style={{ padding: '16px', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px', fontSize: '13px', fontWeight: 'bold', color: '#071437' }}>
+                          {getStudyChartData.labels[activeAreaIndex]}
+                        </div>
+                        <div style={{ fontSize: '13px', color: '#4B5675', marginBottom: '10px', display: 'flex', justifyContent: 'space-between', gap: '24px' }}>
+                          <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><span style={{ color: '#450468', fontSize: 16, lineHeight: 1 }}>●</span> Syllabus</span>
+                          <strong style={{ color: '#071437', fontSize: '14px' }}>{getStudyChartData.syllabus[activeAreaIndex]}%</strong>
+                        </div>
+                        <div style={{ fontSize: '13px', color: '#4B5675', display: 'flex', justifyContent: 'space-between' }}>
+                          <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><span style={{ color: '#22C55E', fontSize: 16, lineHeight: 1 }}>●</span> Online</span>
+                          <strong style={{ color: '#071437', fontSize: '14px' }}>{getStudyChartData.online[activeAreaIndex]}%</strong>
+                        </div>
                       </div>
+                    </div>
 
-                      <div 
-                        className="learners-performance-chart-canvas" 
-                        ref={chartWrapRef}
-                        onMouseMove={handleChartMouseMove}
-                        onMouseLeave={handleChartMouseLeave}
-                      >
-                        <div className="learners-performance-chart-grid">
-                          {Array.from({ length: 6 }).map((_, i) => <span key={i}></span>)}
-                        </div>
-
-                        <div className="learners-performance-bars" aria-hidden="true">
-                          {chartMonths.map((month, index) => (
-                            <div
-                              key={index}
-                              className={`learners-performance-bar-group ${index === activeBarIndex ? 'is-active' : ''}`}
-                              onMouseEnter={() => handleBarHover(index)}
-                            >
-                              <span className="learners-performance-bar learners-performance-bar--syllabus" style={{ height: `${(chartSyllabusValues[index] / chartMax) * 100}%` }}></span>
-                              <span className="learners-performance-bar learners-performance-bar--online" style={{ height: `${(chartOnlineValues[index] / chartMax) * 100}%` }}></span>
-                            </div>
-                          ))}
-                        </div>
-
-                        <div 
-                          className="learners-performance-chart-tooltip learners-performance-chart-tooltip--bars" 
-                          style={{ 
-                            left: `${(activeBarIndex / (chartMonths.length - 1)) * 100}%`, 
-                            top: '52%',
-                            opacity: 1
+                    <div style={{ position: 'absolute', bottom: '-25px', left: 0, right: 0, pointerEvents: 'none' }}>
+                      {getStudyChartData.labels.map((label, i) => (
+                        <span
+                          key={label}
+                          style={{
+                            position: 'absolute',
+                            left: `${(i / Math.max(1, getStudyChartData.labels.length - 1)) * 100}%`,
+                            transform: 'translateX(-50%)',
+                            color: i === activeAreaIndex ? '#450468' : '#A1A5B7',
+                            fontWeight: i === activeAreaIndex ? 600 : 'normal',
+                            fontSize: '10px',
                           }}
                         >
-                          <span>{chartMonths[activeBarIndex]} Stats</span>
-                          <div className="learners-performance-chart-tooltip-row">
-                            <i className="is-syllabus"></i><span>Syllabus :</span><b>{chartSyllabusValues[activeBarIndex]}</b>
-                          </div>
-                          <div className="learners-performance-chart-tooltip-row">
-                            <i className="is-online"></i><span>Online :</span><b>{chartOnlineValues[activeBarIndex]}</b>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="learners-performance-chart-months">
-                      {chartMonths.map((month, index) => (
-                        <span key={index} className={index === activeBarIndex ? 'is-active' : ''}>{month}</span>
+                          {label}
+                        </span>
                       ))}
                     </div>
-                  </>
-                )}
+                  </div>
+                </div>
               </section>
 
               {/* --- Side Summary (Donut Chart & Top Recent) --- */}
               <section className="learners-performance-side-summary">
                 <div className="learners-performance-donut-wrap">
-                  {!hasDonutData && !analyticsLoading ? (
-                    <div className="learners-card learners-empty-state learners-empty-state--compact" style={{ border: 'none', boxShadow: 'none', padding: '1rem', width: '100%' }}>
-                      <p style={{ margin: 0, fontSize: '0.85rem' }}>No grading data available.</p>
-                    </div>
-                  ) : (
                     <>
                       <div
                         className="learners-performance-donut"
@@ -421,11 +617,13 @@ const Performance = () => {
                         onMouseMove={handleDonutMove}
                         onMouseLeave={handleDonutLeave}
                         style={{
-                          background: `conic-gradient(
+                          background: hasDonutData
+                            ? `conic-gradient(
                             #F23C72 0% ${(donutStats.failed / totalDonut) * 100}%, 
                             #F2C335 ${(donutStats.failed / totalDonut) * 100}% ${((donutStats.failed + donutStats.tried) / totalDonut) * 100}%, 
                             #22C55E ${((donutStats.failed + donutStats.tried) / totalDonut) * 100}% 100%
                           )`
+                            : '#E9EDF4',
                         }}
                       ></div>
                       
@@ -448,18 +646,17 @@ const Performance = () => {
                         ))}
                       </div>
                     </>
-                  )}
                 </div>
 
                 <div className="learners-performance-top-recent">
                   <div className="learners-performance-top-recent-head">
-                    <h3>Top Learned</h3>
+                    <h3>Top course</h3>
                   </div>
 
                   {analytics?.topCourse ? (
                     <article className="learners-performance-recent-card">
                       <div className="learners-performance-recent-badge">
-                        <img src="/assets/icons/certt.svg" alt="" />
+                        <img src={certt} alt="" />
                         <span>100%</span>
                       </div>
                       <div className="learners-performance-recent-copy">
@@ -480,7 +677,7 @@ const Performance = () => {
 
                   <a href="/academia/professor/management-lessons-ranks" className="learners-performance-download-link">
                     <span>See more of your courses rank</span>
-                    <img src="/assets/icons/right1.svg" alt="" />
+                    <img src={right1} alt="" />
                   </a>
                 </div>
               </section>
@@ -497,7 +694,13 @@ const Performance = () => {
             </div>
 
             <div className="learners-performance-schedule-list">
-              {eventsLoading ? (
+              {eventsError ? (
+                <LearnerLoadError
+                  title="Schedule unavailable"
+                  message={eventsError}
+                  onRetry={eventsError.includes('sign in') ? undefined : () => setEventsReloadKey((key) => key + 1)}
+                />
+              ) : eventsLoading ? (
                 <div className="learners-card learners-empty-state learners-empty-state--compact" style={{ border: 'none', boxShadow: 'none' }}>
                   <p style={{ fontSize: '0.85rem', color: 'var(--muted)', margin: 0 }}>Loading events...</p>
                 </div>
@@ -537,11 +740,11 @@ const Performance = () => {
             <div className="learners-performance-history-tools">
               <div className="dropdown learners-performance-history-dropdown">
                 <button type="button" className="dropdown-toggle learners-performance-history-tool learners-performance-history-tool-date" data-bs-toggle="dropdown" aria-expanded="false">
-                  <img src="/assets/icons/calendar2.svg" alt="" />
+                  <img src={calendar2} alt="" />
                   <span>{paymentPeriod}</span>
                 </button>
                 <ul className="dropdown-menu learners-performance-history-menu">
-                  {['Today', 'This Week', 'This Month', 'All Time'].map(period => (
+                  {['All Time', 'Today', 'This Week', 'This Month'].map(period => (
                     <li key={period}>
                       <button 
                         className={`dropdown-item ${paymentPeriod === period ? 'active' : ''}`} 
@@ -556,7 +759,7 @@ const Performance = () => {
 
               <div className="dropdown learners-performance-history-dropdown">
                 <button type="button" className="dropdown-toggle learners-performance-history-tool learners-performance-history-tool-filter" data-bs-toggle="dropdown" aria-expanded="false">
-                  <img src="/assets/icons/filters-icon.svg" alt="" />
+                  <img src={filtersIcon} alt="" />
                   <span>{paymentStatusFilter === 'All Statuses' ? 'Filters' : paymentStatusFilter}</span>
                 </button>
                 <ul className="dropdown-menu learners-performance-history-menu learners-performance-history-menu-filter">
@@ -574,6 +777,14 @@ const Performance = () => {
               </div>
             </div>
           </div>
+
+          {paymentsError ? (
+            <LearnerLoadError
+              title="Payment history unavailable"
+              message={paymentsError}
+              onRetry={paymentsError.includes('sign in') ? undefined : () => setPaymentsReloadKey((key) => key + 1)}
+            />
+          ) : null}
 
           <div className="learners-performance-history-table-wrap">
             <table className="learners-performance-history-table">
@@ -699,7 +910,6 @@ const Performance = () => {
         </section>
 
       </section>
-    </ProfessorLayout>
   );
 };
 
