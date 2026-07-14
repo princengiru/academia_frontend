@@ -1,6 +1,6 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import ProfessorLayout from '../../../components/layouts/ProfessorLayout/ProfessorLayout';
+import LearnerLoadError from '../learner/LearnerLoadError';
 import './dashboard-home.css';
 import hoagoto from '../../../assets/icons/hoagoto.svg';
 
@@ -41,12 +41,12 @@ const normalizeCourseRow = (row, index) => {
 
 const DashboardHome = () => {
   const navigate = useNavigate();
-  const preventDefault = (e) => e.preventDefault();
 
   // --- OVERALL DASHBOARD STATE ---
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState('');
+  const [reloadKey, setReloadKey] = useState(0);
 
   // --- TABLE / FILTER / PAGINATION STATE ---
   const [searchTerm, setSearchTerm] = useState('');
@@ -57,6 +57,8 @@ const DashboardHome = () => {
   const [assessmentsRows, setAssessmentsRows] = useState([]);
   const [assessmentsLoading, setAssessmentsLoading] = useState(false);
   const [assessmentsTotal, setAssessmentsTotal] = useState(0);
+  const [assessmentsError, setAssessmentsError] = useState('');
+  const [assessmentsReloadKey, setAssessmentsReloadKey] = useState(0);
 
   // --- CHECKBOX STATE ---
   const [selectedRowIds, setSelectedRowIds] = useState(() => new Set());
@@ -71,43 +73,83 @@ const DashboardHome = () => {
     return () => clearTimeout(handler);
   }, [searchTerm]);
 
+  const loadDashboard = useCallback(async (signal) => {
+    const token = localStorage.getItem('token');
+
+    if (!token) {
+      setFetchError('Missing login token. Please sign in again.');
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    setFetchError('');
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/dashboard/instructor`, {
+        headers: { Authorization: `Bearer ${token}` },
+        signal,
+      });
+
+      const body = await response.json();
+      if (response.ok) {
+        setDashboardData(body?.data || null);
+      } else {
+        setFetchError(body?.message || 'Failed to load professor dashboard data.');
+      }
+    } catch (error) {
+      if (error.name !== 'AbortError') {
+        setFetchError(error.message || 'Network error.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   // 2. Load top-level dashboard metrics (Cards & Stats)
+  useEffect(() => {
+    const controller = new AbortController();
+    loadDashboard(controller.signal);
+    return () => controller.abort();
+  }, [loadDashboard, reloadKey]);
+
+  const [upcomingEvents, setUpcomingEvents] = useState([]);
+  const [eventsLoading, setEventsLoading] = useState(true);
+
   useEffect(() => {
     const controller = new AbortController();
     const token = localStorage.getItem('token');
 
-    const loadDashboard = async () => {
-      if (!token) {
-        setFetchError('Missing login token. Please sign in again.');
-        setLoading(false);
-        return;
-      }
+    if (!token) {
+      setEventsLoading(false);
+      setUpcomingEvents([]);
+      return undefined;
+    }
 
-      setLoading(true);
+    const loadEvents = async () => {
+      setEventsLoading(true);
       try {
-        const response = await fetch(`${API_BASE_URL}/api/dashboard/instructor`, {
+        const res = await fetch(`${API_BASE_URL}/api/events/created/my?limit=3&sort=upcoming`, {
           headers: { Authorization: `Bearer ${token}` },
           signal: controller.signal,
         });
-
-        const body = await response.json();
-        if (response.ok) {
-          setDashboardData(body?.data || null);
+        const body = await res.json();
+        if (res.ok) {
+          setUpcomingEvents(Array.isArray(body?.data) ? body.data : []);
         } else {
-          setFetchError(body?.message || 'Failed to load professor dashboard data.');
+          setUpcomingEvents([]);
         }
-      } catch (error) {
-        if (error.name !== 'AbortError') {
-          setFetchError(error.message || 'Network error.');
+      } catch (err) {
+        if (err.name !== 'AbortError') {
+          setUpcomingEvents([]);
         }
       } finally {
-        setLoading(false);
+        setEventsLoading(false);
       }
     };
 
-    loadDashboard();
+    loadEvents();
     return () => controller.abort();
-  }, []);
+  }, [reloadKey]);
 
   // 3. Load Table Data with Server-Side Pagination & Filtering
   useEffect(() => {
@@ -118,6 +160,7 @@ const DashboardHome = () => {
       if (!token) return;
       
       setAssessmentsLoading(true);
+      setAssessmentsError('');
       try {
         const offset = (activePage - 1) * pageSize;
         const q = new URLSearchParams({
@@ -140,11 +183,13 @@ const DashboardHome = () => {
         } else {
           setAssessmentsRows([]);
           setAssessmentsTotal(0);
+          setAssessmentsError(body?.message || body?.error?.message || 'Could not load lesson history.');
         }
       } catch (err) {
         if (err.name !== 'AbortError') {
           setAssessmentsRows([]);
           setAssessmentsTotal(0);
+          setAssessmentsError(err.message || 'Could not load lesson history.');
         }
       } finally {
         setAssessmentsLoading(false);
@@ -153,7 +198,7 @@ const DashboardHome = () => {
 
     loadTableData();
     return () => controller.abort(); // Cancel previous request if user clicks fast
-  }, [statusFilter, pageSize, activePage, debouncedSearch]);
+  }, [statusFilter, pageSize, activePage, debouncedSearch, assessmentsReloadKey]);
 
   // Normalize current page rows
   const courseRows = useMemo(() => {
@@ -232,7 +277,41 @@ const DashboardHome = () => {
   const assessmentMetrics = dashboardData?.assessmentMetrics || {};
   const statusLabel = STATUS_FILTERS.find((item) => item.value === statusFilter)?.label || 'All';
 
+  const courseRevenueTotal = useMemo(() => {
+    const earnings = Array.isArray(dashboardData?.courseEarnings) ? dashboardData.courseEarnings : [];
+    return earnings.reduce((sum, item) => sum + Number(item.course_revenue || 0), 0);
+  }, [dashboardData]);
+
+  const schedulePreview = useMemo(() => (
+    upcomingEvents.map((ev) => {
+      const date = new Date(ev.event_datetime || ev.createdAt);
+      return {
+        id: ev.id || ev._id,
+        day: String(date.getDate()).padStart(2, '0'),
+        month: date.toLocaleDateString(undefined, { month: 'short' }),
+        title: ev.name || ev.title || 'Event',
+        meta: ev.subtitle || 'Scheduled session',
+        time: date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        status: ev.status === 'online' ? 'Online' : 'In person',
+      };
+    })
+  ), [upcomingEvents]);
+
   const renderTableBody = () => {
+    if (assessmentsError && !assessmentsLoading) {
+      return (
+        <tr>
+          <td colSpan="9" className="prof-table-empty-cell">
+            <LearnerLoadError
+              title="Could not load lesson history"
+              message={assessmentsError}
+              onRetry={() => setAssessmentsReloadKey((key) => key + 1)}
+            />
+          </td>
+        </tr>
+      );
+    }
+
     if (assessmentsLoading && courseRows.length === 0) {
       return (
         <tr>
@@ -304,7 +383,6 @@ const DashboardHome = () => {
   };
 
   return (
-    <ProfessorLayout currentPage="index">
       <section className="prof-page">
         {/* --- HEADER --- */}
         <section className="learners-home-title">
@@ -323,6 +401,15 @@ const DashboardHome = () => {
           </div>
         </section>
 
+        {fetchError ? (
+          <LearnerLoadError
+            title="Could not load dashboard"
+            message={fetchError}
+            onRetry={() => setReloadKey((key) => key + 1)}
+          />
+        ) : null}
+
+        {!fetchError ? (
         <div className="row g-3">
           {/* --- MAIN CONTENT (LEFT COLUMN) --- */}
           <div className="col-12 col-xl-9">
@@ -342,10 +429,10 @@ const DashboardHome = () => {
               <div className="prof-stat-card">
                 <div className="prof-stat-top">
                   <div className="prof-stat-title">
-                    <img src="/assets/icons/pi2.svg" alt="Exams" />
-                    <span>Exams</span>
+                    <img src="/assets/icons/pi2.svg" alt="Rating" />
+                    <span>Rating</span>
                   </div>
-                  <a href="#" onClick={(e) => { e.preventDefault(); navigate('/academia/professor/assignments'); }}>Check Exams</a>
+                  <a href="#" onClick={(e) => { e.preventDefault(); navigate('/academia/professor/performance'); }}>View performance</a>
                 </div>
                 <svg className="prof-stat-sparkline prof-stat-sparkline-red" viewBox="0 0 72 22"><polyline points="2,14 10,16 18,15 26,10 34,11 42,4 50,20 58,6 70,18"></polyline></svg>
                 <h3>{loading ? '...' : `${Number(dashboardData?.averageRating || 0).toFixed(2)}`}</h3>
@@ -357,7 +444,7 @@ const DashboardHome = () => {
                     <img src="/assets/icons/st3.svg" alt="Certificates" />
                     <span>Certificates</span>
                   </div>
-                  <a href="#" onClick={(e) => { e.preventDefault(); navigate('/academia/professor/performance'); }}>Check Learners</a>
+                  <a href="#" onClick={(e) => { e.preventDefault(); navigate('/academia/professor/performance'); }}>View certificates</a>
                 </div>
                 <svg className="prof-stat-sparkline" viewBox="0 0 72 22"><polyline points="2,15 10,19 18,10 26,6 34,10 42,10 50,12 58,10 70,9"></polyline></svg>
                 <h3>{loading ? '...' : `${assessmentMetrics.totalCertificatesEarned || 0}`}</h3>
@@ -369,17 +456,17 @@ const DashboardHome = () => {
             <div className="prof-panel prof-panel--flat">
               <div className="prof-panel-head">
                 <h2>Assignments</h2>
-                <a className="prof-manage-link" href="#" onClick={preventDefault}>
+                <button type="button" className="prof-manage-link" onClick={() => navigate('/academia/professor/management')}>
                   <img src="/assets/icons/book-open.svg" alt="Manage Courses" />
                   <span><img src="/assets/icons/lea1.svg" alt="" /> Manage Courses</span>
-                </a>
+                </button>
               </div>
 
               <div className="prof-assignment-cards">
                 <div className="prof-mini-card">
                   <span className="prof-mini-icon"><img src="/assets/icons/as1.svg" alt="" /></span>
                   <div>
-                    <h4>{loading ? '...' : `${dashboardData?.totalCourses || 0}`}</h4>
+                    <h4>{loading || assessmentsLoading ? '...' : `${assessmentsTotal}`}</h4>
                     <p>Total Assignments</p>
                   </div>
                 </div>
@@ -421,60 +508,93 @@ const DashboardHome = () => {
           {/* --- SIDEBAR (RIGHT COLUMN) --- */}
           <div className="col-12 col-xl-3">
             <div className="prof-panel prof-side-panel">
-              <div className="prof-calendar-top">
-                <div>
-                  <h3>Week 2</h3>
-                  <p>Wed, March 2026</p>
-                </div>
-                <button type="button" className="prof-add-event" onClick={preventDefault}><img src="/assets/icons/plus1.svg" alt="" />Add Event</button>
+              <div className="prof-panel-head">
+                <h2>Schedule</h2>
+                <button type="button" className="prof-manage-link" onClick={() => navigate('/academia/professor/management-schedule')}>
+                  See all
+                </button>
               </div>
-              <div className="prof-calendar-surface">
-                <div className="prof-calendar-days">
-                  <div>Su</div><div>Mo</div><div>Tu</div><div>We</div><div>Th</div><div>Fr</div><div>Sa</div>
-                </div>
-                <div className="prof-calendar-dates">
-                  <div className="muted">26</div><div className="muted">27</div><div className="muted">28</div><div>1</div><div>2</div><div>3</div><div className="active">4</div>
-                </div>
+
+              <div className="prof-dashboard-schedule-list">
+                {eventsLoading ? (
+                  <p className="prof-dashboard-schedule-empty">Loading upcoming events…</p>
+                ) : schedulePreview.length > 0 ? (
+                  schedulePreview.map((item) => (
+                    <article key={item.id || `${item.title}-${item.time}`} className="prof-dashboard-schedule-item">
+                      <div className="prof-dashboard-schedule-date">
+                        <strong>{item.day}</strong>
+                        <span>{item.month}</span>
+                      </div>
+                      <div className="prof-dashboard-schedule-copy">
+                        <h4>{item.title}</h4>
+                        <p>{item.meta}</p>
+                        <div className="prof-dashboard-schedule-meta">
+                          <span>{item.time}</span>
+                          <span>{item.status}</span>
+                        </div>
+                      </div>
+                    </article>
+                  ))
+                ) : (
+                  <p className="prof-dashboard-schedule-empty">No upcoming events. Open the schedule to create one.</p>
+                )}
               </div>
-              <div className="prof-calendar-nav">
-                <button type="button" onClick={preventDefault}><img src="/assets/icons/ac-le2.svg" alt="" /></button>
-                <button type="button" onClick={preventDefault}><img src="/assets/icons/ac-ri.svg" alt="" /></button>
-              </div>
+
+              <button
+                type="button"
+                className="prof-add-event"
+                style={{ marginTop: 16 }}
+                onClick={() => navigate('/academia/professor/management-schedule')}
+              >
+                <img src="/assets/icons/plus1.svg" alt="" />
+                Open schedule
+              </button>
             </div>
 
             <div className="prof-panel prof-side-panel">
               <div className="prof-panel-head">
-                <h2>Activities</h2>
-                <div className="dropdown">
-                  <button type="button" className="dropdown-toggle prof-small-btn" data-bs-toggle="dropdown">
-                    <span>This Week</span> <img src="/assets/icons/drop.svg" alt="" />
-                  </button>
-                  <ul className="dropdown-menu">
-                    <li><a className="dropdown-item" href="#" onClick={preventDefault}>Today</a></li>
-                    <li><a className="dropdown-item" href="#" onClick={preventDefault}>This Week</a></li>
-                    <li><a className="dropdown-item" href="#" onClick={preventDefault}>This Month</a></li>
-                  </ul>
-                </div>
+                <h2>Analytics</h2>
+                <button type="button" className="prof-manage-link" onClick={() => navigate('/academia/professor/performance')}>
+                  View all
+                </button>
               </div>
+
               <div className="prof-activity-row">
                 <div className="prof-activity-item">
-                  <div className="prof-activity-metric"><span className="prof-activity-value">57</span><span className="prof-activity-delta prof-activity-delta--up">+1.6%</span></div>
-                  <div className="prof-activity-label">Present</div>
+                  <div className="prof-activity-metric">
+                    <span className="prof-activity-value">{loading ? '…' : dashboardData?.totalStudents || 0}</span>
+                  </div>
+                  <div className="prof-activity-label">Students</div>
                 </div>
-                <div className="prof-activity-divider"></div>
+                <div className="prof-activity-divider" aria-hidden="true" />
                 <div className="prof-activity-item">
-                  <div className="prof-activity-metric"><span className="prof-activity-value">23</span><span className="prof-activity-delta prof-activity-delta--down">-0.6%</span></div>
-                  <div className="prof-activity-label">Absent</div>
+                  <div className="prof-activity-metric">
+                    <span className="prof-activity-value">{loading ? '…' : assessmentMetrics.passedStudents || 0}</span>
+                  </div>
+                  <div className="prof-activity-label">Passed</div>
                 </div>
-                <div className="prof-activity-divider"></div>
+                <div className="prof-activity-divider" aria-hidden="true" />
                 <div className="prof-activity-item">
-                  <div className="prof-activity-metric"><span className="prof-activity-value">3</span><span className="prof-activity-delta">+0.0%</span></div>
-                  <div className="prof-activity-label">Events</div>
+                  <div className="prof-activity-metric">
+                    <span className="prof-activity-value">{loading ? '…' : `${courseRevenueTotal} USD`}</span>
+                  </div>
+                  <div className="prof-activity-label">Revenue</div>
                 </div>
               </div>
+
+              <button
+                type="button"
+                className="prof-add-event"
+                style={{ marginTop: 16 }}
+                onClick={() => navigate('/academia/professor/performance')}
+              >
+                <img src="/assets/icons/charts.svg" alt="" />
+                View analytics
+              </button>
             </div>
           </div>
         </div>
+        ) : null}
 
         {/* --- DATA TABLE SECTION --- */}
         <div className="prof-panel mt-3">
@@ -583,7 +703,6 @@ const DashboardHome = () => {
           </div>
         </div>
       </section>
-    </ProfessorLayout>
   );
 };
 

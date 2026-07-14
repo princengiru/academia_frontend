@@ -1,6 +1,7 @@
 import React, { useState, useRef, useMemo, useEffect } from 'react';
 import ReactQuill from 'react-quill-new'; 
 import 'react-quill-new/dist/quill.snow.css'; 
+import LearnerLoadError from '../../learner/LearnerLoadError';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
@@ -19,6 +20,10 @@ const BasicInfo = ({ courseId, setCourseId, setActiveStep, pushFeedback }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [categories, setCategories] = useState(FALLBACK_CATEGORIES);
+  const [categoriesError, setCategoriesError] = useState('');
+  const [categoriesReloadKey, setCategoriesReloadKey] = useState(0);
+  const [courseLoadError, setCourseLoadError] = useState('');
+  const [courseReloadKey, setCourseReloadKey] = useState(0);
 
   // --- Form Data State ---
   const [basicInfo, setBasicInfo] = useState({
@@ -39,36 +44,42 @@ const BasicInfo = ({ courseId, setCourseId, setActiveStep, pushFeedback }) => {
   // Fetch categories from DB
   useEffect(() => {
     const fetchCategories = async () => {
+      setCategoriesError('');
       try {
         const res = await fetch(`${API_BASE_URL}/api/categories`);
         const data = await res.json();
         if (res.ok && data.success && Array.isArray(data.data)) {
           const filtered = data.data.filter(cat => cat.type === 'course' || cat.type === 'general');
-          setCategories(filtered);
-          if (filtered.length > 0) {
-            setBasicInfo(prev => {
-              if (!prev.categoryId || prev.categoryId === FALLBACK_CATEGORIES[0].id) {
-                return {
-                  ...prev,
-                  categoryId: filtered[0].id,
-                  categoryName: filtered[0].name
-                };
-              }
-              return prev;
-            });
+          if (filtered.length === 0) {
+            setCategoriesError('No course categories are available right now.');
+            return;
           }
+          setCategories(filtered);
+          setBasicInfo(prev => {
+            if (!prev.categoryId || prev.categoryId === FALLBACK_CATEGORIES[0].id) {
+              return {
+                ...prev,
+                categoryId: filtered[0].id,
+                categoryName: filtered[0].name
+              };
+            }
+            return prev;
+          });
+        } else {
+          setCategoriesError(data.message || 'Could not load categories.');
         }
       } catch (err) {
-        console.error("Error fetching categories:", err);
+        setCategoriesError(err.message || 'Could not load categories.');
       }
     };
     fetchCategories();
-  }, []);
+  }, [categoriesReloadKey]);
 
   // Fetch course details if courseId exists
   useEffect(() => {
     if (!courseId) return;
     const fetchCourse = async () => {
+      setCourseLoadError('');
       try {
         const token = localStorage.getItem('token');
         const res = await fetch(`${API_BASE_URL}/api/courses/${courseId}`, {
@@ -94,13 +105,15 @@ const BasicInfo = ({ courseId, setCourseId, setActiveStep, pushFeedback }) => {
           if (course.thumbnail_url) {
             setCourseThumbnailPreview(course.thumbnail_url.startsWith('http') ? course.thumbnail_url : `${API_BASE_URL}${course.thumbnail_url}`);
           }
+        } else {
+          setCourseLoadError(data.message || 'Could not load course details.');
         }
       } catch (err) {
-        console.error("Error fetching course details:", err);
+        setCourseLoadError(err.message || 'Could not load course details.');
       }
     };
     fetchCourse();
-  }, [courseId]);
+  }, [courseId, courseReloadKey]);
 
   // --- File Upload State ---
   const [courseThumbnail, setCourseThumbnail] = useState(null);
@@ -256,6 +269,22 @@ const BasicInfo = ({ courseId, setCourseId, setActiveStep, pushFeedback }) => {
           This information will be visible on the public course landing page. Make it compelling to attract students.
         </p>
       </div>
+
+      {categoriesError ? (
+        <LearnerLoadError
+          title="Could not load categories"
+          message={categoriesError}
+          onRetry={() => setCategoriesReloadKey((key) => key + 1)}
+        />
+      ) : null}
+
+      {courseLoadError ? (
+        <LearnerLoadError
+          title="Could not load course"
+          message={courseLoadError}
+          onRetry={() => setCourseReloadKey((key) => key + 1)}
+        />
+      ) : null}
 
       {/* --- IMAGE UPLOAD --- */}
       <div className="prof-field-group">

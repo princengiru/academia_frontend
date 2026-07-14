@@ -2,7 +2,7 @@ import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
-import ProfessorLayout from '../../../components/layouts/ProfessorLayout/ProfessorLayout';
+import LearnerLoadError from '../learner/LearnerLoadError';
 import './prepare-course.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
@@ -23,6 +23,8 @@ const PrepareSyllabus = () => {
   const [categories, setCategories] = useState([]);
   const [subcategories, setSubcategories] = useState([]);
   const [topics, setTopics] = useState([]);
+  const [categoriesError, setCategoriesError] = useState('');
+  const [categoriesReloadKey, setCategoriesReloadKey] = useState(0);
 
   // --- Syllabus Profile Fields ---
   const [profile, setProfile] = useState({
@@ -76,19 +78,29 @@ const PrepareSyllabus = () => {
   // Fetch Categories on Mount
   useEffect(() => {
     const fetchCategories = async () => {
+      setCategoriesError('');
       try {
         const res = await fetch(`${API_BASE_URL}/api/categories`);
         const data = await res.json();
         if (res.ok && data.success && Array.isArray(data.data)) {
           const filtered = data.data.filter(cat => cat.type === 'syllabus' || cat.type === 'general');
+          if (filtered.length === 0) {
+            setCategoriesError('No syllabus categories are available right now.');
+            setCategories([]);
+            return;
+          }
           setCategories(filtered);
+        } else {
+          setCategories([]);
+          setCategoriesError(data.message || 'Could not load categories.');
         }
       } catch (err) {
-        console.error("Error fetching categories:", err);
+        setCategories([]);
+        setCategoriesError(err.message || 'Could not load categories.');
       }
     };
     fetchCategories();
-  }, []);
+  }, [categoriesReloadKey]);
 
   // Fetch Subcategories when Category changes
   const handleCategorySelect = async (catId, catName) => {
@@ -108,9 +120,11 @@ const PrepareSyllabus = () => {
       const data = await res.json();
       if (res.ok && data.success && Array.isArray(data.data)) {
         setSubcategories(data.data);
+      } else {
+        pushFeedback(data.message || 'Could not load subcategories.', 'error');
       }
     } catch (err) {
-      console.error("Error fetching subcategories:", err);
+      pushFeedback(err.message || 'Could not load subcategories.', 'error');
     }
   };
 
@@ -129,9 +143,11 @@ const PrepareSyllabus = () => {
       const data = await res.json();
       if (res.ok && data.success && Array.isArray(data.data)) {
         setTopics(data.data);
+      } else {
+        pushFeedback(data.message || 'Could not load topics.', 'error');
       }
     } catch (err) {
-      console.error("Error fetching topics:", err);
+      pushFeedback(err.message || 'Could not load topics.', 'error');
     }
   };
 
@@ -296,7 +312,6 @@ const PrepareSyllabus = () => {
   ];
 
   return (
-    <ProfessorLayout currentPage="prepare-syllabus">
       <section className="prof-page">
         <section className="prof-prepare">
           {feedback.visible && (
@@ -353,6 +368,14 @@ const PrepareSyllabus = () => {
 
             {/* Step Panes */}
             <div className="prof-prepare-body">
+              {categoriesError ? (
+                <LearnerLoadError
+                  title="Could not load categories"
+                  message={categoriesError}
+                  onRetry={() => setCategoriesReloadKey((key) => key + 1)}
+                />
+              ) : null}
+
               {activeStep === 'profile' && (
                 <div className="prof-step-pane is-active animate-fade-in">
                   <div className="prof-step-header">
@@ -663,7 +686,6 @@ const PrepareSyllabus = () => {
           </div>
         </section>
       </section>
-    </ProfessorLayout>
   );
 };
 

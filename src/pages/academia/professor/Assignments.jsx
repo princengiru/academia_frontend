@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import ProfessorLayout from '../../../components/layouts/ProfessorLayout/ProfessorLayout';
+import LearnerLoadError from '../learner/LearnerLoadError';
 import './assignments.css';
 import hoagoto from '../../../assets/icons/hoagoto.svg';
 
@@ -1144,7 +1144,7 @@ const Assignments = () => {
   }, [isModalOpen]);
 
   return (
-    <ProfessorLayout currentPage="assignments">
+    <>
       {toast.show && (
         <div className={`prof-toast-container toast-${toast.type}`}>
           <span className="toast-icon">
@@ -1160,7 +1160,7 @@ const Assignments = () => {
           <div className="learners-home-title-top">
             <h1>Assessments</h1>
             <div className="learners-home-title-actions">
-              <a className="learners-btn learners-btn-secondary" href="#" onClick={preventDefault}>
+              <a className="learners-btn learners-btn-secondary" href="/academia/professor/performance" onClick={(e) => { e.preventDefault(); navigate('/academia/professor/performance'); }}>
                 <img src="/assets/icons/van.svg" alt="" />
                 <span>View Analytics</span>
               </a>
@@ -1171,6 +1171,14 @@ const Assignments = () => {
             </div>
           </div>
         </section>
+
+        {fetchError && !loading ? (
+          <LearnerLoadError
+            title="Could not load assessments"
+            message={fetchError}
+            onRetry={fetchError === 'Authentication missing.' ? undefined : () => setRefreshTrigger((value) => value + 1)}
+          />
+        ) : null}
 
         <section className="assessments-hero">
           <div className="assessments-hero-copy">
@@ -2450,7 +2458,7 @@ const Assignments = () => {
           )}
         </div>
       </div>
-    </ProfessorLayout>
+    </>
   );
 };
 

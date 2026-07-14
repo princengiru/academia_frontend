@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import ProfessorLayout from '../../../components/layouts/ProfessorLayout/ProfessorLayout';
 import './prepare-course.css';
 
 // Import all the separated steps
@@ -52,7 +51,6 @@ const PrepareCourse = () => {
   };
 
   return (
-    <ProfessorLayout currentPage="prepare-course">
       <section className="prof-page">
         <section className="prof-prepare">
           
@@ -122,7 +120,6 @@ const PrepareCourse = () => {
           </div>
         </section>
       </section>
-    </ProfessorLayout>
   );
 };
 
