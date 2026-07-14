@@ -1,10 +1,12 @@
 import React from 'react';
+import { usePublicPageTitle } from '../public/usePublicPageTitle.jsx';
 
 // Assets (Update paths to match your React project structure)
 import concordIcon from '../../../assets/icons/concord.svg';
 import bgVisual from '../../../assets/imgs/bg.png';
 
 function AcademiaPasswordChanged() {
+  usePublicPageTitle('Password changed');
   return (
     <>
       <style>{`

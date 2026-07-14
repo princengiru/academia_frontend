@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
+import { usePublicPageTitle } from '../public/usePublicPageTitle.jsx';
 
 // Assets (Update paths to match your React project structure)
 import eyeIcon from '../../../assets/icons/eye.svg';
@@ -8,6 +9,7 @@ import bgVisual from '../../../assets/imgs/bg.png';
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 function AcademiaResetPassword() {
+  usePublicPageTitle('Reset password');
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token');

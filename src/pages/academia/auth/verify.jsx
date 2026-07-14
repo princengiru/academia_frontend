@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { usePublicPageTitle } from '../public/usePublicPageTitle.jsx';
 
 // Assets (Update paths to match your React project structure)
 import smartphoneIcon from '../../../assets/icons/smartphone1.svg';
@@ -8,6 +9,7 @@ import bgVisual from '../../../assets/imgs/bg.png';
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 function AcademiaVerify() {
+  usePublicPageTitle('Verify account');
   const navigate = useNavigate();
   
   // Rare variable names for state logic

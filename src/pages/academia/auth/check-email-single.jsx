@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { usePublicPageTitle } from '../public/usePublicPageTitle.jsx';
 
 // Assets (Update paths to match your React project structure)
 import remmIcon from '../../../assets/icons/remm.svg';
 import bgVisual from '../../../assets/imgs/bg.png';
 
 function AcademiaCheckEmailSingle() {
+  usePublicPageTitle('Check your email');
   // Using rare variable names for state logic
   const [apexEmail, setApexEmail] = useState('');
   const [nexusResent, setNexusResent] = useState(false);

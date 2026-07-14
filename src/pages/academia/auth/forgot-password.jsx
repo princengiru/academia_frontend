@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { usePublicPageTitle } from '../public/usePublicPageTitle.jsx';
 
 // Assets (Update paths to match your React project structure)
 import bgVisual from '../../../assets/imgs/bg.png';
@@ -7,6 +8,7 @@ import bgVisual from '../../../assets/imgs/bg.png';
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 function AcademiaForgotPassword() {
+  usePublicPageTitle('Forgot password');
   const navigate = useNavigate();
   // Using rare variable names for state logic
   const [apexEmail, setApexEmail] = useState('');

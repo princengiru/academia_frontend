@@ -1,11 +1,16 @@
 import React, { useState, useEffect } from 'react';
+import { usePublicPageTitle } from '../public/usePublicPageTitle.jsx';
+import { useAuthToast } from './useAuthToast.jsx';
 
 // Assets (Update paths to match your React project structure)
 import remmIcon from '../../../assets/icons/remm.svg';
 import bgVisual from '../../../assets/imgs/bg.png';
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
 function AcademiaCheckEmail() {
-  // Using rare variable names for state logic
+  usePublicPageTitle('Check your email');
+  const { showToast, AuthToast } = useAuthToast();
   const [apexEmail, setApexEmail] = useState('');
   const [nexusResent, setNexusResent] = useState(false);
   const [titanLoading, setTitanLoading] = useState(false);
@@ -14,21 +19,51 @@ function AcademiaCheckEmail() {
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
-      const user = JSON.parse(storedUser);
-      setApexEmail(user.email || '');
+      try {
+        const user = JSON.parse(storedUser);
+        setApexEmail(user.email || '');
+      } catch {
+        setApexEmail('');
+      }
     }
   }, []);
 
-  const handleResend = (e) => {
+  const handleResend = async (e) => {
     e.preventDefault();
     setVortexError('');
-    setNexusResent(true);
-    // Email verification link has been sent
-    setTimeout(() => setNexusResent(false), 5000);
+
+    if (!apexEmail) {
+      setVortexError('No email address found. Sign in again to resend verification.');
+      return;
+    }
+
+    setTitanLoading(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/auth/resend-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: apexEmail }),
+      });
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        setVortexError(data.error?.message || data.message || 'Failed to resend verification email.');
+        return;
+      }
+
+      setNexusResent(true);
+      showToast('Verification email sent.');
+      setTimeout(() => setNexusResent(false), 5000);
+    } catch {
+      setVortexError('An error occurred while resending.');
+    } finally {
+      setTitanLoading(false);
+    }
   };
 
   return (
     <>
+      {AuthToast}
       <style>{`
         :root {
           --page-bg: #ffffff;
@@ -271,8 +306,8 @@ function AcademiaCheckEmail() {
               ) : (
                 <>
                   Didn’t receive an email?
-                  <button type="button" onClick={handleResend}>
-                    Resend
+                  <button type="button" onClick={handleResend} disabled={titanLoading}>
+                    {titanLoading ? 'Sending...' : 'Resend'}
                   </button>
                 </>
               )}

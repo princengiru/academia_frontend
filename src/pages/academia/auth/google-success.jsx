@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { usePublicPageTitle } from '../public/usePublicPageTitle.jsx';
 
 function AcademiaGoogleSuccess() {
+  usePublicPageTitle('Signing in');
   const navigate = useNavigate();
   const [error, setError] = useState('');
 
