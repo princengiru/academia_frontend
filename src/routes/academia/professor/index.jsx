@@ -11,27 +11,25 @@ import ManagementSchedule from '../../../pages/academia/professor/ManagementSche
 import ManagementLessonsRanks from '../../../pages/academia/professor/ManagementLessonsRanks';
 import ManagementStudentQA from '../../../pages/academia/professor/ManagementStudentQA';
 import Settings from '../../../pages/academia/professor/Settings';
-import Account from '../../../pages/academia/professor/Account';
+import Account from '../../../pages/academia/professor/account';
 
 function AcademiaProfessorRoutes() {
-  // Provide a top-level route so DashboardHome renders without the AcademiaLayout wrapper.
-  // Keep URL as /academia/professor per request.
   return (
     <>
-      <Route path="academia/professor" element={<DashboardHome />} />
-      <Route path="academia/professor/prepare-course" element={<PrepareCourse />} />
-      <Route path="academia/professor/prepare-syllabus" element={<PrepareSyllabus />} />
-      <Route path="academia/professor/assignments" element={<Assignments />} />
-      <Route path="academia/professor/projects" element={<Projects />} />
-      <Route path="academia/professor/view-project" element={<ViewProject />} />
-      <Route path="academia/professor/performance" element={<Performance />} />
-      <Route path="academia/professor/management" element={<Management />} />
-      <Route path="academia/professor/management-syllabuses" element={<Management />} />
-      <Route path="academia/professor/management-schedule" element={<ManagementSchedule />} />
-      <Route path="academia/professor/management-lessons-ranks" element={<ManagementLessonsRanks />} />
-      <Route path="academia/professor/management-student-qa" element={<ManagementStudentQA />} />
-      <Route path="academia/professor/settings" element={<Settings />} />
-      <Route path="academia/professor/account" element={<Account />} />
+      <Route index element={<DashboardHome />} />
+      <Route path="assignments" element={<Assignments />} />
+      <Route path="projects" element={<Projects />} />
+      <Route path="view-project" element={<ViewProject />} />
+      <Route path="performance" element={<Performance />} />
+      <Route path="management" element={<Management />} />
+      <Route path="management-syllabuses" element={<Management />} />
+      <Route path="management-schedule" element={<ManagementSchedule />} />
+      <Route path="management-lessons-ranks" element={<ManagementLessonsRanks />} />
+      <Route path="management-student-qa" element={<ManagementStudentQA />} />
+      <Route path="prepare-course" element={<PrepareCourse />} />
+      <Route path="prepare-syllabus" element={<PrepareSyllabus />} />
+      <Route path="settings" element={<Settings />} />
+      <Route path="account" element={<Account />} />
     </>
   );
 }
