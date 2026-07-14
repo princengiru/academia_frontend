@@ -584,10 +584,29 @@
     flex-shrink: 0;
     position: sticky;
     top: 20px;
+    align-self: flex-start;
+    display: flex;
+    flex-direction: column;
+    max-height: calc(100vh - 90px);
     background: transparent;
     border: none;
     padding: 0;
     box-shadow: none;
+}
+
+.hoas-settings-nav-scroll {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    padding-bottom: 16px;
+}
+
+.hoas-settings-nav-scroll::-webkit-scrollbar {
+    display: none;
 }
 
 .hoas-settings-title {
@@ -914,6 +933,7 @@
 
 .hoas-form-horizontal-control input[type="text"],
 .hoas-form-horizontal-control input[type="email"],
+.hoas-form-horizontal-control input[type="password"],
 .hoas-form-horizontal-control select {
     width: 100%;
     padding: 10px 14px;
@@ -2872,4 +2892,129 @@
 @keyframes learnersToastIn {
     from { transform: translateY(-8px); opacity: 0; }
     to { transform: translateY(0); opacity: 1; }
+}
+
+.hoas-privacy-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.hoas-privacy-block {
+    border: 1px solid #F1E8B8;
+    background: #FFFBEB;
+    border-radius: 12px;
+    padding: 20px 22px;
+}
+
+.hoas-privacy-block--danger {
+    border-color: #FECACA;
+    background: #FEF2F2;
+}
+
+.hoas-privacy-block h4 {
+    margin: 0 0 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #071437;
+}
+
+.hoas-privacy-block p {
+    margin: 0 0 16px;
+    font-size: 13px;
+    line-height: 1.55;
+    color: #4B5675;
+    max-width: 640px;
+}
+
+.hoas-privacy-confirm {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin: 0 0 14px;
+    font-size: 13px;
+    line-height: 1.45;
+    color: #252F4A;
+    cursor: pointer;
+}
+
+.hoas-privacy-confirm input {
+    margin-top: 2px;
+    flex-shrink: 0;
+}
+
+.hoas-privacy-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-width: 420px;
+}
+
+.hoas-privacy-input {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid #DBDFE9;
+    border-radius: 6px;
+    font-size: 13px;
+    color: #450468;
+    outline: none;
+    box-sizing: border-box;
+    font-family: inherit;
+    background: #FFFFFF;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.hoas-privacy-input:focus {
+    border-color: #450468;
+    box-shadow: 0 0 0 3px rgba(69, 4, 104, 0.07);
+}
+
+.hoas-privacy-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+}
+
+.hoas-privacy-btn {
+    min-height: 38px;
+    padding: 0 16px;
+    border-radius: 6px;
+    border: none;
+    font-size: 12px;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+
+.hoas-privacy-btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.hoas-privacy-btn--primary {
+    background: #450468;
+    color: #FFFFFF;
+}
+
+.hoas-privacy-btn--secondary {
+    background: #FFFFFF;
+    color: #4B5675;
+    border: 1px solid #DBDFE9;
+}
+
+.hoas-privacy-btn--danger {
+    background: #EF4444;
+    color: #FFFFFF;
+}
+
+@media (max-width: 768px) {
+    .hoas-privacy-block {
+        padding: 16px;
+    }
+
+    .hoas-privacy-fields {
+        max-width: 100%;
+    }
 }

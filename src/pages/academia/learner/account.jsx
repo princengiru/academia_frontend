@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import './account.css';
 import LearnersPageShell from './LearnersPageShell';
 
@@ -31,6 +31,7 @@ import HoasButtonSpinner from './HoasButtonSpinner';
 import { getProfilePhotoDisplayUrl, isCustomProfilePhoto } from './profilePhotoUtils';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const SIGN_IN_PATH = '/academia/auth/signin';
 
 const MAX_DOCUMENT_BYTES = 5 * 1024 * 1024;
 const MAX_DOCUMENT_COUNT = 5;
@@ -152,6 +153,14 @@ const NAV_CATEGORIES = [
       { id: 'documents', label: 'Documents & Files' },
       { id: 'social', label: 'Social Media Links' },
     ]
+  },
+  {
+    title: 'Security',
+    items: [
+      { id: 'password', label: 'Password' },
+      { id: 'twofactor', label: 'Two-Factor Authentication' },
+      { id: 'privacy', label: 'Account Privacy' },
+    ],
   },
   {
     title: 'Payments',
@@ -990,7 +999,9 @@ const SectionCard = ({ id, title, children, onSave, sectionRef, showDiscard = tr
 
 // ─── Main Component ────────────────────────────────────────────────────────────
 const LearnerAccount = () => {
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const enrollmentReturnPath = searchParams.get('return');
   const [saved, setSaved] = useState({});
   const [activeSection, setActiveSection] = useState('general');
   const sectionRefs = useRef({});
@@ -1105,6 +1116,19 @@ const LearnerAccount = () => {
 
   const [socialConnections, setSocialConnections] = useState([]);
   const [socialPopover, setSocialPopover] = useState(null);
+
+  const [passwordForm, setPasswordForm] = useState({ current: '', next: '', confirm: '' });
+  const [passwordSaving, setPasswordSaving] = useState(false);
+  const [confirmDeactivation, setConfirmDeactivation] = useState(false);
+  const [confirmDeletion, setConfirmDeletion] = useState(false);
+  const [deactivating, setDeactivating] = useState(false);
+  const [deactivateStage, setDeactivateStage] = useState('idle');
+  const [deactivatePassword, setDeactivatePassword] = useState('');
+  const [deactivateOtp, setDeactivateOtp] = useState('');
+  const [deleteStage, setDeleteStage] = useState('idle');
+  const [deletePassword, setDeletePassword] = useState('');
+  const [deleteOtp, setDeleteOtp] = useState('');
+  const [deletingAccount, setDeletingAccount] = useState(false);
 
   const getToken = () => localStorage.getItem('token');
 
@@ -2364,12 +2388,17 @@ const LearnerAccount = () => {
 
       handleSave(selectedGateway === 'mtn' ? 'payment-mtn' : selectedGateway === 'airtel' ? 'payment-airtel' : 'payment-card');
       pushFeedback(existingMethod ? 'Payment method updated.' : 'Payment method saved.');
+
+      const returnPath = searchParams.get('return');
+      if (returnPath && returnPath.startsWith('/academia/')) {
+        window.setTimeout(() => navigate(returnPath), 1200);
+      }
     } catch (e) {
       pushFeedback(e.message || 'Couldn\'t save payment method. Please try again.', 'error');
     } finally {
       setPaymentMethodsSaving(false);
     }
-  }, [apiFetch, applyPaymentMethodToForm, cardNumberIsMasked, cvvIsMasked, handleSave, normalizePaymentMethods, paymentCardBrand, paymentCardName, paymentCardNumber, paymentCvv, paymentExpiryMonth, paymentPhoneNumber, paymentSimName, phoneNumberIsMasked, pushFeedback, refreshPaymentMethods, savePaymentMethod, savedPaymentMethods, selectedGateway]);
+  }, [apiFetch, applyPaymentMethodToForm, cardNumberIsMasked, cvvIsMasked, handleSave, navigate, normalizePaymentMethods, paymentCardBrand, paymentCardName, paymentCardNumber, paymentCvv, paymentExpiryMonth, paymentPhoneNumber, paymentSimName, phoneNumberIsMasked, pushFeedback, refreshPaymentMethods, savePaymentMethod, savedPaymentMethods, searchParams, selectedGateway]);
 
   const handleDeletePaymentMethod = useCallback(async (id) => {
     try {
@@ -2454,6 +2483,142 @@ const LearnerAccount = () => {
     setTwoFactorOtp('');
   }, []);
 
+  const handleChangePassword = useCallback(async () => {
+    if (!passwordForm.current || !passwordForm.next) {
+      pushFeedback('Enter your current and new password.', 'error');
+      return;
+    }
+
+    if (passwordForm.next.length < 6) {
+      pushFeedback('New password must be at least 6 characters.', 'error');
+      return;
+    }
+
+    if (passwordForm.next !== passwordForm.confirm) {
+      pushFeedback('New passwords do not match.', 'error');
+      return;
+    }
+
+    try {
+      setPasswordSaving(true);
+      await apiFetch('/api/auth/change-password', {
+        method: 'POST',
+        body: JSON.stringify({
+          currentPassword: passwordForm.current,
+          newPassword: passwordForm.next,
+        }),
+      });
+      setPasswordForm({ current: '', next: '', confirm: '' });
+      pushFeedback('Password changed successfully.');
+    } catch (e) {
+      pushFeedback(e.message || 'Couldn\'t change password. Please try again.', 'error');
+    } finally {
+      setPasswordSaving(false);
+    }
+  }, [apiFetch, passwordForm, pushFeedback]);
+
+  const handleRequestDeactivateAccount = useCallback(async () => {
+    if (!confirmDeactivation) {
+      pushFeedback('Please confirm account deactivation.', 'error');
+      return;
+    }
+
+    if (!deactivatePassword) {
+      pushFeedback('Enter your current password to continue.', 'error');
+      return;
+    }
+
+    try {
+      setDeactivating(true);
+      await apiFetch('/api/auth/request-deactivate-account', {
+        method: 'POST',
+        body: JSON.stringify({ currentPassword: deactivatePassword }),
+      });
+      setDeactivateStage('otp-pending');
+      pushFeedback('Verification code sent to your email.', 'success');
+    } catch (e) {
+      pushFeedback(e.message || 'Could not start account deactivation.', 'error');
+    } finally {
+      setDeactivating(false);
+    }
+  }, [apiFetch, confirmDeactivation, deactivatePassword, pushFeedback]);
+
+  const handleConfirmDeactivateAccount = useCallback(async () => {
+    if (!confirmDeactivation) {
+      pushFeedback('Please confirm account deactivation.', 'error');
+      return;
+    }
+
+    if (deactivateOtp.trim().length !== 6) {
+      pushFeedback('Enter the 6-digit verification code.', 'error');
+      return;
+    }
+
+    try {
+      setDeactivating(true);
+      await apiFetch('/api/auth/confirm-deactivate-account', {
+        method: 'POST',
+        body: JSON.stringify({
+          otp: deactivateOtp.trim(),
+          reason: 'User requested deactivation from account settings',
+        }),
+      });
+      localStorage.removeItem('token');
+      navigate(SIGN_IN_PATH);
+    } catch (e) {
+      pushFeedback(e.message || 'Could not deactivate account. Please try again.', 'error');
+    } finally {
+      setDeactivating(false);
+    }
+  }, [apiFetch, confirmDeactivation, deactivateOtp, navigate, pushFeedback]);
+
+  const handleRequestDeleteAccount = useCallback(async () => {
+    if (!deletePassword) {
+      pushFeedback('Enter your current password to continue.', 'error');
+      return;
+    }
+
+    try {
+      setDeletingAccount(true);
+      await apiFetch('/api/auth/request-delete-account', {
+        method: 'POST',
+        body: JSON.stringify({ currentPassword: deletePassword }),
+      });
+      setDeleteStage('otp-pending');
+      pushFeedback('Verification code sent to your email.', 'success');
+    } catch (e) {
+      pushFeedback(e.message || 'Could not start account deletion.', 'error');
+    } finally {
+      setDeletingAccount(false);
+    }
+  }, [apiFetch, deletePassword, pushFeedback]);
+
+  const handleConfirmDeleteAccount = useCallback(async () => {
+    if (!confirmDeletion) {
+      pushFeedback('Please confirm account deletion.', 'error');
+      return;
+    }
+
+    if (deleteOtp.trim().length !== 6) {
+      pushFeedback('Enter the 6-digit verification code.', 'error');
+      return;
+    }
+
+    try {
+      setDeletingAccount(true);
+      await apiFetch('/api/auth/confirm-delete-account', {
+        method: 'POST',
+        body: JSON.stringify({ otp: deleteOtp.trim() }),
+      });
+      localStorage.removeItem('token');
+      navigate(SIGN_IN_PATH);
+    } catch (e) {
+      pushFeedback(e.message || 'Could not delete account. Please try again.', 'error');
+    } finally {
+      setDeletingAccount(false);
+    }
+  }, [apiFetch, confirmDeletion, deleteOtp, navigate, pushFeedback]);
+
 
   return (
     <LearnersPageShell>
@@ -2481,11 +2646,39 @@ const LearnerAccount = () => {
           </div>
         )}
 
+        {enrollmentReturnPath && enrollmentReturnPath.startsWith('/academia/') ? (
+          <div
+            style={{
+              margin: '0 0 16px',
+              padding: '12px 14px',
+              borderRadius: 10,
+              border: '1px solid #E2D4EC',
+              background: '#FDFBFF',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 12,
+              flexWrap: 'wrap',
+            }}
+          >
+            <span style={{ fontSize: 13, color: '#4B5675' }}>
+              Add a payment method, then return to finish enrollment.
+            </span>
+            <button
+              type="button"
+              className="hoas-btn-save"
+              onClick={() => navigate(enrollmentReturnPath)}
+            >
+              Return to course
+            </button>
+          </div>
+        ) : null}
+
         {/* Page Header */}
         <div className="hoas-page-header">
           <div>
-            <h1>Platform Settings</h1>
-            <p className="hoas-page-subtitle">Manage your platform configuration and preferences</p>
+            <h1>Account</h1>
+            <p className="hoas-page-subtitle">Manage identity, security, billing, and platform preferences</p>
           </div>
           <div className="hoas-header-actions">
             <span className="hoas-update-status">
@@ -2493,9 +2686,12 @@ const LearnerAccount = () => {
               Data updated every 5min
               <span className="hoas-dot" />
             </span>
-            <button className="hoas-btn-primary">
-              Go to website <img src={hoagoto} alt="Go" />
+            <button type="button" className="hoas-btn-primary" onClick={() => navigate('/academia/learner/settings')}>
+              Learning profile
             </button>
+            <a className="hoas-btn-primary" href="/academia/index" target="_blank" rel="noopener noreferrer">
+              Go to website <img src={hoagoto} alt="Go" />
+            </a>
           </div>
         </div>
 
@@ -2503,27 +2699,29 @@ const LearnerAccount = () => {
 
           {/* ── Left sticky nav ── */}
           <div className="hoas-settings-nav">
-            <h2 className="hoas-settings-title">Settings</h2>
-            {NAV_CATEGORIES.map(category => (
-              <div key={category.title} className="hoas-nav-category">
-                <h3 className="hoas-nav-category-title">{category.title}</h3>
-                <ul className="hoas-nav-list">
-                  {category.items.map((nav) => (
-                    <li key={nav.id}>
-                      <button
-                        className={`hoas-nav-btn ${activeSection === nav.id ? 'active' : ''}`}
-                        onClick={() => scrollToSection(nav.id)}
-                      >
-                        <span className="hoas-step-icon">
-                          {isSectionComplete(nav.id) ? <IconChecked /> : <IconUnchecked />}
-                        </span>
-                        <span className="hoas-nav-label">{nav.label}</span>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
+            <h2 className="hoas-settings-title">Account</h2>
+            <div className="hoas-settings-nav-scroll">
+              {NAV_CATEGORIES.map(category => (
+                <div key={category.title} className="hoas-nav-category">
+                  <h3 className="hoas-nav-category-title">{category.title}</h3>
+                  <ul className="hoas-nav-list">
+                    {category.items.map((nav) => (
+                      <li key={nav.id}>
+                        <button
+                          className={`hoas-nav-btn ${activeSection === nav.id ? 'active' : ''}`}
+                          onClick={() => scrollToSection(nav.id)}
+                        >
+                          <span className="hoas-step-icon">
+                            {isSectionComplete(nav.id) ? <IconChecked /> : <IconUnchecked />}
+                          </span>
+                          <span className="hoas-nav-label">{nav.label}</span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
           </div>
 
           {/* ── Main Content ── */}
@@ -2862,6 +3060,50 @@ const LearnerAccount = () => {
               </div>
             </SectionCard>
 
+            <SectionCard
+              id="password"
+              title="Password"
+              onSave={handleChangePassword}
+              saveDisabled={!passwordForm.current || !passwordForm.next || !passwordForm.confirm}
+              saving={passwordSaving}
+              sectionRef={el => sectionRefs.current['password'] = el}
+              showDiscard={false}
+            >
+              <div className="hoas-form-horizontal-row">
+                <label className="hoas-form-horizontal-label">Current password</label>
+                <div className="hoas-form-horizontal-control">
+                  <input
+                    type="password"
+                    value={passwordForm.current}
+                    onChange={(e) => setPasswordForm((current) => ({ ...current, current: e.target.value }))}
+                    autoComplete="current-password"
+                  />
+                </div>
+              </div>
+              <div className="hoas-form-horizontal-row">
+                <label className="hoas-form-horizontal-label">New password</label>
+                <div className="hoas-form-horizontal-control">
+                  <input
+                    type="password"
+                    value={passwordForm.next}
+                    onChange={(e) => setPasswordForm((current) => ({ ...current, next: e.target.value }))}
+                    autoComplete="new-password"
+                  />
+                </div>
+              </div>
+              <div className="hoas-form-horizontal-row">
+                <label className="hoas-form-horizontal-label">Confirm password</label>
+                <div className="hoas-form-horizontal-control">
+                  <input
+                    type="password"
+                    value={passwordForm.confirm}
+                    onChange={(e) => setPasswordForm((current) => ({ ...current, confirm: e.target.value }))}
+                    autoComplete="new-password"
+                  />
+                </div>
+              </div>
+            </SectionCard>
+
             {/* ── 4. Two-Factor Authentication ── */}
             <SectionCard
               id="twofactor"
@@ -2945,6 +3187,154 @@ const LearnerAccount = () => {
                     {twoFactorLoading ? 'Loading...' : twoFactorProcessing ? 'Please wait...' : twoFactorEnabled ? 'Disable 2FA' : 'Enable 2FA'}
                   </button>
                 )}
+              </div>
+            </SectionCard>
+
+            <SectionCard
+              id="privacy"
+              title="Account Privacy"
+              onSave={() => handleSave('privacy')}
+              sectionRef={el => sectionRefs.current['privacy'] = el}
+              showFooter={false}
+            >
+              <div className="hoas-privacy-stack">
+                <div className="hoas-privacy-block">
+                  <h4>Deactivate account</h4>
+                  <p>Temporarily deactivate your account. You can sign in again later to reactivate it.</p>
+
+                  <label className="hoas-privacy-confirm">
+                    <input
+                      type="checkbox"
+                      checked={confirmDeactivation}
+                      onChange={(e) => setConfirmDeactivation(e.target.checked)}
+                    />
+                    <span>I confirm my account deactivation</span>
+                  </label>
+
+                  <div className="hoas-privacy-fields">
+                    {deactivateStage === 'idle' ? (
+                      <>
+                        <input
+                          type="password"
+                          className="hoas-privacy-input"
+                          value={deactivatePassword}
+                          onChange={(e) => setDeactivatePassword(e.target.value)}
+                          placeholder="Current password"
+                          autoComplete="current-password"
+                        />
+                        <div className="hoas-privacy-actions">
+                          <button
+                            type="button"
+                            className="hoas-privacy-btn hoas-privacy-btn--primary"
+                            onClick={handleRequestDeactivateAccount}
+                            disabled={!confirmDeactivation || !deactivatePassword || deactivating}
+                          >
+                            {deactivating ? 'Sending code...' : 'Deactivate account'}
+                          </button>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <input
+                          type="text"
+                          className="hoas-privacy-input"
+                          value={deactivateOtp}
+                          onChange={(e) => setDeactivateOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                          placeholder="Enter 6-digit verification code"
+                          maxLength={6}
+                          inputMode="numeric"
+                        />
+                        <div className="hoas-privacy-actions">
+                          <button
+                            type="button"
+                            className="hoas-privacy-btn hoas-privacy-btn--primary"
+                            onClick={handleConfirmDeactivateAccount}
+                            disabled={deactivateOtp.length !== 6 || deactivating}
+                          >
+                            {deactivating ? 'Confirming...' : 'Confirm deactivation'}
+                          </button>
+                          <button
+                            type="button"
+                            className="hoas-privacy-btn hoas-privacy-btn--secondary"
+                            onClick={() => { setDeactivateStage('idle'); setDeactivateOtp(''); }}
+                            disabled={deactivating}
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                <div className="hoas-privacy-block hoas-privacy-block--danger">
+                  <h4>Delete account</h4>
+                  <p>Permanently delete your account. This action cannot be undone.</p>
+
+                  <label className="hoas-privacy-confirm">
+                    <input
+                      type="checkbox"
+                      checked={confirmDeletion}
+                      onChange={(e) => setConfirmDeletion(e.target.checked)}
+                    />
+                    <span>I confirm my account deletion</span>
+                  </label>
+
+                  <div className="hoas-privacy-fields">
+                    {deleteStage === 'idle' ? (
+                      <>
+                        <input
+                          type="password"
+                          className="hoas-privacy-input"
+                          value={deletePassword}
+                          onChange={(e) => setDeletePassword(e.target.value)}
+                          placeholder="Current password"
+                          autoComplete="current-password"
+                        />
+                        <div className="hoas-privacy-actions">
+                          <button
+                            type="button"
+                            className="hoas-privacy-btn hoas-privacy-btn--danger"
+                            onClick={handleRequestDeleteAccount}
+                            disabled={!confirmDeletion || !deletePassword || deletingAccount}
+                          >
+                            {deletingAccount ? 'Sending code...' : 'Delete account permanently'}
+                          </button>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <input
+                          type="text"
+                          className="hoas-privacy-input"
+                          value={deleteOtp}
+                          onChange={(e) => setDeleteOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                          placeholder="Enter 6-digit verification code"
+                          maxLength={6}
+                          inputMode="numeric"
+                        />
+                        <div className="hoas-privacy-actions">
+                          <button
+                            type="button"
+                            className="hoas-privacy-btn hoas-privacy-btn--danger"
+                            onClick={handleConfirmDeleteAccount}
+                            disabled={deleteOtp.length !== 6 || deletingAccount}
+                          >
+                            {deletingAccount ? 'Confirming...' : 'Confirm deletion'}
+                          </button>
+                          <button
+                            type="button"
+                            className="hoas-privacy-btn hoas-privacy-btn--secondary"
+                            onClick={() => { setDeleteStage('idle'); setDeleteOtp(''); }}
+                            disabled={deletingAccount}
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
               </div>
             </SectionCard>
 
