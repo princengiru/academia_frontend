@@ -2,9 +2,11 @@ import { useState, useMemo, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import LearnersPageShell from './LearnersPageShell';
 import './index.css';
+import { buildReaderUrl, buildScheduleItems } from './homeDashboardUtils';
+import LearnerLoadError from './LearnerLoadError';
 
 // Icons & Images
-import acSav from '../../../assets/icons/ac-sav.svg';
+import SavedLibraryButton from './SavedLibraryButton';
 import hoagoto from '../../../assets/icons/hoagoto.svg';
 import certt from '../../../assets/icons/certt.svg';
 import right1 from '../../../assets/icons/right1.svg';
@@ -36,11 +38,19 @@ function LearnersPerformance() {
   const [areaChartPeriod, setAreaChartPeriod] = useState('Monthly');
   const [activeAreaIndex, setActiveAreaIndex] = useState(0);
   const areaWrapRef = useRef(null);
-  const [selectedEcho, setSelectedEcho] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [performanceState, setPerformanceState] = useState(null);
+  const [loadError, setLoadError] = useState('');
+  const [reloadToken, setReloadToken] = useState(0);
+  const [performanceLoaded, setPerformanceLoaded] = useState(false);
+  const [summaryState, setSummaryState] = useState(null);
+  const [historyState, setHistoryState] = useState({ assessmentHistory: [], pagination: {} });
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyError, setHistoryError] = useState('');
+  const [historyReloadToken, setHistoryReloadToken] = useState(0);
   const [certificateStatsState, setCertificateStatsState] = useState(null);
   const [certificatesState, setCertificatesState] = useState([]);
+  const [dashboardBody, setDashboardBody] = useState(null);
+  const [enrolledCourses, setEnrolledCourses] = useState([]);
 
   // Pagination & Filter states
   const [page, setPage] = useState(1);
@@ -51,17 +61,19 @@ function LearnersPerformance() {
   useEffect(() => {
     let cancelled = false;
 
-    const loadPerformance = async () => {
+    const loadPerformanceSummary = async () => {
       const token = localStorage.getItem('token');
       if (!token) {
         setLoading(false);
+        setPerformanceLoaded(false);
+        setLoadError('');
         return;
       }
       setLoading(true);
+      setLoadError('');
       try {
-        const offset = (page - 1) * pageSize;
-        const [performanceRes, certStatsRes, certListRes] = await Promise.allSettled([
-          fetch(`${API_BASE_URL}/api/profile/performance?limit=${pageSize}&offset=${offset}&timePeriod=${timePeriod}&status=${status}`, {
+        const [performanceRes, certStatsRes, certListRes, dashboardRes] = await Promise.allSettled([
+          fetch(`${API_BASE_URL}/api/profile/performance?limit=1000&offset=0&timePeriod=all&status=all`, {
             headers: { Authorization: `Bearer ${token}` },
           }),
           fetch(`${API_BASE_URL}/api/certificates/user/statistics`, {
@@ -70,54 +82,136 @@ function LearnersPerformance() {
           fetch(`${API_BASE_URL}/api/certificates/user/my-certificates`, {
             headers: { Authorization: `Bearer ${token}` },
           }),
+          fetch(`${API_BASE_URL}/api/dashboard/student`, {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
         ]);
 
         if (cancelled) return;
 
+        let performanceOk = false;
+        let performanceError = '';
+
         if (performanceRes.status === 'fulfilled') {
-          const performanceBody = await performanceRes.value.json();
-          const performanceData = extractBody(performanceBody) || {};
-          setPerformanceState({
-            metrics: performanceData.metrics || {},
-            assessmentHistory: performanceData.assessmentHistory || [],
-            pagination: performanceData.pagination || {},
-          });
+          const res = performanceRes.value;
+          let performanceBody = {};
+          try {
+            performanceBody = await res.json();
+          } catch {
+            performanceBody = {};
+          }
+
+          if (!res.ok) {
+            performanceError = performanceBody?.message || 'Could not load performance data.';
+          } else {
+            performanceOk = true;
+            const performanceData = extractBody(performanceBody) || {};
+            setSummaryState({
+              metrics: performanceData.metrics || {},
+              assessmentHistory: performanceData.assessmentHistory || [],
+            });
+            setPerformanceLoaded(true);
+          }
         } else {
-          setPerformanceState({ metrics: {}, assessmentHistory: [], pagination: {} });
+          performanceError = 'Could not load performance data.';
         }
 
-        if (certStatsRes.status === 'fulfilled') {
+        if (!performanceOk && !cancelled) {
+          setLoadError(performanceError);
+          setPerformanceLoaded(false);
+        }
+
+        if (certStatsRes.status === 'fulfilled' && certStatsRes.value.ok) {
           const certStatsBody = await certStatsRes.value.json();
           setCertificateStatsState(extractBody(certStatsBody) || {});
         } else {
           setCertificateStatsState({});
         }
 
-        if (certListRes.status === 'fulfilled') {
+        if (certListRes.status === 'fulfilled' && certListRes.value.ok) {
           const certListBody = await certListRes.value.json();
           setCertificatesState(extractList(certListBody));
         } else {
           setCertificatesState([]);
         }
+
+        if (dashboardRes?.status === 'fulfilled' && dashboardRes.value.ok) {
+          const dashboardJson = await dashboardRes.value.json();
+          setDashboardBody(dashboardJson);
+          setEnrolledCourses(Array.isArray(dashboardJson?.data?.enrolledCourses) ? dashboardJson.data.enrolledCourses : []);
+        } else {
+          setDashboardBody(null);
+          setEnrolledCourses([]);
+        }
       } catch (err) {
         console.error('Error loading performance:', err);
         if (!cancelled) {
-          setPerformanceState({ metrics: {}, assessmentHistory: [], pagination: {} });
-          setCertificateStatsState({});
-          setCertificatesState([]);
+          setLoadError(err?.message || 'Could not load performance data.');
+          setPerformanceLoaded(false);
         }
       } finally {
         if (!cancelled) setLoading(false);
       }
     };
 
-    loadPerformance();
+    loadPerformanceSummary();
 
     return () => { cancelled = true; };
-  }, [API_BASE_URL, page, pageSize, timePeriod, status]);
+  }, [API_BASE_URL, reloadToken]);
 
-  const metrics = useMemo(() => performanceState?.metrics || {}, [performanceState?.metrics]);
-  const historyRows = useMemo(() => performanceState?.assessmentHistory || [], [performanceState?.assessmentHistory]);
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadAssessmentHistory = async () => {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      setHistoryLoading(true);
+      setHistoryError('');
+      try {
+        const offset = (page - 1) * pageSize;
+        const res = await fetch(
+          `${API_BASE_URL}/api/profile/performance?limit=${pageSize}&offset=${offset}&timePeriod=${timePeriod}&status=${status}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        let body = {};
+        try {
+          body = await res.json();
+        } catch {
+          body = {};
+        }
+
+        if (cancelled) return;
+
+        if (!res.ok) {
+          setHistoryError(body?.message || 'Could not load assessment history.');
+          setHistoryState({ assessmentHistory: [], pagination: {} });
+          return;
+        }
+
+        const performanceData = extractBody(body) || {};
+        setHistoryState({
+          assessmentHistory: performanceData.assessmentHistory || [],
+          pagination: performanceData.pagination || {},
+        });
+      } catch (err) {
+        if (!cancelled) {
+          setHistoryError(err?.message || 'Could not load assessment history.');
+          setHistoryState({ assessmentHistory: [], pagination: {} });
+        }
+      } finally {
+        if (!cancelled) setHistoryLoading(false);
+      }
+    };
+
+    loadAssessmentHistory();
+
+    return () => { cancelled = true; };
+  }, [API_BASE_URL, page, pageSize, timePeriod, status, reloadToken, historyReloadToken]);
+
+  const metrics = useMemo(() => summaryState?.metrics || {}, [summaryState?.metrics]);
+  const chartHistoryRows = useMemo(() => summaryState?.assessmentHistory || [], [summaryState?.assessmentHistory]);
+  const historyRows = useMemo(() => historyState.assessmentHistory || [], [historyState.assessmentHistory]);
   const recentCertificates = useMemo(() => certificatesState || [], [certificatesState]);
   const topCertificate = recentCertificates[0] || null;
 
@@ -128,55 +222,80 @@ function LearnersPerformance() {
     { value: metrics.certificatesEarned ?? certificateStatsState?.total_certificates ?? 0, label: 'Certificates Earned' },
   ];
 
-  const genesis = [
-    { color: '#F23C72', range: '0-59', status: 'FAIL (F)' },
-    { color: '#F2C335', range: '60 - 79', status: 'TRIED (T)' },
-    { color: '#22C55E', range: '80 - 100', status: 'PASS (P)' },
-  ];
+  const scoreBreakdown = useMemo(() => {
+    const buckets = [
+      { color: '#F23C72', range: '0–59%', status: 'Below passing', count: 0 },
+      { color: '#F2C335', range: '60–79%', status: 'Almost there', count: 0 },
+      { color: '#22C55E', range: '80–100%', status: 'Passed', count: 0 },
+    ];
 
-  const apex = useMemo(() => {
-    return historyRows.slice(0, 4).map((item) => {
-      const date = item.startTime || item.endTime || item.createdAt || '';
-      const parsedDate = date ? new Date(date) : null;
-      const label = parsedDate && !Number.isNaN(parsedDate.getTime())
-        ? parsedDate.toLocaleString('en-US', { day: '2-digit' })
-        : '00';
+    chartHistoryRows.forEach((item) => {
+      if (item.percentage == null && item.score == null) return;
+      const pct = Number(item.percentage ?? item.score ?? 0);
+      if (pct >= 80) buckets[2].count += 1;
+      else if (pct >= 60) buckets[1].count += 1;
+      else buckets[0].count += 1;
+    });
+
+    const total = buckets.reduce((sum, bucket) => sum + bucket.count, 0);
+    let cursor = 0;
+    const gradientStops = buckets
+      .filter((bucket) => bucket.count > 0)
+      .map((bucket) => {
+        const start = cursor;
+        cursor += (bucket.count / total) * 100;
+        return `${bucket.color} ${start}% ${cursor}%`;
+      });
+
+    return {
+      buckets,
+      total,
+      donutBackground: total > 0 ? `conic-gradient(${gradientStops.join(', ')})` : '#E9EDF4',
+    };
+  }, [chartHistoryRows]);
+
+  const scheduleItems = useMemo(() => buildScheduleItems({
+    dashboardBody,
+    performanceBody: summaryState ? { data: summaryState } : null,
+    enrolledCourses,
+    weekAnchor: new Date(),
+  }), [dashboardBody, summaryState, enrolledCourses]);
+
+  const zenith = useMemo(() => {
+    return historyRows.map((item, idx) => {
+      const assessmentId = item.assessmentId || item.assessment_id || item.id;
+      const category = String(item.category || item.assessmentType || '').toLowerCase();
+      const chapterId = category === 'summative' || item.isSummative
+        ? 'assessment'
+        : (assessmentId ? `formative-${assessmentId}` : null);
 
       return {
-        date: label,
-        title: item.courseTitle || item.assessmentTitle || 'Assessment',
-        meta: item.assessmentType || item.status || 'Assessment',
-        time: parsedDate && !Number.isNaN(parsedDate.getTime()) ? parsedDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--',
-        status: item.status === 'graded' ? 'Read' : item.status === 'submitted' ? 'Review' : 'In Progress',
-        statusTone: item.status === 'graded' ? 'read' : item.status === 'submitted' ? 'meeting' : 'read',
+        id: item.id || idx,
+        courseId: item.courseId,
+        category: item.category,
+        assessmentId,
+        chapterId,
+        readerUrl: item.courseId ? buildReaderUrl(item.courseId, chapterId) : null,
+        isPassed: item.isPassed,
+        course: item.courseTitle || item.assessmentTitle || 'Assessment',
+        date: item.startTime || item.endTime || item.createdAt ? new Date(item.startTime || item.endTime || item.createdAt).toLocaleDateString() : '--',
+        author: item.instructor?.name || item.instructorName || 'Academia',
+        score: item.percentage != null ? `${Number(item.percentage).toFixed(1).replace(/\.0$/, '')}%` : (item.score != null ? `${item.score}` : '---'),
+        timeTaken: item.duration || item.timeTaken || '--',
+        status: item.status === 'graded' ? (item.isPassed ? 'Passed' : 'Failed') : item.status === 'submitted' ? 'Submitted' : 'In Progress',
+        statusTone: item.status === 'graded' ? (item.isPassed ? 'passed' : 'failed') : item.status === 'submitted' ? 'progress' : 'progress',
+        action: item.status === 'graded' 
+          ? (item.category === 'summative' && item.isPassed ? 'Download Certificate' : 'Review')
+          : (item.status === 'submitted' ? 'View' : 'Resume'),
+        actionTone: item.status === 'graded' 
+          ? (item.category === 'summative' && item.isPassed ? 'download' : 'resume')
+          : (item.status === 'submitted' ? 'retake' : 'resume'),
       };
     });
   }, [historyRows]);
 
-  const zenith = useMemo(() => {
-    return historyRows.map((item, idx) => ({
-      id: item.id || idx,
-      courseId: item.courseId,
-      category: item.category,
-      isPassed: item.isPassed,
-      course: item.courseTitle || item.assessmentTitle || 'Assessment',
-      date: item.startTime || item.endTime || item.createdAt ? new Date(item.startTime || item.endTime || item.createdAt).toLocaleDateString() : '--',
-      author: item.instructor?.name || item.instructorName || 'Academia',
-      score: item.percentage != null ? `${Number(item.percentage).toFixed(1).replace(/\.0$/, '')}%` : (item.score != null ? `${item.score}` : '---'),
-      timeTaken: item.duration || item.timeTaken || '--',
-      status: item.status === 'graded' ? (item.isPassed ? 'Passed' : 'Failed') : item.status === 'submitted' ? 'Submitted' : 'In Progress',
-      statusTone: item.status === 'graded' ? (item.isPassed ? 'passed' : 'failed') : item.status === 'submitted' ? 'progress' : 'progress',
-      action: item.status === 'graded' 
-        ? (item.category === 'summative' && item.isPassed ? 'Download Certificate' : 'Review')
-        : (item.status === 'submitted' ? 'View' : 'Resume'),
-      actionTone: item.status === 'graded' 
-        ? (item.category === 'summative' && item.isPassed ? 'download' : 'resume')
-        : (item.status === 'submitted' ? 'retake' : 'resume'),
-    }));
-  }, [historyRows]);
-
-  const totalItems = performanceState?.pagination?.total || 0;
-  const totalPages = performanceState?.pagination?.pages || 1;
+  const totalItems = historyState.pagination?.total || 0;
+  const totalPages = historyState.pagination?.pages || 1;
   const startIndex = totalItems === 0 ? 0 : (page - 1) * pageSize + 1;
   const endIndex = Math.min(page * pageSize, totalItems);
 
@@ -217,7 +336,7 @@ function LearnersPerformance() {
     const formativeScores = Array(numSlots).fill(null).map(() => []);
     const summativeScores = Array(numSlots).fill(null).map(() => []);
 
-    historyRows.forEach(item => {
+    chartHistoryRows.forEach(item => {
       const dStr = item.startTime || item.endTime || item.createdAt;
       if (!dStr) return;
       const date = new Date(dStr);
@@ -248,7 +367,7 @@ function LearnersPerformance() {
       quizzes,
       exams
     };
-  }, [historyRows, areaChartPeriod]);
+  }, [chartHistoryRows, areaChartPeriod]);
 
   const handleAreaMouseMove = (e) => {
     if (!areaWrapRef.current) return;
@@ -279,11 +398,30 @@ function LearnersPerformance() {
   };
 
   const hasSummaryData = Object.keys(metrics).length > 0 || recentCertificates.length > 0 || Object.keys(certificateStatsState || {}).length > 0;
-  const hasChartSectionData = historyRows.length > 0;
-  const hasScheduleData = apex.length > 0;
+  const hasChartSectionData = chartHistoryRows.length > 0;
+  const hasScheduleData = scheduleItems.length > 0;
   const hasHistoryData = zenith.length > 0;
   const hasCertificateData = Boolean(topCertificate);
-  const hasPerformanceData = hasSummaryData || hasChartSectionData || hasScheduleData || hasHistoryData || hasCertificateData;
+  const historyFiltersActive = timePeriod !== 'all' || status !== 'all';
+  const hasPerformanceData = hasSummaryData || hasChartSectionData || hasScheduleData || hasCertificateData;
+
+  const scrollToAssessmentHistory = () => {
+    const section = document.getElementById('learners-performance-history');
+    section?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  const handleDownloadTopCertificate = () => {
+    const certificateNumber = topCertificate?.certificate_number || topCertificate?.certificateNumber;
+    if (certificateNumber) {
+      window.open(`${API_BASE_URL}/api/certificates/${certificateNumber}/download`, '_blank', 'noopener,noreferrer');
+      return;
+    }
+    if (topCertificate?.certificate_url) {
+      window.open(topCertificate.certificate_url, '_blank', 'noopener,noreferrer');
+      return;
+    }
+    navigate('/academia/learner/certificates');
+  };
 
   if (loading) {
     return (
@@ -300,38 +438,56 @@ function LearnersPerformance() {
     );
   }
 
-  if (!hasPerformanceData) {
+  if (loadError) {
     return (
       <LearnersPageShell>
         <section className="learners-performance-page">
-          <div className="learners-card learners-empty-state learners-empty-state--compact">
-            <h3>No performance data yet</h3>
-            <div>
-              <button className="learners-btn learners-btn-primary" disabled>Browse courses</button>
-              <button className="learners-btn learners-btn-secondary" disabled>View certificates</button>
+          <section className="learners-home-title">
+            <div className="learners-home-title-top">
+              <h1>My Performance</h1>
             </div>
+          </section>
+          <div className="learners-card learners-empty-state learners-empty-state--compact">
+            <h3>Could not load performance</h3>
+            <p>{loadError}</p>
+            <button
+              type="button"
+              className="learners-btn learners-btn-primary"
+              onClick={() => setReloadToken((value) => value + 1)}
+            >
+              Retry
+            </button>
           </div>
         </section>
       </LearnersPageShell>
     );
   }
 
-  // Tooltip positioning is handled via responsive transform shifts
-
-  // Handlers for Table Checkboxes
-  const handleSelectAll = (e) => {
-    if (e.target.checked) {
-      setSelectedEcho(zenith.map((_, i) => i));
-    } else {
-      setSelectedEcho([]);
-    }
-  };
-
-  const handleSelectOne = (idx) => {
-    setSelectedEcho((prev) => 
-      prev.includes(idx) ? prev.filter(i => i !== idx) : [...prev, idx]
+  if (performanceLoaded && !hasPerformanceData) {
+    return (
+      <LearnersPageShell>
+        <section className="learners-performance-page">
+          <section className="learners-home-title">
+            <div className="learners-home-title-top">
+              <h1>My Performance</h1>
+            </div>
+          </section>
+          <div className="learners-card learners-empty-state learners-empty-state--compact">
+            <h3>No performance data yet</h3>
+            <p>Your stats, charts, and assessment history will appear once you start learning and taking tests.</p>
+            <div>
+              <button type="button" className="learners-btn learners-btn-primary" onClick={() => navigate('/academia/learner/courses')}>
+                Browse courses
+              </button>
+              <button type="button" className="learners-btn learners-btn-secondary" onClick={() => navigate('/academia/learner/certificates')}>
+                View certificates
+              </button>
+            </div>
+          </div>
+        </section>
+      </LearnersPageShell>
     );
-  };
+  }
 
   return (
     <LearnersPageShell>
@@ -340,10 +496,7 @@ function LearnersPerformance() {
           <div className="learners-home-title-top">
             <h1>My Performance</h1>
             <div className="learners-home-title-actions">
-              <a className="learners-btn learners-btn-secondary" href="/" onClick={preventDefault}>
-                <img src={acSav} alt="Save" />
-                <span>Saved Library</span>
-              </a>
+              <SavedLibraryButton />
               <a className="learners-btn learners-btn-primary" href="/academia/index" target="_blank" rel="noopener noreferrer">
                 <span>Go to website</span>
                 <img src={hoagoto} alt="Go" />
@@ -387,8 +540,6 @@ function LearnersPerformance() {
 
             <div className="learners-performance-board-grid">
               <section className="learners-performance-chart-card">
-                {hasChartSectionData ? (
-                  <>
                     <div className="rep-chart-header">
                       <div className="rep-chart-title">
                         <span className="rep-badge-purple">{metrics.averageScore != null ? `${Number(metrics.averageScore).toFixed(1).replace(/\.0$/, '')}%` : '0%'}</span>
@@ -484,28 +635,22 @@ function LearnersPerformance() {
                         </div>
                       </div>
                     </div>
-                  </>
-                ) : (
-                  <div className="learners-card learners-empty-state learners-empty-state--compact">
-                    <h3>No chart data yet</h3>
-                    <p>Your score trend will show up after you submit assessments.</p>
-                    <button className="learners-btn learners-btn-primary" type="button" onClick={() => navigate('/academia/learner/available-test')}>
-                      Take an assessment
-                    </button>
-                  </div>
-                )}
               </section>
 
               <section className="learners-performance-side-summary">
                 <div className="learners-performance-donut-wrap">
-                  <div className="learners-performance-donut"></div>
+                  <div
+                    className="learners-performance-donut"
+                    style={{ background: scoreBreakdown.donutBackground }}
+                    aria-hidden="true"
+                  />
 
                   <div className="learners-performance-legend">
-                    {genesis.map((husk, idx) => (
-                      <div key={idx} className="learners-performance-legend-item">
-                        <span className="learners-performance-legend-dot" style={{ '--legend-color': husk.color }}></span>
-                        <span>{husk.range}</span>
-                        <strong>{husk.status}</strong>
+                    {scoreBreakdown.buckets.map((bucket) => (
+                      <div key={bucket.range} className="learners-performance-legend-item">
+                        <span className="learners-performance-legend-dot" style={{ '--legend-color': bucket.color }}></span>
+                        <span>{bucket.range}</span>
+                        <strong>{scoreBreakdown.total > 0 ? `${bucket.count} · ${bucket.status}` : bucket.status}</strong>
                       </div>
                     ))}
                   </div>
@@ -514,7 +659,7 @@ function LearnersPerformance() {
                 <div className="learners-performance-top-recent">
                   <div className="learners-performance-top-recent-head">
                     <h3>Top Recent</h3>
-                    <p>{topCertificate?.issue_date || historyRows[0]?.startTime || 'Completed recently'}</p>
+                    <p>{topCertificate?.issue_date || chartHistoryRows[0]?.startTime || 'Completed recently'}</p>
                   </div>
 
                   {hasCertificateData ? (
@@ -547,10 +692,10 @@ function LearnersPerformance() {
                   )}
 
                   {hasCertificateData && (
-                    <a href={topCertificate.certificate_url || '/'} className="learners-performance-download-link" onClick={preventDefault}>
+                    <button type="button" className="learners-performance-download-link" onClick={handleDownloadTopCertificate}>
                       <span>Download your certificates</span>
                       <img src={right1} alt="Download" />
-                    </a>
+                    </button>
                   )}
                 </div>
               </section>
@@ -563,7 +708,9 @@ function LearnersPerformance() {
                 <h2>Weekly Schedule</h2>
                 <p>Milestone to achieve</p>
               </div>
-              <a href="/" onClick={preventDefault}>See All</a>
+              <button type="button" className="learners-performance-see-all" onClick={scrollToAssessmentHistory}>
+                See All
+              </button>
             </div>
 
             <div className="learners-performance-schedule-list">
@@ -573,16 +720,28 @@ function LearnersPerformance() {
                   <p>Your weekly plan will populate when assessments or learning tasks are scheduled.</p>
                 </div>
               ) : (
-                apex.map((husk, idx) => (
-                  <article key={idx} className="learners-performance-schedule-item">
-                    <div className="learners-performance-schedule-date">{husk.date}</div>
+                scheduleItems.map((item) => (
+                  <article
+                    key={`${item.id}-${item.dateLabel}`}
+                    className={`learners-performance-schedule-item ${item.href ? 'is-clickable' : ''}`}
+                    onClick={() => item.href && navigate(item.href)}
+                    onKeyDown={(event) => {
+                      if (item.href && (event.key === 'Enter' || event.key === ' ')) {
+                        event.preventDefault();
+                        navigate(item.href);
+                      }
+                    }}
+                    role={item.href ? 'button' : undefined}
+                    tabIndex={item.href ? 0 : undefined}
+                  >
+                    <div className="learners-performance-schedule-date">{item.dateLabel}</div>
                     <div className="learners-performance-schedule-copy">
-                      <h4>{husk.title}</h4>
-                      <p>{husk.meta}</p>
+                      <h4>{item.title}</h4>
+                      <p>{item.progressLabel}: {item.num} of {item.total}</p>
                       <div className="learners-performance-schedule-meta">
-                        <span>{husk.time}</span>
+                        <span>{item.time}</span>
                         <span>•</span>
-                        <strong className={`is-${husk.statusTone}`}>{husk.status}</strong>
+                        <strong>{item.meta}</strong>
                       </div>
                     </div>
                   </article>
@@ -592,7 +751,7 @@ function LearnersPerformance() {
           </aside>
         </section>
 
-        <section className="learners-performance-history">
+        <section className="learners-performance-history" id="learners-performance-history">
           <div className="learners-performance-history-head">
             <div>
               <h2>Assessment History</h2>
@@ -628,33 +787,51 @@ function LearnersPerformance() {
             </div>
           </div>
 
-          <div className="learners-performance-history-table-wrap">
-            {!hasHistoryData ? (
+          <div className={`learners-performance-history-table-wrap ${historyLoading ? 'is-loading' : ''}`}>
+            {historyLoading ? (
               <div className="learners-card learners-empty-state learners-empty-state--compact">
-                <h3>No assessment history</h3>
-                <p>Run your first assessment to see it listed here.</p>
-                <button className="learners-btn learners-btn-primary" type="button" onClick={() => navigate('/academia/learner/available-test')}>
-                  Take an assessment
-                </button>
+                <h3>Loading assessment history…</h3>
+              </div>
+            ) : historyError ? (
+              <LearnerLoadError
+                title="Could not load assessment history"
+                message={historyError}
+                onRetry={() => {
+                  setHistoryError('');
+                  setHistoryReloadToken((value) => value + 1);
+                }}
+              />
+            ) : !hasHistoryData ? (
+              <div className="learners-card learners-empty-state learners-empty-state--compact">
+                <h3>{historyFiltersActive ? 'No assessments match these filters' : 'No assessment history'}</h3>
+                <p>
+                  {historyFiltersActive
+                    ? 'Try a broader date range or clear your status filter.'
+                    : 'Run your first assessment to see it listed here.'}
+                </p>
+                {historyFiltersActive ? (
+                  <button
+                    className="learners-btn learners-btn-primary"
+                    type="button"
+                    onClick={() => {
+                      setTimePeriod('all');
+                      setStatus('all');
+                      setPage(1);
+                    }}
+                  >
+                    Clear filters
+                  </button>
+                ) : (
+                  <button className="learners-btn learners-btn-primary" type="button" onClick={() => navigate('/academia/learner/available-test')}>
+                    Take an assessment
+                  </button>
+                )}
               </div>
             ) : (
               <table className="learners-performance-history-table">
                 <thead>
                   <tr>
-                    <th className="is-checkbox">
-                      <label className="learners-performance-checkbox" aria-label="Select all assessments">
-                        <input 
-                          type="checkbox" 
-                          checked={selectedEcho.length === zenith.length && zenith.length > 0}
-                          ref={(input) => {
-                            if (input) input.indeterminate = selectedEcho.length > 0 && selectedEcho.length < zenith.length;
-                          }}
-                          onChange={handleSelectAll} 
-                        />
-                        <span></span>
-                      </label>
-                    </th>
-                    <th><span className="learners-performance-table-head-text">Client Details</span></th>
+                    <th><span className="learners-performance-table-head-text">Course / Assessment</span></th>
                     <th><span className="learners-performance-table-head-text">Author</span></th>
                     <th><span className="learners-performance-table-head-text">Score</span></th>
                     <th><span className="learners-performance-table-head-text">Time taken</span></th>
@@ -665,16 +842,6 @@ function LearnersPerformance() {
                 <tbody>
                   {zenith.map((husk, idx) => (
                     <tr key={husk.id}>
-                      <td className="is-checkbox">
-                        <label className="learners-performance-checkbox" aria-label={`Select ${husk.course}`}>
-                          <input 
-                            type="checkbox" 
-                            checked={selectedEcho.includes(idx)} 
-                            onChange={() => handleSelectOne(idx)} 
-                          />
-                          <span></span>
-                        </label>
-                      </td>
                       <td>
                         <div className="learners-performance-history-course">
                           <strong>{husk.course}</strong>
@@ -694,8 +861,10 @@ function LearnersPerformance() {
                           onClick={() => {
                             if (husk.action === 'Download Certificate') {
                               navigate('/academia/learner/certificates');
-                            } else {
-                              navigate(`/academia/learner/read-contents?id=${husk.courseId}`, { state: { courseId: husk.courseId } });
+                            } else if (husk.readerUrl) {
+                              navigate(husk.readerUrl);
+                            } else if (husk.courseId) {
+                              navigate(`/academia/learner/read-contents?id=${husk.courseId}`);
                             }
                           }}
                         >
@@ -712,7 +881,7 @@ function LearnersPerformance() {
             )}
           </div>
 
-          {hasHistoryData && (
+          {!historyLoading && !historyError && totalItems > 0 && (
           <div className="learners-performance-history-footer">
             <div className="learners-performance-history-page-size">
               <span>Show</span>

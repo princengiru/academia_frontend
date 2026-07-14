@@ -148,7 +148,8 @@
   color: #78829D;
 }
 
-.learners-performance-panel-head-side a {
+.learners-performance-panel-head-side a,
+.learners-performance-panel-head-side .learners-performance-see-all {
   margin-top: 2px;
   font-family: Inter, sans-serif;
   font-weight: 500;
@@ -157,6 +158,12 @@
   color: #78829D;
   text-decoration: none;
   border-bottom: 1px dotted #C7CEDC;
+  background: none;
+  border-top: none;
+  border-left: none;
+  border-right: none;
+  padding: 0 0 1px;
+  cursor: pointer;
 }
 
 .learners-performance-board-grid {
@@ -465,7 +472,6 @@
   height: 110px;
   margin: 6px auto 18px;
   border-radius: 50%;
-  background: conic-gradient(#F23C72 0 24%, #F2C335 24% 39%, #22C55E 39% 100%);
   position: relative;
 }
 
@@ -615,6 +621,10 @@
   align-items: center;
   gap: 7px;
   text-decoration: none;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
 }
 
 .learners-performance-download-link span {
@@ -646,6 +656,16 @@
   grid-template-columns: 34px minmax(0, 1fr);
   gap: 12px;
   align-items: center;
+}
+
+.learners-performance-schedule-item.is-clickable {
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.learners-performance-schedule-item.is-clickable:hover {
+  background: #FDFBFF;
+  border-color: #E2D4EC;
 }
 
 .learners-performance-schedule-date {
