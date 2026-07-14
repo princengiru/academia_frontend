@@ -1,5 +1,12 @@
 .hoa-dashboard-home-page {
 
+  .hoa-dashboard-muted {
+    color: #99a1b7;
+    font-size: 12px;
+    font-weight: 500;
+    margin-left: 6px;
+  }
+
   /* Page Header */
   .hoa-page-header {
     display: flex;
@@ -791,11 +798,19 @@
     font-weight: 600;
   }
 
-  .file-info a {
+  .file-info a,
+  .file-info .hoa-inline-link {
     font-size: 10px;
     color: #450468;
     font-weight: 600;
     text-decoration: none;
+    background: transparent;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
   }
 
   .open-btn {

@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import HOALayout from '../../../components/layouts/HOALayout/HOALayout';
 import { useCurrency, flagOptions } from '../../../hooks/useCurrency';
+import { HOAToast, useHOAToast } from './useHOAToast';
 import './hoa-dashboard-home.css';
 
 import hoadollar from '../../../assets/icons/hoadollar.svg';
@@ -34,9 +36,19 @@ import defaultAvatar from '../../../assets/imgs/default-profile.png';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
+const getApprovalReviewPath = (req) => {
+  if (!req?.id) return '/academia/hoa';
+  const id = encodeURIComponent(req.id);
+  if (req.type === 'syllabus') return `/academia/hoa/syllabus?mode=pending&id=${id}`;
+  if (req.type === 'course') return `/academia/hoa/online-courses?mode=pending&id=${id}`;
+  if (req.type === 'project') return `/academia/hoa/projects?mode=pending&id=${id}`;
+  return '/academia/hoa';
+};
+
 const HOADashboardHome = () => {
-  const preventDefault = (e) => e.preventDefault();
+  const navigate = useNavigate();
   const { currency, setCurrency, formatAmount } = useCurrency();
+  const { toast, showToast, hideToast } = useHOAToast();
 
   // --- UI State ---
   const [viewMode, setViewMode] = useState('list');
@@ -222,8 +234,9 @@ const HOADashboardHome = () => {
       
       // Remove approved/rejected item from local state
       setApprovalRequests(prev => prev.filter(req => req.id !== item.id));
+      showToast(`${item.title || 'Item'} ${action === 'approve' ? 'approved' : 'rejected'} successfully.`, 'success');
     } catch (error) {
-      alert(`Error: ${error.message}`);
+      showToast(error.message || `Failed to ${action} item.`, 'error');
     } finally {
       setActionLoadingId(null);
       setOpenActionRowId(null);
@@ -410,7 +423,7 @@ const HOADashboardHome = () => {
             <div className="hoa-card hoa-stat-main">
               <div className="stat-top">
                 <span><img src={hoaprojects} alt="Projects" /> Projects</span>
-                <a href="#/projects" onClick={preventDefault}>Manage Projects</a>
+                <Link to="/academia/hoa/projects">Manage Projects</Link>
               </div>
               <div className="stat-body">
                 <div>
@@ -423,7 +436,7 @@ const HOADashboardHome = () => {
             <div className="hoa-card hoa-stat-main">
               <div className="stat-top">
                 <span><img src={hoacertificates} alt="Certificates" /> Certificates</span>
-                <a href="#/certificates" onClick={preventDefault}>Manage Certificates</a>
+                <Link to="/academia/hoa/certificates">Manage Certificates</Link>
               </div>
               <div className="stat-body">
                 <div>
@@ -451,7 +464,7 @@ const HOADashboardHome = () => {
             </div>
             <div className="sub-stat">
               <h4>{isLoading ? '...' : dashboardStats?.avgScore || '0'}</h4>
-              <p>Average Score <span className="trend down"> <img src={hoadecrease} alt="Decrease" /> -4.5%</span></p>
+              <p>Average Score</p>
             </div>
             <div className="sub-stat">
               <h4>{isLoading ? '...' : dashboardStats?.totalEvents || '0'}</h4>
@@ -459,7 +472,7 @@ const HOADashboardHome = () => {
             </div>
             <div className="sub-stat">
               <h4>{isLoading ? '...' : dashboardStats?.avgRating || '0'}</h4>
-              <p>Avg. Rating <span className="trend up"> <img src={hoaincrease} alt="Increase" /> +4.1</span></p>
+              <p>Avg. Rating</p>
             </div>
           </div>
         </div>
@@ -469,7 +482,7 @@ const HOADashboardHome = () => {
           <div className="hoa-revenue-section">
             <div className="section-header">
               <span className="section-title">GROSS REVENUE</span>
-              <a href="#/finances" className="manage-link" onClick={preventDefault}>Manage funds <img src={hoaviewall} style={{width: '5.2px', height: '9.2px'}} alt="" /></a>
+              <Link to="/academia/hoa/reports" className="manage-link">Manage funds <img src={hoaviewall} style={{width: '5.2px', height: '9.2px'}} alt="" /></Link>
             </div>
             
             <div className="revenue-amount-box outline-box" style={{width: '300px', borderRadius: '8px'}}>
@@ -481,18 +494,11 @@ const HOADashboardHome = () => {
                   <h3>+ {formatAmount(`${dashboardStats?.revenue || '0'} USD`).replace(' USD', '').replace(' RWF', '')} <span>{currency.label}</span></h3>
                   {renderFlagDropdown('revenue')}
                 </div>
-                <p>TOTAL REVENUE <span className="trend up"> <img src={hoaincrease} alt="Increase" /> +40.1%</span></p>
+                <p>TOTAL REVENUE</p>
               </div>
             </div>
 
-            {/* Stacked Progress Bar */}
-            <div className="revenue-progress-bar">
-              <div className="segment color-syllabus" style={{ width: '0%' }}></div>
-              <div className="segment color-online" style={{ width: '0%' }}></div>
-              <div className="segment color-tutors" style={{ width: '0%' }}></div>
-              <div className="segment color-certs" style={{ width: '0%' }}></div>
-              <div className="segment color-tax" style={{ width: '0%' }}></div>
-            </div>
+            <p className="hoa-dashboard-muted">Revenue breakdown by category is not available from the current API.</p>
 
             {/* Legend */}
             <div className="revenue-legend">
@@ -510,7 +516,7 @@ const HOADashboardHome = () => {
           <div className="hoa-card hoa-split-stat">
             <div className="section-header">
               <span className="section-title">LEARNER'S STATS</span>
-              <a href="#/learners" className="manage-link" onClick={preventDefault}>See Details <img src={hoaviewall} style={{width: '5.2px', height: '9.2px'}} alt="" /></a>
+              <Link to="/academia/hoa/learners" className="manage-link">See Details <img src={hoaviewall} style={{width: '5.2px', height: '9.2px'}} alt="" /></Link>
             </div>
             <div className="revenue-amount-box outline-box">
               <div className="icon-circle">
@@ -518,22 +524,22 @@ const HOADashboardHome = () => {
               </div>
               <div className="amount-details">
                 <div className="amt-row">
-                  <h3>+ 0 <span>USD</span></h3>
+                  <h3>{dashboardStats?.revenue != null && dashboardStats?.revenue !== '' ? `+ ${formatAmount(`${dashboardStats.revenue} USD`).replace(' USD', '').replace(' RWF', '')}` : '—'} <span>{currency.label}</span></h3>
                   {renderFlagDropdown('learner')}
                 </div>
-                <p>TOTAL REVENUE <span className="trend up"> <img src={hoaincrease} alt="Increase" /> +0.0%</span></p>
+                <p>TOTAL REVENUE <span className="hoa-dashboard-muted">Not tracked yet</span></p>
               </div>
             </div>
             <div className="split-footer-stats">
-              <div><strong>0</strong> Project Uploads</div>
-              <div><strong>0</strong> Avg. Learning Hours</div>
+              <div><strong>{dashboardStats?.learnerProjectUploads ?? '—'}</strong> Project Uploads</div>
+              <div><strong>{dashboardStats?.learnerAvgHours ?? '—'}</strong> Avg. Learning Hours</div>
             </div>
           </div>
 
           <div className="hoa-card hoa-split-stat">
             <div className="section-header">
               <span className="section-title">TUTOR'S STATS</span>
-              <a href="#/tutors" className="manage-link" onClick={preventDefault}>See Details <img src={hoaviewall} style={{width: '5.2px', height: '9.2px'}} alt="" /></a>
+              <Link to="/academia/hoa/tutors" className="manage-link">See Details <img src={hoaviewall} style={{width: '5.2px', height: '9.2px'}} alt="" /></Link>
             </div>
             <div className="revenue-amount-box outline-box">
               <div className="icon-circle">
@@ -541,15 +547,15 @@ const HOADashboardHome = () => {
               </div>
               <div className="amount-details">
                 <div className="amt-row">
-                  <h3>+ 0 <span>USD</span></h3>
+                  <h3>{dashboardStats?.tutorRevenue != null && dashboardStats?.tutorRevenue !== '' ? `+ ${formatAmount(`${dashboardStats.tutorRevenue} USD`).replace(' USD', '').replace(' RWF', '')}` : '—'} <span>USD</span></h3>
                   {renderFlagDropdown('tutor')}
                 </div>
-                <p>TOTAL REVENUE <span className="trend up"> <img src={hoaincrease} alt="Increase" /> +0.0%</span></p>
+                <p>TOTAL REVENUE <span className="hoa-dashboard-muted">Not tracked yet</span></p>
               </div>
             </div>
             <div className="split-footer-stats">
-              <div><strong>0</strong> Project Uploads</div>
-              <div><strong>0</strong> Avg. Uploads</div>
+              <div><strong>{dashboardStats?.tutorProjectUploads ?? '—'}</strong> Project Uploads</div>
+              <div><strong>{dashboardStats?.tutorAvgUploads ?? '—'}</strong> Avg. Uploads</div>
             </div>
           </div>
         </div>
@@ -650,10 +656,12 @@ const HOADashboardHome = () => {
                     </div>
                     <div className="file-info">
                       <strong><label>{req.fileCount}</label> Files Attached</strong>
-                      <a href={`#/approval/${req.id}`} onClick={preventDefault}>View All <img src={hoaviewall} style={{width: '4px', height: '8px'}} alt="" /></a>
+                      <button type="button" className="hoa-inline-link" onClick={() => navigate(getApprovalReviewPath(req))}>
+                        View All <img src={hoaviewall} style={{width: '4px', height: '8px'}} alt="" />
+                      </button>
                     </div>
                   </div>
-                  <button className="open-btn" onClick={() => window.open(`/academia/syllabus-part?courseId=${req.id}`, '_blank')}><img src={hoaopenfile} alt="Open" /></button>
+                  <button type="button" className="open-btn" onClick={() => navigate(getApprovalReviewPath(req))} aria-label="Open review"><img src={hoaopenfile} alt="" /></button>
                 </div>
 
                 <div className="approval-action-row">
@@ -721,7 +729,9 @@ const HOADashboardHome = () => {
                         <img src={req.fileIcon} alt="File" className="list-file-icon" />
                         <div className="file-info">
                           <strong><label>{req.fileCount}</label> Files</strong>
-                          <a href={`#/approval/${req.id}`} onClick={preventDefault}>View All <img src={hoaviewall} style={{width: '5px', height: '8px'}} alt="" /></a>
+                          <button type="button" className="hoa-inline-link" onClick={() => navigate(getApprovalReviewPath(req))}>
+                            View All <img src={hoaviewall} style={{width: '5px', height: '8px'}} alt="" />
+                          </button>
                         </div>
                       </div>
                     </td>
@@ -819,6 +829,7 @@ const HOADashboardHome = () => {
           </div>
         </div>
 
+        <HOAToast toast={toast} onDismiss={hideToast} />
       </div>
     </HOALayout>
   );
