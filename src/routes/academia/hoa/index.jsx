@@ -1,31 +1,32 @@
-import { Navigate, Route } from 'react-router-dom';
+import React, { Suspense, lazy } from 'react';
+import { Route } from 'react-router-dom';
+import { HOALoading } from '../../../pages/academia/hoa/HOAPageState';
 import HOADashboardHome from '../../../pages/academia/hoa/HOADashboardHome';
 import HOALearners from '../../../pages/academia/hoa/HOALearners';
 import HOATutors from '../../../pages/academia/hoa/HOATutors';
-import HOALayout from '../../../components/layouts/HOALayout/HOALayout';
 import HOAReports from '../../../pages/academia/hoa/HOAReports';
 import HOAAssignments from '../../../pages/academia/hoa/HOAAssignments';
 import HOAPassedCourses from '../../../pages/academia/hoa/HOAPassedCourses';
 import HOARetakenCourses from '../../../pages/academia/hoa/HOARetakenCourses';
 import HOAFailedCourses from '../../../pages/academia/hoa/HOAFailedCourses';
 import HOASyllabus from '../../../pages/academia/hoa/HOASyllabus';
-import HOAOnlineCourses from '../../../pages/academia/hoa/HOAOnlineCourses';
 import HOAProjects from '../../../pages/academia/hoa/HOAProjects';
-import HOACommunity from '../../../pages/academia/hoa/HOACommunity';
 import HOACertificates from '../../../pages/academia/hoa/HOACertificates';
 import HOAEventsPlanning from '../../../pages/academia/hoa/HOAEventsPlanning';
-import HOAETravel from '../../../pages/academia/hoa/HOAEtravel';
+import HOAETravel from '../../../pages/academia/hoa/HOAETravel';
 import HOATermsConditions from '../../../pages/academia/hoa/HOATermsConditions';
-import HOAAccount from '../../../pages/academia/hoa/HOAAccount';
 
-const HOAPlaceholderPage = ({ currentPage, title, description, breadcrumb }) => (
-  <HOALayout currentPage={currentPage} breadcrumb={breadcrumb}>
-    <div style={{ padding: '12px 0 32px' }}>
-      <h1 style={{ margin: '0 0 8px', fontSize: '20px', fontWeight: 700, color: '#071437' }}>{title}</h1>
-      <p style={{ margin: 0, color: '#78829D', fontSize: '13px' }}>{description}</p>
-    </div>
-  </HOALayout>
-);
+const HOAOnlineCourses = lazy(() => import('../../../pages/academia/hoa/HOAOnlineCourses'));
+const HOACommunity = lazy(() => import('../../../pages/academia/hoa/HOACommunity'));
+const HOAAccount = lazy(() => import('../../../pages/academia/hoa/HOAAccount'));
+
+function LazyHOAPage({ message, children }) {
+  return (
+    <Suspense fallback={<HOALoading message={message} />}>
+      {children}
+    </Suspense>
+  );
+}
 
 function AcademiaHOARoutes() {
   return (
@@ -39,14 +40,35 @@ function AcademiaHOARoutes() {
       <Route path="academia/hoa/retaken-courses" element={<HOARetakenCourses />} />
       <Route path="academia/hoa/failed-courses" element={<HOAFailedCourses />} />
       <Route path="academia/hoa/syllabus" element={<HOASyllabus />} />
-      <Route path="academia/hoa/online-courses" element={<HOAOnlineCourses />} />
+      <Route
+        path="academia/hoa/online-courses"
+        element={(
+          <LazyHOAPage message="Loading online courses…">
+            <HOAOnlineCourses />
+          </LazyHOAPage>
+        )}
+      />
       <Route path="academia/hoa/projects" element={<HOAProjects />} />
-      <Route path="academia/hoa/community" element={<HOACommunity />} />
+      <Route
+        path="academia/hoa/community"
+        element={(
+          <LazyHOAPage message="Loading community…">
+            <HOACommunity />
+          </LazyHOAPage>
+        )}
+      />
       <Route path="academia/hoa/certificates" element={<HOACertificates />} />
       <Route path="academia/hoa/events-planning" element={<HOAEventsPlanning />} />
       <Route path="academia/hoa/e-travel" element={<HOAETravel />} />
       <Route path="academia/hoa/terms-conditions" element={<HOATermsConditions />} />
-      <Route path="academia/hoa/account" element={<HOAAccount />} />
+      <Route
+        path="academia/hoa/account"
+        element={(
+          <LazyHOAPage message="Loading account…">
+            <HOAAccount />
+          </LazyHOAPage>
+        )}
+      />
     </>
   );
 }
