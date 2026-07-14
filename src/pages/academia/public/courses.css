@@ -505,6 +505,26 @@
   line-height: 1.4;
 }
 
+.public-courses-directory-page .sidebar-syllabus-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  margin-bottom: 16px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid #45046833;
+  background: #45046812;
+  color: #450468;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.public-courses-directory-page .sidebar-syllabus-link:hover {
+  background: #45046820;
+}
+
 .public-courses-directory-page .syllabus-list {
   display: flex;
   flex-direction: column;

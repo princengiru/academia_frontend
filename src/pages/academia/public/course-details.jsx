@@ -17,13 +17,13 @@ import hoabasics from '../../../assets/icons/hoabasics.svg';
 import arrowUpRight from '../../../assets/icons/arrow-up-right.svg';
 import playIcon from '../../../assets/icons/play.svg';
 import jo1 from '../../../assets/icons/jo1.svg';
-import dtiktok from '../../../assets/icons/dtiktok.svg';
-import dwhat from '../../../assets/icons/dwhat.svg';
-import dfaceb from '../../../assets/icons/dfaceb.svg';
-import dinstagram from '../../../assets/icons/dinstagram.svg';
 import acSms from '../../../assets/icons/ac-sms.svg';
 import acSend from '../../../assets/icons/ac-send.svg';
 import './course-details.css';
+import { PublicLoadError, PublicLoading } from './PublicPageState';
+import { PublicNewsletterNotice, usePublicNewsletter } from './usePublicNewsletter.jsx';
+import { sharePublicPage } from './publicShare';
+import { usePublicPageTitle } from './usePublicPageTitle.jsx';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
@@ -43,6 +43,10 @@ function AcademiaCourseDetails() {
   const [isEnrolling, setIsEnrolling] = useState(false);
   const [isSummaryExpanded, setIsSummaryExpanded] = useState(false);
   const [toast, setToast] = useState({ message: '', visible: false, tone: 'success' });
+  const [retryKey, setRetryKey] = useState(0);
+  const { email: newsletterEmail, setEmail: setNewsletterEmail, notice: newsletterNotice, handleSubmit: handleNewsletterSubmit } = usePublicNewsletter();
+
+  usePublicPageTitle(course?.title || 'Course details');
 
   const resolveAssetUrl = (value) => {
     if (!value) return acOn;
@@ -63,6 +67,26 @@ function AcademiaCourseDetails() {
     setTimeout(() => {
       setToast((prev) => ({ ...prev, visible: false }));
     }, 4000);
+  };
+
+  const handleAuthor = () => {
+    if (course?.authorId) {
+      navigate(`/academia/author?authorId=${course.authorId}`);
+      return;
+    }
+    navigate('/academia/courses');
+  };
+
+  const handleShareCourse = async () => {
+    const result = await sharePublicPage({
+      title: course?.title || 'Course',
+      text: course?.summary || course?.intro || '',
+    });
+    if (result.ok && result.method === 'clipboard') {
+      showToast('Course link copied to clipboard.');
+    } else if (!result.ok && result.method === 'none') {
+      showToast('Unable to share this course from your browser.', 'error');
+    }
   };
 
   // Check enrollment if logged in
@@ -94,12 +118,8 @@ function AcademiaCourseDetails() {
 
     const token = localStorage.getItem('token');
     if (!token) {
-      // Save redirect query so user is auto-enrolled on return
       sessionStorage.setItem('redirectAfterLogin', `/academia/course-details?id=${courseId}&enroll=true`);
-      showToast("Please sign in or sign up to enroll in this course.", "warning");
-      setTimeout(() => {
-        navigate('/academia/auth/signin');
-      }, 1500);
+      navigate('/academia/auth/signin');
       return;
     }
 
@@ -188,7 +208,7 @@ function AcademiaCourseDetails() {
       }
     };
     checkAutoEnroll();
-  }, [course, isEnrolled]);
+  }, [course, isEnrolled, isEnrolling, searchParams, navigate]);
 
   // Load Course Details
   useEffect(() => {
@@ -211,6 +231,7 @@ function AcademiaCourseDetails() {
           id: courseData.id,
           title: courseData.title,
           author: courseData.instructor_name || courseData.author,
+          authorId: courseData.instructor_id || courseData.user_id || courseData.created_by || null,
           authorImage: courseData.instructor_avatar ? resolveAssetUrl(courseData.instructor_avatar) : defaultProfile,
           authorRole: 'Instructor',
           publishedOn: courseData.created_at,
@@ -255,7 +276,7 @@ function AcademiaCourseDetails() {
     return () => {
       cancelled = true;
     };
-  }, [courseId]);
+  }, [courseId, retryKey]);
 
   // Fallback week grouping if weeks are empty but chapters exist
   useEffect(() => {
@@ -297,23 +318,18 @@ function AcademiaCourseDetails() {
   const showContentSections = !loading && (hasBreakdown || hasOutcomes || hasAudience);
 
   if (loading) {
-    return (
-      <div className="course-details-loading">
-        <div className="spinner"></div>
-        <p>Loading course details...</p>
-      </div>
-    );
+    return <PublicLoading message="Loading course details…" />;
   }
 
   if (error || !course) {
     return (
-      <div className="course-details-error">
-        <h3>Oops! Course details could not be loaded</h3>
-        <p>{error || "Course not found."}</p>
-        <button type="button" onClick={() => navigate('/academia/index')}>
-          Go back home
-        </button>
-      </div>
+      <PublicLoadError
+        title="Course unavailable"
+        message={error || 'Course not found.'}
+        onRetry={() => setRetryKey((key) => key + 1)}
+        backTo="/academia/courses"
+        backLabel="Browse courses"
+      />
     );
   }
 
@@ -460,7 +476,16 @@ function AcademiaCourseDetails() {
             )}
 
             <section className="instructor-bio-card">
-              <div className="instructor-card-inner">
+              <div
+                className="instructor-card-inner"
+                role={course.authorId ? 'button' : undefined}
+                tabIndex={course.authorId ? 0 : undefined}
+                onClick={course.authorId ? handleAuthor : undefined}
+                onKeyDown={course.authorId ? (event) => {
+                  if (event.key === 'Enter' || event.key === ' ') handleAuthor();
+                } : undefined}
+                style={course.authorId ? { cursor: 'pointer' } : undefined}
+              >
                 <div className="instructor-avatar-wrap">
                   <img src={course.authorImage} alt={course.author} onError={(e) => { e.target.src = defaultProfile; }} />
                 </div>
@@ -489,9 +514,9 @@ function AcademiaCourseDetails() {
               </div>
 
               {(() => {
+                const token = localStorage.getItem('token');
                 const userObj = JSON.parse(localStorage.getItem('user') || '{}');
                 const userRole = (userObj.role || '').toLowerCase().trim();
-                const token = localStorage.getItem('token');
 
                 if (token && userRole === 'admin') {
                   return (
@@ -539,7 +564,13 @@ function AcademiaCourseDetails() {
                     onClick={handleEnrollment}
                     disabled={isEnrolling}
                   >
-                    <span>{isEnrolling ? 'Enrolling...' : 'Enroll / Join Today'}</span>
+                    <span>
+                      {!token
+                        ? 'Sign in to enroll'
+                        : isEnrolling
+                          ? 'Enrolling...'
+                          : 'Enroll / Join Today'}
+                    </span>
                     <img src={jo1} alt="" />
                   </button>
                 );
@@ -553,30 +584,29 @@ function AcademiaCourseDetails() {
             <h3>Find the right course for you</h3>
             <p>See your personalised recommendations based on your interests and goals.</p>
             <div className="social-links-row">
-              <a href="#" onClick={(e) => e.preventDefault()} aria-label="TikTok">
-                <img src={dtiktok} alt="" />
-              </a>
-              <a href="#" onClick={(e) => e.preventDefault()} aria-label="WhatsApp">
-                <img src={dwhat} alt="" />
-              </a>
-              <a href="#" onClick={(e) => e.preventDefault()} aria-label="Facebook">
-                <img src={dfaceb} alt="" />
-              </a>
-              <a href="#" onClick={(e) => e.preventDefault()} aria-label="Instagram">
-                <img src={dinstagram} alt="" />
-              </a>
+              <button type="button" className="course-share-btn" onClick={handleShareCourse}>
+                Share this course
+              </button>
             </div>
           </div>
           <div className="newsletter-half right-half">
-            <h3>Stay tuned and get the latest updates</h3>
-            <p>Get daily newsletters and notification updates about new resources.</p>
-            <form className="newsletter-form-block" onSubmit={(e) => e.preventDefault()}>
+            <h3>Newsletter</h3>
+            <p>Product updates will be announced here when newsletter subscriptions open.</p>
+            <form className="newsletter-form-block" onSubmit={handleNewsletterSubmit}>
               <img src={acSms} alt="" className="newsletter-mail-icon" />
-              <input type="email" placeholder="Enter email address" required aria-label="Enter email address" />
+              <input
+                type="email"
+                placeholder="Enter email address"
+                value={newsletterEmail}
+                onChange={(e) => setNewsletterEmail(e.target.value)}
+                required
+                aria-label="Enter email address"
+              />
               <button type="submit" aria-label="Submit email">
                 <img src={acSend} alt="" />
               </button>
             </form>
+            <PublicNewsletterNotice message={newsletterNotice} />
           </div>
         </section>
       </div>

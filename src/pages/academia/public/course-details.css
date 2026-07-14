@@ -619,24 +619,20 @@
   gap: 12px;
 }
 
-.public-course-details-page .social-links-row a {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.1);
-  transition: background-color 0.2s ease;
+.public-course-details-page .course-share-btn {
+  padding: 8px 14px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.12);
+  color: #FFFFFF;
+  font-family: Inter, sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
 }
 
-.public-course-details-page .social-links-row a:hover {
+.public-course-details-page .course-share-btn:hover {
   background: rgba(255, 255, 255, 0.2);
-}
-
-.public-course-details-page .social-links-row img {
-  width: 16px;
-  height: 16px;
 }
 
 .public-course-details-page .newsletter-form-block {

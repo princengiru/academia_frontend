@@ -12,6 +12,8 @@ import acRi from '../../../assets/icons/ac-ri.svg';
 import acPlus from '../../../assets/icons/ac-plus.svg';
 import acLock from '../../../assets/icons/ac-lock.svg';
 import './courses.css';
+import { PublicLoadError, PublicLoading } from './PublicPageState';
+import { usePublicPageTitle } from './usePublicPageTitle.jsx';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
@@ -27,11 +29,14 @@ const extractCourseList = (body) => {
 const extractPagination = (body) => body?.data?.pagination || body?.pagination || null;
 
 function AcademiaCourses() {
+  usePublicPageTitle('Courses');
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState('');
+  const [retryKey, setRetryKey] = useState(0);
   const [selectedFilter, setSelectedFilter] = useState('All');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -59,6 +64,9 @@ function AcademiaCourses() {
     if (q !== null) {
       setSearchTerm(q);
     }
+    const pageParam = Number.parseInt(searchParams.get('page') || '1', 10);
+    const safePage = Number.isFinite(pageParam) && pageParam > 0 ? pageParam : 1;
+    setCurrentPage(safePage);
   }, [searchParams]);
 
   const resolveAssetUrl = (value) => {
@@ -131,6 +139,7 @@ function AcademiaCourses() {
 
     const loadCourses = async () => {
       setLoading(true);
+      setFetchError('');
       try {
         let res;
         let body;
@@ -173,12 +182,33 @@ function AcademiaCourses() {
 
         if (cancelled) return;
 
-        setCourses(list.map(mapCourse));
-        setTotalPages(Number(pagination?.pages || 1));
+        const mapped = list.map(mapCourse);
+        const total = Math.max(1, Number(pagination?.pages || 1));
+
+        if (mapped.length === 0 && currentPage > 1) {
+          const params = new URLSearchParams(searchParams);
+          params.delete('page');
+          setSearchParams(params, { replace: true });
+          setCurrentPage(1);
+          setCourses([]);
+          setTotalPages(total);
+          return;
+        }
+
+        setCourses(mapped);
+        setTotalPages(total);
+        if (currentPage > total) {
+          const params = new URLSearchParams(searchParams);
+          if (total > 1) params.set('page', String(total));
+          else params.delete('page');
+          setSearchParams(params, { replace: true });
+          setCurrentPage(total);
+        }
       } catch (err) {
         if (cancelled) return;
         setCourses([]);
         setTotalPages(1);
+        setFetchError(err.message || 'Failed to load courses. Check your connection and try again.');
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -189,7 +219,7 @@ function AcademiaCourses() {
     return () => {
       cancelled = true;
     };
-  }, [currentPage, selectedFilter, debouncedSearchTerm, selectedCategory]);
+  }, [currentPage, selectedFilter, debouncedSearchTerm, selectedCategory, retryKey, searchParams, setSearchParams]);
 
   // Client side sorting
   const sortedCourses = React.useMemo(() => {
@@ -214,24 +244,37 @@ function AcademiaCourses() {
     return list; // default newest
   }, [courses, sortOrder]);
 
+  const updatePageParam = (page) => {
+    const params = new URLSearchParams(searchParams);
+    if (page > 1) {
+      params.set('page', String(page));
+    } else {
+      params.delete('page');
+    }
+    setSearchParams(params, { replace: true });
+    setCurrentPage(page);
+  };
+
   const handleFilterChange = (filter) => {
     setSelectedFilter(filter);
-    setCurrentPage(1);
     const newParams = new URLSearchParams(searchParams);
     newParams.set('filter', filter);
+    newParams.delete('page');
     setSearchParams(newParams);
+    setCurrentPage(1);
   };
 
   const handleCategorySelect = (category) => {
     setSelectedCategory(category);
-    setCurrentPage(1);
     const newParams = new URLSearchParams(searchParams);
     if (category) {
       newParams.set('category', category);
     } else {
       newParams.delete('category');
     }
+    newParams.delete('page');
     setSearchParams(newParams);
+    setCurrentPage(1);
   };
 
   const handleSearchChange = (e) => {
@@ -243,7 +286,9 @@ function AcademiaCourses() {
     } else {
       newParams.delete('search');
     }
+    newParams.delete('page');
     setSearchParams(newParams);
+    setCurrentPage(1);
   };
 
   const pageNumbers = Array.from({ length: totalPages }, (_, i) => i + 1);
@@ -352,9 +397,16 @@ function AcademiaCourses() {
           
           <div className="courses-list-col">
             {loading ? (
-              <div className="courses-loading-state">
-                <div className="spinner"></div>
-                <p>Fetching public courses catalog...</p>
+              <PublicLoading message="Fetching public courses catalog…" />
+            ) : fetchError ? (
+              <div className="public-page-state--inline">
+                <PublicLoadError
+                  title="Could not load courses"
+                  message={fetchError}
+                  onRetry={() => setRetryKey((key) => key + 1)}
+                  backTo="/academia/index"
+                  backLabel="Back to home"
+                />
               </div>
             ) : sortedCourses.length > 0 ? (
               <>
@@ -401,7 +453,7 @@ function AcademiaCourses() {
                     <button
                       type="button"
                       disabled={currentPage === 1}
-                      onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                      onClick={() => updatePageParam(Math.max(1, currentPage - 1))}
                       className="pag-nav-btn"
                     >
                       <img src={acLe2} alt="Prev" />
@@ -411,7 +463,7 @@ function AcademiaCourses() {
                         key={num}
                         type="button"
                         className={`pag-num-btn ${currentPage === num ? 'active' : ''}`}
-                        onClick={() => setCurrentPage(num)}
+                        onClick={() => updatePageParam(num)}
                       >
                         {num}
                       </button>
@@ -419,7 +471,7 @@ function AcademiaCourses() {
                     <button
                       type="button"
                       disabled={currentPage === totalPages}
-                      onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                      onClick={() => updatePageParam(Math.min(totalPages, currentPage + 1))}
                       className="pag-nav-btn"
                     >
                       <img src={acRi} alt="Next" />
@@ -438,6 +490,7 @@ function AcademiaCourses() {
                     setSelectedFilter('All');
                     setSelectedCategory('');
                     setSearchTerm('');
+                    setCurrentPage(1);
                     setSearchParams({});
                   }}
                 >
@@ -452,6 +505,13 @@ function AcademiaCourses() {
             <div className="sidebar-catalog-card">
               <h3>Featured Syllabus Program</h3>
               <p>Explore recommended course breakdowns and start today.</p>
+              <button
+                type="button"
+                className="sidebar-syllabus-link"
+                onClick={() => navigate('/academia/syllabuses')}
+              >
+                Browse all syllabuses
+              </button>
               
               <div className="syllabus-list">
                 {syllabusCourses.slice(0, 5).map((item) => (
