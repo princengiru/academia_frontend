@@ -1,0 +1,77 @@
+.hoa-toast-notification {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 20px;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.12);
+  border-left: 4px solid #10b981;
+  animation: hoaToastIn 0.22s cubic-bezier(0, 0, 0.2, 1);
+  max-width: 380px;
+}
+
+.hoa-toast-notification.is-success {
+  border-left-color: #10b981;
+}
+
+.hoa-toast-notification.is-error {
+  border-left-color: #ef4444;
+}
+
+.hoa-toast-icon {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 11px;
+  flex-shrink: 0;
+}
+
+.hoa-toast-notification.is-success .hoa-toast-icon {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.hoa-toast-notification.is-error .hoa-toast-icon {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.hoa-toast-message {
+  margin: 0;
+  font-family: Inter, Poppins, sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: #071437;
+  line-height: 1.4;
+}
+
+.hoa-toast-dismiss {
+  margin-left: auto;
+  border: none;
+  background: transparent;
+  color: #78829d;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 0 0 8px;
+}
+
+@keyframes hoaToastIn {
+  from {
+    transform: translateY(-16px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}

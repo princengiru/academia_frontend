@@ -1,0 +1,113 @@
+.hoa-page-state {
+  display: flex;
+  justify-content: center;
+  padding: 40px 20px 48px;
+}
+
+.hoa-page-state-card {
+  width: min(560px, 100%);
+  text-align: center;
+  background: #ffffff;
+  border: 1px dashed #dbe0ea;
+  border-radius: 12px;
+  padding: 32px 24px;
+}
+
+.hoa-page-state-card h2 {
+  margin: 0 0 8px;
+  font-family: Inter, Poppins, sans-serif;
+  font-size: 20px;
+  line-height: 28px;
+  font-weight: 700;
+  color: #071437;
+}
+
+.hoa-page-state-card p {
+  margin: 0;
+  font-family: Inter, Poppins, sans-serif;
+  font-size: 13px;
+  line-height: 20px;
+  color: #78829d;
+}
+
+.hoa-page-state-actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 18px;
+}
+
+.hoa-page-state-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  padding: 0 16px;
+  border-radius: 8px;
+  font-family: Inter, Poppins, sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.hoa-page-state-btn--primary {
+  border: none;
+  background: #450468;
+  color: #ffffff;
+}
+
+.hoa-page-state-btn--primary:hover {
+  background: #360353;
+}
+
+.hoa-page-state-btn--ghost {
+  border: 1px solid #e3e8f2;
+  background: #ffffff;
+  color: #450468;
+}
+
+.hoa-page-state-btn--ghost:hover {
+  background: #4504680a;
+}
+
+.hoa-page-state-spinner {
+  width: 30px;
+  height: 30px;
+  margin: 0 auto 14px;
+  border: 3px solid #e4e6ef;
+  border-top-color: #450468;
+  border-radius: 50%;
+  animation: hoa-page-state-spin 0.8s linear infinite;
+}
+
+@keyframes hoa-page-state-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.hoa-page-state--inline {
+  padding: 20px 0;
+}
+
+.hoa-page-state--inline .hoa-page-state-card {
+  width: 100%;
+  padding: 24px 18px;
+}
+
+.hoa-table-empty-cell {
+  padding: 0 !important;
+  border: none !important;
+  background: transparent !important;
+}
+
+.hoa-table-empty-cell .hoa-page-state {
+  padding: 24px 12px;
+}
+
+.hoa-table-empty-cell .hoa-page-state-card {
+  border-style: solid;
+  border-color: #eef1f7;
+}
