@@ -2,10 +2,11 @@ import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
-import ProfessorLayout from '../../../components/layouts/ProfessorLayout/ProfessorLayout';
-import { ChevronDown, AlertTriangle, Search, RefreshCw } from 'lucide-react';
+import LearnerLoadError from '../learner/LearnerLoadError';
+import ManagementLoading from './ManagementLoading';
 import './management-student-qa.css';
 import hoagoto from '../../../assets/icons/hoagoto.svg';
+import hoarefresh from '../../../assets/icons/hoarefresh.svg';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
@@ -111,10 +112,18 @@ const IconTrash = ({ size = 14, color = "#EF4444" }) => (
   </svg>
 );
 
-const IconChatBubble = ({ size = 12, color = "#64748B" }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ color, verticalAlign: 'middle' }}>
-    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-  </svg>
+const getStatusClass = (status) => {
+  if (status === 'resolved') return 'is-resolved';
+  if (status === 'answered') return 'is-answered';
+  if (status === 'closed') return 'is-closed';
+  return 'is-open';
+};
+
+const StatusPill = ({ status }) => (
+  <span className={`prof-qa-status-pill ${getStatusClass(status)}`}>
+    <span className="dot" />
+    {status}
+  </span>
 );
 
 const ManagementStudentQA = () => {
@@ -126,12 +135,14 @@ const ManagementStudentQA = () => {
   const [questions, setQuestions] = useState([]);
   const [questionsLoading, setQuestionsLoading] = useState(true);
   const [questionsError, setQuestionsError] = useState('');
+  const [questionsReloadKey, setQuestionsReloadKey] = useState(0);
 
   const [selectedQuestionId, setSelectedQuestionId] = useState(null);
   const [selectedQuestion, setSelectedQuestion] = useState(null);
 
   const [threadLoading, setThreadLoading] = useState(false);
   const [threadError, setThreadError] = useState('');
+  const [threadReloadKey, setThreadReloadKey] = useState(0);
 
   // --- Reply State ---
   const [replyContent, setReplyContent] = useState('');
@@ -256,7 +267,7 @@ const ManagementStudentQA = () => {
     const controller = new AbortController();
     fetchQuestions(null, controller.signal);
     return () => controller.abort();
-  }, []);
+  }, [questionsReloadKey]);
 
   // 3. Fetch Active Thread (with Race Condition Guard)
   useEffect(() => {
@@ -301,7 +312,7 @@ const ManagementStudentQA = () => {
     return () => {
       if (threadAbortController.current) threadAbortController.current.abort();
     };
-  }, [selectedQuestionId]);
+  }, [selectedQuestionId, threadReloadKey]);
 
   // --- Client Side Filtering ---
   const filteredQuestions = useMemo(() => {
@@ -405,7 +416,7 @@ const ManagementStudentQA = () => {
 
   const handleManualRefresh = (e) => {
     e.preventDefault();
-    fetchQuestions(selectedQuestionId);
+    setQuestionsReloadKey((key) => key + 1);
   };
 
   const handleTogglePin = async (questionId, currentPinnedState) => {
@@ -521,49 +532,54 @@ const ManagementStudentQA = () => {
   };
 
   const replyComposer = (
-    <section className="prof-qa-reply-box" style={{ display: 'flex', flexDirection: 'column', minHeight: '260px', background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: '8px', overflow: 'hidden', marginBottom: '16px', flexShrink: 0 }}>
-      <div id="reply-editor-toolbar" className="prof-qa-editor-toolbar ql-toolbar ql-snow" style={{ border: 'none', borderBottom: '1px solid #E2E8F0', padding: '8px 12px' }}>
-        <button type="button" className="ql-bold" aria-label="Bold"><svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 16 16"><path d="M5 3.5h4a2.5 2.5 0 0 1 0 5H5zm0 5h5a2.5 2.5 0 0 1 0 5H5z" /></svg></button>
-        <button type="button" className="ql-italic" aria-label="Italic"><svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 16 16"><path d="M10 3L6 13" /><path d="M8 3h4" /><path d="M4 13h4" /></svg></button>
-        <button type="button" className="ql-underline" aria-label="Underline"><svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 16 16"><path d="M4 3v4a4 4 0 0 0 8 0V3" /><path d="M4 13h8" /></svg></button>
-        <button type="button" className="ql-list" value="bullet" aria-label="Bulleted List"><svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 16 16"><circle cx="4" cy="5" r="1.3" /><line x1="7" y1="5" x2="13" y2="5" /><circle cx="4" cy="11" r="1.3" /><line x1="7" y1="11" x2="13" y2="11" /></svg></button>
-        <button type="button" className="ql-list" value="ordered" aria-label="Numbered List"><svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 16 16"><text x="2" y="7" fontSize="5" fill="currentColor">1.</text><line x1="7" y1="6" x2="13" y2="6" /><text x="2" y="13" fontSize="5" fill="currentColor">2.</text><line x1="7" y1="12" x2="13" y2="12" /></svg></button>
-        <button type="button" className="ql-align" value="" aria-label="Align Left"><svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 16 16"><line x1="3" y1="4" x2="13" y2="4" /><line x1="3" y1="8" x2="10" y2="8" /><line x1="3" y1="12" x2="13" y2="12" /></svg></button>
-        <button type="button" className="ql-align" value="center" aria-label="Align Center"><svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 16 16"><line x1="4" y1="4" x2="12" y2="4" /><line x1="2" y1="8" x2="14" y2="8" /><line x1="4" y1="12" x2="12" y2="12" /></svg></button>
+    <section className="prof-qa-reply-box">
+      <div className="prof-qa-reply-toolbar">
+        <div id="reply-editor-toolbar" className="prof-qa-editor-toolbar ql-toolbar ql-snow">
+          <span className="ql-formats">
+            <button type="button" className="ql-bold" aria-label="Bold"><svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 16 16"><path d="M5 3.5h4a2.5 2.5 0 0 1 0 5H5zm0 5h5a2.5 2.5 0 0 1 0 5H5z" /></svg></button>
+            <button type="button" className="ql-italic" aria-label="Italic"><svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 16 16"><path d="M10 3L6 13" /><path d="M8 3h4" /><path d="M4 13h4" /></svg></button>
+            <button type="button" className="ql-underline" aria-label="Underline"><svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 16 16"><path d="M4 3v4a4 4 0 0 0 8 0V3" /><path d="M4 13h8" /></svg></button>
+          </span>
+          <span className="ql-formats">
+            <button type="button" className="ql-list" value="bullet" aria-label="Bulleted list"><svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 16 16"><circle cx="4" cy="5" r="1.3" /><line x1="7" y1="5" x2="13" y2="5" /><circle cx="4" cy="11" r="1.3" /><line x1="7" y1="11" x2="13" y2="11" /></svg></button>
+            <button type="button" className="ql-list" value="ordered" aria-label="Numbered list"><svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 16 16"><text x="2" y="7" fontSize="5" fill="currentColor">1.</text><line x1="7" y1="6" x2="13" y2="6" /><text x="2" y="13" fontSize="5" fill="currentColor">2.</text><line x1="7" y1="12" x2="13" y2="12" /></svg></button>
+          </span>
+          <span className="ql-formats">
+            <button type="button" className="ql-align" value="" aria-label="Align left"><svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 16 16"><line x1="3" y1="4" x2="13" y2="4" /><line x1="3" y1="8" x2="10" y2="8" /><line x1="3" y1="12" x2="13" y2="12" /></svg></button>
+            <button type="button" className="ql-align" value="center" aria-label="Align center"><svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 16 16"><line x1="4" y1="4" x2="12" y2="4" /><line x1="2" y1="8" x2="14" y2="8" /><line x1="4" y1="12" x2="12" y2="12" /></svg></button>
+          </span>
+        </div>
 
-        <button type="button" className="prof-qa-attach-btn" onClick={() => fileInputRef.current?.click()} style={{ border: 'none', background: 'transparent', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', marginLeft: 'auto' }}>
-          <img src="/assets/icons/attach-file.png" alt="" style={{ width: '14px', height: '14px', objectFit: 'contain' }} />
-          <span style={{ fontSize: '11px', color: '#78829D', fontWeight: '500' }}>Add an attachment</span>
+        <button type="button" className="prof-qa-attach-btn" onClick={() => fileInputRef.current?.click()}>
+          <img src="/assets/icons/attach-file.png" alt="" />
+          <span>Attach file</span>
         </button>
         <input
           type="file"
           ref={fileInputRef}
-          style={{ display: 'none' }}
+          className="prof-qa-hidden-input"
           multiple
           onChange={handleFileChange}
         />
       </div>
 
-      <ReactQuill
-        ref={replyTextareaRef}
-        theme="snow"
-        modules={quillModules}
-        placeholder="Write your reply to the student here..."
-        value={replyContent}
-        onChange={setReplyContent}
-        style={{ background: '#FFFFFF', minHeight: '140px', flex: '1 0 auto' }}
-      />
+      <div className="prof-qa-quill-wrap">
+        <ReactQuill
+          ref={replyTextareaRef}
+          theme="snow"
+          modules={quillModules}
+          placeholder="Write your reply to the student here..."
+          value={replyContent}
+          onChange={setReplyContent}
+        />
+      </div>
 
       {replyAttachments.length > 0 && (
-        <div className="prof-qa-reply-attachments" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '10px', marginBottom: '10px' }}>
+        <div className="prof-qa-reply-attachments">
           {replyAttachments.map((file, idx) => (
-            <div key={idx} style={{ display: 'inline-flex', alignItems: 'center', background: '#F1F5F9', border: '1px solid #E2E8F0', padding: '4px 10px', borderRadius: '20px', fontSize: '12px', gap: '6px' }}>
-              <span style={{ maxWidth: '160px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: '#4B5675', fontWeight: '500' }}>{file.name}</span>
-              <button
-                type="button"
-                onClick={() => removeAttachment(idx)}
-                style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: '#64748B', fontWeight: 'bold', fontSize: '14px', padding: '0 2px' }}
-              >
+            <div key={idx} className="prof-qa-attachment-chip">
+              <span>{file.name}</span>
+              <button type="button" onClick={() => removeAttachment(idx)} aria-label={`Remove ${file.name}`}>
                 &times;
               </button>
             </div>
@@ -572,39 +588,23 @@ const ManagementStudentQA = () => {
       )}
 
       {replyFeedback && (
-        <p style={{ margin: '0.35rem 0 0', color: replyFeedback.includes('success') ? 'var(--success, #00C853)' : 'var(--danger, #D32F2F)', fontSize: '0.92rem' }}>
+        <p className={`prof-qa-reply-feedback ${replyFeedback.toLowerCase().includes('success') ? 'is-success' : 'is-error'}`}>
           {replyFeedback}
         </p>
       )}
 
-      <button
-        type="button"
-        className="prof-qa-send-btn"
-        onClick={handleReplySubmit}
-        disabled={replySaving}
-        style={{
-          background: '#450468',
-          color: '#FFFFFF',
-          border: 'none',
-          borderRadius: '6px',
-          padding: '8px 16px',
-          fontSize: '12px',
-          fontWeight: 600,
-          cursor: 'pointer',
-          alignSelf: 'flex-end',
-          margin: '12px',
-          flexShrink: 0
-        }}
-      >
-        {replySaving ? 'Sending...' : 'Send Message'}
-      </button>
+      <div className="prof-qa-send-row">
+        <button type="button" className="prof-qa-send-btn" onClick={handleReplySubmit} disabled={replySaving}>
+          {replySaving ? 'Sending...' : 'Send reply'}
+        </button>
+      </div>
     </section>
   );
 
   const listEmptyDescription = questionsError || 'No student questions have been posted for your courses yet.';
 
   const threadEmpty = (
-    <div className="prof-management-empty-state" style={{ minHeight: 260 }}>
+    <div className="prof-management-empty-state">
       <div className="prof-management-empty-state-card">
         <h3>Select a question</h3>
         <p>Open a student question from the list to view the thread and reply from here.</p>
@@ -618,7 +618,7 @@ const ManagementStudentQA = () => {
   );
 
   return (
-    <ProfessorLayout currentPage="management">
+    <>
       <section className="prof-management-page prof-management-qa-page">
 
         {/* Header */}
@@ -626,7 +626,7 @@ const ManagementStudentQA = () => {
           <div className="learners-home-title-top">
             <h1>Management</h1>
             <div className="learners-home-title-actions">
-              <a className="learners-btn learners-btn-secondary" href="#" onClick={preventDefault}>
+              <a className="learners-btn learners-btn-secondary" href="/academia/professor/management-schedule" onClick={(e) => { e.preventDefault(); navigate('/academia/professor/management-schedule'); }}>
                 <img src="/assets/icons/plus1.svg" alt="" style={{ width: '14px', height: '14px', objectFit: 'contain' }} />
                 <span>Add Event</span>
               </a>
@@ -661,71 +661,17 @@ const ManagementStudentQA = () => {
             <h2>Student Q&amp;A</h2>
             <p>Questions asked across your courses and chapters</p>
           </div>
-          <div className="assessments-hero-actions" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div className="assessments-search" style={{ background: '#FFFFFF', borderRadius: '8px', padding: '6px 12px', display: 'flex', alignItems: 'center', gap: '8px', border: '1px solid rgba(0, 0, 0, 0.05)', boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)', width: '240px' }}>
-              <Search size={14} color="#64748B" />
-              <input
-                type="search"
-                placeholder="Search questions..."
-                aria-label="Search questions"
-                value={searchTerm}
-                onChange={(event) => setSearchTerm(event.target.value)}
-                style={{ border: 'none', background: 'transparent', outline: 'none', fontSize: '12px', width: '100%', color: '#071437' }}
-              />
-            </div>
-            
-            <button 
-              type="button" 
-              onClick={handleManualRefresh}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '8px',
-                background: 'rgba(255, 255, 255, 0.12)',
-                border: '1px solid rgba(255, 255, 255, 0.25)',
-                borderRadius: '8px',
-                color: '#FFFFFF',
-                padding: '8px 16px',
-                fontSize: '12px',
-                fontWeight: 600,
-                cursor: 'pointer',
-                transition: 'all 0.2s ease-in-out',
-                height: '34px'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = '#FFFFFF';
-                e.currentTarget.style.color = '#450468';
-                e.currentTarget.style.borderColor = '#FFFFFF';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.12)';
-                e.currentTarget.style.color = '#FFFFFF';
-                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.25)';
-              }}
-            >
-              <RefreshCw size={12} />
-              <span>Refresh Q&amp;A</span>
-            </button>
-          </div>
         </section>
 
-        {/* Toolbar */}
-        <section className="prof-qa-toolbar">
-          <div className="prof-qa-summary">
-            <img src="/assets/icons/user.svg" alt="" style={{ width: '14px', height: '14px', objectFit: 'contain' }} />
-            <span>{questions.length}</span>
-            <p>{questions.filter((question) => question.status === 'open').length} open</p>
+        <section className="prof-lesson-ranks-toolbar prof-qa-toolbar">
+          <div className="prof-qa-stats">
+            <img src="/assets/icons/user.svg" alt="" />
+            <strong>{questions.length}</strong>
+            <span>{questions.filter((question) => question.status === 'open').length} open</span>
           </div>
 
-          <div className="prof-qa-search-wrap">
-            <input
-              type="search"
-              placeholder="Search by student, course, chapter, or title..."
-              aria-label="Search questions"
-              value={searchTerm}
-              onChange={(event) => setSearchTerm(event.target.value)}
-            />
-            <div className="prof-qa-filters">
+          <div className="prof-lesson-ranks-search-wrap">
+            <div className="prof-lesson-ranks-filters">
               {qaFilters.map((filter) => (
                 <button
                   key={filter.id}
@@ -736,9 +682,22 @@ const ManagementStudentQA = () => {
                   {filter.label}
                 </button>
               ))}
-              <button type="button" className="prof-qa-filter-btn" onClick={preventDefault}>
-                <img src="/assets/icons/ac-fi.svg" alt="" style={{ width: '14px', height: '14px', objectFit: 'contain' }} />
-                <span>Filters</span>
+            </div>
+
+            <div className="prof-lesson-ranks-toolbar-end">
+              <div className="prof-lesson-ranks-search">
+                <img src="/assets/icons/magnifier.svg" alt="" />
+                <input
+                  type="search"
+                  placeholder="Search questions..."
+                  aria-label="Search questions"
+                  value={searchTerm}
+                  onChange={(event) => setSearchTerm(event.target.value)}
+                />
+              </div>
+              <button type="button" className="assessments-create-btn" onClick={handleManualRefresh}>
+                <img src={hoarefresh} alt="" aria-hidden="true" />
+                <span>Refresh</span>
               </button>
             </div>
           </div>
@@ -750,11 +709,15 @@ const ManagementStudentQA = () => {
           {/* Left Panel: Question List */}
           <section className="prof-qa-list-panel">
             {questionsLoading ? (
-              <div className="prof-lesson-ranks-loading">Loading student questions...</div>
+              <ManagementLoading compact title="Loading questions" message="Fetching student Q&A across your courses." />
             ) : questionsError ? (
-              <div className="prof-lesson-ranks-loading is-error">Error: {questionsError}</div>
+              <LearnerLoadError
+                title="Could not load questions"
+                message={questionsError}
+                onRetry={questionsError === 'Authentication missing.' ? undefined : () => setQuestionsReloadKey((key) => key + 1)}
+              />
             ) : currentQuestions.length === 0 ? (
-              <div className="prof-management-empty-state" style={{ minHeight: 300 }}>
+              <div className="prof-management-empty-state">
                 <div className="prof-management-empty-state-card">
                   <h3>{debouncedSearch || activeFilter !== 'All' ? 'No matching questions' : 'No student questions yet'}</h3>
                   <p>{debouncedSearch || activeFilter !== 'All' ? 'Try adjusting your search or filters.' : listEmptyDescription}</p>
@@ -766,66 +729,58 @@ const ManagementStudentQA = () => {
                 </div>
               </div>
             ) : (
-              <div className="prof-qa-list">
+              <>
+                <div className="prof-qa-list-head">
+                  <h3>Questions</h3>
+                  <span>{filteredQuestions.length} shown</span>
+                </div>
+                <div className="prof-qa-list">
                 {currentQuestions.map((item) => {
                   const isSelected = selectedQuestionId === item.id;
                   return (
-                    <article
+                    <button
                       key={item.id}
-                      className={`prof-qa-item ${isSelected ? 'is-selected' : ''} ${item.isPinned ? 'is-pinned' : ''}`}
+                      type="button"
+                      className={`prof-qa-row ${isSelected ? 'is-selected' : ''} ${item.isPinned ? 'is-pinned' : ''}`}
                       onClick={() => setSelectedQuestionId(item.id)}
-                      role="button"
-                      tabIndex={0}
                     >
-                      <div className="prof-qa-item-marker" aria-hidden="true">
+                      <div className="prof-qa-row-avatar">
                         <img src={resolveAssetUrl(item.studentAvatar)} alt="" />
                       </div>
 
-                      <div className="prof-qa-item-body">
-                        <header className="prof-qa-item-head" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <div className="prof-qa-user">
-                            <strong>{item.studentName}</strong>
-                            <span>{formatRelativeTime(item.createdAt)}</span>
-                          </div>
+                      <div className="prof-qa-row-main">
+                        <div className="prof-qa-row-top">
+                          <strong>{item.studentName}</strong>
+                          <time>{formatRelativeTime(item.createdAt)}</time>
                           {item.isPinned && (
-                            <span className="prof-qa-pin-badge" title="Pinned by Instructor">
-                              <IconPin size={12} color="#450468" />
+                            <span className="prof-qa-pin-badge" title="Pinned">
+                              <IconPin size={11} color="#450468" />
                             </span>
                           )}
-                        </header>
-
-                        <h4 className="prof-qa-item-title" style={{ fontSize: '13px', fontWeight: 600, color: '#071437', margin: '4px 0 6px 0' }}>
-                          {item.title}
-                        </h4>
-
-                        <div className="prof-qa-item-tags" style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '8px' }}>
-                          <span className="prof-qa-item-tags-pill" style={{ fontSize: '10px', background: '#F3E8FF', color: '#450468', padding: '2px 8px', borderRadius: '4px' }}>
-                            {(item.weekTitle || `Week ${item.weekNumber || '-'}`)} : {item.chapterTitle || 'No chapter'}
-                          </span>
-                          <span className="prof-qa-course-tag" style={{ fontSize: '10px', color: '#64748B', background: '#F8FAFC', padding: '2px 8px', borderRadius: '4px', border: '1px solid #E2E8F0' }}>
-                            {item.courseTitle}
-                          </span>
                         </div>
 
-                        <p className="prof-qa-item-content" style={{ fontSize: '12px', color: '#475569', lineHeight: '1.5', margin: '0 0 8px 0' }}>
-                          {truncateText(stripHtml(item.content))}
-                        </p>
+                        <h4 className="prof-qa-row-title">{item.title}</h4>
+                        <p className="prof-qa-row-preview">{truncateText(stripHtml(item.content), 110)}</p>
 
-                        <footer className="prof-qa-item-foot" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '10px', paddingBlock: '8px', borderTop: '1px dashed #EEF1F6' }}>
-                          <span style={{ fontSize: '11px', color: '#64748B', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            <IconChatBubble size={12} color="#64748B" />
+                        <div className="prof-qa-row-meta">
+                          <span className="prof-qa-row-tag">
+                            {(item.weekTitle || `Week ${item.weekNumber || '-'}`)} : {item.chapterTitle || 'No chapter'}
+                          </span>
+                          <span className="prof-qa-row-course">{item.courseTitle}</span>
+                          <span className="prof-qa-row-replies">
                             {item.answersCount} {item.answersCount === 1 ? 'reply' : 'replies'}
                           </span>
-                          <span className={`status-pill pill-${item.status === 'resolved' ? 'green' : item.status === 'answered' ? 'purple' : item.status === 'closed' ? 'gray' : 'orange'}`} style={{ fontSize: '9px', padding: '2px 8px', textTransform: 'capitalize', fontWeight: 700 }}>
-                            <span className="dot"></span>
-                            {item.status}
-                          </span>
-                        </footer>
+                        </div>
                       </div>
-                    </article>
+
+                      <div className="prof-qa-row-status">
+                        <StatusPill status={item.status} />
+                      </div>
+                    </button>
                   );
                 })}
-              </div>
+                </div>
+              </>
             )}
 
             {/* Pagination */}
@@ -863,114 +818,53 @@ const ManagementStudentQA = () => {
           </section>
 
           {/* Right Panel: Thread & Reply */}
-          <section className="prof-qa-thread-panel" style={{ height: '780px', overflow: 'hidden', display: 'flex', flexDirection: 'column', padding: '20px 20px 10px 20px' }}>
+          <section className="prof-qa-thread-panel">
             {threadLoading && !threadQuestion ? (
-              <div className="prof-lesson-ranks-loading">Loading thread...</div>
+              <ManagementLoading compact title="Loading thread" message="Fetching replies and moderation details." />
             ) : threadError ? (
-              <div className="prof-lesson-ranks-loading is-error">Error: {threadError}</div>
+              <LearnerLoadError
+                title="Could not load thread"
+                message={threadError}
+                onRetry={() => setThreadReloadKey((key) => key + 1)}
+              />
             ) : threadQuestion ? (
               <>
-                {/* Moderation Controls toolbar */}
-                <div className="prof-qa-thread-header-actions" style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '14px', background: '#F8FAFC', padding: '10px 14px', borderRadius: '8px', border: '1px solid #E2E8F0', flexShrink: 0 }}>
-                  <span style={{ fontSize: '12px', fontWeight: 600, color: '#475569' }}>Moderate Question:</span>
+                <div className="prof-qa-thread-toolbar">
+                  <span className="prof-qa-thread-toolbar-label">Moderate</span>
 
                   <button
                     type="button"
+                    className={`prof-qa-action-btn ${threadQuestion.isPinned ? 'is-active' : ''}`}
                     onClick={() => handleTogglePin(threadQuestion.id, threadQuestion.isPinned)}
-                    style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '11px', fontWeight: 600, padding: '4px 10px', borderRadius: '6px', border: '1px solid #DBDFE9', background: threadQuestion.isPinned ? '#F3E8FF' : '#FFFFFF', color: threadQuestion.isPinned ? '#450468' : '#64748B', cursor: 'pointer' }}
                   >
                     <IconPin size={11} color={threadQuestion.isPinned ? '#450468' : '#64748B'} />
                     {threadQuestion.isPinned ? 'Pinned' : 'Pin'}
                   </button>
 
-                  {/* Custom Status Dropdown */}
-                  <div style={{ position: 'relative' }}>
+                  <div className="prof-qa-status-dropdown">
                     <button
                       type="button"
+                      className="prof-qa-status-toggle"
                       onClick={() => setStatusDropdownOpen(!statusDropdownOpen)}
-                      style={{ 
-                        display: 'inline-flex', 
-                        alignItems: 'center', 
-                        gap: '6px', 
-                        fontSize: '11px', 
-                        fontWeight: 600, 
-                        padding: '6px 12px', 
-                        borderRadius: '6px', 
-                        border: '1px solid #DBDFE9', 
-                        background: '#FFFFFF', 
-                        color: '#4B5675', 
-                        cursor: 'pointer',
-                        transition: 'border-color 0.2s'
-                      }}
-                      onMouseEnter={(e) => e.currentTarget.style.borderColor = '#A1A5B7'}
-                      onMouseLeave={(e) => e.currentTarget.style.borderColor = '#DBDFE9'}
                     >
-                      <span style={{ 
-                        width: '6px', 
-                        height: '6px', 
-                        borderRadius: '50%', 
-                        background: threadQuestion.status === 'resolved' ? '#50CD89' : threadQuestion.status === 'answered' ? '#7239EA' : threadQuestion.status === 'closed' ? '#7E8299' : '#FFA800'
-                      }} />
-                      <span style={{ textTransform: 'capitalize' }}>{threadQuestion.status}</span>
-                      <ChevronDown size={12} color="#78829D" style={{ marginLeft: '2px' }} />
+                      <span className={`prof-qa-status-dot ${getStatusClass(threadQuestion.status)}`} />
+                      <span>{threadQuestion.status}</span>
+                      <img src="/assets/icons/down1.svg" alt="" />
                     </button>
                     {statusDropdownOpen && (
-                      <div style={{ 
-                        position: 'absolute', 
-                        top: '100%', 
-                        left: 0, 
-                        marginTop: '4px', 
-                        background: '#FFFFFF', 
-                        border: '1px solid #E2E8F0', 
-                        borderRadius: '8px', 
-                        boxShadow: '0 10px 15px -3px rgba(0,0,0,0.08)', 
-                        padding: '4px', 
-                        zIndex: 1000, 
-                        display: 'flex', 
-                        flexDirection: 'column', 
-                        gap: '2px', 
-                        minWidth: '120px' 
-                      }}>
+                      <div className="prof-qa-status-menu">
                         {['open', 'answered', 'resolved', 'closed'].map((status) => (
                           <button
                             key={status}
                             type="button"
+                            className="prof-qa-status-option"
                             onClick={() => {
                               handleUpdateStatus(threadQuestion.id, status);
                               setStatusDropdownOpen(false);
                             }}
-                            style={{ 
-                              display: 'flex', 
-                              alignItems: 'center', 
-                              gap: '8px', 
-                              width: '100%', 
-                              border: 'none', 
-                              background: 'transparent', 
-                              padding: '8px 12px', 
-                              borderRadius: '6px', 
-                              textAlign: 'left', 
-                              cursor: 'pointer', 
-                              fontSize: '11px', 
-                              fontWeight: 600, 
-                              color: '#4B5675', 
-                              transition: 'background 0.2s, color 0.2s' 
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.background = '#F8FAFC';
-                              e.currentTarget.style.color = '#071437';
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.background = 'transparent';
-                              e.currentTarget.style.color = '#4B5675';
-                            }}
                           >
-                            <span style={{ 
-                              width: '6px', 
-                              height: '6px', 
-                              borderRadius: '50%', 
-                              background: status === 'resolved' ? '#50CD89' : status === 'answered' ? '#7239EA' : status === 'closed' ? '#7E8299' : '#FFA800'
-                            }} />
-                            <span style={{ textTransform: 'capitalize' }}>{status}</span>
+                            <span className={`prof-qa-status-dot ${getStatusClass(status)}`} />
+                            <span>{status}</span>
                           </button>
                         ))}
                       </div>
@@ -979,125 +873,101 @@ const ManagementStudentQA = () => {
 
                   <button
                     type="button"
+                    className="prof-qa-action-btn is-danger"
                     onClick={() => handleDeleteQuestion(threadQuestion.id)}
-                    style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '11px', fontWeight: 600, padding: '4px 10px', borderRadius: '6px', border: '1px solid #FCA5A5', background: '#FFF5F5', color: '#EF4444', marginLeft: 'auto', cursor: 'pointer' }}
                   >
-                    <IconTrash size={11} color="#EF4444" />
+                    <IconTrash size={11} color="#DC2626" />
                     Delete
                   </button>
                 </div>
 
-                {/* Scrollable replies listing & main card */}
-                <div className="prof-qa-thread-scrollable-area" style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '16px', paddingRight: '6px', marginBottom: '12px' }}>
-                  <article className="prof-qa-item is-thread-main" style={{ display: 'flex', flexDirection: 'column', gap: '12px', flexShrink: 0 }}>
-                    <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                      <div className="prof-qa-item-marker" aria-hidden="true" style={{ alignSelf: 'center' }}>
-                        <img src={resolveAssetUrl(threadQuestion.studentAvatar)} alt="" />
-                      </div>
-                      <div className="prof-qa-item-body">
-                        <div className="prof-qa-user" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '2px' }}>
-                          <strong style={{ fontSize: '14px' }}>{threadQuestion.studentName || 'Student'}</strong>
-                          <span style={{ fontSize: '11px', color: '#78829D' }}>Asked {formatRelativeTime(threadQuestion.created_at || threadQuestion.createdAt)}</span>
-                        </div>
+                <div className="prof-qa-thread-scrollable-area">
+                  <article className="prof-qa-thread-post">
+                    <div className="prof-qa-thread-user-row">
+                      <img src={resolveAssetUrl(threadQuestion.studentAvatar)} alt="" />
+                      <div>
+                        <strong>{threadQuestion.studentName || 'Student'}</strong>
+                        <span>Asked {formatRelativeTime(threadQuestion.created_at || threadQuestion.createdAt)}</span>
                       </div>
                     </div>
 
-                    <div style={{ borderBottom: '1px solid #EEF1F6', paddingBottom: '10px' }}>
-                      <h2 style={{ fontSize: '16px', fontWeight: 700, color: '#071437', margin: '4px 0 8px 0' }}>{threadQuestion.title}</h2>
-                      <div className="prof-qa-item-tags" style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                        <span className="prof-qa-item-tags-pill" style={{ fontSize: '10px', background: '#F3E8FF', color: '#450468', padding: '2px 8px', borderRadius: '4px' }}>
-                          {threadQuestion.weekTitle || `Week ${threadQuestion.weekNumber || '-'}`} : {threadQuestion.chapterTitle || 'No chapter'}
-                        </span>
-                        <span className="prof-qa-course-tag" style={{ fontSize: '10px', color: '#64748B', background: '#F8FAFC', padding: '2px 8px', borderRadius: '4px', border: '1px solid #E2E8F0' }}>
-                          {threadQuestion.courseTitle}
-                        </span>
-                      </div>
+                    <h2>{threadQuestion.title}</h2>
+
+                    <div className="prof-qa-thread-tags">
+                      <span className="prof-qa-thread-tag">
+                        {threadQuestion.weekTitle || `Week ${threadQuestion.weekNumber || '-'}`} : {threadQuestion.chapterTitle || 'No chapter'}
+                      </span>
+                      <span className="prof-qa-thread-course">{threadQuestion.courseTitle}</span>
                     </div>
 
                     <div
-                      className="prof-qa-item-content"
-                      style={{ fontSize: '13px', color: '#334155', lineHeight: '1.6', margin: '4px 0 10px 0' }}
+                      className="prof-qa-thread-body"
                       dangerouslySetInnerHTML={{ __html: cleanDescriptionHtml(threadQuestion.content) }}
                     />
 
-                    <footer className="prof-qa-thread-meta-bar" style={{ display: 'flex', alignItems: 'center', gap: '16px', background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '8px', padding: '8px 16px', marginTop: '14px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#475569', fontWeight: 600 }}>
-                        <IconChatBubble size={14} color="#64748B" />
-                        <span>{threadQuestion.answers?.length || threadQuestion.answersCount || 0} replies</span>
-                      </div>
-
-                      <div style={{ width: '1px', height: '14px', background: '#E2E8F0' }} aria-hidden="true" />
-
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#475569', fontWeight: 600 }}>
-                        <span style={{ color: '#64748B' }}>Status:</span>
-                        <span className={`status-pill pill-${threadQuestion.status === 'resolved' ? 'green' : threadQuestion.status === 'answered' ? 'purple' : threadQuestion.status === 'closed' ? 'gray' : 'orange'}`} style={{ fontSize: '10px', padding: '2px 10px', textTransform: 'capitalize', fontWeight: 700 }}>
-                          <span className="dot"></span>
-                          {threadQuestion.status}
-                        </span>
-                      </div>
-                    </footer>
+                    <div className="prof-qa-thread-stats">
+                      <span>{threadQuestion.answers?.length || threadQuestion.answersCount || 0} replies</span>
+                      <StatusPill status={threadQuestion.status} />
+                    </div>
                   </article>
 
-                  <div className="prof-qa-thread-replies" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                    {threadLoading && threadAnswers.length > 0 && (
-                      <div style={{ textAlign: 'center', fontSize: '0.85rem', color: '#64748B', marginBottom: '1rem' }}>Updating thread...</div>
-                    )}
-                    {threadAnswers.length === 0 ? (
-                      <div className="prof-management-empty-state" style={{ margin: '8px 0 0', minHeight: 180 }}>
-                        <div className="prof-management-empty-state-card">
-                          <h3>No replies yet</h3>
-                          <p>Be the first to respond to this question from the instructor panel.</p>
-                        </div>
+                  <h3 className="prof-qa-replies-head">Replies</h3>
+
+                  {threadLoading && threadAnswers.length > 0 && (
+                    <div className="prof-qa-thread-updating">Updating thread...</div>
+                  )}
+
+                  {threadAnswers.length === 0 ? (
+                    <div className="prof-management-empty-state">
+                      <div className="prof-management-empty-state-card">
+                        <h3>No replies yet</h3>
+                        <p>Be the first to respond to this question.</p>
                       </div>
-                    ) : (
-                      threadAnswers.map((answer) => (
-                        <article key={answer.id} className={`prof-qa-item is-reply ${answer.is_official ? 'is-official' : ''}`} style={{ display: 'flex', flexDirection: 'column', gap: '10px', position: 'relative' }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                              <div className="prof-qa-item-marker" aria-hidden="true" style={{ alignSelf: 'center' }}>
-                                <img src={resolveAssetUrl(answer.author_avatar)} alt="" />
-                              </div>
-                              <div className="prof-qa-item-body">
-                                <div className="prof-qa-user" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '2px' }}>
-                                  <strong style={{ fontSize: '13px', color: '#1E293B' }}>
-                                    {answer.author_name && answer.author_name.trim() !== ''
-                                      ? answer.author_name
-                                      : (answer.author_role === 'student' ? 'Student' : 'Instructor')}
-                                  </strong>
-                                  <span style={{ fontSize: '11px', color: '#78829D' }}>Replied {formatRelativeTime(answer.created_at)}</span>
-                                </div>
-                              </div>
-                            </div>
-
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                              {answer.is_official ? (
-                                <span style={{ fontSize: '10px', color: '#10B981', background: '#DCFCE7', padding: '2px 8px', borderRadius: '4px', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                                  ✓ Verified Official Response
-                                </span>
-                              ) : null}
-
-                              <button
-                                type="button"
-                                onClick={() => handleToggleOfficialAnswer(answer.id, answer.is_official)}
-                                style={{ fontSize: '10px', fontWeight: 600, padding: '2px 8px', borderRadius: '4px', border: '1px solid #DBDFE9', background: answer.is_official ? '#FFF1F2' : '#FFFFFF', color: answer.is_official ? '#F43F5E' : '#64748B', cursor: 'pointer' }}
-                              >
-                                {answer.is_official ? 'Remove Official Flag' : 'Mark Official'}
-                              </button>
-                            </div>
+                    </div>
+                  ) : (
+                    <div className="prof-qa-replies-list">
+                      {threadAnswers.map((answer) => (
+                        <article key={answer.id} className={`prof-qa-reply ${answer.is_official ? 'is-official' : ''}`}>
+                          <div className="prof-qa-reply-avatar-col">
+                            <img src={resolveAssetUrl(answer.author_avatar)} alt="" />
                           </div>
-
-                          <div
-                            className="prof-qa-item-content"
-                            style={{ fontSize: '12.5px', color: '#475569', lineHeight: '1.6', margin: '4px 0 0 0' }}
-                            dangerouslySetInnerHTML={{ __html: cleanDescriptionHtml(answer.content) }}
-                          />
+                          <div className="prof-qa-reply-body">
+                            <div className="prof-qa-reply-head">
+                              <div>
+                                <strong>
+                                  {answer.author_name && answer.author_name.trim() !== ''
+                                    ? answer.author_name
+                                    : (answer.author_role === 'student' ? 'Student' : 'Instructor')}
+                                </strong>
+                                <time>Replied {formatRelativeTime(answer.created_at)}</time>
+                              </div>
+                              <div className="prof-qa-reply-actions">
+                                {answer.is_official ? (
+                                  <span className="prof-qa-official-badge">Official</span>
+                                ) : null}
+                                <button
+                                  type="button"
+                                  className={`prof-qa-official-btn ${answer.is_official ? 'is-active' : ''}`}
+                                  onClick={() => handleToggleOfficialAnswer(answer.id, answer.is_official)}
+                                >
+                                  {answer.is_official ? 'Remove official' : 'Mark official'}
+                                </button>
+                              </div>
+                            </div>
+                            <div
+                              className="prof-qa-reply-content"
+                              dangerouslySetInnerHTML={{ __html: cleanDescriptionHtml(answer.content) }}
+                            />
+                          </div>
                         </article>
-                      ))
-                    )}
-                  </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
-                {replyComposer}
+                <div className="prof-qa-thread-footer">
+                  {replyComposer}
+                </div>
               </>
             ) : (
               threadEmpty
@@ -1109,50 +979,46 @@ const ManagementStudentQA = () => {
 
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
-        <div className="modal-overlay" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(9, 9, 11, 0.4)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }}>
-          <div style={{ background: '#FFFFFF', borderRadius: '12px', border: '1px solid #E2E8F0', padding: '24px', maxWidth: '360px', width: '90%', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04)', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <span style={{ 
-                background: '#FEE2E2', 
-                borderRadius: '50%', 
-                width: '36px', 
-                height: '36px', 
-                display: 'inline-flex', 
-                alignItems: 'center', 
-                justifyContent: 'center',
-                flexShrink: 0
-              }}>
-                <AlertTriangle size={20} color="#EF4444" />
-              </span>
-              <h4 style={{ fontSize: '15px', fontWeight: 700, color: '#071437', margin: 0 }}>Delete Question</h4>
+        <div className="assessments-modal is-open" style={{ zIndex: 1300 }}>
+          <div className="assessments-modal__backdrop" onClick={() => setShowDeleteConfirm(false)}></div>
+          <div className="assessments-modal__dialog" role="dialog" aria-modal="true" style={{ height: 'auto', width: 'min(440px, calc(100vw - 32px))', margin: 'auto' }}>
+            <div className="assessments-modal__header">
+              <h2>Delete question</h2>
+              <button type="button" className="assessments-modal__close" onClick={() => setShowDeleteConfirm(false)} aria-label="Close modal">
+                <img src="/assets/icons/popup-close.svg" alt="" />
+              </button>
             </div>
-            <p style={{ fontSize: '12.5px', color: '#64748B', margin: 0, lineHeight: '1.5' }}>
-              Are you sure you want to delete this question? This will permanently delete the thread and all replies. This action cannot be undone.
-            </p>
-            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '4px' }}>
-              <button
-                type="button"
-                onClick={() => setShowDeleteConfirm(false)}
-                style={{ border: '1px solid #DBDFE9', background: '#FFFFFF', color: '#4B5675', padding: '8px 16px', borderRadius: '6px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  if (threadQuestion) {
-                    handleDeleteQuestionAction(threadQuestion.id);
-                  }
-                }}
-                style={{ border: 'none', background: '#EF4444', color: '#FFFFFF', padding: '8px 16px', borderRadius: '6px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}
-              >
-                Delete
-              </button>
+            <div className="assessments-modal__body" style={{ padding: '24px 30px' }}>
+              <p style={{ margin: '0 0 24px 0', fontSize: '14px', color: '#4B5675', lineHeight: '1.5' }}>
+                Are you sure you want to delete this question? This will permanently delete the thread and all replies. This action cannot be undone.
+              </p>
+              <div className="assessments-modal-step-actions" style={{ justifyContent: 'flex-end', gap: '12px' }}>
+                <button
+                  type="button"
+                  className="assessments-modal-back"
+                  onClick={() => setShowDeleteConfirm(false)}
+                  style={{ height: '38px', padding: '0 16px', fontSize: '13px' }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="assessments-modal-next"
+                  onClick={() => {
+                    if (threadQuestion) {
+                      handleDeleteQuestionAction(threadQuestion.id);
+                    }
+                  }}
+                  style={{ height: '38px', padding: '0 16px', fontSize: '13px', backgroundColor: '#EF4444' }}
+                >
+                  Delete
+                </button>
+              </div>
             </div>
           </div>
         </div>
       )}
-    </ProfessorLayout>
+    </>
   );
 };
 

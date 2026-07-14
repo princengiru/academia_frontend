@@ -96,6 +96,102 @@
   min-width: 150px;
 }
 
+.prof-management-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 180px;
+  margin: 14px 0;
+  padding: 28px 20px;
+  border: 1px dashed #d9e1ef;
+  border-radius: 12px;
+  background: #fbfcff;
+  text-align: center;
+}
+
+.prof-management-loading.is-compact {
+  min-height: 120px;
+  margin: 12px 0;
+  padding: 20px 16px;
+}
+
+.prof-management-loading.is-inline {
+  min-height: auto;
+  margin: 0;
+  padding: 16px;
+  flex-direction: row;
+  text-align: left;
+}
+
+.prof-management-loading-spinner {
+  width: 28px;
+  height: 28px;
+  border: 2px solid #e8ddf0;
+  border-top-color: #450468;
+  border-radius: 50%;
+  animation: prof-management-spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+.prof-management-loading.is-inline .prof-management-loading-spinner {
+  width: 20px;
+  height: 20px;
+}
+
+.prof-management-loading-copy strong {
+  display: block;
+  font-family: Inter, sans-serif;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 600;
+  color: #071437;
+}
+
+.prof-management-loading-copy p {
+  margin: 4px 0 0;
+  font-family: Inter, sans-serif;
+  font-size: 12px;
+  line-height: 18px;
+  color: #78829d;
+}
+
+@keyframes prof-management-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.prof-lesson-ranks-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 180px;
+  grid-column: 1 / -1;
+  padding: 28px 20px;
+  border: 1px dashed #d9e1ef;
+  border-radius: 12px;
+  background: #fbfcff;
+  font-family: Inter, sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: #071437;
+  text-align: center;
+}
+
+.prof-lesson-ranks-loading::before {
+  content: "";
+  width: 28px;
+  height: 28px;
+  border: 2px solid #e8ddf0;
+  border-top-color: #450468;
+  border-radius: 50%;
+  animation: prof-management-spin 0.7s linear infinite;
+}
+
 @media (max-width: 991px) {
   .prof-management-tab {
     font-size: 12px;

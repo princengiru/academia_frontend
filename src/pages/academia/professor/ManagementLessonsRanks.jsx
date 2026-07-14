@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import ProfessorLayout from '../../../components/layouts/ProfessorLayout/ProfessorLayout';
+import LearnerLoadError from '../learner/LearnerLoadError';
+import ManagementLoading from './ManagementLoading';
 import './management-lessons-ranks.css';
 import hoagoto from '../../../assets/icons/hoagoto.svg';
 
@@ -24,6 +25,7 @@ const ManagementLessonsRanks = () => {
   const [items, setItems] = useState([]);
   const [itemsLoading, setItemsLoading] = useState(true);
   const [itemsError, setItemsError] = useState('');
+  const [itemsReloadKey, setItemsReloadKey] = useState(0);
   const [hasEverLoadedData, setHasEverLoadedData] = useState(false); // To determine if they have ANY courses vs just an empty search
 
   // --- Filters & Search State ---
@@ -101,7 +103,7 @@ const ManagementLessonsRanks = () => {
 
     loadData();
     return () => controller.abort();
-  }, [safeCurrentPage, pageSize, debouncedSearch, activePriceFilter, lessonType, sortOrder]);
+  }, [safeCurrentPage, pageSize, debouncedSearch, activePriceFilter, lessonType, sortOrder, itemsReloadKey]);
 
   // --- Pagination Window Calculation ---
   const visiblePageNumbers = useMemo(() => {
@@ -118,7 +120,6 @@ const ManagementLessonsRanks = () => {
   };
 
   return (
-    <ProfessorLayout currentPage="management">
       <section className="prof-management-page prof-lessons-ranks-page">
         
         {/* Header */}
@@ -126,7 +127,7 @@ const ManagementLessonsRanks = () => {
           <div className="learners-home-title-top">
             <h1>Management</h1>
             <div className="learners-home-title-actions">
-              <a className="learners-btn learners-btn-secondary" href="#" onClick={preventDefault}>
+              <a className="learners-btn learners-btn-secondary" href="/academia/professor/management-schedule" onClick={(e) => { e.preventDefault(); navigate('/academia/professor/management-schedule'); }}>
                 <img src="/assets/icons/plus1.svg" alt="" />
                 <span>Add Event</span>
               </a>
@@ -160,22 +161,6 @@ const ManagementLessonsRanks = () => {
           <div className="assessments-hero-copy">
             <h2>Lesson Ranks</h2>
             <p>Courses & Syllabus</p>
-          </div>
-          <div className="assessments-hero-actions">
-            <div className="assessments-search">
-              <img src="/assets/icons/magnifier.svg" alt="Search" />
-              <input 
-                type="search" 
-                placeholder="Search lessons..." 
-                aria-label="Search lessons" 
-                value={searchTerm} 
-                onChange={(e) => setSearchTerm(e.target.value)} 
-              />
-            </div>
-            <button type="button" className="assessments-create-btn" onClick={() => navigate('/academia/professor/prepare-course')}>
-              <img src="/assets/icons/plus.svg" alt="" aria-hidden="true" />
-              <span>Create new test</span>
-            </button>
           </div>
         </section>
 
@@ -228,6 +213,23 @@ const ManagementLessonsRanks = () => {
                 </ul>
               </div>
             </div>
+
+            <div className="prof-lesson-ranks-toolbar-end">
+              <div className="prof-lesson-ranks-search">
+                <img src="/assets/icons/magnifier.svg" alt="" />
+                <input
+                  type="search"
+                  placeholder="Search lessons..."
+                  aria-label="Search lessons"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+              <button type="button" className="assessments-create-btn" onClick={() => navigate('/academia/professor/prepare-course')}>
+                <img src="/assets/icons/plus.svg" alt="" aria-hidden="true" />
+                <span>Create new course</span>
+              </button>
+            </div>
           </div>
         </section>
 
@@ -260,9 +262,13 @@ const ManagementLessonsRanks = () => {
         {/* Image Grid */}
         <section className="prof-lesson-ranks-grid">
           {itemsLoading ? (
-            <div className="prof-lesson-ranks-loading">Loading records...</div>
+            <ManagementLoading title="Loading lessons" message="Fetching ranked courses and syllabuses." />
           ) : itemsError ? (
-            <div className="prof-lesson-ranks-loading is-error">Error: {itemsError}</div>
+            <LearnerLoadError
+              title="Could not load lessons"
+              message={itemsError}
+              onRetry={() => setItemsReloadKey((key) => key + 1)}
+            />
           ) : items.length === 0 ? (
             <div className="prof-management-empty-state" style={{ minHeight: 240, gridColumn: '1 / -1' }}>
               <div className="prof-management-empty-state-card">
@@ -291,9 +297,14 @@ const ManagementLessonsRanks = () => {
                     <p>Created on : {card.created_at ? new Date(card.created_at).toLocaleDateString() : 'N/A'}</p>
                   </div>
 
-                  <a className="prof-lesson-rank-open" href={`/academia/courses/${card.id}`} onClick={preventDefault} aria-label="Open lesson">
+                  <button
+                    type="button"
+                    className="prof-lesson-rank-open"
+                    onClick={() => navigate('/academia/professor/management')}
+                    aria-label="Open course in management"
+                  >
                     <img src="/assets/icons/ac-en.svg" alt="" />
-                  </a>
+                  </button>
                 </div>
               </article>
             ))
@@ -362,7 +373,6 @@ const ManagementLessonsRanks = () => {
         </section>
 
       </section>
-    </ProfessorLayout>
   );
 };
 

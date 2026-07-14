@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import ProfessorLayout from '../../../components/layouts/ProfessorLayout/ProfessorLayout';
+import LearnerLoadError from '../learner/LearnerLoadError';
+import ManagementLoading from './ManagementLoading';
 import { useCurrency, flagOptions } from '../../../hooks/useCurrency';
 import './management.css';
 import '../hoa/hoa-online-courses.css';
@@ -128,10 +129,13 @@ const Management = () => {
   // --- Detailed course states ---
   const [courseEnrollments, setCourseEnrollments] = useState([]);
   const [loadingEnrollments, setLoadingEnrollments] = useState(false);
+  const [enrollmentsError, setEnrollmentsError] = useState('');
   const [courseQuestions, setCourseQuestions] = useState([]);
   const [loadingQuestions, setLoadingQuestions] = useState(false);
+  const [questionsError, setQuestionsError] = useState('');
   const [questionReplies, setQuestionReplies] = useState({});
   const [loadingReplies, setLoadingReplies] = useState({});
+  const [repliesError, setRepliesError] = useState({});
   const [expandedReplies, setExpandedReplies] = useState({});
 
   // --- Syllabus Taxonomy Explorer State ---
@@ -148,6 +152,7 @@ const Management = () => {
   const [selectedMySyllabus, setSelectedMySyllabus] = useState(null);
   const [mySyllabusOutlines, setMySyllabusOutlines] = useState([]);
   const [loadingMySyllabusDetails, setLoadingMySyllabusDetails] = useState(false);
+  const [syllabusOutlinesError, setSyllabusOutlinesError] = useState('');
 
   // --- Toast Notifications ---
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
@@ -281,6 +286,9 @@ const Management = () => {
     setCourseQuestions([]);
     setQuestionReplies({});
     setExpandedReplies({});
+    setEnrollmentsError('');
+    setQuestionsError('');
+    setRepliesError({});
 
     // Fetch enrolled students
     fetchCourseEnrollments(course.id);
@@ -305,6 +313,7 @@ const Management = () => {
 
   const fetchCourseEnrollments = async (courseId) => {
     setLoadingEnrollments(true);
+    setEnrollmentsError('');
     try {
       const token = localStorage.getItem('token');
       const res = await fetch(`${API_BASE_URL}/api/courses/${courseId}/enrollments`, {
@@ -315,9 +324,13 @@ const Management = () => {
         setCourseEnrollments(result.data);
       } else if (Array.isArray(result)) {
         setCourseEnrollments(result);
+      } else {
+        setCourseEnrollments([]);
+        setEnrollmentsError(result.message || 'Could not load enrollments.');
       }
     } catch (err) {
-      console.error('Failed to load course enrollments:', err);
+      setCourseEnrollments([]);
+      setEnrollmentsError(err.message || 'Could not load enrollments.');
     } finally {
       setLoadingEnrollments(false);
     }
@@ -325,6 +338,7 @@ const Management = () => {
 
   const fetchCourseQuestions = async (courseId) => {
     setLoadingQuestions(true);
+    setQuestionsError('');
     try {
       const token = localStorage.getItem('token');
       const res = await fetch(`${API_BASE_URL}/api/qa/courses/${courseId}/questions?limit=100`, {
@@ -333,9 +347,13 @@ const Management = () => {
       const result = await res.json();
       if (result.success && result.data && Array.isArray(result.data.questions)) {
         setCourseQuestions(result.data.questions);
+      } else {
+        setCourseQuestions([]);
+        setQuestionsError(result.message || 'Could not load Q&A discussions.');
       }
     } catch (err) {
-      console.error('Failed to load course Q&A questions:', err);
+      setCourseQuestions([]);
+      setQuestionsError(err.message || 'Could not load Q&A discussions.');
     } finally {
       setLoadingQuestions(false);
     }
@@ -348,6 +366,7 @@ const Management = () => {
     }
 
     setLoadingReplies(prev => ({ ...prev, [questionId]: true }));
+    setRepliesError(prev => ({ ...prev, [questionId]: '' }));
     try {
       const token = localStorage.getItem('token');
       const res = await fetch(`${API_BASE_URL}/api/qa/questions/${questionId}`, {
@@ -356,12 +375,16 @@ const Management = () => {
       const result = await res.json();
       if (result.success && result.data && Array.isArray(result.data.answers)) {
         setQuestionReplies(prev => ({ ...prev, [questionId]: result.data.answers }));
+        setExpandedReplies(prev => ({ ...prev, [questionId]: true }));
+      } else {
+        setRepliesError(prev => ({ ...prev, [questionId]: result.message || 'Could not load replies.' }));
+        setExpandedReplies(prev => ({ ...prev, [questionId]: true }));
       }
     } catch (err) {
-      console.error('Failed to load answers for question:', err);
+      setRepliesError(prev => ({ ...prev, [questionId]: err.message || 'Could not load replies.' }));
+      setExpandedReplies(prev => ({ ...prev, [questionId]: true }));
     } finally {
       setLoadingReplies(prev => ({ ...prev, [questionId]: false }));
-      setExpandedReplies(prev => ({ ...prev, [questionId]: true }));
     }
   };
 
@@ -370,6 +393,7 @@ const Management = () => {
     setSelectedMySyllabus(syllabus);
     setLoadingMySyllabusDetails(true);
     setMySyllabusOutlines([]);
+    setSyllabusOutlinesError('');
 
     try {
       const token = localStorage.getItem('token');
@@ -379,9 +403,13 @@ const Management = () => {
       const result = await res.json();
       if (result.success && result.data && Array.isArray(result.data.outlines)) {
         setMySyllabusOutlines(result.data.outlines);
+      } else {
+        setMySyllabusOutlines([]);
+        setSyllabusOutlinesError(result.message || 'Could not load syllabus outlines.');
       }
     } catch (err) {
-      console.error('Failed to load syllabus outline list:', err);
+      setMySyllabusOutlines([]);
+      setSyllabusOutlinesError(err.message || 'Could not load syllabus outlines.');
     } finally {
       setLoadingMySyllabusDetails(false);
     }
@@ -696,7 +724,6 @@ const Management = () => {
   };
 
   return (
-    <ProfessorLayout currentPage="management">
       <div className="prof-management-page">
 
         {/* Global Stats Banner */}
@@ -868,10 +895,14 @@ const Management = () => {
             </div>
 
             {/* Redesigned Courses Cards Grid */}
-            {isLoading ? (
-              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '220px' }}>
-                <div className="spinner-border text-primary" role="status" style={{ width: '1.8rem', height: '1.8rem' }}></div>
-              </div>
+            {error && !isLoading ? (
+              <LearnerLoadError
+                title="Could not load courses"
+                message={error}
+                onRetry={error === 'Authentication missing. Please sign in.' ? undefined : loadDashboardData}
+              />
+            ) : isLoading ? (
+              <ManagementLoading title="Loading courses" message="Fetching your course list." />
             ) : filteredCourses.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '60px 20px', background: '#FCFCFC', borderRadius: '12px', border: '1.5px dashed #E4E6EF', margin: '20px 0' }}>
                 <h4 style={{ fontSize: '15px', fontWeight: 600, color: '#071437', marginBottom: '4px' }}>No courses found</h4>
@@ -1066,7 +1097,7 @@ const Management = () => {
                             <h3 className="oc-section-title" style={{ marginTop: '28px', borderBottom: '1px solid #EEF1F6', paddingBottom: '10px' }}>Curriculum Breakdown</h3>
                             <div className="oc-breakdown-list" style={{ marginTop: '16px' }}>
                               {loadingCourseDetails ? (
-                                <p style={{ fontSize: '13px', color: '#64748B' }}>Loading course curriculum outline...</p>
+                                <ManagementLoading compact title="Loading curriculum" message="Fetching course outline and lectures." />
                               ) : selectedCourse.weeks && selectedCourse.weeks.length > 0 ? (
                                 selectedCourse.weeks.map((week, wIdx) => (
                                   <div className="oc-bd-week-group" key={week.id || wIdx}>
@@ -1131,7 +1162,13 @@ const Management = () => {
                             </div>
 
                             {loadingEnrollments ? (
-                              <p style={{ color: '#64748B', fontSize: '13px', textAlign: 'center', padding: '20px' }}>Loading enrollments...</p>
+                              <ManagementLoading compact title="Loading enrollments" message="Fetching enrolled students." />
+                            ) : enrollmentsError ? (
+                              <LearnerLoadError
+                                title="Could not load enrollments"
+                                message={enrollmentsError}
+                                onRetry={() => selectedCourse?.id && fetchCourseEnrollments(selectedCourse.id)}
+                              />
                             ) : courseEnrollments.length === 0 ? (
                               <div style={{ textAlign: 'center', padding: '40px', background: '#F8FAFC', borderRadius: '8px', border: '1px dashed #CBD5E1', marginTop: '16px' }}>
                                 <p style={{ color: '#64748B', fontSize: '13px', margin: 0 }}>No student enrollments for this program.</p>
@@ -1186,7 +1223,13 @@ const Management = () => {
                             </div>
 
                             {loadingQuestions ? (
-                              <p style={{ color: '#64748B', fontSize: '13px', textAlign: 'center', padding: '20px' }}>Loading discussions...</p>
+                              <ManagementLoading compact title="Loading discussions" message="Fetching Q&A posts for this course." />
+                            ) : questionsError ? (
+                              <LearnerLoadError
+                                title="Could not load discussions"
+                                message={questionsError}
+                                onRetry={() => selectedCourse?.id && fetchCourseQuestions(selectedCourse.id)}
+                              />
                             ) : courseQuestions.length === 0 ? (
                               <div style={{ textAlign: 'center', padding: '40px', background: '#F8FAFC', borderRadius: '8px', border: '1px dashed #CBD5E1', marginTop: '16px' }}>
                                 <p style={{ color: '#64748B', fontSize: '13px', margin: 0 }}>No Q&A posts from learners found for this course.</p>
@@ -1252,7 +1295,13 @@ const Management = () => {
 
                                       {isExpanded && (
                                         <div style={{ marginTop: '12px', borderTop: '1px dashed #E4E6EF', paddingTop: '12px', display: 'flex', flexDirection: 'column', gap: '12px', background: '#F8FAFC', padding: '12px', borderRadius: '6px' }}>
-                                          {replies.length === 0 ? (
+                                          {repliesError[q.id] ? (
+                                            <LearnerLoadError
+                                              title="Could not load replies"
+                                              message={repliesError[q.id]}
+                                              onRetry={() => fetchQuestionReplies(q.id)}
+                                            />
+                                          ) : replies.length === 0 ? (
                                             <p style={{ margin: 0, fontSize: '11px', color: '#78829D', fontStyle: 'italic' }}>No replies to this post yet.</p>
                                           ) : (
                                             replies.map((reply) => {
@@ -1489,7 +1538,13 @@ const Management = () => {
                     <div className="syll-section-block" style={{ marginBottom: '24px' }}>
                       <h3 style={{ fontSize: '13px', fontWeight: 600, color: '#071437', marginBottom: '12px' }}>Syllabus Outlines / Papers ({mySyllabusOutlines.length})</h3>
                       {loadingMySyllabusDetails ? (
-                        <p style={{ fontSize: '12px', color: '#64748B' }}>Loading outline papers...</p>
+                        <ManagementLoading compact title="Loading outlines" message="Fetching syllabus papers." />
+                      ) : syllabusOutlinesError ? (
+                        <LearnerLoadError
+                          title="Could not load outlines"
+                          message={syllabusOutlinesError}
+                          onRetry={() => selectedMySyllabus && loadMySyllabusDetails(selectedMySyllabus)}
+                        />
                       ) : mySyllabusOutlines.length === 0 ? (
                         <p style={{ fontSize: '12px', color: '#64748B' }}>No outlines uploaded for this syllabus yet.</p>
                       ) : (
@@ -1523,7 +1578,19 @@ const Management = () => {
                 ) : (
                   // Grid List of own syllabuses
                   <div className="syll-papers-list" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '16px' }}>
-                    {syllabuses.length === 0 ? (
+                    {error && !isLoading ? (
+                      <div style={{ gridColumn: '1/-1' }}>
+                        <LearnerLoadError
+                          title="Could not load syllabuses"
+                          message={error}
+                          onRetry={error === 'Authentication missing. Please sign in.' ? undefined : loadDashboardData}
+                        />
+                      </div>
+                    ) : isLoading ? (
+                      <div style={{ gridColumn: '1/-1' }}>
+                        <ManagementLoading title="Loading syllabuses" message="Fetching your syllabus list." />
+                      </div>
+                    ) : syllabuses.length === 0 ? (
                       <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '40px', background: '#F8FAFC', borderRadius: '8px', border: '1px dashed #CBD5E1' }}>
                         <p style={{ color: '#64748B', fontSize: '13px', margin: 0 }}>You have not prepared any syllabuses yet.</p>
                       </div>
@@ -1585,7 +1652,6 @@ const Management = () => {
         )}
 
       </div>
-    </ProfessorLayout>
   );
 };
 

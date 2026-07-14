@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import ProfessorLayout from '../../../components/layouts/ProfessorLayout/ProfessorLayout';
+import LearnerLoadError from '../learner/LearnerLoadError';
+import ManagementLoading from './ManagementLoading';
 import './management-schedule.css';
 import hoagoto from '../../../assets/icons/hoagoto.svg';
 
@@ -136,6 +137,7 @@ const ManagementSchedule = () => {
   const [events, setEvents] = useState([]);
   const [eventsLoading, setEventsLoading] = useState(true);
   const [eventsError, setEventsError] = useState('');
+  const [eventsReloadKey, setEventsReloadKey] = useState(0);
 
   const loadEvents = async (signal) => {
     const token = localStorage.getItem('token');
@@ -155,7 +157,6 @@ const ManagementSchedule = () => {
     } catch (error) {
       if (error.name !== 'AbortError') {
         setEventsError(error.message || 'Failed to load schedule events');
-        showToast(error.message || 'Failed to load schedule events', 'error');
       }
     } finally {
       setEventsLoading(false);
@@ -166,7 +167,7 @@ const ManagementSchedule = () => {
     const controller = new AbortController();
     loadEvents(controller.signal);
     return () => controller.abort();
-  }, []);
+  }, [eventsReloadKey]);
 
   // --- Schedule Week Navigation State ---
   const [weekStartDate, setWeekStartDate] = useState(startOfWeek(new Date()));
@@ -899,7 +900,7 @@ const ManagementSchedule = () => {
   }, [events, weekStartDate]);
 
   return (
-    <ProfessorLayout currentPage="management">
+    <>
       <section className="prof-management-page" onClick={() => {
         if (isWeekMenuOpen) setIsWeekMenuOpen(false);
         if (openEventMenuId) setOpenEventMenuId(null);
@@ -986,10 +987,15 @@ const ManagementSchedule = () => {
           </header>
 
           <section className="prof-schedule-board" aria-label="Weekly calendar">
-            {eventsLoading && <div className="prof-schedule-board-state">Loading schedule...</div>}
-            {!eventsLoading && eventsError && <div className="prof-schedule-board-state is-error">Error: {eventsError}</div>}
-
-            {!eventsLoading && !eventsError && scheduleEvents.length === 0 && (
+            {eventsLoading ? (
+              <ManagementLoading title="Loading schedule" message="Fetching your upcoming events." />
+            ) : eventsError ? (
+              <LearnerLoadError
+                title="Could not load schedule"
+                message={eventsError}
+                onRetry={() => setEventsReloadKey((key) => key + 1)}
+              />
+            ) : scheduleEvents.length === 0 ? (
               <div className="prof-management-empty-state" style={{ margin: '18px 0' }}>
                 <div className="prof-management-empty-state-card">
                   <h3>No events this week</h3>
@@ -999,8 +1005,9 @@ const ManagementSchedule = () => {
                   </div>
                 </div>
               </div>
-            )}
+            ) : null}
 
+            {!eventsLoading && !eventsError && scheduleEvents.length > 0 && (
             <div
               className="prof-schedule-grid"
               style={{
@@ -1134,6 +1141,7 @@ const ManagementSchedule = () => {
                 );
               })}
             </div>
+            )}
           </section>
         </section>
       </section>
@@ -1524,7 +1532,7 @@ const ManagementSchedule = () => {
           </div>
         </div>
       )}
-    </ProfessorLayout>
+    </>
   );
 };
 

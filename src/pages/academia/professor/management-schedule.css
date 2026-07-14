@@ -195,17 +195,37 @@
   left: 0;
   z-index: 3;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 12px;
   min-height: 120px;
   margin: 14px;
+  padding: 24px 20px;
   border: 1px dashed #d9e1ef;
   border-radius: 12px;
   background: #fbfcff;
   font-family: inherit;
   font-size: 14px;
-  font-weight: 500;
-  color: #5b6a88;
+  font-weight: 600;
+  color: #071437;
+  text-align: center;
+}
+
+.prof-schedule-board-state::before {
+  content: "";
+  width: 28px;
+  height: 28px;
+  border: 2px solid #e8ddf0;
+  border-top-color: #450468;
+  border-radius: 50%;
+  animation: prof-management-spin 0.7s linear infinite;
+}
+
+@keyframes prof-management-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .prof-schedule-board-state.is-error {
