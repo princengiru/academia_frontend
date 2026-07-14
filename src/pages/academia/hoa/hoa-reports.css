@@ -7,6 +7,24 @@
   color: #071437;
 }
 
+.hoa-reports-notice {
+  margin-bottom: 20px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  border: 1px solid #dbe0ea;
+  background: #f8fafc;
+  color: #4b5675;
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.hoa-reports-muted {
+  color: #99a1b7;
+  font-size: 11px;
+  font-weight: 500;
+  margin-left: 6px;
+}
+
 /* Page Header */
 .hoa-reports-page .hoa-page-header {
   display: flex;
