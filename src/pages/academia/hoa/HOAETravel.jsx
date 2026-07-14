@@ -1,12 +1,10 @@
 import React from 'react';
 import HOALayout from '../../../components/layouts/HOALayout/HOALayout';
+import { HOAEmptyState } from './HOAPageState';
 import './hoa-e-travel.css';
 
-// Standard icons reused from previous pages
 import hoagoto from '../../../assets/icons/hoagoto.svg';
-import norecordfound from '../../../assets/imgs/norecordsfound.png';
 
-// Custom Inline SVGs
 const IconPlus = () => (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <line x1="12" y1="5" x2="12" y2="19"></line>
@@ -30,11 +28,11 @@ const HOAETravel = () => {
                 <div className="hoat-page-header">
                     <h1>e-Travel Records</h1>
                     <div className="hoat-header-actions">
-                        <button className="hoat-btn-outline">
-                            <IconPlus /> Add an e-Travel
+                        <button type="button" className="hoat-btn-outline hoat-btn--coming-soon" disabled title="Coming soon">
+                            <IconPlus /> Add an e-Travel <span className="hoat-coming-soon-label">Coming soon</span>
                         </button>
-                        <button className="hoat-btn-primary">
-                            Go to website <img src={hoagoto} alt="Go" />
+                        <button type="button" className="hoat-btn-primary hoat-btn--coming-soon" disabled title="Coming soon">
+                            Go to website <img src={hoagoto} alt="" /> <span className="hoat-coming-soon-label">Coming soon</span>
                         </button>
                     </div>
                 </div>
@@ -57,19 +55,16 @@ const HOAETravel = () => {
                         </thead>
                     </table>
 
-                    {/* Empty State Body */}
                     <div className="hoat-empty-state">
-                        {/* Replace this src with your actual empty state image */}
-                        <img 
-                            src={norecordfound} 
-                            alt="No records found" 
-                            className="hoat-empty-illustration"
+                        <HOAEmptyState
+                            inline
+                            title="No e-Travel records yet"
+                            message="Mission travel requests will appear here once the e-Travel module is enabled."
+                            actionLabel="Back to dashboard"
+                            actionTo="/academia/hoa"
                         />
-                        
-                        <p className="hoat-empty-text">Nothing here yet, Back to home</p>
-                        
-                        <button className="hoat-btn-outline-light">
-                            <IconPlus /> Request an e-Travel
+                        <button type="button" className="hoat-btn-outline-light hoat-btn--coming-soon" disabled title="Coming soon">
+                            <IconPlus /> Request an e-Travel <span className="hoat-coming-soon-label">Coming soon</span>
                         </button>
                     </div>
                 </div>

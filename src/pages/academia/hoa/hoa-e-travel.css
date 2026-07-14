@@ -61,6 +61,32 @@
     height: 40px;
 }
 
+.hoat-btn--coming-soon {
+    opacity: 0.65;
+    cursor: not-allowed;
+}
+
+.hoat-btn--coming-soon:disabled {
+    pointer-events: none;
+}
+
+.hoat-coming-soon-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    opacity: 0.85;
+}
+
+.hoat-btn-primary .hoat-coming-soon-label {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.hoat-btn-outline .hoat-coming-soon-label,
+.hoat-btn-outline-light .hoat-coming-soon-label {
+    color: #64748B;
+}
+
 /* Table Container */
 .hoat-table-container {
     background: #FFFFFF;
