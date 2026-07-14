@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { Link } from 'react-router-dom';
-import ProfessorLayout from '../../../components/layouts/ProfessorLayout/ProfessorLayout';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import LearnerLoadError from '../learner/LearnerLoadError';
+import { buildProjectProfileDraftFromUser } from '../learner/learnerProfileShared';
 import './projects.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
@@ -19,7 +20,8 @@ function formatCount(value) {
 }
 
 const Projects = () => {
-  const preventDefault = (e) => e.preventDefault();
+  const navigate = useNavigate();
+  const location = useLocation();
 
   // --- Profile State ---
   const [profile, setProfile] = useState({
@@ -31,6 +33,7 @@ const Projects = () => {
   const [projects, setProjects] = useState([]);
   const [projectsLoading, setProjectsLoading] = useState(true);
   const [projectsError, setProjectsError] = useState('');
+  const [projectsReloadKey, setProjectsReloadKey] = useState(0);
 
   // --- Upload Modal State ---
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
@@ -125,11 +128,18 @@ const Projects = () => {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [isUploadModalOpen]);
 
+  useEffect(() => {
+    if (!location.state?.openUpload) return;
+    setIsUploadModalOpen(true);
+    navigate(location.pathname, { replace: true, state: {} });
+  }, [location.pathname, location.state, navigate]);
+
   // --- Data Fetching ---
-  const loadProjects = async (token, mounted = true) => {
+  const loadProjects = useCallback(async (token, mounted = true) => {
+    setProjectsError('');
     try {
-      const res = await fetch(`${API_BASE_URL}/api/projects/my`, { 
-        headers: token ? { Authorization: `Bearer ${token}` } : {} 
+      const res = await fetch(`${API_BASE_URL}/api/projects/my`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
       });
       const body = await res.json();
       if (!res.ok) throw new Error(body?.message || 'Failed to load projects');
@@ -137,7 +147,7 @@ const Projects = () => {
     } catch (err) {
       if (mounted) setProjectsError(err.message || 'Failed to load projects');
     }
-  };
+  }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -151,14 +161,27 @@ const Projects = () => {
         const body = await res.json();
         if (res.ok && mounted) {
           const user = body?.data?.user || {};
-          setProfile(prev => ({ 
-            ...prev, 
-            name: user.name || prev.name, 
-            email: user.email || prev.email, 
-            avatar: user.avatar || prev.avatar, 
-            role: user.role || prev.role, 
-            bio: user.bio || prev.bio, 
-            location: user.location || prev.location 
+          const projectDraft = buildProjectProfileDraftFromUser(user);
+          const stats = [];
+
+          if (projectDraft.jobTitle) {
+            stats.push({ label: 'Role', value: projectDraft.jobTitle });
+          }
+          if (projectDraft.yearsExperience !== '' && projectDraft.yearsExperience != null) {
+            stats.push({ label: 'Experience', value: `${projectDraft.yearsExperience} yrs` });
+          }
+
+          setProfile((prev) => ({
+            ...prev,
+            name: user.name || prev.name,
+            email: user.email || prev.email,
+            avatar: user.avatar || prev.avatar,
+            role: user.role || prev.role,
+            bio: projectDraft.bio || prev.bio,
+            location: user.location || prev.location,
+            availability: projectDraft.availableToHire ? 'Available now' : 'Not available',
+            skills: projectDraft.skills,
+            stats,
           }));
         }
       } catch (err) {
@@ -175,7 +198,7 @@ const Projects = () => {
 
     initData();
     return () => { mounted = false; };
-  }, []);
+  }, [loadProjects, projectsReloadKey]);
 
   // --- Pagination Logic ---
   useEffect(() => {
@@ -185,6 +208,18 @@ const Projects = () => {
 
   const [likedProjects, setLikedProjects] = useState({});
   const [savedProjects, setSavedProjects] = useState({});
+
+  const projectStats = useMemo(() => {
+    const totalViews = projects.reduce((sum, item) => sum + Number(item.views_count || 0), 0);
+    const totalLikes = projects.reduce((sum, item) => sum + Number(item.likes_count || 0), 0);
+    return [
+      { label: 'Published', value: projects.length },
+      { label: 'Total views', value: formatCount(totalViews) },
+      { label: 'Total likes', value: formatCount(totalLikes) },
+    ];
+  }, [projects]);
+
+  const sidebarStats = profile.stats?.length ? profile.stats : projectStats;
 
   const visibleProjects = useMemo(() => {
     const start = (page - 1) * pageSize;
@@ -411,7 +446,7 @@ const Projects = () => {
   };
 
   return (
-    <ProfessorLayout currentPage="projects">
+    <>
       <section className="learners-projects-page">
         
         {/* --- Profile Strip --- */}
@@ -444,11 +479,19 @@ const Projects = () => {
               <span>Upload new project</span>
               <img src="/assets/icons/exit-down.svg" alt="" />
             </button>
-            <button type="button" className="learners-projects-secondary-btn" onClick={preventDefault}>
-              View Profile
+            <button type="button" className="learners-projects-secondary-btn" onClick={() => navigate('/academia/professor/settings')}>
+              View profile
             </button>
           </div>
         </section>
+
+        {projectsError && !projectsLoading ? (
+          <LearnerLoadError
+            title="Projects could not load"
+            message={projectsError}
+            onRetry={() => setProjectsReloadKey((key) => key + 1)}
+          />
+        ) : null}
 
         {/* --- Main Board --- */}
         <section className="learners-projects-board">
@@ -456,7 +499,7 @@ const Projects = () => {
             <div className="learners-projects-section-head">
               <div>
                 <h2>My Projects</h2>
-                <p>{projects.length} Courses Available to learn</p>
+                <p>{projects.length} project{projects.length === 1 ? '' : 's'} published</p>
               </div>
             </div>
 
@@ -467,7 +510,7 @@ const Projects = () => {
                 </div>
               ) : projectsError ? (
                 <div className="learners-projects-empty-state">
-                  <h3>Error</h3>
+                  <h3>Projects unavailable</h3>
                   <p>{projectsError}</p>
                 </div>
               ) : projects.length === 0 ? (
@@ -503,10 +546,10 @@ const Projects = () => {
                             <img src={likedProjects[card.id] ? '/assets/icons/ac-her2.svg' : '/assets/icons/heart.svg'} alt="Like" />
                             <span>{formatCount(card.likes_count || 0)}</span>
                           </button>
-                          <button type="button" onClick={preventDefault}>
+                          <span className="learners-project-card-action-btn learners-project-card-action-btn--readonly">
                             <img src="/assets/icons/ac-eye.svg" alt="Views" />
                             <span>{formatCount(card.views_count || 0)}</span>
-                          </button>
+                          </span>
                           <button 
                             type="button" 
                             onClick={(e) => handleSaveToggle(card.id, e)}
@@ -563,7 +606,7 @@ const Projects = () => {
             <div className="learners-projects-side-card learners-projects-side-card-profile">
               <div className="learners-projects-side-card-head">
                 <span className="learners-projects-availability">{profile.availability}</span>
-                <button type="button" className="learners-projects-edit-btn" onClick={preventDefault}>
+                <button type="button" className="learners-projects-edit-btn" onClick={() => navigate('/academia/professor/settings')}>
                   <img src="/assets/icons/b-pencil.svg" alt="" />
                   <span>Edit</span>
                 </button>
@@ -577,11 +620,11 @@ const Projects = () => {
 
               <div className="learners-projects-followers-row">
                 <img src="/assets/icons/user.svg" alt="" />
-                <span>123 Followers</span>
+                <span>{formatCount(projects.length)} project{projects.length === 1 ? '' : 's'}</span>
               </div>
 
-              <button type="button" className="learners-projects-email-btn" onClick={preventDefault}>
-                <span>Edit E-mail</span>
+              <button type="button" className="learners-projects-email-btn" onClick={() => navigate('/academia/professor/account')}>
+                <span>View account</span>
                 <img src="/assets/icons/le-em.svg" alt="" />
               </button>
             </div>
@@ -589,22 +632,22 @@ const Projects = () => {
             <div className="learners-projects-side-card">
               <div className="learners-projects-side-card-head">
                 <h3>About</h3>
-                <button type="button" className="learners-projects-icon-edit" onClick={preventDefault}>
+                <button type="button" className="learners-projects-icon-edit" onClick={() => navigate('/academia/professor/settings')}>
                   <img src="/assets/icons/b-pencil.svg" alt="" />
                 </button>
               </div>
               <p className="learners-projects-side-paragraph">
-                {profile.bio || "No biography provided yet."} <a href="#" onClick={preventDefault}>Read more</a>
+                {profile.bio || 'No biography provided yet.'}
               </p>
             </div>
 
-            {profile.stats && profile.stats.length > 0 && (
+            {sidebarStats.length > 0 && (
               <div className="learners-projects-side-card">
                 <div className="learners-projects-side-card-head">
                   <h3>Projects Stats</h3>
                 </div>
                 <div className="learners-projects-stats-list">
-                  {profile.stats.map((stat, index) => (
+                  {sidebarStats.map((stat, index) => (
                     <div key={index}>
                       <span>{stat.label}</span>
                       <strong>{stat.value}</strong>
@@ -618,7 +661,7 @@ const Projects = () => {
               <div className="learners-projects-side-card">
                 <div className="learners-projects-side-card-head">
                   <h3>Tools &amp; Skills</h3>
-                  <button type="button" className="learners-projects-icon-edit" onClick={preventDefault}>
+                  <button type="button" className="learners-projects-icon-edit" onClick={() => navigate('/academia/professor/settings')}>
                     <img src="/assets/icons/b-pencil.svg" alt="" />
                   </button>
                 </div>
@@ -727,7 +770,7 @@ const Projects = () => {
           </div>
         </div>
       </div>
-    </ProfessorLayout>
+    </>
   );
 };
 
