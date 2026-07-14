@@ -34,15 +34,13 @@ import trashIcon from '../../../assets/icons/trash.svg';
 import dotsVertical from '../../../assets/icons/dots-vertical.svg';
 import exitDown from '../../../assets/icons/exit-down.svg';
 import leEm from '../../../assets/icons/le-em.svg';
-<<<<<<< HEAD
+
 import acEye from '../../../assets/icons/ac-eye.svg';
 import LearnerRefresh from '../../../assets/icons/LearnerRefresh.svg';
 import LearnerUpload from '../../../assets/icons/LearnerUpload.svg';
 import LearnerWarning from '../../../assets/icons/LearnerWarning.svg';
 import LearnerSuccess from '../../../assets/icons/LearnerSuccess.svg';
-=======
 import AccountQuickLinks from './AccountQuickLinks';
->>>>>>> 6c043dd (settings page refining)
 import './projects.css';
 import './settings.css';
 
@@ -1041,7 +1039,7 @@ function LearnersSettings() {
                         value={userTypeLabel}
                       />
 
-<<<<<<< HEAD
+
                       <ReadOnlyField
                         label="Role"
                         tip={FIELD_TOOLTIPS.role}
@@ -1069,14 +1067,6 @@ function LearnersSettings() {
                             Message (Telephone)
                           </label>
                         </div>
-=======
-                      <div className="learners-settings-field">
-                        <div className="learners-settings-field-head">
-                          <label>Role</label>
-                          <FieldInfo tip={FIELD_TOOLTIPS.role} />
-                        </div>
-                        <div className="learners-settings-field-value learners-settings-field-control is-plain">{jobTitleLabel}</div>
->>>>>>> 6c043dd (settings page refining)
                       </div>
                     </div>
 
@@ -1085,7 +1075,7 @@ function LearnersSettings() {
                     </p>
                   </article>
 
-<<<<<<< HEAD
+
                   <article className="learners-settings-panel">
                     <div className="learners-settings-panel-head">
                       <h3>Security &amp; Privacy</h3>
@@ -1354,13 +1344,12 @@ function LearnersSettings() {
                       </div>
                     )}
                   </article>
-=======
+
                   <AccountQuickLinks
                     onOpenSection={openAccountSection}
                     notificationEmailEnabled={notificationEmailEnabled}
                     notificationMessageEnabled={notificationMessageEnabled}
                   />
->>>>>>> 6c043dd (settings page refining)
                 </section>
               )}
 
