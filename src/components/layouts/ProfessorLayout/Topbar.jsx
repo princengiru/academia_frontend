@@ -1,41 +1,48 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-const Topbar = ({ profileLoading, profileSummary }) => {
+const Topbar = ({ profileLoading, profileSummary, onOpenSidebar, isSidebarOpen = false }) => {
   const navigate = useNavigate();
-  const preventDefault = (e) => e.preventDefault();
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const handleSearchSubmit = (event) => {
+    event.preventDefault();
+    const query = searchQuery.trim();
+    if (!query) {
+      navigate('/academia/professor/assignments');
+      return;
+    }
+    navigate(`/academia/professor/assignments?search=${encodeURIComponent(query)}`);
+  };
 
   return (
     <header className="prof-topbar" role="banner">
       <div className="prof-topbar-left">
-        <form className="prof-topbar-search" role="search" onSubmit={preventDefault}>
-          <img src="/assets/icons/magnifier.svg" alt="Search" />
-          <input type="search" placeholder="Search videos..." aria-label="Search videos" />
+        <button
+          type="button"
+          className="prof-mobile-menu-btn"
+          onClick={onOpenSidebar}
+          aria-expanded={isSidebarOpen}
+          aria-controls="sidebar"
+          aria-label="Open menu"
+        >
+          <img src="/assets/icons/bars.svg" alt="" />
+        </button>
+        <form className="prof-topbar-search" role="search" onSubmit={handleSearchSubmit}>
+          <img src="/assets/icons/magnifier.svg" alt="" />
+          <input
+            type="search"
+            placeholder="Search assessments..."
+            aria-label="Search assessments"
+            value={searchQuery}
+            onChange={(event) => setSearchQuery(event.target.value)}
+          />
         </form>
       </div>
 
       <div className="prof-topbar-right">
-        <button type="button" className="prof-topbar-icon" aria-label="Apps" onClick={preventDefault}>
-          <img src="/assets/icons/header-grid.svg" alt="Apps" />
-        </button>
-
-        <div className="dropdown prof-lang">
-          <button className="dropdown-toggle prof-lang-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-            <img src="/assets/icons/rwanda.svg" alt="RW" />
-            <span>RW</span>
-            <span className="prof-lang-sep">|</span>
-            <span>EN</span>
-            <img src="/assets/icons/drop1.svg" alt="Open" />
-          </button>
-          <ul className="dropdown-menu prof-lang-menu">
-            <li><a className="dropdown-item" href="#" onClick={preventDefault}>RW</a></li>
-            <li><a className="dropdown-item" href="#" onClick={preventDefault}>EN</a></li>
-            <li><a className="dropdown-item" href="#" onClick={preventDefault}>FR</a></li>
-          </ul>
-        </div>
-
-        <div 
-          className="prof-user" 
+        <div
+          className="prof-user"
           onClick={() => navigate('/academia/professor/account')}
           style={{ cursor: 'pointer' }}
           role="button"

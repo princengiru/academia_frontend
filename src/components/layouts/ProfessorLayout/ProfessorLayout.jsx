@@ -1,20 +1,24 @@
-import React, { useEffect, useLayoutEffect, useState } from 'react';
-import { Navigate, useNavigate } from 'react-router-dom';
+import React, { useCallback, useEffect, useLayoutEffect, useState, useRef } from 'react';
+import { Navigate, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Topbar from './Topbar';
 import Footer from './Footer';
+import { resolveProfessorCurrentPage } from '../../../pages/academia/professor/professorBrand';
 
 // Importing the localized styles
-import './client-layout.css';
-import './learners-layout.css'; // Keep if you want fallback/shared utilities accessible
+import './learners-layout.css';
 import './prof-layout.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 const defaultProfileImage = '/assets/imgs/default-profile.png';
 
-const ProfessorLayout = ({ children, currentPage }) => {
+const ProfessorLayout = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const contentScrollRef = useRef(null);
   const token = localStorage.getItem('token');
+  const currentPage = resolveProfessorCurrentPage(location.pathname);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [profileLoading, setProfileLoading] = useState(true);
   const [profileSummary, setProfileSummary] = useState({
@@ -25,6 +29,7 @@ const ProfessorLayout = ({ children, currentPage }) => {
   });
   const [profileCompletion, setProfileCompletion] = useState(0);
   const [profileError, setProfileError] = useState('');
+  const [profileReloadKey, setProfileReloadKey] = useState(0);
   const [isSuspended, setIsSuspended] = useState(false);
   const [projectsCount, setProjectsCount] = useState(0);
 
@@ -32,6 +37,9 @@ const ProfessorLayout = ({ children, currentPage }) => {
     if (event && event.preventDefault) event.preventDefault();
     setShowLogoutModal(true);
   };
+
+  const openSidebar = () => setIsSidebarOpen(true);
+  const closeSidebar = useCallback(() => setIsSidebarOpen(false), []);
 
   const cancelLogout = () => setShowLogoutModal(false);
 
@@ -90,6 +98,32 @@ const ProfessorLayout = ({ children, currentPage }) => {
     };
   }, []);
 
+  useLayoutEffect(() => {
+    const content = contentScrollRef.current;
+    if (content) content.scrollTop = 0;
+  }, [location.pathname]);
+
+  useEffect(() => {
+    closeSidebar();
+  }, [location.pathname, closeSidebar]);
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth > 768) closeSidebar();
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [closeSidebar]);
+
+  useEffect(() => {
+    if (!isSidebarOpen) return undefined;
+    const handleEscape = (event) => {
+      if (event.key === 'Escape') closeSidebar();
+    };
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [isSidebarOpen, closeSidebar]);
+
   useEffect(() => {
     if (!token) {
       setProfileLoading(false);
@@ -99,6 +133,9 @@ const ProfessorLayout = ({ children, currentPage }) => {
     let mounted = true;
 
     const loadProfile = async () => {
+      setProfileLoading(true);
+      setProfileError('');
+
       try {
         const response = await fetch(`${API_BASE_URL}/api/profile`, {
           headers: {
@@ -124,6 +161,13 @@ const ProfessorLayout = ({ children, currentPage }) => {
         if (!mounted) return;
 
         const user = data?.data?.user || {};
+
+        if (user.is_active === false || user.status === 'suspended' || user.deactivated === true) {
+          setIsSuspended(true);
+          setProfileLoading(false);
+          return;
+        }
+
         setProfileSummary({
           name: user.name || user.email || 'Professor',
           email: user.email || '',
@@ -138,7 +182,6 @@ const ProfessorLayout = ({ children, currentPage }) => {
         }
       }
 
-      // Load Projects count
       try {
         const response = await fetch(`${API_BASE_URL}/api/projects/my`, {
           headers: {
@@ -167,7 +210,7 @@ const ProfessorLayout = ({ children, currentPage }) => {
       mounted = false;
       clearInterval(interval);
     };
-  }, []);
+  }, [navigate, profileReloadKey, token]);
 
   useEffect(() => {
     // Dev helper: rewrite any <img src="/assets/..."> to Vite-served /src/assets/ so images load
@@ -220,23 +263,41 @@ const ProfessorLayout = ({ children, currentPage }) => {
   }
 
   return (
-    <div className="dashboard">
+    <div className="dashboard" data-role="prof">
+      {isSidebarOpen && (
+        <button
+          type="button"
+          className="prof-sidebar-backdrop"
+          onClick={closeSidebar}
+          aria-label="Close menu"
+        />
+      )}
+
       <Sidebar
         currentPage={currentPage}
         profileLoading={profileLoading}
         profileSummary={profileSummary}
         profileCompletion={profileCompletion}
         profileError={profileError}
+        onRetryProfile={() => setProfileReloadKey((key) => key + 1)}
         onLogout={openLogoutModal}
         projectsCount={projectsCount}
+        isOpen={isSidebarOpen}
+        onClose={closeSidebar}
       />
       
       <section className="right-container">
-        <Topbar profileLoading={profileLoading} profileSummary={profileSummary} />
+        <Topbar
+          profileLoading={profileLoading}
+          profileSummary={profileSummary}
+          onOpenSidebar={openSidebar}
+          isSidebarOpen={isSidebarOpen}
+        />
         
-        <div className="prof-content">
-          {/* Inject the specific page content here */}
-          {children}
+        <div className="prof-content" ref={contentScrollRef}>
+          <div className="prof-content-body">
+            <Outlet />
+          </div>
           <Footer />
         </div>
 
