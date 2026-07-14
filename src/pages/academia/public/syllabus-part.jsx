@@ -9,16 +9,21 @@ import acDlIcon from '../../../assets/icons/ac-dl.svg';
 import acSmsIcon from '../../../assets/icons/ac-sms.svg';
 import acSendIcon from '../../../assets/icons/ac-send.svg';
 import './syllabus-part.css';
+import { PublicLoadError, PublicLoading } from './PublicPageState';
+import { PublicNewsletterNotice, usePublicNewsletter } from './usePublicNewsletter.jsx';
+import { usePublicPageTitle } from './usePublicPageTitle.jsx';
 
 function AcademiaSyllabusPart() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const preventDefault = (e) => e.preventDefault();
 
   const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
   const [categoryTree, setCategoryTree] = useState([]);
   const [dataLoading, setDataLoading] = useState(true);
+  const [treeError, setTreeError] = useState('');
+  const [retryKey, setRetryKey] = useState(0);
+  const { email: newsletterEmail, setEmail: setNewsletterEmail, notice: newsletterNotice, handleSubmit: handleNewsletterSubmit } = usePublicNewsletter();
   const [topicPage, setTopicPage] = useState(1);
   const topicsPerPage = 4;
 
@@ -34,14 +39,21 @@ function AcademiaSyllabusPart() {
     const loadTree = async () => {
       try {
         setDataLoading(true);
+        setTreeError('');
         const res = await fetch(`${API_BASE_URL}/api/categories/tree`);
         const body = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          throw new Error(body?.message || 'Failed to load syllabus topics.');
+        }
         if (mounted) {
           const tree = Array.isArray(body?.data) ? body.data : [];
           setCategoryTree(tree);
         }
       } catch (err) {
-        console.error("Failed to load syllabus categories tree:", err);
+        if (mounted) {
+          setCategoryTree([]);
+          setTreeError(err.message || 'Failed to load syllabus topics.');
+        }
       } finally {
         if (mounted) setDataLoading(false);
       }
@@ -50,7 +62,7 @@ function AcademiaSyllabusPart() {
     return () => {
       mounted = false;
     };
-  }, [API_BASE_URL]);
+  }, [API_BASE_URL, retryKey]);
 
   // Reset page when topic changes
   useEffect(() => {
@@ -85,9 +97,11 @@ function AcademiaSyllabusPart() {
 
   // --- Find Active Topic ---
   const activeTopic = useMemo(() => {
-    if (!topicId) return allTopics[0] || null;
-    return allTopics.find(t => String(t.id) === String(topicId)) || allTopics[0] || null;
+    if (!topicId) return null;
+    return allTopics.find((t) => String(t.id) === String(topicId)) || null;
   }, [allTopics, topicId]);
+
+  usePublicPageTitle(activeTopic?.name || 'Syllabus topic');
 
   // --- Derive Syllabus Outlines (Papers) ---
   const syllabusOutlines = useMemo(() => {
@@ -99,7 +113,6 @@ function AcademiaSyllabusPart() {
     return syllabusOutlines.map((outline, index) => ({
       id: outline.id || index,
       title: outline.title || `Outline Paper ${index + 1}`,
-      author: 'Academia Team',
       description: outline.abstract || outline.description || 'Detailed syllabus outline and course papers describing the curriculum structure.',
       file_url: outline.file_url || '',
       syllabus_id: outline.syllabus_id,
@@ -132,7 +145,8 @@ function AcademiaSyllabusPart() {
 
   // --- View/Download Handlers ---
   const handleViewPaper = (outlineId, syllabusId) => {
-    navigate(`/academia/read-contents?syllabusId=${syllabusId}&topicId=${outlineId}`);
+    const categoryTopicId = topicId ? `&categoryTopicId=${topicId}` : '';
+    navigate(`/academia/read-contents?syllabusId=${syllabusId}&topicId=${outlineId}${categoryTopicId}`);
   };
 
   const handleRelatedTopic = (id) => {
@@ -146,6 +160,44 @@ function AcademiaSyllabusPart() {
     }
     navigate('/academia/syllabuses');
   };
+
+  if (dataLoading) {
+    return <PublicLoading message="Loading syllabus topic…" />;
+  }
+
+  if (treeError) {
+    return (
+      <PublicLoadError
+        title="Syllabus unavailable"
+        message={treeError}
+        onRetry={() => setRetryKey((key) => key + 1)}
+        backTo="/academia/syllabuses"
+        backLabel="Browse syllabuses"
+      />
+    );
+  }
+
+  if (!topicId) {
+    return (
+      <PublicLoadError
+        title="Topic not selected"
+        message="No topic was specified. Open a topic from the syllabuses page."
+        backTo="/academia/syllabuses"
+        backLabel="Browse syllabuses"
+      />
+    );
+  }
+
+  if (!activeTopic) {
+    return (
+      <PublicLoadError
+        title="Topic not found"
+        message="This syllabus topic could not be found."
+        backTo="/academia/syllabuses"
+        backLabel="Browse syllabuses"
+      />
+    );
+  }
 
   return (
     <div className="syllabus-part-page">
@@ -181,7 +233,7 @@ function AcademiaSyllabusPart() {
             <ul className="dropdown-menu">
               {syllabusTypes.map((type, idx) => (
                 <li key={idx} className={`dropdown-item ${idx === 0 ? 'active' : ''}`}>
-                  <a href="#/">{type}</a>
+                  <a href={`/academia/syllabuses?type=${type.toLowerCase().replace(/\s+/g, '-')}`}>{type}</a>
                 </li>
               ))}
             </ul>
@@ -206,7 +258,7 @@ function AcademiaSyllabusPart() {
                     <ul className="dropdown-menu">
                       {sortOptions.map((option, idx) => (
                         <li key={idx} className={`dropdown-item ${idx === 0 ? 'active' : ''}`}>
-                          <a href="#/">{option}</a>
+                          <a href={`/academia/syllabuses?sort=${option.toLowerCase().replace(/\s+/g, '-')}`}>{option}</a>
                         </li>
                       ))}
                     </ul>
@@ -446,17 +498,24 @@ function AcademiaSyllabusPart() {
       {/* Newsletter Section */}
       <section className="newsletter-sec">
         <div className="newsletter-sec-l">
-          <h3>Newsletter - Stay tune and get the latest update</h3>
-          <p>Far far away, behind the word mountains</p>
+          <h3>Newsletter</h3>
+          <p>Product updates will be announced here when newsletter subscriptions open.</p>
         </div>
         <div className="newsletter-sec-r">
-          <form onSubmit={preventDefault}>
+          <form onSubmit={handleNewsletterSubmit}>
             <img src={acSmsIcon} alt="Message" className="ac-sms" />
-            <input type="email" placeholder="Enter email address" />
+            <input
+              type="email"
+              placeholder="Enter email address"
+              value={newsletterEmail}
+              onChange={(e) => setNewsletterEmail(e.target.value)}
+              required
+            />
             <button type="submit">
               <img src={acSendIcon} alt="Submit" />
             </button>
           </form>
+          <PublicNewsletterNotice message={newsletterNotice} />
         </div>
       </section>
     </div>

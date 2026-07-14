@@ -438,8 +438,8 @@
 
 .syllabus-part-page .filters-grid-b-h {
     display: flex;
-    align-items: center;
-    gap: 25px;
+    align-items: flex-start;
+    gap: 14px;
     padding: 20px 0;
     border-bottom: 0.5px solid #DBDFE9;
 }
@@ -447,29 +447,30 @@
 .syllabus-part-page .filters-grid-b-h button {
     background-color: transparent;
     border: none;
+    flex-shrink: 0;
+    margin-top: 1px;
 }
 
 .syllabus-part-page .filters-grid-b-h div {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    gap: 10px;
-    font-family: Inter;
+    gap: 6px 8px;
+    min-width: 0;
+    font-family: Inter, sans-serif;
     font-weight: 400;
-    font-style: Regular;
-    font-size: 11px;
-    line-height: 14px;
-    letter-spacing: 0%;
+    font-size: 12px;
+    line-height: 1.45;
     color: #4B5675;
 }
 
 .syllabus-part-page .filters-grid-b-h div p {
-    font-family: Inter;
+    font-family: Inter, sans-serif;
     font-weight: 500;
-    font-style: Medium;
-    font-size: 11px;
-    line-height: 16px;
-    letter-spacing: 0%;
+    font-size: 12px;
+    line-height: 1.45;
     color: #071437;
+    margin: 0;
 }
 
 .syllabus-part-page .filters-grid-b-sel {
@@ -479,38 +480,42 @@
 
 .syllabus-part-page .filters-grid-b-sel-h {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: space-between;
-    gap: 20px;
+    gap: 12px 20px;
+    flex-wrap: wrap;
 }
 
 .syllabus-part-page .filters-grid-b-sel-h h1 {
-    font-family: Inter;
+    font-family: Inter, sans-serif;
     font-weight: 600;
-    font-style: Semi Bold;
-    font-size: 24px;
-    line-height: 16px;
-    letter-spacing: 0%;
+    font-size: clamp(20px, 5vw, 24px);
+    line-height: 1.3;
+    letter-spacing: -0.01em;
     color: #071437;
+    margin: 0;
+    min-width: 0;
+    flex: 1 1 12rem;
 }
 
 .syllabus-part-page .filters-grid-b-sel-h div {
     display: flex;
     align-items: center;
-    gap: 20px;
+    gap: 12px;
+    flex-shrink: 0;
 }
 
 .syllabus-part-page .filters-grid-b-sel-h p {
-    font-family: Inter;
-    font-weight: 500;
-    font-style: Medium;
-    font-size: 11px;
-    line-height: 14px;
-    letter-spacing: 0%;
-    color: #64748B;
+    font-family: Inter, sans-serif;
+    font-weight: 600;
+    font-size: 12px;
+    line-height: 1.35;
+    color: #450468;
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
+    margin: 0;
+    white-space: nowrap;
 }
 
 .syllabus-part-page .filters-grid-b-sel-h button {
@@ -588,13 +593,13 @@
 
 .syllabus-part-page .mcgl-h h2,
 .syllabus-part-page .mcgr-h h2 {
-    font-family: Inter;
+    font-family: Inter, sans-serif;
     font-weight: 600;
-    font-style: Semi Bold;
     font-size: 20px;
-    line-height: 16px;
-    letter-spacing: 0%;
+    line-height: 1.3;
+    letter-spacing: -0.01em;
     color: #071437;
+    margin: 0;
 }
 
 .syllabus-part-page .mcgl-b,
@@ -939,13 +944,42 @@
     }
 
     .syllabus-part-page .filters-grid-b-h {
-        gap: 20px;
-        padding: 10px 0;
+        gap: 12px;
+        padding: 14px 0;
+        align-items: flex-start;
+    }
+
+    .syllabus-part-page .filters-grid-b-h div {
+        font-size: 11px;
+        line-height: 1.5;
     }
 
     .syllabus-part-page .filters-grid-b-sel {
         border-bottom: 0.5px solid #DBDFE9;
-        padding: 0px 0 20px;
+        padding: 16px 0 20px;
+    }
+
+    .syllabus-part-page .filters-grid-b-sel-h {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .syllabus-part-page .filters-grid-b-sel-h h1 {
+        flex: none;
+        width: 100%;
+        font-size: 22px;
+        line-height: 1.3;
+    }
+
+    .syllabus-part-page .filters-grid-b-sel-b {
+        padding-top: 12px;
+    }
+
+    .syllabus-part-page .mcgl-h h2,
+    .syllabus-part-page .mcgr-h h2 {
+        font-size: 18px;
+        line-height: 1.3;
     }
 
     .syllabus-part-page .main-content-grid {

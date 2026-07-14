@@ -16,6 +16,7 @@ import acNextIcon from '../../../assets/icons/ac-next.svg';
 import storyImage from '../../../assets/imgs/ac-str.jpg';
 
 import './syllabuses.css';
+import { usePublicPageTitle } from './usePublicPageTitle.jsx';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
@@ -49,6 +50,7 @@ const normalizeStory = (story) => {
 };
 
 function AcademiaSyllabuses() {
+  usePublicPageTitle('Syllabuses');
   const navigate = useNavigate();
   const ssSwiperRef = useRef(null);
 
@@ -582,6 +584,9 @@ function AcademiaSyllabuses() {
                   <div className="fgbl-item-l" style={{ width: '100%' }}>
                     <h4>No topics found</h4>
                     <p>Try clearing your filters or broadening your search keywords.</p>
+                    <button type="button" onClick={clearFilters} style={{ marginTop: '12px', padding: '8px 14px', borderRadius: '6px', border: '1px solid #45046833', background: '#45046812', color: '#450468', fontWeight: 600, cursor: 'pointer' }}>
+                      Clear filters
+                    </button>
                   </div>
                 </div>
               )}
