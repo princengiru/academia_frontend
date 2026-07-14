@@ -398,6 +398,61 @@
     object-fit: contain;
 }
 
+.mcgl-comp-t svg {
+    width: 20px;
+    height: 20px;
+    color: #450468;
+    flex-shrink: 0;
+}
+
+.academia-read-project-page .mcgl-comp.is-active .mcgl-comp-t svg {
+    color: #450468;
+}
+
+.academia-read-project-page .course-part-h button,
+.academia-read-project-page .more-from-follow,
+.academia-read-project-page .more-from-profile-btn,
+.academia-read-project-page .mcnd-l-b-h button,
+.academia-read-project-page .filters-grid-b-h > button {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.academia-read-project-page .course-part-h button svg,
+.academia-read-project-page .more-from-follow svg,
+.academia-read-project-page .more-from-profile-btn svg,
+.academia-read-project-page .mcnd-l-b-h button svg,
+.academia-read-project-page .author-stats svg,
+.academia-read-project-page .filters-grid-b-h > button svg {
+    color: currentColor;
+    flex-shrink: 0;
+}
+
+.academia-read-project-page .course-part-h button.is-active,
+.academia-read-project-page .course-part-h button.cp-btn.is-active {
+    color: #450468;
+}
+
+.academia-read-project-page .mcgl-comp-t.fir-st button svg {
+    width: 14px;
+    height: 14px;
+    color: #450468;
+}
+
+.academia-read-project-page .newsletter-sec-r form .ac-sms {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #98A2B3;
+    pointer-events: none;
+}
+
+.academia-read-project-page .newsletter-sec-r button svg {
+    color: #fff;
+}
+
 
 .mcgl-comp-t.fir-st img{
     width: 100%;
@@ -452,6 +507,21 @@
     letter-spacing: 0%;
     text-align: center;
     color: #4B5675;
+}
+
+.academia-read-project-page .mcgl-comp.is-active label {
+    color: #450468;
+    font-weight: 600;
+}
+
+.academia-read-project-page .mcgl-comp.is-active .mcgl-comp-t div {
+    box-shadow: inset 0 0 0 2px #450468;
+}
+
+.academia-read-project-page .read-project-action-notice {
+    margin: 10px 0 0;
+    color: #b42318;
+    font-size: 13px;
 }
 
 .main-content-grid-r {
@@ -586,11 +656,11 @@
     color: #4B5675;
 }
 
-.academia-read-journal-page .more-from-section {
+.academia-read-project-page .more-from-section {
     gap: 24px;
 }
 
-.academia-read-journal-page .more-from {
+.academia-read-project-page .more-from {
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
@@ -598,18 +668,18 @@
     margin-bottom: 4px;
 }
 
-.academia-read-journal-page .more-from-intro {
+.academia-read-project-page .more-from-intro {
     display: flex;
     flex-direction: column;
     gap: 18px;
     min-width: 0;
 }
 
-.academia-read-journal-page .more-from-actions {
+.academia-read-project-page .more-from-actions {
     flex-shrink: 0;
 }
 
-.academia-read-journal-page .more-from h3 {
+.academia-read-project-page .more-from h3 {
     font-family: Inter;
     font-weight: 600;
     font-size: 24px;
@@ -618,17 +688,17 @@
     margin: 0;
 }
 
-.academia-read-journal-page .more-from h3 span {
+.academia-read-project-page .more-from h3 span {
     color: #450468;
 }
 
-.academia-read-journal-page .more-from .more-from-p {
+.academia-read-project-page .more-from .more-from-p {
     display: flex;
     align-items: center;
     gap: 14px;
 }
 
-.academia-read-journal-page .more-from-img {
+.academia-read-project-page .more-from-img {
     width: 52px;
     min-width: 52px;
     height: 52px;
@@ -637,13 +707,13 @@
     border: 1px solid #E2E8F0;
 }
 
-.academia-read-journal-page .more-from-img img {
+.academia-read-project-page .more-from-img img {
     width: 100%;
     height: 100%;
     object-fit: cover;
 }
 
-.academia-read-journal-page .more-from .more-from-text {
+.academia-read-project-page .more-from .more-from-text {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
@@ -651,7 +721,7 @@
     min-width: 0;
 }
 
-.academia-read-journal-page .more-from-text h6 {
+.academia-read-project-page .more-from-text h6 {
     font-family: Inter;
     font-weight: 600;
     font-size: 16px;
@@ -660,7 +730,7 @@
     margin: 0;
 }
 
-.academia-read-journal-page .more-from .more-from-text p {
+.academia-read-project-page .more-from .more-from-text p {
     font-family: Inter;
     font-weight: 400;
     font-size: 13px;
@@ -669,7 +739,7 @@
     margin: 0;
 }
 
-.academia-read-journal-page .more-from-follow {
+.academia-read-project-page .more-from-follow {
     background: transparent;
     border: none;
     padding: 0;
@@ -682,12 +752,12 @@
     cursor: pointer;
 }
 
-.academia-read-journal-page .more-from-follow:disabled {
+.academia-read-project-page .more-from-follow:disabled {
     opacity: 0.6;
     cursor: not-allowed;
 }
 
-.academia-read-journal-page .more-from-profile-btn {
+.academia-read-project-page .more-from-profile-btn {
     font-family: Inter;
     font-weight: 500;
     font-size: 12px;
@@ -704,13 +774,13 @@
     white-space: nowrap;
 }
 
-.academia-read-journal-page .more-from-profile-btn img {
+.academia-read-project-page .more-from-profile-btn img {
     width: 14px;
     height: 14px;
     filter: brightness(0) invert(1);
 }
 
-.academia-read-journal-page .more-from-grid {
+.academia-read-project-page .more-from-grid {
     width: 100%;
     min-width: 0;
     overflow: hidden;
@@ -718,16 +788,16 @@
     padding: 0 48px;
 }
 
-.academia-read-journal-page .more-from-grid .swiper-slide {
+.academia-read-project-page .more-from-grid .swiper-slide {
     height: auto;
 }
 
-.academia-read-journal-page .more-from-grid .journal {
+.academia-read-project-page .more-from-grid .journal {
     cursor: pointer;
     height: 100%;
 }
 
-.academia-read-journal-page .more-from-empty {
+.academia-read-project-page .more-from-empty {
     width: 100%;
     min-height: 220px;
     border: 1px dashed #DBDFE9;
@@ -742,7 +812,7 @@
     background: #FCFCFC;
 }
 
-.academia-read-journal-page .more-from-empty h4 {
+.academia-read-project-page .more-from-empty h4 {
     font-family: Inter;
     font-weight: 600;
     font-size: 16px;
@@ -751,7 +821,7 @@
     margin: 0;
 }
 
-.academia-read-journal-page .more-from-empty p {
+.academia-read-project-page .more-from-empty p {
     font-family: Inter;
     font-weight: 400;
     font-size: 13px;
@@ -761,7 +831,7 @@
     max-width: 420px;
 }
 
-.academia-read-journal-page .more-from-empty button {
+.academia-read-project-page .more-from-empty button {
     margin-top: 6px;
     padding: 9px 14px;
     border-radius: 6px;
@@ -774,7 +844,7 @@
     cursor: pointer;
 }
 
-.academia-read-journal-page .more-from-grid .js-btn {
+.academia-read-project-page .more-from-grid .js-btn {
     color: #450468;
     border: 1px solid #45046833;
     background: #FFFFFF;
@@ -791,44 +861,44 @@
     margin-top: -20px;
 }
 
-.academia-read-journal-page .more-from-grid .swiper-button-prev {
+.academia-read-project-page .more-from-grid .swiper-button-prev {
     left: 0;
 }
 
-.academia-read-journal-page .more-from-grid .swiper-button-next {
+.academia-read-project-page .more-from-grid .swiper-button-next {
     right: 0;
 }
 
-.academia-read-journal-page .more-from-grid .js-btn::after {
+.academia-read-project-page .more-from-grid .js-btn::after {
     font-size: 14px;
     font-weight: 700;
 }
 
-.academia-read-journal-page .more-from-grid .js-btn svg {
+.academia-read-project-page .more-from-grid .js-btn svg {
     width: 15px !important;
     height: 15px !important;
 }
 
-.academia-read-journal-page .more-from-grid .js-btn svg path {
+.academia-read-project-page .more-from-grid .js-btn svg path {
     stroke: #450468 !important;
     fill: #450468 !important;
 }
 
 @media (max-width: 768px) {
-    .academia-read-journal-page .more-from {
+    .academia-read-project-page .more-from {
         flex-direction: column;
         align-items: stretch;
     }
 
-    .academia-read-journal-page .more-from-actions {
+    .academia-read-project-page .more-from-actions {
         align-self: flex-start;
     }
 
-    .academia-read-journal-page .more-from-grid {
+    .academia-read-project-page .more-from-grid {
         padding: 0;
     }
 
-    .academia-read-journal-page .more-from-grid .js-btn {
+    .academia-read-project-page .more-from-grid .js-btn {
         display: none;
     }
 }
