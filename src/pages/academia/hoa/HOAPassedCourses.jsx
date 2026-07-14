@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import HOALayout from '../../../components/layouts/HOALayout/HOALayout';
+import { HOALoadError, HOALoading, HOATableEmptyRow } from './HOAPageState';
+import { HOAToast, useHOAToast } from './useHOAToast';
 import './hoa-passed-courses.css';
 import './hoa-assignments.css';
 import './hoa-reports.css';
@@ -26,12 +28,15 @@ import hoadownload3 from '../../../assets/icons/hoadownload3.svg';
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 const HOAPassedCourses = () => {
-    const navigate = useNavigate();
+  const navigate = useNavigate();
+  const { toast, showToast, hideToast } = useHOAToast();
 
     // --- Data State ---
     const [statsData, setStatsData] = useState(null);
     const [passedCoursesData, setPassedCoursesData] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [fetchError, setFetchError] = useState('');
+    const [retryKey, setRetryKey] = useState(0);
 
     // --- UI/Filter State ---
     const [selectedRows, setSelectedRows] = useState([]);
@@ -73,6 +78,7 @@ const HOAPassedCourses = () => {
     // --- Data Fetching ---
     const fetchPassedCoursesData = async (mounted = true) => {
         setIsLoading(true);
+        setFetchError('');
         try {
             const token = localStorage.getItem('token');
             if (!token) {
@@ -144,7 +150,8 @@ const HOAPassedCourses = () => {
                 
                 setPassedCoursesData(parsedList);
             } else {
-                setPassedCoursesData([]);
+                const errorBody = await assignmentsRes?.json().catch(() => ({}));
+                throw new Error(errorBody?.message || errorBody?.error?.message || 'Failed to load passed courses.');
             }
 
         } catch (error) {
@@ -152,6 +159,7 @@ const HOAPassedCourses = () => {
             if (mounted) {
                 setStatsData({});
                 setPassedCoursesData([]);
+                setFetchError(error.message || 'Failed to load passed courses.');
             }
         } finally {
             if (mounted) setIsLoading(false);
@@ -162,7 +170,7 @@ const HOAPassedCourses = () => {
         let mounted = true;
         fetchPassedCoursesData(mounted);
         return () => { mounted = false; };
-    }, []);
+    }, [retryKey]);
 
     // --- Memoized Sorting & Filtering ---
     const processedData = useMemo(() => {
@@ -243,18 +251,25 @@ const HOAPassedCourses = () => {
         }
     };
 
-    const handleAction = async (id, actionType) => {
-        console.log(`Triggering ${actionType} for passed course record ID: ${id}`);
-        // TODO: Wire this to appropriate API endpoints
-        if (actionType === 'Remove Record') {
-            setPassedCoursesData(prev => prev.filter(item => item.id !== id));
-        }
+    const handleAction = (id, actionType) => {
         setActiveActionMenu(null);
+
+        if (actionType === 'View Details') {
+            showToast('Opening learners — use the learner profile for full course history.', 'success');
+            navigate('/academia/hoa/learners');
+            return;
+        }
+
+        const unavailableMessages = {
+            'Contact Student': 'Contacting students from HOA is not available yet.',
+            'Remove Record': 'Removing records from this list does not change backend data until the admin API is connected.',
+        };
+
+        showToast(unavailableMessages[actionType] || 'This action is not available yet.', 'error');
     };
 
-    const handleDownloadCertificate = (id) => {
-        console.log(`Triggering Certificate Download for ID: ${id}`);
-        // TODO: Implement actual PDF download logic via API
+    const handleDownloadCertificate = () => {
+        showToast('Certificate download is not available from HOA yet. Learners can download from their account.', 'error');
     };
 
     return (
@@ -374,6 +389,16 @@ const HOAPassedCourses = () => {
                 </div>
 
                 {/* Table */}
+                {isLoading && passedCoursesData.length === 0 ? (
+                    <HOALoading message="Loading passed courses…" />
+                ) : fetchError ? (
+                    <HOALoadError
+                        title="Could not load passed courses"
+                        message={fetchError}
+                        onRetry={() => setRetryKey((key) => key + 1)}
+                    />
+                ) : (
+                <>
                 <div className="rep-table-wrapper">
                     <table className="rep-table">
                         <thead>
@@ -464,11 +489,11 @@ const HOAPassedCourses = () => {
                                 </tr>
                             ))}
                             {paginatedData.length === 0 && !isLoading && (
-                                <tr>
-                                    <td colSpan="9" style={{ textAlign: 'center', padding: '30px', color: '#64748B' }}>
-                                        No passed courses found.
-                                    </td>
-                                </tr>
+                                <HOATableEmptyRow
+                                    colSpan={9}
+                                    title="No passed courses found"
+                                    message={searchQuery || selectedFilter !== 'All Status' ? 'Try adjusting your search or filters.' : 'Students who pass assessments will appear here.'}
+                                />
                             )}
                         </tbody>
                     </table>
@@ -525,8 +550,11 @@ const HOAPassedCourses = () => {
                         </button>
                     </div>
                 </div>
+                </>
+                )}
 
             </div>
+            <HOAToast toast={toast} onDismiss={hideToast} />
         </HOALayout>
     );
 };

@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import HOALayout from '../../../components/layouts/HOALayout/HOALayout';
+import { HOALoadError, HOALoading, HOATableEmptyRow } from './HOAPageState';
+import { HOAToast, useHOAToast } from './useHOAToast';
 import './hoa-retaken-courses.css';
 import './hoa-assignments.css';
 import './hoa-reports.css';
@@ -26,11 +28,14 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 const HOARetakenCourses = () => {
     const navigate = useNavigate();
+    const { toast, showToast, hideToast } = useHOAToast();
 
     // --- Data State ---
     const [statsData, setStatsData] = useState(null);
     const [retakenCoursesData, setRetakenCoursesData] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [fetchError, setFetchError] = useState('');
+    const [retryKey, setRetryKey] = useState(0);
 
     // --- UI/Filter State ---
     const [selectedRows, setSelectedRows] = useState([]);
@@ -72,6 +77,7 @@ const HOARetakenCourses = () => {
     // --- Data Fetching ---
     const fetchRetakenCoursesData = async (mounted = true) => {
         setIsLoading(true);
+        setFetchError('');
         try {
             const token = localStorage.getItem('token');
             if (!token) {
@@ -143,7 +149,8 @@ const HOARetakenCourses = () => {
                 
                 setRetakenCoursesData(parsedList);
             } else {
-                setRetakenCoursesData([]);
+                const errorBody = await assignmentsRes?.json().catch(() => ({}));
+                throw new Error(errorBody?.message || errorBody?.error?.message || 'Failed to load retaken courses.');
             }
 
         } catch (error) {
@@ -151,6 +158,7 @@ const HOARetakenCourses = () => {
             if (mounted) {
                 setStatsData({});
                 setRetakenCoursesData([]);
+                setFetchError(error.message || 'Failed to load retaken courses.');
             }
         } finally {
             if (mounted) setIsLoading(false);
@@ -161,7 +169,7 @@ const HOARetakenCourses = () => {
         let mounted = true;
         fetchRetakenCoursesData(mounted);
         return () => { mounted = false; };
-    }, []);
+    }, [retryKey]);
 
     // --- Memoized Sorting & Filtering ---
     const processedData = useMemo(() => {
@@ -242,13 +250,21 @@ const HOARetakenCourses = () => {
         }
     };
 
-    const handleAction = async (id, actionType) => {
-        console.log(`Triggering ${actionType} for retaken course record ID: ${id}`);
-        // TODO: Wire this to appropriate API endpoints
-        if (actionType === 'Remove Record') {
-            setRetakenCoursesData(prev => prev.filter(item => item.id !== id));
-        }
+    const handleAction = (id, actionType) => {
         setActiveActionMenu(null);
+
+        if (actionType === 'View Details') {
+            showToast('Opening learners — use the learner profile for full course history.', 'success');
+            navigate('/academia/hoa/learners');
+            return;
+        }
+
+        const unavailableMessages = {
+            'Approve Retake': 'Approving retakes from HOA is not available until the admin API is connected.',
+            'Remove Record': 'Removing records from this list does not change backend data until the admin API is connected.',
+        };
+
+        showToast(unavailableMessages[actionType] || 'This action is not available yet.', 'error');
     };
 
     return (
@@ -368,6 +384,16 @@ const HOARetakenCourses = () => {
                 </div>
 
                 {/* Table */}
+                {isLoading && retakenCoursesData.length === 0 ? (
+                    <HOALoading message="Loading retaken courses…" />
+                ) : fetchError ? (
+                    <HOALoadError
+                        title="Could not load retaken courses"
+                        message={fetchError}
+                        onRetry={() => setRetryKey((key) => key + 1)}
+                    />
+                ) : (
+                <>
                 <div className="rep-table-wrapper">
                     <table className="rep-table">
                         <thead>
@@ -458,11 +484,11 @@ const HOARetakenCourses = () => {
                                 </tr>
                             ))}
                             {paginatedData.length === 0 && !isLoading && (
-                                <tr>
-                                    <td colSpan="9" style={{ textAlign: 'center', padding: '30px', color: '#64748B' }}>
-                                        No retaken courses found.
-                                    </td>
-                                </tr>
+                                <HOATableEmptyRow
+                                    colSpan={9}
+                                    title="No retaken courses found"
+                                    message={searchQuery || selectedFilter !== 'All Status' ? 'Try adjusting your search or filters.' : 'Assessment retakes will appear here once students retry.'}
+                                />
                             )}
                         </tbody>
                     </table>
@@ -519,8 +545,11 @@ const HOARetakenCourses = () => {
                         </button>
                     </div>
                 </div>
+                </>
+                )}
 
             </div>
+            <HOAToast toast={toast} onDismiss={hideToast} />
         </HOALayout>
     );
 };

@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import HOALayout from '../../../components/layouts/HOALayout/HOALayout';
+import { HOALoadError, HOALoading, HOATableEmptyRow } from './HOAPageState';
+import { HOAToast, useHOAToast } from './useHOAToast';
 import './hoa-failed-courses.css';
 import './hoa-assignments.css';
 import './hoa-reports.css';
@@ -26,11 +28,14 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 const HOAFailedCourses = () => {
     const navigate = useNavigate();
+    const { toast, showToast, hideToast } = useHOAToast();
 
     // --- Data State ---
     const [statsData, setStatsData] = useState(null);
     const [failedCoursesData, setFailedCoursesData] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [fetchError, setFetchError] = useState('');
+    const [retryKey, setRetryKey] = useState(0);
 
     // --- UI/Filter State ---
     const [selectedRows, setSelectedRows] = useState([]);
@@ -70,6 +75,7 @@ const HOAFailedCourses = () => {
     // --- Data Fetching ---
     const fetchFailedCoursesData = async (mounted = true) => {
         setIsLoading(true);
+        setFetchError('');
         try {
             const token = localStorage.getItem('token');
             if (!token) {
@@ -136,7 +142,8 @@ const HOAFailedCourses = () => {
                 
                 setFailedCoursesData(parsedList);
             } else {
-                setFailedCoursesData([]);
+                const errorBody = await assignmentsRes?.json().catch(() => ({}));
+                throw new Error(errorBody?.message || errorBody?.error?.message || 'Failed to load failed courses.');
             }
 
         } catch (error) {
@@ -144,6 +151,7 @@ const HOAFailedCourses = () => {
             if (mounted) {
                 setStatsData({});
                 setFailedCoursesData([]);
+                setFetchError(error.message || 'Failed to load failed courses.');
             }
         } finally {
             if (mounted) setIsLoading(false);
@@ -154,7 +162,7 @@ const HOAFailedCourses = () => {
         let mounted = true;
         fetchFailedCoursesData(mounted);
         return () => { mounted = false; };
-    }, []);
+    }, [retryKey]);
 
     // --- Memoized Sorting & Filtering ---
     const processedData = useMemo(() => {
@@ -237,13 +245,21 @@ const HOAFailedCourses = () => {
         }
     };
 
-    const handleAction = async (id, actionType) => {
-        console.log(`Triggering ${actionType} for failed course record ID: ${id}`);
-        // TODO: Wire this to appropriate API endpoints
-        if (actionType === 'Remove Record') {
-            setFailedCoursesData(prev => prev.filter(item => item.id !== id));
-        }
+    const handleAction = (id, actionType) => {
         setActiveActionMenu(null);
+
+        if (actionType === 'View Details') {
+            showToast('Opening learners — use the learner profile for full course history.', 'success');
+            navigate('/academia/hoa/learners');
+            return;
+        }
+
+        const unavailableMessages = {
+            'Contact Student': 'Contacting students from HOA is not available yet.',
+            'Remove Record': 'Removing records from this list does not change backend data until the admin API is connected.',
+        };
+
+        showToast(unavailableMessages[actionType] || 'This action is not available yet.', 'error');
     };
 
     return (
@@ -363,6 +379,16 @@ const HOAFailedCourses = () => {
                 </div>
 
                 {/* Table */}
+                {isLoading && failedCoursesData.length === 0 ? (
+                    <HOALoading message="Loading failed courses…" />
+                ) : fetchError ? (
+                    <HOALoadError
+                        title="Could not load failed courses"
+                        message={fetchError}
+                        onRetry={() => setRetryKey((key) => key + 1)}
+                    />
+                ) : (
+                <>
                 <div className="rep-table-wrapper">
                     <table className="rep-table">
                         <thead>
@@ -453,11 +479,11 @@ const HOAFailedCourses = () => {
                                 </tr>
                             ))}
                             {paginatedData.length === 0 && !isLoading && (
-                                <tr>
-                                    <td colSpan="9" style={{ textAlign: 'center', padding: '30px', color: '#64748B' }}>
-                                        No failed courses found.
-                                    </td>
-                                </tr>
+                                <HOATableEmptyRow
+                                    colSpan={9}
+                                    title="No failed courses found"
+                                    message={searchQuery || selectedFilter !== 'All Status' ? 'Try adjusting your search or filters.' : 'Students who fail assessments will appear here.'}
+                                />
                             )}
                         </tbody>
                     </table>
@@ -514,8 +540,11 @@ const HOAFailedCourses = () => {
                         </button>
                     </div>
                 </div>
+                </>
+                )}
 
             </div>
+            <HOAToast toast={toast} onDismiss={hideToast} />
         </HOALayout>
     );
 };
