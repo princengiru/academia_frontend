@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import LearnersPageShell from './LearnersPageShell';
+import LearnerLoadError from './LearnerLoadError';
 import ProfilePhotoCropModal from './ProfilePhotoCropModal';
 import ProfilePhotoViewModal from './ProfilePhotoViewModal';
 import HoasButtonSpinner from './HoasButtonSpinner';
@@ -27,23 +28,25 @@ import leEx from '../../../assets/icons/le-ex.svg';
 import leLo from '../../../assets/icons/le-lo.svg';
 import userIcon from '../../../assets/icons/user.svg';
 import acInn from '../../../assets/icons/ac-inn.svg';
-import resetIcon from '../../../assets/icons/reset.svg';
 import calendarIcon from '../../../assets/icons/calendar.svg';
 import drop1 from '../../../assets/icons/drop1.svg';
 import trashIcon from '../../../assets/icons/trash.svg';
 import dotsVertical from '../../../assets/icons/dots-vertical.svg';
 import exitDown from '../../../assets/icons/exit-down.svg';
 import leEm from '../../../assets/icons/le-em.svg';
+<<<<<<< HEAD
 import acEye from '../../../assets/icons/ac-eye.svg';
 import LearnerRefresh from '../../../assets/icons/LearnerRefresh.svg';
 import LearnerUpload from '../../../assets/icons/LearnerUpload.svg';
 import LearnerWarning from '../../../assets/icons/LearnerWarning.svg';
 import LearnerSuccess from '../../../assets/icons/LearnerSuccess.svg';
+=======
+import AccountQuickLinks from './AccountQuickLinks';
+>>>>>>> 6c043dd (settings page refining)
 import './projects.css';
 import './settings.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-const SIGN_IN_PATH = '/academia/auth/signin';
 
 const activityFilters = ['This week', 'Last week', 'This month', 'All time'];
 
@@ -53,7 +56,6 @@ const FIELD_TOOLTIPS = {
   telephone: 'Your contact number with country code for account recovery and message notifications.',
   userType: 'Your account type on the Academia platform.',
   role: 'Your professional role or job title shown on your project profile.',
-  password: 'Your account password. Use Reset Password to change it.',
 };
 
 const FieldInfo = ({ tip }) => (
@@ -145,17 +147,6 @@ function LearnersSettings() {
   const [followerCount, setFollowerCount] = useState(0);
   const [activityItems, setActivityItems] = useState([]);
   const [aboutExpanded, setAboutExpanded] = useState(false);
-  const [passwordVisible, setPasswordVisible] = useState(false);
-  const [confirmDeactivation, setConfirmDeactivation] = useState(false);
-  const [confirmDeletion, setConfirmDeletion] = useState(false);
-  const [deactivating, setDeactivating] = useState(false);
-  const [deactivateStage, setDeactivateStage] = useState('idle');
-  const [deactivatePassword, setDeactivatePassword] = useState('');
-  const [deactivateOtp, setDeactivateOtp] = useState('');
-  const [deleteStage, setDeleteStage] = useState('idle');
-  const [deletePassword, setDeletePassword] = useState('');
-  const [deleteOtp, setDeleteOtp] = useState('');
-  const [deletingAccount, setDeletingAccount] = useState(false);
   const [openActivityMenuId, setOpenActivityMenuId] = useState(null);
   const [activityFilterOpen, setActivityFilterOpen] = useState(false);
   const [reviewedActivityIds, setReviewedActivityIds] = useState([]);
@@ -186,12 +177,6 @@ function LearnersSettings() {
     skills: [],
   });
   const [profileCompletion, setProfileCompletion] = useState(null);
-  const [accountStatus, setAccountStatus] = useState(null);
-  const [documents, setDocuments] = useState([]);
-  const [paymentMethods, setPaymentMethods] = useState([]);
-  const [certificates, setCertificates] = useState([]);
-  const [certificateStats, setCertificateStats] = useState(null);
-
   const [basicDraft, setBasicDraft] = useState({
     name: '',
     phone: '',
@@ -228,12 +213,6 @@ function LearnersSettings() {
   const [isSkillsEditing, setIsSkillsEditing] = useState(false);
   const [savingProjectProfile, setSavingProjectProfile] = useState(false);
   const [photoUploading, setPhotoUploading] = useState(false);
-  const [twoFactorProcessing, setTwoFactorProcessing] = useState(false);
-  const [twoFactorStage, setTwoFactorStage] = useState('idle');
-  const [twoFactorOtp, setTwoFactorOtp] = useState('');
-  const [passwordForm, setPasswordForm] = useState({ current: '', next: '', confirm: '' });
-  const [passwordSaving, setPasswordSaving] = useState(false);
-  const [showPasswordForm, setShowPasswordForm] = useState(false);
   const [baselineTick, setBaselineTick] = useState(0);
 
   const pushFeedback = useCallback((message, type = 'success') => {
@@ -336,11 +315,6 @@ function LearnersSettings() {
 
     const requests = await Promise.allSettled([
       apiFetch('/api/profile'),
-      apiFetch('/api/profile/documents'),
-      apiFetch('/api/profile/payment-methods'),
-      apiFetch('/api/certificates/user/statistics'),
-      apiFetch('/api/certificates/user/my-certificates?limit=6&offset=0'),
-      apiFetch('/api/auth/account-status'),
       apiFetch('/api/projects/my'),
       apiFetch('/api/followers/stats'),
       apiFetch('/api/profile/notification-settings'),
@@ -387,39 +361,7 @@ function LearnersSettings() {
       firstError = profileResult.reason?.message || 'Failed to load profile data';
     }
 
-    const documentsResult = requests[1];
-    if (documentsResult.status === 'fulfilled') {
-      setDocuments(Array.isArray(documentsResult.value?.data?.documents) ? documentsResult.value.data.documents : []);
-    } else if (!firstError) {
-      firstError = documentsResult.reason?.message || 'Failed to load documents';
-    }
-
-    const paymentsResult = requests[2];
-    if (paymentsResult.status === 'fulfilled') {
-      setPaymentMethods(Array.isArray(paymentsResult.value?.data?.paymentMethods) ? paymentsResult.value.data.paymentMethods : []);
-    } else if (!firstError) {
-      firstError = paymentsResult.reason?.message || 'Failed to load payment methods';
-    }
-
-    const statsResult = requests[3];
-    if (statsResult.status === 'fulfilled') {
-      setCertificateStats(statsResult.value?.data || statsResult.value || null);
-    }
-
-    const certificatesResult = requests[4];
-    if (certificatesResult.status === 'fulfilled') {
-      const items = certificatesResult.value?.data?.certificates || certificatesResult.value?.data?.data || [];
-      setCertificates(Array.isArray(items) ? items : []);
-    } else if (!firstError) {
-      firstError = certificatesResult.reason?.message || 'Failed to load certificates';
-    }
-
-    const accountResult = requests[5];
-    if (accountResult.status === 'fulfilled') {
-      setAccountStatus(accountResult.value?.data || accountResult.value || null);
-    }
-
-    const projectsResult = requests[6];
+    const projectsResult = requests[1];
     if (projectsResult.status === 'fulfilled') {
       const body = projectsResult.value;
       const list = Array.isArray(body?.data)
@@ -432,12 +374,12 @@ function LearnersSettings() {
       setProjects(list);
     }
 
-    const followersResult = requests[7];
+    const followersResult = requests[2];
     if (followersResult.status === 'fulfilled') {
       setFollowerCount(Number(followersResult.value?.data?.followers || 0));
     }
 
-    const notificationResult = requests[8];
+    const notificationResult = requests[3];
     if (notificationResult.status === 'fulfilled') {
       const settings = notificationResult.value?.data?.settings;
       if (settings) {
@@ -470,11 +412,7 @@ function LearnersSettings() {
   }, [activityFilter, loading, loadActivity]);
 
   const profileCompletionValue = Number(profileCompletion?.profile_percentage ?? profileCompletion?.profilePercentage ?? 0);
-  const totalCertificates = Number(certificateStats?.totalCertificates ?? certificates.length ?? 0);
-  const totalDocuments = documents.length;
-  const totalPaymentMethods = paymentMethods.length;
-  const isAccountActive = accountStatus?.isActive !== false;
-  const is2FAEnabled = Boolean(accountStatus?.twoFactorEnabled);
+  const headerBadgeValue = projects.length || Math.round(profileCompletionValue);
 
   const projectStats = useMemo(() => {
     const totals = projects.reduce((acc, project) => ({
@@ -493,11 +431,9 @@ function LearnersSettings() {
   const userTypeLabel = formatRoleLabel(profile.role);
   const jobTitleLabel = projectProfileDraft.jobTitle?.trim() || '—';
   const telephoneDisplay = formatTelephoneDisplay(profile.phone, profile.country);
-  const notificationsMasterEnabled = notificationEmailEnabled || notificationMessageEnabled;
   const experienceLabel = formatExperienceLabel(projectProfileDraft.yearsExperience);
   const followersLabel = `${formatNumber(followerCount)} Followers`;
   const locationLabel = formatLocationDisplay(profile);
-  const headerBadgeValue = projects.length || totalCertificates || Math.round(profileCompletionValue);
   const aboutPreview = projectProfileDraft.bio || 'No bio has been added yet. Share your experience and interests here.';
   const aboutDisplay = aboutExpanded || aboutPreview.length <= 140
     ? aboutPreview
@@ -551,77 +487,6 @@ function LearnersSettings() {
   const resetPreferencesDraft = () => {
     if (!preferencesBaselineRef.current) return;
     setPreferencesDraft(JSON.parse(preferencesBaselineRef.current));
-  };
-
-  const startEnableTwoFactor = async () => {
-    try {
-      setTwoFactorProcessing(true);
-      await apiFetch('/api/auth/enable-2fa', { method: 'POST' });
-      setTwoFactorStage('enable-pending');
-      setTwoFactorOtp('');
-      pushFeedback('Verification code sent to your email.', 'success');
-    } catch (e) {
-      pushFeedback(e.message || 'Couldn\'t start two-factor setup. Please try again.', 'error');
-    } finally {
-      setTwoFactorProcessing(false);
-    }
-  };
-
-  const verifyEnableTwoFactor = async () => {
-    try {
-      if (twoFactorOtp.trim().length !== 6) throw new Error('Enter the 6-digit code from your email.');
-      setTwoFactorProcessing(true);
-      await apiFetch('/api/auth/verify-otp-enable-2fa', {
-        method: 'POST',
-        body: JSON.stringify({ otp: twoFactorOtp.trim() }),
-      });
-      setTwoFactorStage('idle');
-      setTwoFactorOtp('');
-      pushFeedback('Two-factor authentication enabled.', 'success');
-      await loadSettings();
-    } catch (e) {
-      pushFeedback(e.message || 'Couldn\'t enable two-factor authentication. Please try again.', 'error');
-    } finally {
-      setTwoFactorProcessing(false);
-    }
-  };
-
-  const startDisableTwoFactor = async () => {
-    try {
-      setTwoFactorProcessing(true);
-      await apiFetch('/api/auth/disable-2fa', { method: 'POST' });
-      setTwoFactorStage('disable-pending');
-      setTwoFactorOtp('');
-      pushFeedback('Verification code sent to your email.', 'success');
-    } catch (e) {
-      pushFeedback(e.message || 'Couldn\'t start two-factor disable. Please try again.', 'error');
-    } finally {
-      setTwoFactorProcessing(false);
-    }
-  };
-
-  const verifyDisableTwoFactor = async () => {
-    try {
-      if (twoFactorOtp.trim().length !== 6) throw new Error('Enter the 6-digit code from your email.');
-      setTwoFactorProcessing(true);
-      await apiFetch('/api/auth/disable-2fa', {
-        method: 'POST',
-        body: JSON.stringify({ otp: twoFactorOtp.trim() }),
-      });
-      setTwoFactorStage('idle');
-      setTwoFactorOtp('');
-      pushFeedback('Two-factor authentication disabled.', 'success');
-      await loadSettings();
-    } catch (e) {
-      pushFeedback(e.message || 'Couldn\'t disable two-factor authentication. Please try again.', 'error');
-    } finally {
-      setTwoFactorProcessing(false);
-    }
-  };
-
-  const cancelTwoFactorFlow = () => {
-    setTwoFactorStage('idle');
-    setTwoFactorOtp('');
   };
 
   const saveProjectProfile = async () => {
@@ -755,41 +620,6 @@ function LearnersSettings() {
     event.currentTarget.src = defaultProfile;
   };
 
-  const handleChangePassword = async () => {
-    if (!passwordForm.current || !passwordForm.next) {
-      pushFeedback('Enter your current and new password.', 'error');
-      return;
-    }
-
-    if (passwordForm.next.length < 6) {
-      pushFeedback('New password must be at least 6 characters.', 'error');
-      return;
-    }
-
-    if (passwordForm.next !== passwordForm.confirm) {
-      pushFeedback('New passwords do not match.', 'error');
-      return;
-    }
-
-    try {
-      setPasswordSaving(true);
-      await apiFetch('/api/auth/change-password', {
-        method: 'POST',
-        body: JSON.stringify({
-          currentPassword: passwordForm.current,
-          newPassword: passwordForm.next,
-        }),
-      });
-      setPasswordForm({ current: '', next: '', confirm: '' });
-      setShowPasswordForm(false);
-      pushFeedback('Password changed successfully.');
-    } catch (changeError) {
-      pushFeedback(changeError.message || 'Couldn\'t change password. Please try again.', 'error');
-    } finally {
-      setPasswordSaving(false);
-    }
-  };
-
   const toggleAvailability = () => {
     setProjectProfileDraft((current) => ({ ...current, availableToHire: !current.availableToHire }));
   };
@@ -837,108 +667,6 @@ function LearnersSettings() {
     pushFeedback('Activity cleared.', 'success');
   };
 
-  const handleRequestDeactivateAccount = async () => {
-    if (!confirmDeactivation) {
-      pushFeedback('Please confirm account deactivation.', 'error');
-      return;
-    }
-
-    if (!deactivatePassword) {
-      pushFeedback('Enter your current password to continue.', 'error');
-      return;
-    }
-
-    try {
-      setDeactivating(true);
-      await apiFetch('/api/auth/request-deactivate-account', {
-        method: 'POST',
-        body: JSON.stringify({ currentPassword: deactivatePassword }),
-      });
-      setDeactivateStage('otp-pending');
-      pushFeedback('Verification code sent to your email.', 'success');
-    } catch (deactivateError) {
-      pushFeedback(deactivateError.message || 'Could not start account deactivation.', 'error');
-    } finally {
-      setDeactivating(false);
-    }
-  };
-
-  const handleConfirmDeactivateAccount = async () => {
-    if (!confirmDeactivation) {
-      pushFeedback('Please confirm account deactivation.', 'error');
-      return;
-    }
-
-    if (deactivateOtp.trim().length !== 6) {
-      pushFeedback('Enter the 6-digit verification code.', 'error');
-      return;
-    }
-
-    try {
-      setDeactivating(true);
-      await apiFetch('/api/auth/confirm-deactivate-account', {
-        method: 'POST',
-        body: JSON.stringify({
-          otp: deactivateOtp.trim(),
-          reason: 'User requested deactivation from settings',
-        }),
-      });
-      localStorage.removeItem('token');
-      navigate(SIGN_IN_PATH);
-    } catch (deactivateError) {
-      pushFeedback(deactivateError.message || 'Could not deactivate account. Please try again.', 'error');
-    } finally {
-      setDeactivating(false);
-    }
-  };
-
-  const handleRequestDeleteAccount = async () => {
-    if (!deletePassword) {
-      pushFeedback('Enter your current password to continue.', 'error');
-      return;
-    }
-
-    try {
-      setDeletingAccount(true);
-      await apiFetch('/api/auth/request-delete-account', {
-        method: 'POST',
-        body: JSON.stringify({ currentPassword: deletePassword }),
-      });
-      setDeleteStage('otp-pending');
-      pushFeedback('Verification code sent to your email.', 'success');
-    } catch (deleteError) {
-      pushFeedback(deleteError.message || 'Could not start account deletion.', 'error');
-    } finally {
-      setDeletingAccount(false);
-    }
-  };
-
-  const handleConfirmDeleteAccount = async () => {
-    if (!confirmDeletion) {
-      pushFeedback('Please confirm account deletion.', 'error');
-      return;
-    }
-
-    if (deleteOtp.trim().length !== 6) {
-      pushFeedback('Enter the 6-digit verification code.', 'error');
-      return;
-    }
-
-    try {
-      setDeletingAccount(true);
-      await apiFetch('/api/auth/confirm-delete-account', {
-        method: 'POST',
-        body: JSON.stringify({ otp: deleteOtp.trim() }),
-      });
-      localStorage.removeItem('token');
-      navigate(SIGN_IN_PATH);
-    } catch (deleteError) {
-      pushFeedback(deleteError.message || 'Could not delete account. Please try again.', 'error');
-    } finally {
-      setDeletingAccount(false);
-    }
-  };
-
   const openProjectsUpload = () => {
     navigate('/academia/learner/projects');
   };
@@ -974,9 +702,7 @@ function LearnersSettings() {
             <div className="learners-projects-profile-copy">
               <div className="learners-projects-profile-name-row">
                 <h1>{profile.name || 'Loading profile...'}</h1>
-                <span className={`learners-projects-status-badge ${isAccountActive ? '' : 'is-inactive'}`}>
-                  {isAccountActive ? 'Active' : 'Inactive'}
-                </span>
+                <span className="learners-projects-status-badge">Active</span>
                 <span className="learners-projects-count-badge">
                   <img src={badge1} alt="Badge" />
                   <span>{headerBadgeValue}</span>
@@ -997,7 +723,7 @@ function LearnersSettings() {
               <img src={LearnerUpload} alt="Upload" />
             </button>
             <button type="button" className="learners-projects-secondary-btn" onClick={() => navigate('/academia/learner/account')}>
-              View Profile
+              Account settings
             </button>
           </div>
         </section>
@@ -1009,9 +735,11 @@ function LearnersSettings() {
         )}
 
         {error && (
-          <div className="learners-settings-feedback is-warning">
-            {error}
-          </div>
+          <LearnerLoadError
+            title={error === 'Please sign in to view your settings.' ? 'Sign in required' : 'Could not load settings'}
+            message={error}
+            onRetry={error === 'Please sign in to view your settings.' ? undefined : loadSettings}
+          />
         )}
 
         {feedback.message && (
@@ -1271,7 +999,7 @@ function LearnersSettings() {
                 <article className="learners-settings-panel">
                   <div className="learners-settings-empty-state learners-settings-activity-empty">
                     <strong>Loading settings</strong>
-                    <span>Loading your profile, preferences, certificates, and account status.</span>
+                    <span>Loading your learning profile and activity.</span>
                   </div>
                 </article>
               ) : null}
@@ -1313,6 +1041,7 @@ function LearnersSettings() {
                         value={userTypeLabel}
                       />
 
+<<<<<<< HEAD
                       <ReadOnlyField
                         label="Role"
                         tip={FIELD_TOOLTIPS.role}
@@ -1340,14 +1069,23 @@ function LearnersSettings() {
                             Message (Telephone)
                           </label>
                         </div>
+=======
+                      <div className="learners-settings-field">
+                        <div className="learners-settings-field-head">
+                          <label>Role</label>
+                          <FieldInfo tip={FIELD_TOOLTIPS.role} />
+                        </div>
+                        <div className="learners-settings-field-value learners-settings-field-control is-plain">{jobTitleLabel}</div>
+>>>>>>> 6c043dd (settings page refining)
                       </div>
                     </div>
 
                     <p className="learners-settings-side-hint">
-                      Name, phone, email, and address are managed on your Account page. Name changes are limited to once every 60 days.
+                      Name, phone, email, and address are managed on your Account page.
                     </p>
                   </article>
 
+<<<<<<< HEAD
                   <article className="learners-settings-panel">
                     <div className="learners-settings-panel-head">
                       <h3>Security &amp; Privacy</h3>
@@ -1616,6 +1354,13 @@ function LearnersSettings() {
                       </div>
                     )}
                   </article>
+=======
+                  <AccountQuickLinks
+                    onOpenSection={openAccountSection}
+                    notificationEmailEnabled={notificationEmailEnabled}
+                    notificationMessageEnabled={notificationMessageEnabled}
+                  />
+>>>>>>> 6c043dd (settings page refining)
                 </section>
               )}
 
