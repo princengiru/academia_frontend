@@ -523,6 +523,11 @@
   color: #8A94A6;
 }
 
+.learners-certificates-page .learners-certificate-pending-note {
+  margin-top: 8px !important;
+  color: #5B0A86 !important;
+}
+
 .learners-certificates-page .learners-certificate-card-stats {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));

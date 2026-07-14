@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import LearnersPageShell from './LearnersPageShell';
+import LearnerLoadError from './LearnerLoadError';
 
 // Icons & Images
 import defaultProfile from '../../../assets/imgs/default-profile.png';
@@ -283,7 +284,7 @@ function LearnersCertificates() {
     role: 'Learner',
     email: firstCertificate?.student?.email || 'Authenticated certificate record',
     avatar: normalizeAssetUrl(firstCertificate?.student?.avatar) || defaultProfile,
-    status: loading ? 'loading...' : certificates.length ? 'Active' : 'empty',
+    status: loading ? 'Loading…' : certificates.length ? 'Active' : 'No certificates',
     projects: formatNumber(certificates.length),
   };
 
@@ -398,7 +399,7 @@ function LearnersCertificates() {
         <section className="learners-certificates-section-head">
           <div>
             <h2>My Certificates</h2>
-            <p>{loading ? 'Loading certificates from the backend...' : `${formatNumber(totalCount)} certificates available`}</p>
+            <p>{loading ? 'Loading your certificates…' : `${formatNumber(totalCount)} certificates available`}</p>
           </div>
 
           <div className="learners-certificates-filters">
@@ -449,28 +450,21 @@ function LearnersCertificates() {
         {loading ? (
           <div className="learners-certificates-empty-state">
             <h3>Loading certificates...</h3>
-            <p>Fetching your earned certificates and progress from the backend.</p>
+            <p>Fetching your earned certificates and progress.</p>
           </div>
         ) : error ? (
-          <div className="learners-certificates-empty-state learners-certificates-empty-state--error">
-            <h3>Certificates could not load</h3>
-            <p>{error}</p>
-            <div className="learners-certificates-empty-actions">
-              <button type="button" className="learners-projects-primary-btn" onClick={handleRetryLoad}>
-                Retry
-              </button>
-              <button type="button" className="learners-projects-secondary-btn" onClick={() => navigate('/academia/learner/courses')}>
-                Browse courses
-              </button>
-            </div>
-          </div>
+          <LearnerLoadError
+            title="Certificates could not load"
+            message={error}
+            onRetry={handleRetryLoad}
+          />
         ) : visibleCertificates.length > 0 ? (
           <>
             <section className="learners-certificates-grid">
               {visibleCertificates.map((certificate, idx) => {
                 const isApproved = certificate.isVerified;
-                const primaryAction = isApproved ? 'Download' : 'Pending HOA';
-                const primaryIcon = isApproved ? downloadIcon : resumeIcon;
+                const primaryAction = isApproved ? 'Download' : 'Pending approval';
+                const primaryIcon = isApproved ? downloadIcon : null;
                 const title = certificate.courseTitle || 'Certificate';
                 const issueDate = certificate.issueDate ? `Completed on ${formatDate(certificate.issueDate)}` : 'Date unavailable';
                 const score = certificate.finalScore !== undefined && certificate.finalScore !== null
@@ -478,8 +472,11 @@ function LearnersCertificates() {
                   : '—';
                 const questions = certificate.totalQuestions ?? 0;
                 const timeSpent = certificate.timeSpent?.display || '—';
-                const statusLabel = isApproved ? 'Approved' : 'Pending HOA';
+                const statusLabel = isApproved ? 'Approved' : 'Pending approval';
                 const statusClass = isApproved ? 'is-passed' : 'is-progress';
+                const pendingNote = isApproved
+                  ? null
+                  : 'Your certificate is being reviewed. You will be able to download it once approved.';
 
                 return (
                   <article key={certificate.id || idx} className="learners-certificate-card">
@@ -489,7 +486,7 @@ function LearnersCertificates() {
                       </div>
                       <div className="learners-certificate-card-banner-copy">
                         <span>Proudly presented to</span>
-                        <h3>Dear, {apexProfile.name}</h3>
+                        <h3>{apexProfile.name}</h3>
                       </div>
                     </div>
 
@@ -497,6 +494,7 @@ function LearnersCertificates() {
                       <div className="learners-certificate-card-title-block">
                         <h4>{title}</h4>
                         <p>{issueDate}</p>
+                        {pendingNote ? <p className="learners-certificate-pending-note">{pendingNote}</p> : null}
                       </div>
 
                       <div className="learners-certificate-card-stats">
@@ -525,8 +523,8 @@ function LearnersCertificates() {
                           <img src={acEye} alt="View" />
                           <span>View</span>
                         </button>
-                        <button type="button" onClick={() => handlePrimaryAction(certificate)}>
-                          <img src={primaryIcon} alt={primaryAction} />
+                        <button type="button" onClick={() => handlePrimaryAction(certificate)} disabled={!isApproved}>
+                          {primaryIcon ? <img src={primaryIcon} alt={primaryAction} /> : null}
                           <span>{primaryAction}</span>
                         </button>
                         <button type="button" onClick={() => handleShareCertificate(certificate)}>

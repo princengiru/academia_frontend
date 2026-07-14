@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import LearnersPageShell from './LearnersPageShell';
+import LearnerLoadError from './LearnerLoadError';
 
 // Icons & Images
-import acSav from '../../../assets/icons/ac-sav.svg';
 import hoagoto from '../../../assets/icons/hoagoto.svg';
+import SavedLibraryButton from './SavedLibraryButton';
 import acFf from '../../../assets/icons/ac-ff.svg';
 import acFi from '../../../assets/icons/ac-fi.svg';
 import acLe2 from '../../../assets/icons/ac-le2.svg';
@@ -15,18 +16,21 @@ import './available-test.css';
 
 function LearnersAvailableTest() {
   const navigate = useNavigate();
-  const preventDefault = (e) => e.preventDefault();
 
-  // No static slate fallback — rely on backend data only
   const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
   const [tests, setTests] = useState([]);
+  const [totalTests, setTotalTests] = useState(0);
   const [syllabusList, setSyllabusList] = useState([]);
+  const [syllabusTotal, setSyllabusTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
+  const [syllabusLoadError, setSyllabusLoadError] = useState('');
   const [searchParams, setSearchParams] = useSearchParams();
   const initPage = Number(searchParams.get('page')) || 1;
   const [page, setPage] = useState(initPage);
   const [limit] = useState(6);
   const [pageCount, setPageCount] = useState(1);
+  const [reloadToken, setReloadToken] = useState(0);
 
   const extractList = (body) => {
     if (!body) return [];
@@ -38,11 +42,47 @@ function LearnersAvailableTest() {
     return [];
   };
 
+  const extractPaginationTotal = (body, fallback = 0) => {
+    const total = body?.data?.pagination?.total ?? body?.pagination?.total;
+    return Number.isFinite(Number(total)) ? Number(total) : fallback;
+  };
+
+  const mapTest = (item, idx) => ({
+    id: item.id || idx,
+    courseId: item.courseId,
+    courseName: item.courseName || '',
+    type: item.type,
+    title: item.title || 'Untitled Test',
+    level: item.minCourseProgress ? `Req. Progress: ${item.minCourseProgress}%` : 'All Levels',
+    levelTone: item.type === 'summative' ? 'intermediate' : 'beginner',
+    author: item.instructor?.name || 'Academia',
+    summary: item.description || '',
+    questions: item.totalQuestions || '0',
+    minutes: item.durationMinutes || '0',
+    attempts: item.attemptLimit || '1',
+    score: item.passingScore ? `${item.passingScore}%` : '0%',
+  });
+
+  const openTest = (test) => {
+    if (!test?.courseId) return;
+    const chapterId = test.type === 'summative' ? 'assessment' : `formative-${test.id}`;
+    navigate(
+      `/academia/learner/read-contents?id=${test.courseId}&chapterId=${encodeURIComponent(chapterId)}`
+    );
+  };
+
+  const openCourse = (courseId) => {
+    if (!courseId) return;
+    navigate(`/academia/learner/course-part?id=${courseId}`);
+  };
+
   useEffect(() => {
     let cancelled = false;
 
     const load = async () => {
       setLoading(true);
+      setLoadError('');
+      setSyllabusLoadError('');
       try {
         const token = localStorage.getItem('token');
         const summativeUrl = `${API_BASE_URL}/api/summative-assessments/public/all?limit=100&offset=0`;
@@ -66,6 +106,10 @@ function LearnersAvailableTest() {
         const formativeRes = results[1];
         const studentDashboardRes = token ? results[2] : null;
 
+        if (!summativeRes && !formativeRes) {
+          throw new Error('Could not load available tests.');
+        }
+
         const summativeList = extractList(summativeRes) || [];
         const formativeList = extractList(formativeRes) || [];
 
@@ -74,57 +118,65 @@ function LearnersAvailableTest() {
           ...formativeList.map(it => ({ ...it, type: 'formative' }))
         ];
 
-        // Sort by created date descending
         combinedList.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
 
         if (cancelled) return;
 
-        // If a student is logged in, filter to show only tests from courses they are enrolled in
         if (token) {
           let enrolledCourseIds = new Set();
-          if (studentDashboardRes && studentDashboardRes.data && Array.isArray(studentDashboardRes.data.enrolledCourses)) {
+          if (studentDashboardRes?.data && Array.isArray(studentDashboardRes.data.enrolledCourses)) {
             enrolledCourseIds = new Set(studentDashboardRes.data.enrolledCourses.map(c => c.id));
           }
           combinedList = combinedList.filter(it => it.courseId && enrolledCourseIds.has(it.courseId));
+        } else {
+          combinedList = [];
         }
 
-        // map to test shape
-        const mapped = combinedList.map((it, idx) => ({
-          id: it.id || idx,
-          courseId: it.courseId,
-          courseName: it.courseName || '',
-          type: it.type,
-          title: it.title || 'Untitled Test',
-          level: it.minCourseProgress ? `Req. Progress: ${it.minCourseProgress}%` : 'All Levels',
-          levelTone: it.type === 'summative' ? 'intermediate' : 'beginner',
-          author: it.instructor?.name || 'Academia',
-          summary: it.description || '',
-          questions: it.totalQuestions || '0',
-          minutes: it.durationMinutes || '0',
-          attempts: it.attemptLimit || '1',
-          score: it.passingScore ? `${it.passingScore}%` : '0%',
-        }));
-
+        const mapped = combinedList.map(mapTest);
         const total = mapped.length;
         const totalPages = Math.ceil(total / limit) || 1;
+        setTotalTests(total);
         setPageCount(totalPages);
 
-        const startIndex = (page - 1) * limit;
-        const paginatedMapped = mapped.slice(startIndex, startIndex + limit);
-        setTests(paginatedMapped);
+        const safePage = Math.min(page, totalPages);
+        if (safePage !== page) {
+          setPage(safePage);
+          setSearchParams({ page: String(safePage) }, { replace: true });
+        }
 
+        const startIndex = (safePage - 1) * limit;
+        setTests(mapped.slice(startIndex, startIndex + limit));
       } catch (err) {
-        console.error("Error combined load:", err);
+        if (!cancelled) {
+          setTests([]);
+          setTotalTests(0);
+          setPageCount(1);
+          setLoadError(err?.message || 'Could not load available tests.');
+        }
       }
 
-      // syllabus / categories fallback
       try {
         const res2 = await fetch(`${API_BASE_URL}/api/courses/public/available?page=1&limit=6`);
         const body2 = await res2.json();
+        if (!res2.ok) throw new Error(body2?.message || 'Failed to load courses');
         const list2 = extractList(body2);
-        if (!cancelled) setSyllabusList(list2.map((c, i) => ({ id: c.id || i, title: c.title || c.name || 'Untitled', icon: acPlus })));
+        if (!cancelled) {
+          setSyllabusList(list2.map((c, i) => ({
+            id: c.id || i,
+            title: c.title || c.name || 'Untitled',
+            category: c.category || '',
+            chapterCount: Number(c.chapter_count || 0),
+            icon: i % 2 === 0 ? acLock : acPlus,
+          })));
+          setSyllabusTotal(extractPaginationTotal(body2, list2.length));
+          setSyllabusLoadError('');
+        }
       } catch (e) {
-        if (!cancelled && syllabusList.length === 0) setSyllabusList([]);
+        if (!cancelled) {
+          setSyllabusList([]);
+          setSyllabusTotal(0);
+          setSyllabusLoadError(e?.message || 'Could not load courses.');
+        }
       }
 
       if (!cancelled) setLoading(false);
@@ -132,7 +184,7 @@ function LearnersAvailableTest() {
 
     load();
     return () => { cancelled = true; };
-  }, [page, limit]);
+  }, [page, limit, reloadToken]);
 
   // Keep page in sync when user changes query param manually / history navigation
   useEffect(() => {
@@ -146,21 +198,25 @@ function LearnersAvailableTest() {
     setSearchParams({ page: String(p) }, { replace: true });
   };
 
-  // Use backend-provided syllabus list only; no static fallbacks
-  const genesis = syllabusList;
+  const testCountLabel = totalTests === 1
+    ? '1 test available from your enrolled courses'
+    : `${totalTests} tests available from your enrolled courses`;
+
+  const syllabusCountLabel = syllabusLoadError
+    ? 'Could not load courses'
+    : syllabusTotal === 1
+      ? '1 course available to explore'
+      : `${syllabusTotal} courses available to explore`;
 
   return (
     <LearnersPageShell>
       <section className="learners-available-test-page">
         <section className="learners-home-title">
           <div className="learners-home-title-top">
-            <h1>Available Test</h1>
+            <h1>Assessments</h1>
 
             <div className="learners-home-title-actions">
-              <a className="learners-btn learners-btn-secondary" href="/" onClick={preventDefault}>
-                <img src={acSav} alt="Save" />
-                <span>Saved Library</span>
-              </a>
+              <SavedLibraryButton />
 
               <a className="learners-btn learners-btn-primary" href="/academia/index" target="_blank" rel="noopener noreferrer">
                 <span>Go to website</span>
@@ -175,7 +231,7 @@ function LearnersAvailableTest() {
             <div className="learners-available-test-head">
               <div>
                 <h2>Earn Certificates</h2>
-                <p>100 Courses Available to learn</p>
+                <p>{loading ? 'Loading tests...' : testCountLabel}</p>
               </div>
             </div>
 
@@ -189,16 +245,24 @@ function LearnersAvailableTest() {
                 </div>
               )}
 
-              {!loading && tests.length === 0 && (
+              {!loading && loadError && (
+                <LearnerLoadError
+                  message={loadError}
+                  onRetry={() => setReloadToken((value) => value + 1)}
+                />
+              )}
+
+              {!loading && !loadError && tests.length === 0 && (
                 <div className="learners-card learners-empty-state learners-empty-state--compact">
                   <h3>No tests available</h3>
-                  <div>
-                    <button className="learners-btn learners-btn-primary" disabled>Browse courses</button>
-                  </div>
+                  <p>Enroll in a course with quizzes or summative assessments to see tests here.</p>
+                  <button type="button" className="learners-btn learners-btn-primary" onClick={() => navigate('/academia/learner/courses')}>
+                    Browse courses
+                  </button>
                 </div>
               )}
 
-              {!loading && tests.length > 0 && (
+              {!loading && !loadError && tests.length > 0 && (
                 tests.map((husk) => (
                   <article key={`${husk.id}-${husk.title || ''}`} className="learners-available-test-card">
                     <div className="learners-available-test-card-top">
@@ -235,15 +299,16 @@ function LearnersAvailableTest() {
                     <button
                       type="button"
                       className="learners-available-test-cta"
-                      onClick={() => navigate('/academia/learner/course-part', { state: { courseId: husk.courseId } })}
+                      onClick={() => openTest(husk)}
                     >
-                      Enroll Test
+                      {husk.type === 'summative' ? 'Take Final Test' : 'Start Quiz'}
                     </button>
                   </article>
                 ))
               )}
             </div>
 
+            {!loading && !loadError && tests.length > 0 && (
             <div className="learners-available-test-pagination">
               <button type="button" onClick={() => goToPage(page - 1)} aria-label="Previous page" disabled={page <= 1}>
                 <img src={acLe2} alt="Previous" />
@@ -257,15 +322,18 @@ function LearnersAvailableTest() {
                 <img src={acRi} alt="Next" />
               </button>
             </div>
+            )}
           </div>
 
           <aside className="learners-available-test-side">
             <div className="learners-available-test-head learners-available-test-head-side">
               <div>
                 <h2>Syllabus</h2>
-                <p>Course Available to research</p>
+                <p>{loading ? 'Loading courses...' : syllabusCountLabel}</p>
               </div>
-              <a href="/" onClick={preventDefault}>See All</a>
+              <button type="button" className="learners-available-test-see-all" onClick={() => navigate('/academia/learner/courses')}>
+                See All
+              </button>
             </div>
 
             <div className="learners-available-syllabus-list">
@@ -276,29 +344,43 @@ function LearnersAvailableTest() {
                       <h4>Loading…</h4>
                     </div>
                     <button type="button" className="learners-available-syllabus-follow" disabled>
-                      <span>Follow</span>
+                      <span>View</span>
                     </button>
                   </div>
                 ))
-              ) : genesis && genesis.length ? (
-                genesis.map((husk) => (
+              ) : syllabusLoadError ? (
+                <div className="learners-card learners-empty-state learners-empty-state--compact">
+                  <h3>Could not load courses</h3>
+                  <p>{syllabusLoadError}</p>
+                  <button type="button" className="learners-btn learners-btn-primary" onClick={() => setReloadToken((value) => value + 1)}>
+                    Retry
+                  </button>
+                </div>
+              ) : syllabusList.length > 0 ? (
+                syllabusList.map((husk) => (
                   <div key={`${husk.id}-${husk.title || ''}`} className="learners-available-syllabus-item">
-                    <div className="learners-available-syllabus-copy">
+                    <button
+                      type="button"
+                      className="learners-available-syllabus-copy learners-available-syllabus-copy-btn"
+                      onClick={() => openCourse(husk.id)}
+                    >
                       <h4>{husk.title}</h4>
-                    </div>
+                      <p>{husk.category || `${husk.chapterCount || 0} outlines`}</p>
+                    </button>
 
-                    <button type="button" className="learners-available-syllabus-follow" onClick={preventDefault}>
-                      <span>Follow</span>
-                      <img src={husk.icon} alt={husk.title} />
+                    <button type="button" className="learners-available-syllabus-follow" onClick={() => openCourse(husk.id)}>
+                      <span>View</span>
+                      <img src={husk.icon} alt="" />
                     </button>
                   </div>
                 ))
               ) : (
                 <div className="learners-card learners-empty-state learners-empty-state--compact">
-                  <h3>No syllabus found</h3>
-                  <div>
-                    <button className="learners-btn learners-btn-primary" disabled>See all</button>
-                  </div>
+                  <h3>No courses found</h3>
+                  <p>Browse the course catalog to find syllabi and enroll.</p>
+                  <button type="button" className="learners-btn learners-btn-primary" onClick={() => navigate('/academia/learner/courses')}>
+                    Browse courses
+                  </button>
                 </div>
               )}
             </div>

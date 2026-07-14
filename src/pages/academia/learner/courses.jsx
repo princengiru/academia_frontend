@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import LearnersPageShell from './LearnersPageShell';
+import LearnerLoadError from './LearnerLoadError';
 
 // Icons & Images
-import acSav from '../../../assets/icons/ac-sav.svg';
 import hoagoto from '../../../assets/icons/hoagoto.svg';
 import acFf from '../../../assets/icons/ac-ff.svg';
 import acFi from '../../../assets/icons/ac-fi.svg';
@@ -13,18 +13,18 @@ import acLe2 from '../../../assets/icons/ac-le2.svg';
 import acRi from '../../../assets/icons/ac-ri.svg';
 import acPlus from '../../../assets/icons/ac-plus.svg';
 import acLock from '../../../assets/icons/ac-lock.svg';
+import SavedLibraryButton from './SavedLibraryButton';
 import './courses.css';
 
 function LearnersCourses() {
   const navigate = useNavigate();
-  const preventDefault = (e) => e.preventDefault();
 
   const handleCourseClick = (id) => {
     if (!id) {
       navigate('/academia/learner/course-part');
       return;
     }
-    navigate('/academia/learner/course-part', { state: { courseId: id } });
+    navigate(`/academia/learner/course-part?id=${id}`);
   };
 
   const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
@@ -47,6 +47,7 @@ function LearnersCourses() {
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [sortOrder, setSortOrder] = useState('Newest');
+  const [loadError, setLoadError] = useState('');
 
   // Sync URL search parameters with states
   useEffect(() => {
@@ -59,9 +60,7 @@ function LearnersCourses() {
       setSelectedFilter(filt);
     }
     const q = searchParams.get('search');
-    if (q !== null) {
-      setSearchTerm(q);
-    }
+    setSearchTerm(q || '');
   }, [searchParams]);
 
   const resolveAssetUrl = (value) => {
@@ -100,9 +99,19 @@ function LearnersCourses() {
     const handler = setTimeout(() => {
       setDebouncedSearchTerm(searchTerm);
       setCurrentPage(1);
+      setSearchParams((prev) => {
+        const newParams = new URLSearchParams(prev);
+        const trimmed = searchTerm.trim();
+        if (trimmed) {
+          newParams.set('search', trimmed);
+        } else {
+          newParams.delete('search');
+        }
+        return newParams;
+      }, { replace: true });
     }, 400);
     return () => clearTimeout(handler);
-  }, [searchTerm]);
+  }, [searchTerm, setSearchParams]);
 
   // Load Courses
   useEffect(() => {
@@ -188,12 +197,14 @@ function LearnersCourses() {
 
         if (cancelled) return;
 
+        setLoadError('');
         setCourses(list.map(mapCourse));
         setTotalPages(Number(pagination?.pages || 1));
       } catch (err) {
         if (cancelled) return;
         setCourses([]);
         setTotalPages(1);
+        setLoadError(err?.message || 'Could not load courses.');
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -247,10 +258,7 @@ function LearnersCourses() {
             <h1>Courses</h1>
 
             <div className="learners-home-title-actions">
-              <a className="learners-btn learners-btn-secondary" href="/" onClick={preventDefault}>
-                <img src={acSav} alt="Save" />
-                <span>Saved Library</span>
-              </a>
+              <SavedLibraryButton />
               <a className="learners-btn learners-btn-primary" href="/academia/index" target="_blank" rel="noopener noreferrer">
                 <span>Go to website</span>
                 <img src={hoagoto} alt="Go" />
@@ -322,6 +330,21 @@ function LearnersCourses() {
             </li>
             <li>
               <button
+                className={`dropdown-item ${selectedFilter === 'Popular' ? 'active' : ''}`}
+                type="button"
+                onClick={() => {
+                  setSelectedFilter('Popular');
+                  setCurrentPage(1);
+                  const newParams = new URLSearchParams(searchParams);
+                  newParams.set('filter', 'Popular');
+                  setSearchParams(newParams);
+                }}
+              >
+                Popular
+              </button>
+            </li>
+            <li>
+              <button
                 className={`dropdown-item ${selectedFilter === 'My Courses' ? 'active' : ''}`}
                 type="button"
                 onClick={() => {
@@ -346,6 +369,23 @@ function LearnersCourses() {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
             <div className="div-h-r-s-f">
+              <button
+                className={selectedFilter === 'Popular' ? 'active' : ''}
+                type="button"
+                onClick={() => {
+                  setSelectedFilter(selectedFilter === 'Popular' ? 'All' : 'Popular');
+                  setCurrentPage(1);
+                  const newParams = new URLSearchParams(searchParams);
+                  if (selectedFilter === 'Popular') {
+                    newParams.set('filter', 'All');
+                  } else {
+                    newParams.set('filter', 'Popular');
+                  }
+                  setSearchParams(newParams);
+                }}
+              >
+                Popular
+              </button>
               <button
                 className={selectedFilter === 'Free' ? 'active' : ''}
                 type="button"
@@ -439,7 +479,32 @@ function LearnersCourses() {
             </div>
 
             <div className="learners-online-sec-contents">
-              {sortedCourses && sortedCourses.length > 0 ? sortedCourses.map((course) => (
+              {loadError ? (
+                <LearnerLoadError
+                  message={loadError}
+                  onRetry={() => {
+                    setLoadError('');
+                    setCurrentPage(1);
+                    setLoading(true);
+                  }}
+                />
+              ) : null}
+              {loading && (
+                <div className="learners-courses-skeleton-grid" aria-hidden="true">
+                  {Array.from({ length: 4 }).map((_, index) => (
+                    <div key={`course-skeleton-${index}`} className="osc-item osc-item--skeleton">
+                      <div className="osc-item-img learners-courses-skeleton-block" />
+                      <div className="osc-item-text">
+                        <div className="learners-courses-skeleton-line learners-courses-skeleton-line--title" />
+                        <div className="learners-courses-skeleton-line learners-courses-skeleton-line--meta" />
+                        <div className="learners-courses-skeleton-line learners-courses-skeleton-line--body" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {!loading && sortedCourses && sortedCourses.length > 0 ? sortedCourses.map((course) => (
                 <div key={course.id} className="osc-item" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleCourseClick(course.id); }} style={{ cursor: 'pointer' }}>
                   <div className="osc-item-img">
                     <img src={course.image || acOn} alt={course.title || 'Online Course'} />
@@ -507,9 +572,11 @@ function LearnersCourses() {
             <div className="learners-courses-section-head learners-courses-section-head-right">
               <div>
                 <h2>Syllabus</h2>
-                <p>Course Available to research</p>
+                <p>Browse course outlines</p>
               </div>
-              <a href="/" onClick={preventDefault}>See All</a>
+              <button type="button" className="learners-courses-see-all" onClick={() => navigate('/academia/learner/courses')}>
+                See All
+              </button>
             </div>
 
             <div className="learners-syllabus-list">
@@ -518,7 +585,7 @@ function LearnersCourses() {
                   <div className="fgbl-item-l">
                     <h4 
                       style={{ margin: '0 0 6px 0', fontSize: '15px', color: '#071437', fontWeight: '600', textDecoration: 'none', cursor: 'pointer' }}
-                      onClick={() => navigate(`/academia/learner/course-part?id=${husk.id}`, { state: { courseId: husk.id } })}
+                      onClick={() => navigate(`/academia/learner/course-part?id=${husk.id}`)}
                     >
                       {husk.title}
                     </h4>
@@ -529,7 +596,7 @@ function LearnersCourses() {
                   <div className="fgbl-item-r">
                     <button 
                       type="button" 
-                      onClick={() => navigate(`/academia/learner/course-part?id=${husk.id}`, { state: { courseId: husk.id } })}
+                      onClick={() => navigate(`/academia/learner/course-part?id=${husk.id}`)}
                       className="learners-btn-view-syllabus"
                       style={{
                         background: 'transparent',
@@ -550,14 +617,17 @@ function LearnersCourses() {
                         <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                         <circle cx="12" cy="12" r="3"></circle>
                       </svg>
-                      <span>View Papers</span>
+                      <span>View syllabus</span>
                     </button>
                   </div>
                 </div>
               )) : (
                 <div className="learners-empty-state learners-empty-state--courses">
                   <h4>No syllabus available</h4>
-                  <p>Load the available courses to populate the syllabus sidebar.</p>
+                  <p>Browse the catalog to explore available courses.</p>
+                  <button type="button" className="learners-btn learners-btn-primary" onClick={() => navigate('/academia/learner/courses')}>
+                    Browse courses
+                  </button>
                 </div>
               )}
             </div>

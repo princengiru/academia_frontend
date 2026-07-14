@@ -36,6 +36,111 @@
   color: #78829D;
 }
 
+.learners-continue-hero {
+  display: flex;
+  align-items: stretch;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 20px;
+  padding: 22px 24px;
+  border-radius: 14px;
+  border: 1px solid #E8D9F3;
+  background: linear-gradient(135deg, #FDFBFF 0%, #F4EBFA 100%);
+}
+
+.learners-continue-hero-copy {
+  min-width: 0;
+  flex: 1;
+}
+
+.learners-continue-hero-eyebrow {
+  display: inline-block;
+  margin-bottom: 8px;
+  font-family: Inter, sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #5B0A86;
+}
+
+.learners-continue-hero-copy h2 {
+  margin: 0;
+  font-family: Inter, sans-serif;
+  font-size: 22px;
+  line-height: 28px;
+  font-weight: 600;
+  color: #071437;
+}
+
+.learners-continue-hero-copy p {
+  margin: 8px 0 0;
+  font-family: Inter, sans-serif;
+  font-size: 14px;
+  line-height: 20px;
+  color: #4B5675;
+}
+
+.learners-continue-hero-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+  font-family: Inter, sans-serif;
+  font-size: 12px;
+  color: #78829D;
+}
+
+.learners-continue-hero-btn {
+  margin-top: 16px;
+}
+
+.learners-continue-hero-media {
+  position: relative;
+  width: 180px;
+  min-width: 180px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #E2E8F0;
+}
+
+.learners-continue-hero-media img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.learners-continue-hero-progress {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(closest-side, #FFFFFF 72%, transparent 73% 100%),
+    conic-gradient(#5B0A86 calc(var(--progress, 0) * 1%), #E9DDF3 0);
+  font-family: Inter, sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  color: #5B0A86;
+}
+
+@media (max-width: 768px) {
+  .learners-continue-hero {
+    flex-direction: column;
+  }
+
+  .learners-continue-hero-media {
+    width: 100%;
+    min-width: 0;
+    height: 140px;
+  }
+}
+
 .learners-card {
   background: #fff;
   border: 1px solid #F1F1F4;
@@ -858,6 +963,29 @@
   border-radius: 14px;
   background: transparent;
   border: 1px solid #F1F1F4;
+  display: flex;
+  align-items: stretch;
+}
+
+button.learners-calendar-item--action {
+  width: 100%;
+  display: flex;
+  align-items: stretch;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+button.learners-calendar-item--action:hover {
+  border-color: #E2D4EC;
+  background: #FDFBFF;
+}
+
+button.learners-calendar-item--action:focus-visible {
+  outline: 2px solid #5B0A86;
+  outline-offset: 2px;
 }
 
 .learners-calendar-date {

@@ -226,7 +226,8 @@
   color: #4B5675;
 }
 
-.learners-available-test-page .learners-available-test-head-side a {
+.learners-available-test-page .learners-available-test-head-side a,
+.learners-available-test-page .learners-available-test-see-all {
   margin-top: 2px;
   font-family: Inter, sans-serif;
   font-weight: 500;
@@ -235,6 +236,17 @@
   color: #4B5675;
   text-decoration: none;
   border-bottom: 1px dotted #4B5675;
+  background: transparent;
+  border-top: none;
+  border-left: none;
+  border-right: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+.learners-available-test-page .learners-available-test-see-all:hover {
+  color: #450468;
+  border-bottom-color: #450468;
 }
 
 .learners-available-test-page .learners-available-test-grid {
@@ -443,6 +455,19 @@
   flex-direction: column;
   gap: 8px;
   min-width: 0;
+}
+
+.learners-available-test-page .learners-available-syllabus-copy-btn {
+  border: none;
+  background: transparent;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+  flex: 1;
+}
+
+.learners-available-test-page .learners-available-syllabus-copy-btn:hover h4 {
+  color: #450468;
 }
 
 .learners-available-test-page .learners-available-syllabus-copy h4 {
