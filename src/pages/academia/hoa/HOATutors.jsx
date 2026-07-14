@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import HOALayout from '../../../components/layouts/HOALayout/HOALayout';
 import { useCurrency, flagOptions } from '../../../hooks/useCurrency';
+import { HOALoadError, HOALoading, HOAEmptyState, HOATableEmptyRow } from './HOAPageState';
+import { HOAToast, useHOAToast } from './useHOAToast';
 import './hoa-tutors.css';
 
 // --- Icons & Images ---
@@ -77,11 +79,14 @@ const HOATutors = () => {
   const navigate = useNavigate();
   const preventDefault = (e) => e.preventDefault();
   const { currency, setCurrency, formatAmount } = useCurrency();
+  const { toast, showToast, hideToast } = useHOAToast();
 
   // --- Main Data State ---
   const [tutorsData, setTutorsData] = useState([]);
   const [statsData, setStatsData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [fetchError, setFetchError] = useState('');
+  const [retryKey, setRetryKey] = useState(0);
 
   // --- UI/Filter State ---
   const [selectedRows, setSelectedRows] = useState([]);
@@ -139,8 +144,9 @@ const HOATutors = () => {
           )
         };
       });
+      showToast('Course approved successfully.', 'success');
     } catch (err) {
-      alert(err.message);
+      showToast(err.message || 'Failed to approve course.', 'error');
     } finally {
       setSubmittingCourseId(null);
       setOpenModalCourseActionId(null);
@@ -173,8 +179,9 @@ const HOATutors = () => {
           )
         };
       });
+      showToast('Course rejected.', 'success');
     } catch (err) {
-      alert(err.message);
+      showToast(err.message || 'Failed to reject course.', 'error');
     } finally {
       setSubmittingCourseId(null);
       setOpenModalCourseActionId(null);
@@ -200,8 +207,9 @@ const HOATutors = () => {
           )
         };
       });
+      showToast('Syllabus approved successfully.', 'success');
     } catch (err) {
-      alert(err.message);
+      showToast(err.message || 'Failed to approve syllabus.', 'error');
     } finally {
       setSubmittingSyllabusId(null);
     }
@@ -233,8 +241,9 @@ const HOATutors = () => {
           )
         };
       });
+      showToast('Syllabus rejected.', 'success');
     } catch (err) {
-      alert(err.message);
+      showToast(err.message || 'Failed to reject syllabus.', 'error');
     } finally {
       setSubmittingSyllabusId(null);
     }
@@ -267,6 +276,7 @@ const HOATutors = () => {
   // --- Data Fetching ---
   const fetchTutorsData = async (mounted = true) => {
     setIsLoading(true);
+    setFetchError('');
     try {
       const token = localStorage.getItem('token');
       if (!token) {
@@ -316,13 +326,15 @@ const HOATutors = () => {
           averageRating: tutor.average_rating || 0
         })));
       } else {
-        setTutorsData([]);
+        const errorBody = await tutorsRes?.json().catch(() => ({}));
+        throw new Error(errorBody?.message || errorBody?.error?.message || 'Failed to load tutors.');
       }
     } catch (error) {
       console.error("Failed to fetch tutors", error);
       if (mounted) {
         setStatsData({});
         setTutorsData([]);
+        setFetchError(error.message || 'Failed to load tutors.');
       }
     } finally {
       if (mounted) setIsLoading(false);
@@ -333,7 +345,7 @@ const HOATutors = () => {
     let mounted = true;
     fetchTutorsData(mounted);
     return () => { mounted = false; };
-  }, []);
+  }, [retryKey]);
 
   // --- Memoized Sorting & Filtering (Main Table) ---
   const processedData = useMemo(() => {
@@ -536,25 +548,6 @@ const HOATutors = () => {
     );
   };
 
-  // --- Dummy Data for Modal ---
-  const modalLessons = useMemo(() => [
-    { id: 1, title: 'Javascript Fundamental', date: '12 Jan 2024', type: 'Course', duration: '4 Weeks', students: '231', views: '2.4K Views', amount: '222.3 USD', amountSub: '23', certs: '6', score: '12.34 %', feeStatus: 'Free', feeAmount: '0 USD', feeColor: '#5014D0', status: 'Published', statusType: 'paid' },
-    { id: 2, title: 'React Hooks Deep Dive', date: '15 Feb 2024', type: 'Course', duration: '2 Weeks', students: '120', views: '1.4K Views', amount: '150.0 USD', amountSub: '15', certs: '3', score: '10.50 %', feeStatus: 'Paid', feeAmount: '35 USD', feeColor: '#04B440', status: 'Draft', statusType: 'failed' },
-  ], []);
-  
-  const modalDocuments = useMemo(() => [
-    { id: 1, name: 'Syllabus PDF', size: '5.6 MB', type: 'pdf' },
-    { id: 2, name: 'Instructor ID', size: '1.2 MB', type: 'pdf' },
-  ], []);
-
-  const modalProjects = useMemo(() => Array(6).fill({
-    image: 'https://via.placeholder.com/300x150/E2E8F0/A1A5B7?text=Project+Preview',
-    author: 'Tutor Admin',
-    likes: '1.2K',
-    views: '5.4K',
-    title: 'Advanced Architecture Presentation'
-  }), []);
-
   const lessonsList = useMemo(() => {
     if (activeTutorProfile?.coursesWithDetails && activeTutorProfile.coursesWithDetails.length > 0) {
       return activeTutorProfile.coursesWithDetails.map(course => {
@@ -587,8 +580,8 @@ const HOATutors = () => {
         };
       });
     }
-    return modalLessons;
-  }, [activeTutorProfile, modalLessons]);
+    return [];
+  }, [activeTutorProfile]);
 
   const documentsList = useMemo(() => {
     if (activeTutorProfile?.allSyllabuses && activeTutorProfile.allSyllabuses.length > 0) {
@@ -606,8 +599,8 @@ const HOATutors = () => {
         };
       });
     }
-    return modalDocuments;
-  }, [activeTutorProfile, modalDocuments]);
+    return [];
+  }, [activeTutorProfile]);
 
   const projectsList = useMemo(() => {
     if (activeTutorProfile?.uploadedProjects && activeTutorProfile.uploadedProjects.length > 0) {
@@ -620,8 +613,8 @@ const HOATutors = () => {
         title: proj.title || 'Untitled Project'
       }));
     }
-    return modalProjects;
-  }, [activeTutorProfile, modalProjects]);
+    return [];
+  }, [activeTutorProfile]);
 
   const activityLogs = useMemo(() => {
     const logs = [];
@@ -663,9 +656,7 @@ const HOATutors = () => {
     if (logs.length > 0) {
       return logs.sort((a, b) => new Date(b.date) - new Date(a.date));
     }
-    return [
-      { id: 1, logNo: '#LOG1204567', action: 'Syllabus Upload', status: 'Success', statusType: 'solved', description: 'Tutor successfully uploaded a new syllabus module pending approval.' }
-    ];
+    return [];
   }, [activeTutorProfile]);
 
   return (
@@ -829,6 +820,16 @@ const HOATutors = () => {
         </div>
 
         {/* Tutors List Layout */}
+        {isLoading && tutorsData.length === 0 ? (
+          <HOALoading message="Loading tutors…" />
+        ) : fetchError ? (
+          <HOALoadError
+            title="Could not load tutors"
+            message={fetchError}
+            onRetry={() => setRetryKey((key) => key + 1)}
+          />
+        ) : (
+        <>
         <div className="hoa-list-container">
           <table className="hoa-list-table learners-table">
             <thead>
@@ -900,7 +901,11 @@ const HOATutors = () => {
                 </tr>
               ))}
               {paginatedData.length === 0 && !isLoading && (
-                <tr><td colSpan="8" style={{ textAlign: 'center', padding: '24px', color: '#64748B' }}>No Tutors found.</td></tr>
+                <HOATableEmptyRow
+                  colSpan={8}
+                  title="No tutors found"
+                  message={searchQuery || activeFilter !== 'All Tutors' ? 'Try adjusting your search or filters.' : 'Instructor accounts will appear here once tutors are registered.'}
+                />
               )}
             </tbody>
           </table>
@@ -951,6 +956,8 @@ const HOATutors = () => {
             </button>
           </div>
         </div>
+        </>
+        )}
 
         {/* --- Tutor Preview Modal --- */}
         <div className={`hoa-modal-overlay ${isModalOpen ? 'open' : ''}`} onClick={closeModal}>
@@ -1055,23 +1062,23 @@ const HOATutors = () => {
                       </div>
                       <div className="profile-info-row">
                         <span className="profile-info-label"><img src={hoabriefcase} alt="role" className="opacity-50" /> Experience</span>
-                        <span className="profile-info-val">{activeTutorProfile?.bio || '3 Yrs'}</span>
+                        <span className="profile-info-val">{activeTutorProfile?.bio || '—'}</span>
                       </div>
                       <div className="profile-info-row">
                         <span className="profile-info-label"><img src={hoasyllabus} alt="syll" className="opacity-50" /> Syllabus</span>
-                        <span className="profile-info-val">{activeTutorProfile?.stats?.totalSyllabuses ?? 12}</span>
+                        <span className="profile-info-val">{activeTutorProfile?.stats?.totalSyllabuses ?? '—'}</span>
                       </div>
                       <div className="profile-info-row">
                         <span className="profile-info-label"><img src={hoaonlinecourses} alt="courses" className="opacity-50" /> Online Courses</span>
-                        <span className="profile-info-val">{activeTutorProfile?.stats?.totalCourses ?? tutorsData.find(t => t.id === activeTutorId)?.uploads ?? 0}</span>
+                        <span className="profile-info-val">{activeTutorProfile?.stats?.totalCourses ?? tutorsData.find(t => t.id === activeTutorId)?.uploads ?? '—'}</span>
                       </div>
                       <div className="profile-info-row">
                         <span className="profile-info-label"><img src={hoaprojects} alt="proj" className="opacity-50" /> Projects</span>
-                        <span className="profile-info-val">{activeTutorProfile?.stats?.totalUploadedProjects ?? 14}</span>
+                        <span className="profile-info-val">{activeTutorProfile?.stats?.totalUploadedProjects ?? '—'}</span>
                       </div>
                       <div className="profile-info-row">
                         <span className="profile-info-label"><img src={hoatotalstudents} alt="stud" className="opacity-50" /> Total Students</span>
-                        <span className="profile-info-val">{activeTutorProfile?.stats?.totalStudents ?? 234}</span>
+                        <span className="profile-info-val">{activeTutorProfile?.stats?.totalStudents ?? '—'}</span>
                       </div>
                     </div>
                   </div>
@@ -1079,19 +1086,34 @@ const HOATutors = () => {
                   {/* Modal Stats Row */}
                   <div className="modal-stats-row modal-stats-row-no-border">
                     <div className="mod-stat mod-stat-br-pr">
-                      <h3 className="flex-center-gap4">+ {formatAmount(`${activeTutorProfile?.stats ? (activeTutorProfile.stats.totalRevenueOfCourses * 0.1) : 2800} USD`).replace(' USD', '').replace(' RWF', '')} <span className="stat-currency">{currency.label}</span></h3>
+                      <h3 className="flex-center-gap4">
+                        {activeTutorProfile?.stats?.totalRevenueOfCourses != null
+                          ? `+ ${formatAmount(`${activeTutorProfile.stats.totalRevenueOfCourses * 0.1} USD`).replace(' USD', '').replace(' RWF', '')}`
+                          : '—'}
+                        <span className="stat-currency">{currency.label}</span>
+                      </h3>
                       <p>Downloads Income</p>
                     </div>
                     <div className="mod-stat mod-stat-br-px">
-                      <h3 className="flex-center-gap4">+ {formatAmount(`${activeTutorProfile?.stats?.totalRevenueOfCourses ?? 2800} USD`).replace(' USD', '').replace(' RWF', '')} <span className="stat-currency">{currency.label}</span></h3>
+                      <h3 className="flex-center-gap4">
+                        {activeTutorProfile?.stats?.totalRevenueOfCourses != null
+                          ? `+ ${formatAmount(`${activeTutorProfile.stats.totalRevenueOfCourses} USD`).replace(' USD', '').replace(' RWF', '')}`
+                          : '—'}
+                        <span className="stat-currency">{currency.label}</span>
+                      </h3>
                       <p>Courses Income</p>
                     </div>
                     <div className="mod-stat mod-stat-br-px">
-                      <h3 className="flex-center-gap4">{formatAmount(`${activeTutorProfile?.stats ? (activeTutorProfile.stats.totalSyllabuses * 5000) : 2340044} RWF`).replace(' RWF','').replace(' USD','')} <span className="stat-currency">{currency.label}</span></h3>
+                      <h3 className="flex-center-gap4">
+                        {activeTutorProfile?.stats?.totalSyllabuses != null
+                          ? formatAmount(`${activeTutorProfile.stats.totalSyllabuses * 5000} RWF`).replace(' RWF', '').replace(' USD', '')
+                          : '—'}
+                        <span className="stat-currency">{currency.label}</span>
+                      </h3>
                       <p>Upload Amount</p>
                     </div>
                     <div className="mod-stat mod-stat-pl">
-                      <h3 className="font-15-mt6">{activeTutorProfile?.created_at ? formatDate(activeTutorProfile.created_at) : '23 - March - 2026 14:00:45'}</h3>
+                      <h3 className="font-15-mt6">{activeTutorProfile?.created_at ? formatDate(activeTutorProfile.created_at) : '—'}</h3>
                       <p>Date Joined</p>
                     </div>
                   </div>
@@ -1207,6 +1229,13 @@ const HOATutors = () => {
                                   </td>
                                 </tr>
                               ))}
+                              {lessonsList.length === 0 && !isModalLoading && (
+                                <HOATableEmptyRow
+                                  colSpan={6}
+                                  title="No courses found"
+                                  message="This tutor has not published any courses yet."
+                                />
+                              )}
                             </tbody>
                           </table>
                         </div>
@@ -1260,6 +1289,9 @@ const HOATutors = () => {
                               </div>
                             </div>
                           ))}
+                          {!isModalLoading && documentsList.length === 0 && (
+                            <p style={{ color: '#64748B', fontSize: '14px' }}>No syllabus documents available for this tutor.</p>
+                          )}
                         </div>
                       </div>
                     )}
@@ -1291,6 +1323,13 @@ const HOATutors = () => {
                               <p className="proj-title">{proj.title}</p>
                             </div>
                           ))}
+                          {projectsList.length === 0 && !isModalLoading && (
+                            <HOAEmptyState
+                              inline
+                              title="No projects uploaded"
+                              message="This tutor has not uploaded any projects yet."
+                            />
+                          )}
                         </div>
                       </div>
                     )}
@@ -1303,7 +1342,13 @@ const HOATutors = () => {
                         </h4>
 
                         <div className="qa-section">
-                          {activityLogs.map((log) => {
+                          {activityLogs.length === 0 && !isModalLoading ? (
+                            <HOAEmptyState
+                              inline
+                              title="No activity yet"
+                              message="Course, syllabus, and project events will appear here once this tutor has upload history."
+                            />
+                          ) : activityLogs.map((log) => {
                             const isOpen = openTickets[log.id] !== undefined ? openTickets[log.id] : (activityLogs[0]?.id === log.id);
                             return (
                               <div key={log.id} className={`ticket-card ${log.statusType === 'solved' ? 'border-green' : 'border-yellow'} ${!isOpen ? 'collapsed' : ''}`} style={{ marginBottom: '12px' }}>
@@ -1348,6 +1393,7 @@ const HOATutors = () => {
           </div>
         )}
 
+        <HOAToast toast={toast} onDismiss={hideToast} />
       </div>
     </HOALayout>
   );

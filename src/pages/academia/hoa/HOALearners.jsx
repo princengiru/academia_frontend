@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import HOALayout from '../../../components/layouts/HOALayout/HOALayout';
 import { useCurrency, flagOptions } from '../../../hooks/useCurrency';
 import './hoa-learners.css';
+import { HOALoadError, HOALoading, HOATableEmptyRow } from './HOAPageState';
 
 // --- Icons & Images ---
 import hoausflag from '../../../assets/icons/hoausflag.svg';
@@ -56,6 +57,8 @@ const HOALearners = () => {
   const [learnersData, setLearnersData] = useState([]);
   const [statsData, setStatsData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [fetchError, setFetchError] = useState('');
+  const [retryKey, setRetryKey] = useState(0);
 
   // --- UI/Filter State ---
   const [selectedRows, setSelectedRows] = useState([]);
@@ -88,6 +91,8 @@ const HOALearners = () => {
 
   const [openRowMenuId, setOpenRowMenuId] = useState(null);
   const [isDrawerMenuOpen, setIsDrawerMenuOpen] = useState(false);
+  const [confirmAction, setConfirmAction] = useState(null);
+  const [confirmLoading, setConfirmLoading] = useState(false);
 
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
   const showToast = (message, type = 'success') => {
@@ -95,6 +100,28 @@ const HOALearners = () => {
     setTimeout(() => {
       setToast(prev => ({ ...prev, show: false }));
     }, 4000);
+  };
+
+  const applyStatusOptimistic = (ids, action) => {
+    const idSet = new Set(ids.map(String));
+    const nextStatus = action === 'suspend'
+      ? { status: 'Suspended', statusColor: 'red' }
+      : { status: 'Active', statusColor: 'green' };
+    setLearnersData((prev) =>
+      prev.map((learner) => (idSet.has(String(learner.id)) ? { ...learner, ...nextStatus } : learner))
+    );
+  };
+
+  const applyDeleteOptimistic = (ids) => {
+    const idSet = new Set(ids.map(String));
+    setLearnersData((prev) => prev.filter((learner) => !idSet.has(String(learner.id))));
+    setSelectedRows((prev) => prev.filter((id) => !idSet.has(String(id))));
+    if (activeLearnerId && idSet.has(String(activeLearnerId))) {
+      setIsModalOpen(false);
+      setActiveLearnerId(null);
+      setActiveTab('lessons');
+      setLearnerProfile(null);
+    }
   };
 
   const filterOptions = ['All Learners', 'Active', 'Inactive', 'Suspended'];
@@ -117,6 +144,7 @@ const HOALearners = () => {
   // --- Data Fetching ---
   const fetchLearnersData = async (mounted = true) => {
     setIsLoading(true);
+    setFetchError('');
     try {
       const token = localStorage.getItem('token');
       
@@ -181,13 +209,15 @@ const HOALearners = () => {
           };
         }));
       } else {
-        setLearnersData([]);
+        const errorBody = await learnersRes?.json().catch(() => ({}));
+        throw new Error(errorBody?.message || errorBody?.error?.message || 'Failed to load learners.');
       }
     } catch (error) {
       console.error("Failed to fetch learners", error);
       if (mounted) {
         setStatsData({});
         setLearnersData([]);
+        setFetchError(error.message || 'Failed to load learners.');
       }
     } finally {
       if (mounted) setIsLoading(false);
@@ -198,7 +228,7 @@ const HOALearners = () => {
     let mounted = true;
     fetchLearnersData(mounted);
     return () => { mounted = false; };
-  }, []);
+  }, [retryKey]);
 
   // --- Memoized Sorting & Filtering (Main Table) ---
   const processedData = useMemo(() => {
@@ -304,102 +334,124 @@ const HOALearners = () => {
     setLearnerProfile(null); // Clean up on close
   };
 
-  const handleSingleStatusChange = async (learnerId, action) => {
-    try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(`${API_BASE_URL}/api/admin/learners/${learnerId}/${action}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ reason: `${action === 'suspend' ? 'Suspended' : 'Activated'} by admin` })
-      });
-      if (res.ok) {
-        fetchLearnersData(true);
-        if (activeLearnerId === learnerId) {
-          fetchLearnerProfile(learnerId);
-        }
-        showToast(`Learner ${action === 'suspend' ? 'suspended' : 'activated'} successfully!`, 'success');
-      } else {
-        showToast('Failed to update learner status', 'error');
-      }
-    } catch (err) {
-      console.error(err);
-      showToast('Error updating learner status', 'error');
-    }
+  const handleSingleStatusChange = (learnerId, action) => {
+    setConfirmAction({
+      kind: action,
+      ids: [learnerId],
+      title: action === 'suspend' ? 'Suspend learner?' : 'Activate learner?',
+      message: action === 'suspend'
+        ? 'This learner will lose access until an admin reactivates the account.'
+        : 'This learner will regain access to Academia.',
+      confirmLabel: action === 'suspend' ? 'Suspend' : 'Activate',
+    });
   };
 
-  const handleSingleDelete = async (learnerId) => {
-    if (!window.confirm('Are you sure you want to delete this learner?')) return;
+  const handleSingleDelete = (learnerId) => {
+    setConfirmAction({
+      kind: 'delete',
+      ids: [learnerId],
+      title: 'Delete learner?',
+      message: 'This permanently removes the learner account from admin listings. This cannot be undone from HOA.',
+      confirmLabel: 'Delete',
+      destructive: true,
+    });
+  };
+
+  const handleBulkStatusChange = (action) => {
+    if (selectedRows.length === 0) return;
+    setConfirmAction({
+      kind: `bulk-${action}`,
+      ids: [...selectedRows],
+      title: action === 'suspend' ? 'Suspend selected learners?' : 'Activate selected learners?',
+      message: `${selectedRows.length} learner${selectedRows.length === 1 ? '' : 's'} will be ${action === 'suspend' ? 'suspended' : 'activated'}.`,
+      confirmLabel: action === 'suspend' ? 'Suspend all' : 'Activate all',
+    });
+  };
+
+  const handleBulkDelete = () => {
+    if (selectedRows.length === 0) return;
+    setConfirmAction({
+      kind: 'bulk-delete',
+      ids: [...selectedRows],
+      title: 'Delete selected learners?',
+      message: `${selectedRows.length} learner${selectedRows.length === 1 ? '' : 's'} will be removed from admin listings. This cannot be undone from HOA.`,
+      confirmLabel: 'Delete all',
+      destructive: true,
+    });
+  };
+
+  const executeConfirmAction = async () => {
+    if (!confirmAction || confirmLoading) return;
+
+    const { kind, ids } = confirmAction;
+    const token = localStorage.getItem('token');
+    if (!token) {
+      navigate('/academia/auth/signin');
+      return;
+    }
+
+    const snapshot = learnersData;
+    const selectedSnapshot = selectedRows;
+    setConfirmLoading(true);
+
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(`${API_BASE_URL}/api/admin/learners/${learnerId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      if (res.ok) {
-        fetchLearnersData(true);
+      if (kind === 'suspend' || kind === 'activate') {
+        applyStatusOptimistic(ids, kind);
+        const res = await fetch(`${API_BASE_URL}/api/admin/learners/${ids[0]}/${kind}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ reason: `${kind === 'suspend' ? 'Suspended' : 'Activated'} by admin` }),
+        });
+        if (!res.ok) throw new Error('Failed to update learner status');
+        if (activeLearnerId === ids[0]) fetchLearnerProfile(ids[0]);
+        showToast(`Learner ${kind === 'suspend' ? 'suspended' : 'activated'} successfully!`, 'success');
+      } else if (kind === 'delete') {
+        applyDeleteOptimistic(ids);
+        const res = await fetch(`${API_BASE_URL}/api/admin/learners/${ids[0]}`, {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) throw new Error('Failed to delete learner');
         showToast('Learner deleted successfully!', 'success');
-      } else {
-        showToast('Failed to delete learner', 'error');
-      }
-    } catch (err) {
-      console.error(err);
-      showToast('Error deleting learner', 'error');
-    }
-  };
-
-  const handleBulkStatusChange = async (action) => {
-    if (selectedRows.length === 0) return;
-    try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(`${API_BASE_URL}/api/admin/learners/bulk-${action}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ ids: selectedRows, reason: `Bulk ${action === 'suspend' ? 'suspended' : 'activated'} by admin` })
-      });
-      if (res.ok) {
-        fetchLearnersData(true);
+      } else if (kind === 'bulk-suspend' || kind === 'bulk-activate') {
+        const action = kind === 'bulk-suspend' ? 'suspend' : 'activate';
+        applyStatusOptimistic(ids, action);
         setSelectedRows([]);
+        const res = await fetch(`${API_BASE_URL}/api/admin/learners/bulk-${action}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ ids, reason: `Bulk ${action === 'suspend' ? 'suspended' : 'activated'} by admin` }),
+        });
+        if (!res.ok) throw new Error('Failed to perform bulk operation');
         showToast(`Selected learners ${action === 'suspend' ? 'suspended' : 'activated'} successfully!`, 'success');
-      } else {
-        showToast('Failed to perform bulk operation', 'error');
-      }
-    } catch (err) {
-      console.error(err);
-      showToast('Error in bulk operation', 'error');
-    }
-  };
-
-  const handleBulkDelete = async () => {
-    if (selectedRows.length === 0) return;
-    if (!window.confirm('Are you sure you want to delete the selected learners?')) return;
-    try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(`${API_BASE_URL}/api/admin/learners/bulk-delete`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ ids: selectedRows })
-      });
-      if (res.ok) {
-        fetchLearnersData(true);
-        setSelectedRows([]);
+      } else if (kind === 'bulk-delete') {
+        applyDeleteOptimistic(ids);
+        const res = await fetch(`${API_BASE_URL}/api/admin/learners/bulk-delete`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ ids }),
+        });
+        if (!res.ok) throw new Error('Failed to delete selected learners');
         showToast('Selected learners deleted successfully!', 'success');
-      } else {
-        showToast('Failed to delete selected learners', 'error');
       }
+
+      setConfirmAction(null);
     } catch (err) {
-      console.error(err);
-      showToast('Error in bulk delete', 'error');
+      setLearnersData(snapshot);
+      setSelectedRows(selectedSnapshot);
+      showToast(err.message || 'Action failed', 'error');
+      fetchLearnersData(true);
+    } finally {
+      setConfirmLoading(false);
     }
   };
 
@@ -520,16 +572,6 @@ const HOALearners = () => {
     </div>
   );
 
-  // --- Dummy Data for the Modal (Needs mapping from backend later) ---
-  const modalLessons = [
-    { id: 1, title: 'Javascript Fundamental Quiz', date: '12 Jan 2024', tutor: 'Alexis Froduard', score: '85.67', type: 'Course', duration: '4 Weeks', attempts: '3', status: 'Passed', statusType: 'passed' },
-    { id: 2, title: 'React UI Architecture', date: '15 Feb 2024', tutor: 'Sarah Jenkins', score: '45.45', type: 'Course', duration: '4 Weeks', attempts: '2', status: 'Failed', statusType: 'failed' },
-  ];
-  const modalDocuments = [
-    { id: 1, name: 'Javascript Fundamental', size: '5.6 MB', type: 'ribbon' },
-    { id: 3, name: 'My Resume.pdf', size: '1.2 MB', type: 'pdf' },
-  ];
-
   return (
     <HOALayout currentPage="learners">
       <div className="hoa-learners-page">
@@ -555,8 +597,8 @@ const HOALearners = () => {
             <div className="sub-stat"><h4>{statsData?.online_learners || '0'}</h4><p>Online Learners</p></div>
             <div className="sub-stat"><h4>{statsData?.competent_learners || '0'}</h4><p>Competent Learners</p></div>
             <div className="sub-stat"><h4>{statsData?.nyc_learners || '0'}</h4><p>NYC Learners</p></div>
-            <div className="sub-stat"><h4>{statsData?.avg_score || '0.0'}</h4><p>Average Score <span className="trend down"> <img src={hoadecrease} alt="" /> -4.5%</span></p></div>
-            <div className="sub-stat"><h4>{statsData?.certificates || '0'}</h4><p>Certificates <span className="trend up"> <img src={hoaincrease} alt="" /> +4.1</span></p></div>
+            <div className="sub-stat"><h4>{statsData?.avg_score || '0.0'}</h4><p>Average Score</p></div>
+            <div className="sub-stat"><h4>{statsData?.certificates || '0'}</h4><p>Certificates</p></div>
           </div>
         </div>
 
@@ -682,6 +724,16 @@ const HOALearners = () => {
         </div>
 
         {/* Learners List Layout */}
+        {isLoading && learnersData.length === 0 ? (
+          <HOALoading message="Loading learners…" />
+        ) : fetchError ? (
+          <HOALoadError
+            title="Could not load learners"
+            message={fetchError}
+            onRetry={() => setRetryKey((key) => key + 1)}
+          />
+        ) : (
+        <>
         <div className="hoa-list-container">
           <table className="hoa-list-table learners-table">
             <thead>
@@ -798,7 +850,11 @@ const HOALearners = () => {
                 </tr>
               ))}
               {paginatedData.length === 0 && !isLoading && (
-                <tr><td colSpan="9" style={{ textAlign: 'center', padding: '24px', color: '#64748B' }}>No learners found.</td></tr>
+                <HOATableEmptyRow
+                  colSpan={9}
+                  title="No learners found"
+                  message={searchQuery || activeFilter !== 'All Learners' ? 'Try adjusting your search or filters.' : 'Learner accounts will appear here once students register.'}
+                />
               )}
             </tbody>
           </table>
@@ -849,6 +905,8 @@ const HOALearners = () => {
             </button>
           </div>
         </div>
+        </>
+        )}
 
         {/* --- Learner Preview Modal --- */}
         <div className={`hoa-modal-overlay ${isModalOpen ? 'open' : ''}`} onClick={closeModal}>
@@ -1123,6 +1181,71 @@ const HOALearners = () => {
           <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.8)', zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <button onClick={() => setFullScreenImage(null)} style={{ position: 'absolute', top: '20px', right: '30px', background: 'none', border: 'none', color: 'white', fontSize: '40px', cursor: 'pointer', padding: '10px' }}>&times;</button>
             <img src={fullScreenImage} alt="Full Screen" style={{ maxWidth: '90%', maxHeight: '90%', borderRadius: '8px', objectFit: 'contain' }} />
+          </div>
+        )}
+
+        {/* Confirm destructive / status actions */}
+        {confirmAction && (
+          <div
+            className="hoa-modal-overlay open"
+            style={{ zIndex: 10050, background: 'rgba(15, 23, 42, 0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            onClick={() => !confirmLoading && setConfirmAction(null)}
+          >
+            <div
+              role="dialog"
+              aria-modal="true"
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                width: 'min(420px, calc(100vw - 32px))',
+                background: '#fff',
+                borderRadius: '12px',
+                border: '1px solid #EEF1F6',
+                padding: '24px',
+                boxShadow: '0 16px 40px rgba(15, 23, 42, 0.18)',
+              }}
+            >
+              <h3 style={{ margin: '0 0 8px', fontSize: '18px', color: '#0F172A' }}>{confirmAction.title}</h3>
+              <p style={{ margin: '0 0 20px', fontSize: '13px', lineHeight: 1.5, color: '#64748B' }}>{confirmAction.message}</p>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                <button
+                  type="button"
+                  disabled={confirmLoading}
+                  onClick={() => setConfirmAction(null)}
+                  style={{
+                    height: '36px',
+                    padding: '0 14px',
+                    borderRadius: '6px',
+                    border: '1px solid #DBDFE9',
+                    background: '#fff',
+                    color: '#4B5675',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={confirmLoading}
+                  onClick={executeConfirmAction}
+                  style={{
+                    height: '36px',
+                    padding: '0 14px',
+                    borderRadius: '6px',
+                    border: 'none',
+                    background: confirmAction.destructive ? '#EF4444' : '#450468',
+                    color: '#fff',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    cursor: confirmLoading ? 'wait' : 'pointer',
+                    opacity: confirmLoading ? 0.75 : 1,
+                  }}
+                >
+                  {confirmLoading ? 'Working…' : confirmAction.confirmLabel}
+                </button>
+              </div>
+            </div>
           </div>
         )}
 
