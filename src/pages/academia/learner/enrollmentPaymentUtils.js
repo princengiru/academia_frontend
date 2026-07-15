@@ -33,6 +33,36 @@ export function getPaymentMethodLabel(value) {
   return labels[value] || String(value || 'Payment').replace(/_/g, ' ');
 }
 
+// Course prices are stored in USD; this converts for display when the learner's
+// system currency is RWF. Adjust the rate here if a live FX source is added.
+export const USD_TO_RWF = 1300;
+
+export function getUserCurrency() {
+  try {
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const code = String(user.currency || 'USD').toUpperCase();
+    return code === 'RWF' ? 'RWF' : 'USD';
+  } catch {
+    return 'USD';
+  }
+}
+
+export function convertFromUsd(amountUsd, currency = 'USD') {
+  const value = Number(amountUsd) || 0;
+  return currency === 'RWF' ? value * USD_TO_RWF : value;
+}
+
+// Formats a USD base amount into the learner's currency string (e.g. "$80" / "RWF 104,000").
+// Amounts are rounded to whole numbers because the payment gateways cannot
+// charge fractional values (no decimals for RWF or the mobile-money rails).
+export function formatMoney(amountUsd, currency = 'USD') {
+  const value = Math.round(convertFromUsd(amountUsd, currency));
+  if (currency === 'RWF') {
+    return `RWF ${value.toLocaleString('en-US')}`;
+  }
+  return `$${value.toLocaleString('en-US')}`;
+}
+
 export const ENROLLMENT_ALLOWED_ROLES = ['student', 'learner'];
 
 export function isEnrollmentRoleAllowed(role) {
@@ -116,18 +146,23 @@ export async function fetchSavedPaymentMethods(apiBaseUrl, token) {
     id: String(method.id),
     paymentType: method.paymentType || method.payment_type || '',
     paymentProvider: method.paymentProvider || method.payment_provider || '',
+    accountHolderName: method.accountHolderName || method.account_holder_name || '',
     accountNumber: method.accountNumber || method.account_number || null,
     phoneNumber: method.phoneNumber || method.phone_number || null,
     cardLastFour: method.cardLastFour || method.card_last_four || null,
+    cardCvv: method.cardCvv || method.card_cvv || null,
+    expiryDate: method.expiryDate || method.expiry_date || null,
     isPrimary: Boolean(method.isPrimary ?? method.is_primary),
   }));
 }
 
-export function buildEnrollRequestBody(course, selectedPaymentValue) {
+export function buildEnrollRequestBody(course, selectedPaymentValue, couponCode) {
   if (isCourseFree(course)) {
     return { payment_method: 'free' };
   }
-  return { payment_method: selectedPaymentValue || 'credit_card' };
+  const body = { payment_method: selectedPaymentValue || 'credit_card' };
+  if (couponCode) body.coupon_code = couponCode;
+  return body;
 }
 
 export async function enrollInCourse({
@@ -136,6 +171,7 @@ export async function enrollInCourse({
   courseId,
   course,
   selectedPaymentValue,
+  couponCode,
 }) {
   const res = await fetch(`${apiBaseUrl}/api/courses/${courseId}/enroll`, {
     method: 'POST',
@@ -143,7 +179,7 @@ export async function enrollInCourse({
       'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify(buildEnrollRequestBody(course, selectedPaymentValue)),
+    body: JSON.stringify(buildEnrollRequestBody(course, selectedPaymentValue, couponCode)),
   });
 
   const data = await res.json();

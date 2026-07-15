@@ -16,14 +16,13 @@ import acBook from '../../../assets/icons/ac-book.svg';
 import hoabasics from '../../../assets/icons/hoabasics.svg';
 import hoagoto from '../../../assets/icons/hoagoto.svg';
 import SavedLibraryButton from './SavedLibraryButton';
-import EnrollmentPaymentPicker from './EnrollmentPaymentPicker';
+import EnrollmentPaymentModal from './EnrollmentPaymentModal';
 import {
   buildAvailablePaymentChoices,
-  buildAccountPaymentHref,
   enrollInCourse,
   fetchSavedPaymentMethods,
   getPaymentMethodLabel,
-  hasSavedPaymentMethods,
+  getUserCurrency,
   isCourseFree,
   isEnrollmentRoleAllowed,
   pickDefaultPaymentValue,
@@ -53,10 +52,11 @@ function CoursePart() {
   const [isEnrolling, setIsEnrolling] = useState(false);
   const [toast, setToast] = useState({ message: '', visible: false, tone: 'success' });
   const [isSummaryExpanded, setIsSummaryExpanded] = useState(false);
-  const [paymentChoices, setPaymentChoices] = useState([]);
   const [selectedPaymentValue, setSelectedPaymentValue] = useState('credit_card');
   const [paymentsLoading, setPaymentsLoading] = useState(false);
   const [savedPaymentMethods, setSavedPaymentMethods] = useState([]);
+  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
+  const [userCurrency, setUserCurrency] = useState(getUserCurrency());
   const [courseProgressPercent, setCourseProgressPercent] = useState(0);
 
   const resolveAssetUrl = (value) => {
@@ -135,20 +135,36 @@ function CoursePart() {
     loadCourseProgress();
   }, [resolvedCourseId, isEnrolled]);
 
+  // Pull the learner's system currency (USD/RWF) so the modal shows the right money.
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/profile`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) return;
+        const body = await res.json();
+        const cur = body?.data?.user?.currency;
+        if (!cancelled && cur) setUserCurrency(String(cur).toUpperCase() === 'RWF' ? 'RWF' : 'USD');
+      } catch {
+        // keep localStorage-derived default
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
 
     const loadPaymentChoices = async () => {
-      if (!course || isEnrolled) {
-        setPaymentChoices([]);
-        return;
-      }
+      if (!course || isEnrolled) return;
 
       const courseIsFree = isCourseFree(course);
       if (courseIsFree) {
-        const freeChoices = buildAvailablePaymentChoices([], true);
         if (!cancelled) {
-          setPaymentChoices(freeChoices);
           setSelectedPaymentValue('free');
           setPaymentsLoading(false);
         }
@@ -162,15 +178,13 @@ function CoursePart() {
         const choices = buildAvailablePaymentChoices(methods, false);
         if (!cancelled) {
           setSavedPaymentMethods(methods);
-          setPaymentChoices(choices);
+          // Default the modal to the learner's primary saved method's gateway
           setSelectedPaymentValue(pickDefaultPaymentValue(choices, methods));
         }
       } catch (err) {
         console.error('Failed to load payment methods:', err);
         if (!cancelled) {
-          const fallbackChoices = buildAvailablePaymentChoices([], false);
-          setPaymentChoices(fallbackChoices);
-          setSelectedPaymentValue(pickDefaultPaymentValue(fallbackChoices, []));
+          setSelectedPaymentValue(pickDefaultPaymentValue(buildAvailablePaymentChoices([], false), []));
         }
       } finally {
         if (!cancelled) setPaymentsLoading(false);
@@ -201,14 +215,43 @@ function CoursePart() {
       return;
     }
 
-    const courseIsFree = isCourseFree(course);
-    if (!courseIsFree && !hasSavedPaymentMethods(savedPaymentMethods)) {
-      const returnPath = `/academia/learner/course-part?id=${encodeURIComponent(inboundId || course.id)}`;
-      showToast('Add a payment method in Account before enrolling.', 'warning');
-      navigate(buildAccountPaymentHref(returnPath));
+    // Free courses enroll immediately; paid courses open the payment modal.
+    if (isCourseFree(course)) {
+      setIsEnrolling(true);
+      try {
+        await enrollInCourse({
+          apiBaseUrl: API_BASE_URL,
+          token,
+          courseId: course.id,
+          course,
+          selectedPaymentValue: 'free',
+        });
+        setIsEnrolled(true);
+        showToast('Enrollment confirmed.', 'success');
+        navigate(buildReaderUrl(course.id));
+      } catch (err) {
+        showToast(err.message || 'Failed to enroll in the course.', 'danger');
+      } finally {
+        setIsEnrolling(false);
+      }
       return;
     }
-    
+
+    setPaymentModalOpen(true);
+  };
+
+  // Maps the modal's gateway tab to the enrollment payment_method value.
+  const gatewayToPaymentValue = (gateway) => {
+    if (gateway === 'mtn') return 'mobile_money';
+    if (gateway === 'airtel') return 'airtel_money';
+    return 'credit_card';
+  };
+
+  const handleModalPay = async (payload) => {
+    const token = localStorage.getItem('token');
+    if (!token || !course?.id) return;
+
+    const paymentValue = gatewayToPaymentValue(payload?.gateway);
     setIsEnrolling(true);
     try {
       await enrollInCourse({
@@ -216,10 +259,12 @@ function CoursePart() {
         token,
         courseId: course.id,
         course,
-        selectedPaymentValue,
+        selectedPaymentValue: paymentValue,
+        couponCode: payload?.coupon || null,
       });
       setIsEnrolled(true);
-      showToast(`Enrollment confirmed via ${getPaymentMethodLabel(selectedPaymentValue)}.`, 'success');
+      setPaymentModalOpen(false);
+      showToast(`Enrollment confirmed via ${getPaymentMethodLabel(paymentValue)}.`, 'success');
       navigate(buildReaderUrl(course.id));
     } catch (err) {
       showToast(err.message || 'Failed to enroll in the course.', 'danger');
@@ -337,8 +382,12 @@ function CoursePart() {
   const hasAudience = !!course?.audience;
   const showContentSections = !loading && inboundId && (hasBreakdown || hasOutcomes || hasAudience);
   const missingCourseId = !inboundId;
-  const enrollmentReturnPath = inboundId ? `/academia/learner/course-part?id=${inboundId}` : '/academia/learner/courses';
-  const requiresPaymentSetup = Boolean(course && !isCourseFree(course) && !paymentsLoading && !hasSavedPaymentMethods(savedPaymentMethods));
+  // Default the payment modal to the learner's primary saved method gateway.
+  const defaultPaymentGateway = selectedPaymentValue === 'mobile_money'
+    ? 'mtn'
+    : selectedPaymentValue === 'airtel_money'
+      ? 'airtel'
+      : 'card';
 
   useEffect(() => {
     const courseTitle = course?.title?.trim();
@@ -606,22 +655,10 @@ function CoursePart() {
                   <img src={hoagoto} alt="Go" />
                 </button>
               ) : (
-                <>
-                  {!isEnrolled && (
-                    <EnrollmentPaymentPicker
-                      choices={paymentChoices}
-                      value={selectedPaymentValue}
-                      onChange={setSelectedPaymentValue}
-                      loading={paymentsLoading}
-                      requiresPaymentSetup={requiresPaymentSetup}
-                      accountHref={buildAccountPaymentHref(enrollmentReturnPath)}
-                    />
-                  )}
-                  <button type="button" className="learners-course-specific-cta" onClick={handleJoinToday} disabled={isEnrolling || paymentsLoading || requiresPaymentSetup}>
-                    <span>{isEnrolling ? 'Joining...' : (isCourseFree(course) ? 'Enroll for free' : 'Join Today')}</span>
-                    <img src={jo1} alt="Join" />
-                  </button>
-                </>
+                <button type="button" className="learners-course-specific-cta" onClick={handleJoinToday} disabled={isEnrolling || paymentsLoading}>
+                  <span>{isEnrolling ? 'Joining...' : (isCourseFree(course) ? 'Enroll for free' : 'Join Today')}</span>
+                  <img src={jo1} alt="Join" />
+                </button>
               )}
             </div>
           </aside>
@@ -652,6 +689,19 @@ function CoursePart() {
           <span>{toast.message}</span>
         </div>
       )}
+
+      <EnrollmentPaymentModal
+        isOpen={paymentModalOpen}
+        onClose={() => setPaymentModalOpen(false)}
+        courseId={course?.id}
+        courseIdLabel={course?.id ? `TR${course.id}GON` : '—'}
+        amountUsd={course?.rawPrice || 0}
+        currency={userCurrency}
+        defaultGateway={defaultPaymentGateway}
+        savedMethods={savedPaymentMethods}
+        processing={isEnrolling}
+        onPay={handleModalPay}
+      />
     </section>
   );
 }
