@@ -476,7 +476,8 @@
 }
 
 .learners-courses-pagination div p,
-.learners-courses-pagination div span {
+.learners-courses-pagination div span,
+.learners-courses-pagination div button {
     width: 30px;
     height: 30px;
     text-align: center;
@@ -490,18 +491,33 @@
     margin: 0;
 }
 
-.learners-courses-pagination div p {
+.learners-courses-pagination div p,
+.learners-courses-pagination div button {
     cursor: pointer;
     transition: all 0.3s ease;
+    border: 1px solid #DBDFE9;
+    background-color: transparent;
 }
 
 .learners-courses-pagination div p.active,
-.learners-courses-pagination div p:hover {
+.learners-courses-pagination div p:hover,
+.learners-courses-pagination div button.active,
+.learners-courses-pagination div button:hover {
     background-color: #450468;
+    border-color: #450468;
     color: white;
 }
 
-.learners-courses-pagination button {
+/* Ellipsis gap indicator between page groups */
+.learners-courses-pagination .learners-courses-pagination-dots {
+    border: none;
+    cursor: default;
+    color: #A1A5B7;
+    font-weight: 600;
+    letter-spacing: 1px;
+}
+
+.learners-courses-pagination > button {
     height: 30px;
     display: flex;
     align-items: center;
@@ -511,6 +527,17 @@
     border-radius: 6px;
     min-width: 30px;
     background-color: transparent;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.learners-courses-pagination > button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.learners-courses-pagination > button:not(:disabled):hover {
+    border-color: #450468;
 }
 
 .learners-courses-pagination button img {

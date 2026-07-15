@@ -18,7 +18,7 @@ import {
   serializePreferencesDraft,
   serializeProjectProfileDraft,
 } from './learnerProfileShared';
-import { formatTelephoneDisplay } from './phoneCountries';
+import { formatTelephoneDisplay, PHONE_COUNTRIES } from './phoneCountries';
 
 import defaultProfile from '../../../assets/imgs/default-profile.png';
 import badge1 from '../../../assets/icons/badge-1.svg';
@@ -45,6 +45,7 @@ import './projects.css';
 import './settings.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const SIGN_IN_PATH = '/academia/auth/signin';
 
 const activityFilters = ['This week', 'Last week', 'This month', 'All time'];
 
@@ -54,6 +55,7 @@ const FIELD_TOOLTIPS = {
   telephone: 'Your contact number with country code for account recovery and message notifications.',
   userType: 'Your account type on the Academia platform.',
   role: 'Your professional role or job title shown on your project profile.',
+  password: 'Your account password. Use Reset Password to change it.',
 };
 
 const FieldInfo = ({ tip }) => (
@@ -66,10 +68,10 @@ const ReadOnlyField = ({ label, tip, value, className = '' }) => (
   <div className={`learners-settings-field ${className}`.trim()}>
     <div className="learners-settings-field-head">
       <label>{label}</label>
+      {tip ? <FieldInfo tip={tip} /> : null}
     </div>
     <div className="learners-settings-display-input">
       <span className="learners-settings-display-input-value">{value}</span>
-      {tip ? <FieldInfo tip={tip} /> : null}
     </div>
   </div>
 );
@@ -150,6 +152,24 @@ function LearnersSettings() {
   const [reviewedActivityIds, setReviewedActivityIds] = useState([]);
   const [notificationEmailEnabled, setNotificationEmailEnabled] = useState(true);
   const [notificationMessageEnabled, setNotificationMessageEnabled] = useState(true);
+  const [passwordVisible, setPasswordVisible] = useState(false);
+  const [showPasswordForm, setShowPasswordForm] = useState(false);
+  const [passwordForm, setPasswordForm] = useState({ current: '', next: '', confirm: '' });
+  const [passwordSaving, setPasswordSaving] = useState(false);
+  const [accountStatus, setAccountStatus] = useState(null);
+  const [twoFactorProcessing, setTwoFactorProcessing] = useState(false);
+  const [twoFactorStage, setTwoFactorStage] = useState('idle');
+  const [twoFactorOtp, setTwoFactorOtp] = useState('');
+  const [confirmDeactivation, setConfirmDeactivation] = useState(false);
+  const [confirmDeletion, setConfirmDeletion] = useState(false);
+  const [deactivating, setDeactivating] = useState(false);
+  const [deactivateStage, setDeactivateStage] = useState('idle');
+  const [deactivatePassword, setDeactivatePassword] = useState('');
+  const [deactivateOtp, setDeactivateOtp] = useState('');
+  const [deleteStage, setDeleteStage] = useState('idle');
+  const [deletePassword, setDeletePassword] = useState('');
+  const [deleteOtp, setDeleteOtp] = useState('');
+  const [deletingAccount, setDeletingAccount] = useState(false);
 
   const [profileAvatarPath, setProfileAvatarPath] = useState('');
   const [cropModalOpen, setCropModalOpen] = useState(false);
@@ -316,6 +336,7 @@ function LearnersSettings() {
       apiFetch('/api/projects/my'),
       apiFetch('/api/followers/stats'),
       apiFetch('/api/profile/notification-settings'),
+      apiFetch('/api/auth/account-status'),
     ]);
 
     let firstError = '';
@@ -386,6 +407,11 @@ function LearnersSettings() {
       }
     }
 
+    const accountResult = requests[4];
+    if (accountResult.status === 'fulfilled') {
+      setAccountStatus(accountResult.value?.data || accountResult.value || null);
+    }
+
     if (firstError) {
       setError(firstError);
     }
@@ -429,6 +455,9 @@ function LearnersSettings() {
   const userTypeLabel = formatRoleLabel(profile.role);
   const jobTitleLabel = projectProfileDraft.jobTitle?.trim() || '—';
   const telephoneDisplay = formatTelephoneDisplay(profile.phone, profile.country);
+  const notificationsMasterEnabled = notificationEmailEnabled || notificationMessageEnabled;
+  const is2FAEnabled = Boolean(accountStatus?.twoFactorEnabled);
+  const isAccountActive = accountStatus?.isActive !== false && accountStatus?.is_active !== false;
   const experienceLabel = formatExperienceLabel(projectProfileDraft.yearsExperience);
   const followersLabel = `${formatNumber(followerCount)} Followers`;
   const locationLabel = formatLocationDisplay(profile);
@@ -665,6 +694,228 @@ function LearnersSettings() {
     pushFeedback('Activity cleared.', 'success');
   };
 
+  const handleChangePassword = async () => {
+    if (!passwordForm.current || !passwordForm.next) {
+      pushFeedback('Enter your current and new password.', 'error');
+      return;
+    }
+
+    if (passwordForm.next.length < 6) {
+      pushFeedback('New password must be at least 6 characters.', 'error');
+      return;
+    }
+
+    if (passwordForm.next !== passwordForm.confirm) {
+      pushFeedback('New passwords do not match.', 'error');
+      return;
+    }
+
+    try {
+      setPasswordSaving(true);
+      await apiFetch('/api/auth/change-password', {
+        method: 'POST',
+        body: JSON.stringify({
+          currentPassword: passwordForm.current,
+          newPassword: passwordForm.next,
+        }),
+      });
+      setPasswordForm({ current: '', next: '', confirm: '' });
+      setShowPasswordForm(false);
+      pushFeedback('Password changed successfully.', 'success');
+    } catch (passwordError) {
+      pushFeedback(passwordError.message || 'Couldn\'t change password. Please try again.', 'error');
+    } finally {
+      setPasswordSaving(false);
+    }
+  };
+
+  const startEnableTwoFactor = async () => {
+    try {
+      setTwoFactorProcessing(true);
+      await apiFetch('/api/auth/enable-2fa', { method: 'POST' });
+      setTwoFactorStage('enable-pending');
+      setTwoFactorOtp('');
+      pushFeedback('Verification code sent to your email.', 'success');
+    } catch (twoFactorError) {
+      pushFeedback(twoFactorError.message || 'Couldn\'t start two-factor setup. Please try again.', 'error');
+    } finally {
+      setTwoFactorProcessing(false);
+    }
+  };
+
+  const verifyEnableTwoFactor = async () => {
+    if (twoFactorOtp.trim().length !== 6) {
+      pushFeedback('Enter the 6-digit code from your email.', 'error');
+      return;
+    }
+
+    try {
+      setTwoFactorProcessing(true);
+      const res = await apiFetch('/api/auth/verify-otp-enable-2fa', {
+        method: 'POST',
+        body: JSON.stringify({ otp: twoFactorOtp.trim() }),
+      });
+      setAccountStatus((current) => ({
+        ...(current || {}),
+        twoFactorEnabled: Boolean(res?.data?.twoFactorEnabled ?? true),
+      }));
+      setTwoFactorStage('idle');
+      setTwoFactorOtp('');
+      pushFeedback('Two-factor authentication enabled.', 'success');
+    } catch (twoFactorError) {
+      pushFeedback(twoFactorError.message || 'Couldn\'t enable two-factor authentication. Please try again.', 'error');
+    } finally {
+      setTwoFactorProcessing(false);
+    }
+  };
+
+  const startDisableTwoFactor = async () => {
+    try {
+      setTwoFactorProcessing(true);
+      await apiFetch('/api/auth/disable-2fa', { method: 'POST' });
+      setTwoFactorStage('disable-pending');
+      setTwoFactorOtp('');
+      pushFeedback('Verification code sent to your email.', 'success');
+    } catch (twoFactorError) {
+      pushFeedback(twoFactorError.message || 'Couldn\'t start two-factor disable. Please try again.', 'error');
+    } finally {
+      setTwoFactorProcessing(false);
+    }
+  };
+
+  const verifyDisableTwoFactor = async () => {
+    if (twoFactorOtp.trim().length !== 6) {
+      pushFeedback('Enter the 6-digit code from your email.', 'error');
+      return;
+    }
+
+    try {
+      setTwoFactorProcessing(true);
+      const res = await apiFetch('/api/auth/disable-2fa', {
+        method: 'POST',
+        body: JSON.stringify({ otp: twoFactorOtp.trim() }),
+      });
+      setAccountStatus((current) => ({
+        ...(current || {}),
+        twoFactorEnabled: Boolean(res?.data?.twoFactorEnabled ?? false),
+      }));
+      setTwoFactorStage('idle');
+      setTwoFactorOtp('');
+      pushFeedback('Two-factor authentication disabled.', 'success');
+    } catch (twoFactorError) {
+      pushFeedback(twoFactorError.message || 'Couldn\'t disable two-factor authentication. Please try again.', 'error');
+    } finally {
+      setTwoFactorProcessing(false);
+    }
+  };
+
+  const cancelTwoFactorFlow = () => {
+    setTwoFactorStage('idle');
+    setTwoFactorOtp('');
+  };
+
+  const handleRequestDeactivateAccount = async () => {
+    if (!confirmDeactivation) {
+      pushFeedback('Please confirm account deactivation.', 'error');
+      return;
+    }
+
+    if (!deactivatePassword) {
+      pushFeedback('Enter your current password to continue.', 'error');
+      return;
+    }
+
+    try {
+      setDeactivating(true);
+      await apiFetch('/api/auth/request-deactivate-account', {
+        method: 'POST',
+        body: JSON.stringify({ currentPassword: deactivatePassword }),
+      });
+      setDeactivateStage('otp-pending');
+      pushFeedback('Verification code sent to your email.', 'success');
+    } catch (deactivateError) {
+      pushFeedback(deactivateError.message || 'Could not start account deactivation.', 'error');
+    } finally {
+      setDeactivating(false);
+    }
+  };
+
+  const handleConfirmDeactivateAccount = async () => {
+    if (!confirmDeactivation) {
+      pushFeedback('Please confirm account deactivation.', 'error');
+      return;
+    }
+
+    if (deactivateOtp.trim().length !== 6) {
+      pushFeedback('Enter the 6-digit verification code.', 'error');
+      return;
+    }
+
+    try {
+      setDeactivating(true);
+      await apiFetch('/api/auth/confirm-deactivate-account', {
+        method: 'POST',
+        body: JSON.stringify({
+          otp: deactivateOtp.trim(),
+          reason: 'User requested deactivation from settings',
+        }),
+      });
+      localStorage.removeItem('token');
+      navigate(SIGN_IN_PATH);
+    } catch (deactivateError) {
+      pushFeedback(deactivateError.message || 'Could not deactivate account. Please try again.', 'error');
+    } finally {
+      setDeactivating(false);
+    }
+  };
+
+  const handleRequestDeleteAccount = async () => {
+    if (!deletePassword) {
+      pushFeedback('Enter your current password to continue.', 'error');
+      return;
+    }
+
+    try {
+      setDeletingAccount(true);
+      await apiFetch('/api/auth/request-delete-account', {
+        method: 'POST',
+        body: JSON.stringify({ currentPassword: deletePassword }),
+      });
+      setDeleteStage('otp-pending');
+      pushFeedback('Verification code sent to your email.', 'success');
+    } catch (deleteError) {
+      pushFeedback(deleteError.message || 'Could not start account deletion.', 'error');
+    } finally {
+      setDeletingAccount(false);
+    }
+  };
+
+  const handleConfirmDeleteAccount = async () => {
+    if (!confirmDeletion) {
+      pushFeedback('Please confirm account deletion.', 'error');
+      return;
+    }
+
+    if (deleteOtp.trim().length !== 6) {
+      pushFeedback('Enter the 6-digit verification code.', 'error');
+      return;
+    }
+
+    try {
+      setDeletingAccount(true);
+      await apiFetch('/api/auth/confirm-delete-account', {
+        method: 'POST',
+        body: JSON.stringify({ otp: deleteOtp.trim() }),
+      });
+      localStorage.removeItem('token');
+      navigate(SIGN_IN_PATH);
+    } catch (deleteError) {
+      pushFeedback(deleteError.message || 'Could not delete account. Please try again.', 'error');
+    } finally {
+      setDeletingAccount(false);
+    }
+  };
+
   const openProjectsUpload = () => {
     navigate('/academia/learner/projects');
   };
@@ -700,7 +951,9 @@ function LearnersSettings() {
             <div className="learners-projects-profile-copy">
               <div className="learners-projects-profile-name-row">
                 <h1>{profile.name || 'Loading profile...'}</h1>
-                <span className="learners-projects-status-badge">Active</span>
+                <span className={`learners-projects-status-badge ${isAccountActive ? '' : 'is-inactive'}`}>
+                  {isAccountActive ? 'Active' : 'Inactive'}
+                </span>
                 <span className="learners-projects-count-badge">
                   <img src={badge1} alt="Badge" />
                   <span>{headerBadgeValue}</span>
@@ -1030,7 +1283,16 @@ function LearnersSettings() {
                       <ReadOnlyField
                         label="Telephone"
                         tip={FIELD_TOOLTIPS.telephone}
-                        value={telephoneDisplay}
+                        value={
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                              {(PHONE_COUNTRIES.find((c) => c.code === (profile.country || 'RW')) || PHONE_COUNTRIES.find((c) => c.code === 'RW'))?.flag || '🇷🇼'}
+                              <img src={drop1} alt="" style={{ width: '8px', opacity: 0.5, marginLeft: '2px' }} />
+                            </span>
+                            <div style={{ width: '1px', height: '16px', background: '#E1E7F0' }} />
+                            <span>{telephoneDisplay}</span>
+                          </div>
+                        }
                       />
 
                       <ReadOnlyField
@@ -1104,7 +1366,7 @@ function LearnersSettings() {
                           <div className="learners-settings-side-form">
                             <input
                               type="password"
-                              className="learners-settings-field-value learners-settings-field-control"
+                              className="learners-settings-inline-input"
                               value={passwordForm.current}
                               onChange={(event) => setPasswordForm((current) => ({ ...current, current: event.target.value }))}
                               placeholder="Current password"
@@ -1112,7 +1374,7 @@ function LearnersSettings() {
                             />
                             <input
                               type="password"
-                              className="learners-settings-field-value learners-settings-field-control"
+                              className="learners-settings-inline-input"
                               value={passwordForm.next}
                               onChange={(event) => setPasswordForm((current) => ({ ...current, next: event.target.value }))}
                               placeholder="New password"
@@ -1120,7 +1382,7 @@ function LearnersSettings() {
                             />
                             <input
                               type="password"
-                              className="learners-settings-field-value learners-settings-field-control"
+                              className="learners-settings-inline-input"
                               value={passwordForm.confirm}
                               onChange={(event) => setPasswordForm((current) => ({ ...current, confirm: event.target.value }))}
                               placeholder="Confirm new password"
@@ -1179,7 +1441,7 @@ function LearnersSettings() {
                           </div>
                           <input
                             type="text"
-                            className="learners-settings-field-value learners-settings-field-control"
+                            className="learners-settings-inline-input"
                             value={twoFactorOtp}
                             onChange={(event) => setTwoFactorOtp(event.target.value.replace(/\D/g, '').slice(0, 6))}
                             placeholder="Enter 6-digit code"
@@ -1234,7 +1496,7 @@ function LearnersSettings() {
                       <div className="learners-settings-side-form" style={{ marginTop: 16 }}>
                         <input
                           type="password"
-                          className="learners-settings-field-value learners-settings-field-control"
+                          className="learners-settings-inline-input"
                           value={deactivatePassword}
                           onChange={(event) => setDeactivatePassword(event.target.value)}
                           placeholder="Current password"
@@ -1253,7 +1515,7 @@ function LearnersSettings() {
                       <div className="learners-settings-side-form" style={{ marginTop: 16 }}>
                         <input
                           type="text"
-                          className="learners-settings-field-value learners-settings-field-control"
+                          className="learners-settings-inline-input"
                           value={deactivateOtp}
                           onChange={(event) => setDeactivateOtp(event.target.value.replace(/\D/g, '').slice(0, 6))}
                           placeholder="Enter 6-digit verification code"
@@ -1292,7 +1554,7 @@ function LearnersSettings() {
                       <div className="learners-settings-side-form" style={{ marginTop: 16 }}>
                         <input
                           type="password"
-                          className="learners-settings-field-value learners-settings-field-control"
+                          className="learners-settings-inline-input"
                           value={deletePassword}
                           onChange={(event) => setDeletePassword(event.target.value)}
                           placeholder="Current password"
@@ -1319,7 +1581,7 @@ function LearnersSettings() {
                       <div className="learners-settings-side-form" style={{ marginTop: 16 }}>
                         <input
                           type="text"
-                          className="learners-settings-field-value learners-settings-field-control"
+                          className="learners-settings-inline-input"
                           value={deleteOtp}
                           onChange={(event) => setDeleteOtp(event.target.value.replace(/\D/g, '').slice(0, 6))}
                           placeholder="Enter 6-digit verification code"

@@ -88,10 +88,14 @@ function CoursePart() {
     }
   }, [legacyStateId, searchParams, setSearchParams]);
 
+  // inboundId may be a public course_uuid, so enrollment/progress checks key off
+  // the resolved numeric course id once the course has loaded.
+  const resolvedCourseId = course?.id;
+
   useEffect(() => {
     const checkEnrollmentStatus = async () => {
       const token = localStorage.getItem('token');
-      if (!token || !inboundId) return;
+      if (!token || !resolvedCourseId) return;
       try {
         const res = await fetch(`${API_BASE_URL}/api/progress`, {
           headers: { 'Authorization': `Bearer ${token}` }
@@ -99,7 +103,7 @@ function CoursePart() {
         if (res.ok) {
           const body = await res.json();
           const progressList = body?.data?.progress || body?.progress || [];
-          const enrolled = progressList.some(p => Number(p.course_id) === Number(inboundId));
+          const enrolled = progressList.some(p => Number(p.course_id) === Number(resolvedCourseId));
           setIsEnrolled(enrolled);
         }
       } catch (err) {
@@ -107,14 +111,14 @@ function CoursePart() {
       }
     };
     checkEnrollmentStatus();
-  }, [inboundId]);
+  }, [resolvedCourseId]);
 
   useEffect(() => {
     const loadCourseProgress = async () => {
       const token = localStorage.getItem('token');
-      if (!token || !inboundId || !isEnrolled) return;
+      if (!token || !resolvedCourseId || !isEnrolled) return;
       try {
-        const res = await fetch(`${API_BASE_URL}/api/progress/${inboundId}`, {
+        const res = await fetch(`${API_BASE_URL}/api/progress/${resolvedCourseId}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (!res.ok) return;
@@ -129,7 +133,7 @@ function CoursePart() {
       }
     };
     loadCourseProgress();
-  }, [inboundId, isEnrolled]);
+  }, [resolvedCourseId, isEnrolled]);
 
   useEffect(() => {
     let cancelled = false;
@@ -199,7 +203,7 @@ function CoursePart() {
 
     const courseIsFree = isCourseFree(course);
     if (!courseIsFree && !hasSavedPaymentMethods(savedPaymentMethods)) {
-      const returnPath = `/academia/learner/course-part?id=${course.id}`;
+      const returnPath = `/academia/learner/course-part?id=${encodeURIComponent(inboundId || course.id)}`;
       showToast('Add a payment method in Account before enrolling.', 'warning');
       navigate(buildAccountPaymentHref(returnPath));
       return;

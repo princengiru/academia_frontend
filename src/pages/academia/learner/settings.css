@@ -490,7 +490,8 @@
 .learners-settings-page .learners-settings-textarea,
 .learners-settings-page .learners-settings-field-control {
   width: 100%;
-  border: 1px solid #DDE3EE;
+  border: none;
+  border-bottom: 1px solid #DDE3EE;
   background: #FCFCFC;
   border-radius: 0;
   box-sizing: border-box;
@@ -790,7 +791,8 @@
   min-height: 42px;
   margin-top: 10px;
   padding: 10px 12px;
-  border: 1px solid #DDE3EE;
+  border: none;
+  border-bottom: 1px solid #DDE3EE;
   border-radius: 0;
   background: #FCFCFC;
   box-sizing: border-box;
@@ -804,7 +806,8 @@
 }
 
 .learners-settings-page .learners-settings-field-control:disabled {
-  border: 1px solid #DDE3EE;
+  border: none;
+  border-bottom: 1px solid #DDE3EE;
   background: #FCFCFC;
   border-radius: 0;
   padding: 10px 12px;
@@ -856,8 +859,9 @@
   margin-top: 10px;
   width: 100%;
   min-height: 42px;
-  padding: 10px 72px 10px 12px;
-  border: 1px solid #DDE3EE;
+  padding: 10px 12px;
+  border: none;
+  border-bottom: 1px solid #DDE3EE;
   border-radius: 0;
   background: #FCFCFC;
   box-sizing: border-box;
@@ -883,14 +887,6 @@
   letter-spacing: 0.08em;
 }
 
-.learners-settings-page .learners-settings-display-input .learners-settings-info-trigger {
-  position: absolute;
-  top: 50%;
-  right: 12px;
-  transform: translateY(-50%);
-  z-index: 2;
-}
-
 .learners-settings-page .learners-settings-display-input .learners-settings-password-toggle {
   position: absolute;
   top: 50%;
@@ -908,7 +904,8 @@
   width: 100%;
   min-height: 42px;
   padding: 10px 72px 10px 12px;
-  border: 1px solid #DDE3EE;
+  border: none;
+  border-bottom: 1px solid #DDE3EE;
   background: #FCFCFC;
   border-radius: 0;
   box-sizing: border-box;
