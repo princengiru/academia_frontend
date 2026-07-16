@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import LearnerLoadError from '../learner/LearnerLoadError';
+import ManagementLoading from './ManagementLoading';
 import './performance.css';
 import hoagoto from '../../../assets/icons/hoagoto.svg';
 import certt from '../../../assets/icons/certt.svg';
@@ -701,9 +702,7 @@ const Performance = () => {
                   onRetry={eventsError.includes('sign in') ? undefined : () => setEventsReloadKey((key) => key + 1)}
                 />
               ) : eventsLoading ? (
-                <div className="learners-card learners-empty-state learners-empty-state--compact" style={{ border: 'none', boxShadow: 'none' }}>
-                  <p style={{ fontSize: '0.85rem', color: 'var(--muted)', margin: 0 }}>Loading events...</p>
-                </div>
+                <ManagementLoading compact title="Loading events" message="Fetching your upcoming schedule." />
               ) : weeklySchedule.length === 0 ? (
                 <div className="learners-card learners-empty-state learners-empty-state--compact" style={{ border: 'none', boxShadow: 'none', marginTop: '2rem' }}>
                   <h3>No schedule items</h3>
@@ -809,9 +808,7 @@ const Performance = () => {
                 {paymentsLoading ? (
                   <tr>
                     <td colSpan="8">
-                      <div className="learners-card learners-empty-state learners-empty-state--compact" style={{ border: 'none', boxShadow: 'none', padding: '3rem' }}>
-                        <h3>Loading payments...</h3>
-                      </div>
+                      <ManagementLoading compact title="Loading payments" message="Fetching your payment records." />
                     </td>
                   </tr>
                 ) : payments.length === 0 ? (

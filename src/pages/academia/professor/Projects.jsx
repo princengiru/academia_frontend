@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import LearnerLoadError from '../learner/LearnerLoadError';
+import ManagementLoading from './ManagementLoading';
 import { buildProjectProfileDraftFromUser } from '../learner/learnerProfileShared';
 import './projects.css';
 
@@ -505,9 +506,7 @@ const Projects = () => {
 
             <div className="learners-projects-grid">
               {projectsLoading ? (
-                <div className="learners-projects-empty-state">
-                  <h3>Loading projects...</h3>
-                </div>
+                <ManagementLoading title="Loading projects" message="Fetching your project list." />
               ) : projectsError ? (
                 <div className="learners-projects-empty-state">
                   <h3>Projects unavailable</h3>

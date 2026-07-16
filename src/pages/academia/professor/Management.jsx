@@ -1067,7 +1067,7 @@ const Management = () => {
                             </div>
 
                             <h3 className="oc-overview-subtitle">Description</h3>
-                            <p className="oc-overview-desc" dangerouslySetInnerHTML={{ __html: cleanDescriptionHtml(selectedCourse.description) }} />
+                            <div className="oc-overview-desc" dangerouslySetInnerHTML={{ __html: cleanDescriptionHtml(selectedCourse.description) }} />
 
                             <div className="oc-info-cards" style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', margin: '20px 0' }}>
                               <div className="oc-info-card" style={{ flex: 1, minWidth: '130px' }}>

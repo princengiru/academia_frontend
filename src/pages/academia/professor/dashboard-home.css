@@ -303,6 +303,9 @@
 .prof-quick-actions button span {
   font-size: 15px;
   color: #8A96B2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .prof-notice {
@@ -1017,4 +1020,173 @@
   .prof-table-search {
     width: 100%;
   }
+}
+
+/* ============================================================
+   SIDE PANELS (Schedule + Analytics) — matched to page design
+   Flat #FAFAFA cards, navy headings, muted labels, gray pills.
+   ============================================================ */
+.prof-side-panel {
+  background: #FAFAFA;
+  border: none;
+  border-radius: 10px;
+  box-shadow: none;
+  padding: 6px 16px 16px;
+  margin-bottom: 12px;
+  margin-top: 0;
+}
+
+.prof-side-panel .prof-panel-head {
+  padding: 12px 0 12px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid #F1F1F4;
+}
+
+.prof-side-panel .prof-panel-head h2 {
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 24px;
+  color: #142047;
+}
+
+.prof-side-panel .prof-manage-link {
+  font-size: 12px;
+  font-weight: 500;
+  color: #586688;
+}
+
+.prof-side-panel .prof-manage-link:hover {
+  color: #142047;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* --- Schedule list --- */
+.prof-side-panel .prof-dashboard-schedule-list {
+  gap: 0;
+  margin-top: 0;
+}
+
+.prof-side-panel .prof-dashboard-schedule-item {
+  gap: 12px;
+  padding: 11px 0;
+  align-items: center;
+  border-bottom: 1px solid #F1F1F4;
+}
+
+.prof-side-panel .prof-dashboard-schedule-item:first-child {
+  padding-top: 6px;
+}
+
+.prof-side-panel .prof-dashboard-schedule-item:last-child {
+  border-bottom: none;
+  padding-bottom: 4px;
+}
+
+.prof-side-panel .prof-dashboard-schedule-date {
+  min-width: 44px;
+  padding: 6px 4px;
+  border-radius: 10px;
+  border: 1px solid #EEF1F7;
+  background: #FFFFFF;
+  gap: 1px;
+}
+
+.prof-side-panel .prof-dashboard-schedule-date strong {
+  font-size: 16px;
+  font-weight: 700;
+  color: #0F172A;
+}
+
+.prof-side-panel .prof-dashboard-schedule-date span {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: #78829D;
+}
+
+.prof-side-panel .prof-dashboard-schedule-copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.prof-side-panel .prof-dashboard-schedule-copy h4 {
+  margin: 0 0 2px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #071437;
+}
+
+.prof-side-panel .prof-dashboard-schedule-copy p {
+  margin: 0 0 6px;
+  font-size: 11px;
+  color: #78829D;
+}
+
+.prof-side-panel .prof-dashboard-schedule-meta {
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+}
+
+.prof-side-panel .prof-dashboard-schedule-meta span:first-child {
+  font-weight: 500;
+  color: #4B5675;
+}
+
+.prof-side-panel .prof-dashboard-schedule-meta span:last-child {
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: #F1F3F7;
+  color: #60729A;
+  font-weight: 500;
+}
+
+/* --- Full-width action buttons (match Quick Actions pills) --- */
+.prof-side-panel .prof-add-event {
+  width: 100%;
+  height: 37px;
+  margin-top: 14px;
+  border-radius: 20px;
+  border: 1px solid #E7EAF0;
+  background: #FBFCFE;
+  color: #60729A;
+  font-size: 13px;
+  font-weight: 500;
+  gap: 8px;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.prof-side-panel .prof-add-event:hover {
+  background: #F4F6FA;
+  border-color: #DFE3EC;
+}
+
+.prof-side-panel .prof-add-event img {
+  width: 15px;
+  height: 15px;
+  margin-right: 0;
+}
+
+/* --- Analytics metrics --- */
+.prof-side-panel .prof-activity-row {
+  padding: 6px 0 2px;
+}
+
+.prof-side-panel .prof-activity-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: #0F172A;
+  white-space: nowrap;
+}
+
+.prof-side-panel .prof-activity-label {
+  margin-top: 4px;
+  font-size: 11px;
+  color: #78829D;
+}
+
+.prof-side-panel .prof-activity-divider {
+  height: 34px;
+  background: #EEF1F7;
 }

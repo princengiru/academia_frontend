@@ -73,6 +73,13 @@ function CoursePart() {
       .replace(/&nbsp;/g, ' ');
   };
 
+  const stripHtml = (html) =>
+    (html || '')
+      .replace(/<[^>]*>/g, ' ')
+      .replace(/&nbsp;/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
   const showToast = (message, tone = 'success') => {
     setToast({ message, visible: true, tone });
     setTimeout(() => {
@@ -327,6 +334,8 @@ function CoursePart() {
     { label: 'subscription', value: course?.price || '—', icon: acBook },
   ];
 
+  const introIsLong = stripHtml(course?.intro).length > 320;
+
   const breakdownWeeks = Array.isArray(weeks) ? weeks : [];
   const hasBreakdown = breakdownWeeks.length > 0;
   const hasOutcomes = !!course?.objectives;
@@ -377,13 +386,24 @@ function CoursePart() {
       <section className="learners-course-specific">
         <div className="learners-course-specific-head">
           <div>
-            <h1>{loading ? 'Loading...' : course?.title || 'Untitled course'}</h1>
-            <p>
-              Prepared by <strong>{loading ? '...' : course?.author || 'Author'}</strong>
-            </p>
-            {isEnrolled && !loading ? (
-              <p className="learners-course-specific-progress">{courseProgressPercent}% complete</p>
-            ) : null}
+            {loading && inboundId ? (
+              <>
+                <div className="lrn-skel lrn-skel-title" style={{ width: 280, maxWidth: '80%' }} />
+                <div className="lrn-skel lrn-skel-text" style={{ width: 170, marginTop: 12 }} />
+              </>
+            ) : error ? (
+              <h1>Course unavailable</h1>
+            ) : (
+              <>
+                <h1>{course?.title || 'Untitled course'}</h1>
+                <p>
+                  Prepared by <strong>{course?.author || 'Author'}</strong>
+                </p>
+                {isEnrolled ? (
+                  <p className="learners-course-specific-progress">{courseProgressPercent}% complete</p>
+                ) : null}
+              </>
+            )}
           </div>
         </div>
 
@@ -393,14 +413,63 @@ function CoursePart() {
             message={error}
             onRetry={() => window.location.reload()}
           />
-        ) : null}
-
+        ) : loading && inboundId ? (
+          <div className="learners-course-specific-grid">
+            <div className="learners-course-specific-main">
+              <section className="learners-course-specific-hero">
+                <div className="learners-course-specific-hero-copy">
+                  <div className="lrn-skel lrn-skel-title" style={{ width: '65%' }} />
+                  <div className="lrn-skel lrn-skel-text" style={{ width: '100%', marginTop: 14 }} />
+                  <div className="lrn-skel lrn-skel-text" style={{ width: '92%', marginTop: 9 }} />
+                  <div className="lrn-skel lrn-skel-text" style={{ width: '80%', marginTop: 9 }} />
+                </div>
+                <div className="learners-course-specific-media-wrap">
+                  <div className="lrn-skel" style={{ width: '100%', height: 210, borderRadius: 12 }} />
+                  <div className="learners-course-specific-stats">
+                    {[0, 1, 2, 3].map((i) => (
+                      <div key={i} className="learners-course-specific-stat">
+                        <div className="lrn-skel lrn-skel-text" style={{ width: '60%' }} />
+                        <div className="lrn-skel lrn-skel-text" style={{ width: '40%' }} />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </section>
+              <section className="learners-course-specific-section">
+                <div className="lrn-skel lrn-skel-title" style={{ width: 160 }} />
+                <div className="lrn-skel lrn-skel-text" style={{ width: '100%', marginTop: 14 }} />
+                <div className="lrn-skel lrn-skel-text" style={{ width: '95%', marginTop: 9 }} />
+                <div className="lrn-skel lrn-skel-text" style={{ width: '88%', marginTop: 9 }} />
+              </section>
+            </div>
+            <aside className="learners-course-specific-side">
+              <div className="learners-course-specific-side-card">
+                <div className="lrn-skel lrn-skel-title" style={{ width: '80%' }} />
+                <div className="learners-course-specific-features" style={{ marginTop: 16 }}>
+                  {[0, 1, 2, 3, 4].map((i) => (
+                    <div key={i} className="learners-course-specific-feature">
+                      <div className="lrn-skel" style={{ width: 20, height: 20, borderRadius: 6, flex: '0 0 auto' }} />
+                      <div className="lrn-skel lrn-skel-text" style={{ width: '70%' }} />
+                    </div>
+                  ))}
+                </div>
+                <div className="lrn-skel" style={{ width: '100%', height: 46, borderRadius: 12, marginTop: 18 }} />
+              </div>
+            </aside>
+          </div>
+        ) : (
+        <>
         <div className="learners-course-specific-grid">
           <div className="learners-course-specific-main">
             <section className="learners-course-specific-hero">
               <div className="learners-course-specific-hero-copy">
                 <h2>{course?.headline || ''}</h2>
-                <p>{course?.summary || ''}</p>
+                {course?.summary ? (
+                  <div
+                    className="learners-course-rich"
+                    dangerouslySetInnerHTML={{ __html: formatHtmlContent(course.summary) }}
+                  />
+                ) : null}
               </div>
 
               <div className="learners-course-specific-media-wrap">
@@ -438,33 +507,24 @@ function CoursePart() {
               </div>
             ) : showContentSections ? (
               <>
-                <section className="learners-course-specific-section">
-                  <h3>Introduction</h3>
-                  <p>
-                    {course?.intro && course.intro.length > 200 && !isSummaryExpanded
-                      ? `${course.intro.slice(0, 200)}...`
-                      : course?.intro || ''}
-                    {course?.intro && course.intro.length > 200 && (
+                {course?.intro ? (
+                  <section className="learners-course-specific-section">
+                    <h3>Introduction</h3>
+                    <div
+                      className={`learners-course-rich learners-course-intro${introIsLong && !isSummaryExpanded ? ' is-clamped' : ''}`}
+                      dangerouslySetInnerHTML={{ __html: formatHtmlContent(course.intro) }}
+                    />
+                    {introIsLong && (
                       <button
                         type="button"
+                        className="learners-course-readmore"
                         onClick={() => setIsSummaryExpanded(!isSummaryExpanded)}
-                        style={{
-                          background: 'none',
-                          border: 'none',
-                          color: '#5B0A86',
-                          fontWeight: 600,
-                          marginLeft: '6px',
-                          padding: 0,
-                          fontSize: '12px',
-                          cursor: 'pointer',
-                          textDecoration: 'underline'
-                        }}
                       >
                         {isSummaryExpanded ? 'Read less' : 'Read more'}
                       </button>
                     )}
-                  </p>
-                </section>
+                  </section>
+                ) : null}
 
                 {hasBreakdown && (
                   <section className="learners-course-specific-section learners-course-specific-syllabus-wrap">
@@ -559,14 +619,14 @@ function CoursePart() {
                 {course?.audience && (
                   <section className="learners-course-specific-section learners-course-specific-audience">
                     <h3>Who is the course for?</h3>
-                    <div className="learners-audience-content" dangerouslySetInnerHTML={{ __html: formatHtmlContent(course.audience) }} />
+                    <div className="learners-course-rich learners-audience-content" dangerouslySetInnerHTML={{ __html: formatHtmlContent(course.audience) }} />
                   </section>
                 )}
 
                 {hasOutcomes && (
                   <section className="learners-course-specific-section learners-course-specific-outcomes">
                     <h3>What will you achieve?</h3>
-                    <div className="learners-outcomes-content" dangerouslySetInnerHTML={{ __html: formatHtmlContent(course.objectives) }} />
+                    <div className="learners-course-rich learners-outcomes-content" dangerouslySetInnerHTML={{ __html: formatHtmlContent(course.objectives) }} />
                   </section>
                 )}
               </>
@@ -641,7 +701,8 @@ function CoursePart() {
             </div>
           </div>
         </section>
-
+        </>
+        )}
       </section>
       {toast.visible && (
         <div className={`toast-notification is-${toast.tone}`} role="alert" aria-live="assertive">

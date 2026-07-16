@@ -51,7 +51,7 @@ function Sidebar({
         className={`learners-read-contents-sidebar ${isSidebarOpen ? 'is-open' : ''}`}
         aria-label="Course outline sidebar"
       >
-        <div className="learners-read-contents-sidebar-card">
+        <div ref={outlineScrollRef} className="learners-read-contents-sidebar-card">
           <div className="learners-read-contents-sidebar-head">
             <div>
               <h1>{stripHtml(courseReader.title)}</h1>
@@ -110,151 +110,151 @@ function Sidebar({
           <div className="learners-read-contents-outline-label">Contents</div>
 
           <div
-            ref={outlineScrollRef}
             className="learners-read-contents-outline-scroll"
           >
             <div className="learners-read-contents-outline">
-            {loadingOutline ? (
-              <p className="learners-read-contents-outline-loading">Loading outline…</p>
-            ) : outlineWeeksState.length === 0 ? (
-              <p className="learners-read-contents-outline-empty">No chapters published yet.</p>
-            ) : (
-              outlineWeeksState.map((huskWeek) => {
-                const hasChildren = (huskWeek.chapters?.length > 0) || (huskWeek.assessments?.length > 0);
-                const isWeekOpen = Boolean(expandedWeeks[huskWeek.id]);
-                const hasActiveLesson = weekHasActiveItem(huskWeek);
-                const weekAccessible = isWeekAccessible(outlineWeeksState, huskWeek.id, isSummativeComplete);
+              {loadingOutline ? (
+                <p className="learners-read-contents-outline-loading">Loading outline…</p>
+              ) : outlineWeeksState.length === 0 ? (
+                <p className="learners-read-contents-outline-empty">No chapters published yet.</p>
+              ) : (
+                outlineWeeksState.map((huskWeek) => {
+                  const hasChildren = (huskWeek.chapters?.length > 0) || (huskWeek.assessments?.length > 0);
+                  const isWeekOpen = Boolean(expandedWeeks[huskWeek.id]);
+                  const hasActiveLesson = weekHasActiveItem(huskWeek);
+                  const weekAccessible = isWeekAccessible(outlineWeeksState, huskWeek.id, isSummativeComplete);
 
-                return (
-                  <section
-                    key={huskWeek.id}
-                    className={`learners-read-week ${isWeekOpen ? 'is-open' : ''} ${hasActiveLesson ? 'has-active-lesson' : ''} ${weekAccessible ? '' : 'is-locked'}`}
-                  >
-                    <div className="learners-read-week-rail" aria-hidden="true">
-                      <img
-                        className="learners-read-week-status"
-                        src={huskWeek.completed ? checkCircle : noCheckCircle}
-                        alt=""
-                      />
-                    </div>
+                  return (
+                    <section
+                      key={huskWeek.id}
+                      className={`learners-read-week ${isWeekOpen ? 'is-open' : ''} ${hasActiveLesson ? 'has-active-lesson' : ''} ${weekAccessible ? '' : 'is-locked'}`}
+                    >
+                      <div className="learners-read-week-rail" aria-hidden="true">
+                        <img
+                          className="learners-read-week-status"
+                          src={huskWeek.completed ? checkCircle : noCheckCircle}
+                          alt=""
+                        />
+                      </div>
 
-                    <div className="learners-read-week-body">
-                      <button
-                        type="button"
-                        className="learners-read-week-toggle"
-                        onClick={() => hasChildren && toggleWeek(huskWeek.id)}
-                        aria-expanded={hasChildren ? (isWeekOpen ? 'true' : 'false') : 'false'}
-                        disabled={!hasChildren}
-                      >
-                        <span className="learners-read-week-title">
-                          {!weekAccessible ? <Lock size={12} aria-hidden="true" /> : null}
-                          <span>{stripHtml(huskWeek.title)}</span>
-                        </span>
-                        {hasChildren ? (
-                          <>
-                            <img className="learners-read-week-toggle-icon learners-read-week-toggle-icon-minus" src={acCl} alt="" />
-                            <img className="learners-read-week-toggle-icon learners-read-week-toggle-icon-plus" src={acOp} alt="" />
-                          </>
-                        ) : null}
-                      </button>
+                      <div className="learners-read-week-body">
+                        <button
+                          type="button"
+                          className="learners-read-week-toggle"
+                          onClick={() => hasChildren && toggleWeek(huskWeek.id)}
+                          aria-expanded={hasChildren ? (isWeekOpen ? 'true' : 'false') : 'false'}
+                          disabled={!hasChildren}
+                          title={stripHtml(huskWeek.title)}
+                        >
+                          <span className="learners-read-week-title">
+                            {!weekAccessible ? <Lock size={12} aria-hidden="true" /> : null}
+                            <span>{stripHtml(huskWeek.title)}</span>
+                          </span>
+                          {hasChildren ? (
+                            <>
+                              <img className="learners-read-week-toggle-icon learners-read-week-toggle-icon-minus" src={acCl} alt="" />
+                              <img className="learners-read-week-toggle-icon learners-read-week-toggle-icon-plus" src={acOp} alt="" />
+                            </>
+                          ) : null}
+                        </button>
 
-                      {hasChildren && (
-                        <div className="learners-read-week-panel">
-                          <div className="learners-read-chapters">
-                            {huskWeek.chapters?.map((huskChapter) => {
-                              const isActive = isSameOutlineItemId(activeChapterId, huskChapter.id);
-                              const isUnlocked = isOutlineItemUnlocked(outlineWeeksState, huskChapter.id, isSummativeComplete);
-                              return (
-                                <button
-                                  key={huskChapter.id}
-                                  ref={isActive ? activeItemRef : null}
-                                  type="button"
-                                  className={`learners-read-chapter ${isActive ? 'is-active' : ''} ${isUnlocked ? '' : 'is-locked'}`}
-                                  onClick={() => handleItemSelect(huskChapter.id)}
-                                  disabled={!isUnlocked}
-                                  aria-current={isActive ? 'page' : undefined}
-                                  aria-disabled={!isUnlocked}
-                                  title={!isUnlocked ? 'Complete earlier lessons to unlock' : undefined}
-                                >
-                                  <span className="learners-read-chapter-line" aria-hidden="true" />
-                                  <span className="learners-read-chapter-title">
-                                    {!isUnlocked ? <Lock size={12} aria-hidden="true" /> : null}
-                                    <span>{stripHtml(huskChapter.title)}</span>
-                                  </span>
-                                  <img
-                                    src={huskChapter.completed ? checkCircle : noCheckCircle}
-                                    alt=""
-                                    aria-hidden="true"
-                                  />
-                                </button>
-                              );
-                            })}
+                        {hasChildren && (
+                          <div className="learners-read-week-panel">
+                            <div className="learners-read-chapters">
+                              {huskWeek.chapters?.map((huskChapter) => {
+                                const isActive = isSameOutlineItemId(activeChapterId, huskChapter.id);
+                                const isUnlocked = isOutlineItemUnlocked(outlineWeeksState, huskChapter.id, isSummativeComplete);
+                                return (
+                                  <button
+                                    key={huskChapter.id}
+                                    ref={isActive ? activeItemRef : null}
+                                    type="button"
+                                    className={`learners-read-chapter ${isActive ? 'is-active' : ''} ${isUnlocked ? '' : 'is-locked'}`}
+                                    onClick={() => handleItemSelect(huskChapter.id)}
+                                    disabled={!isUnlocked}
+                                    aria-current={isActive ? 'page' : undefined}
+                                    aria-disabled={!isUnlocked}
+                                    title={!isUnlocked ? 'Complete earlier lessons to unlock' : stripHtml(huskChapter.title)}
+                                  >
+                                    <span className="learners-read-chapter-line" aria-hidden="true" />
+                                    <span className="learners-read-chapter-title">
+                                      {!isUnlocked ? <Lock size={12} aria-hidden="true" /> : null}
+                                      <span>{stripHtml(huskChapter.title)}</span>
+                                    </span>
+                                    <img
+                                      src={huskChapter.completed ? checkCircle : noCheckCircle}
+                                      alt=""
+                                      aria-hidden="true"
+                                    />
+                                  </button>
+                                );
+                              })}
 
-                            {huskWeek.assessments?.map((huskAss) => {
-                              const isActive = isSameOutlineItemId(activeChapterId, huskAss.id);
-                              const isUnlocked = isOutlineItemUnlocked(outlineWeeksState, huskAss.id, isSummativeComplete);
-                              return (
-                                <button
-                                  key={huskAss.id}
-                                  ref={isActive ? activeItemRef : null}
-                                  type="button"
-                                  className={`learners-read-chapter learners-read-assessment-item ${isActive ? 'is-active' : ''} ${isUnlocked ? '' : 'is-locked'}`}
-                                  onClick={() => handleItemSelect(huskAss.id)}
-                                  disabled={!isUnlocked}
-                                  aria-current={isActive ? 'page' : undefined}
-                                  aria-disabled={!isUnlocked}
-                                  title={!isUnlocked ? 'Complete earlier lessons to unlock' : undefined}
-                                >
-                                  <span className="learners-read-chapter-line" aria-hidden="true" />
-                                  <span className="learners-read-chapter-title learners-read-assessment-title">
-                                    <ClipboardList size={14} color="#5B0A86" aria-hidden="true" />
-                                    <span>{stripHtml(huskAss.title)}</span>
-                                  </span>
-                                  <img
-                                    src={huskAss.completed ? checkCircle : noCheckCircle}
-                                    alt=""
-                                    aria-hidden="true"
-                                  />
-                                </button>
-                              );
-                            })}
+                              {huskWeek.assessments?.map((huskAss) => {
+                                const isActive = isSameOutlineItemId(activeChapterId, huskAss.id);
+                                const isUnlocked = isOutlineItemUnlocked(outlineWeeksState, huskAss.id, isSummativeComplete);
+                                return (
+                                  <button
+                                    key={huskAss.id}
+                                    ref={isActive ? activeItemRef : null}
+                                    type="button"
+                                    className={`learners-read-chapter learners-read-assessment-item ${isActive ? 'is-active' : ''} ${isUnlocked ? '' : 'is-locked'}`}
+                                    onClick={() => handleItemSelect(huskAss.id)}
+                                    disabled={!isUnlocked}
+                                    aria-current={isActive ? 'page' : undefined}
+                                    aria-disabled={!isUnlocked}
+                                    title={!isUnlocked ? 'Complete earlier lessons to unlock' : stripHtml(huskAss.title)}
+                                  >
+                                    <span className="learners-read-chapter-line" aria-hidden="true" />
+                                    <span className="learners-read-chapter-title learners-read-assessment-title">
+                                      <ClipboardList size={14} color="#5B0A86" aria-hidden="true" />
+                                      <span>{stripHtml(huskAss.title)}</span>
+                                    </span>
+                                    <img
+                                      src={huskAss.completed ? checkCircle : noCheckCircle}
+                                      alt=""
+                                      aria-hidden="true"
+                                    />
+                                  </button>
+                                );
+                              })}
+                            </div>
                           </div>
-                        </div>
-                      )}
-                    </div>
-                  </section>
-                );
-              })
-            )}
+                        )}
+                      </div>
+                    </section>
+                  );
+                })
+              )}
 
-            <section className={`learners-read-week learners-read-week-assessment ${isSummativeActive ? 'is-active' : ''} ${summativeUnlocked ? '' : 'is-locked'}`}>
-              <div className="learners-read-week-rail" aria-hidden="true">
-                <img
-                  className="learners-read-week-status"
-                  src={isSummativeComplete ? checkCircle : noCheckCircle}
-                  alt=""
-                />
-              </div>
-              <div className="learners-read-week-body">
-                <button
-                  ref={isSummativeActive ? activeItemRef : null}
-                  type="button"
-                  className="learners-read-week-toggle learners-read-week-toggle-link"
-                  onClick={() => handleItemSelect('assessment')}
-                  disabled={!summativeUnlocked}
-                  aria-current={isSummativeActive ? 'page' : undefined}
-                  aria-disabled={!summativeUnlocked}
-                  title={!summativeUnlocked ? 'Complete all lessons before the final assessment' : undefined}
-                >
-                  <span className="learners-read-week-title">
-                    {!summativeUnlocked ? <Lock size={12} aria-hidden="true" /> : null}
-                    <span>Summative assessment</span>
-                  </span>
-                  <img className="learners-read-week-toggle-icon learners-read-week-toggle-icon-arrow" src={right1} alt="" />
-                </button>
-              </div>
-            </section>
-          </div>
+              <section className={`learners-read-week learners-read-week-assessment ${isSummativeActive ? 'is-active' : ''} ${summativeUnlocked ? '' : 'is-locked'}`}>
+                <div className="learners-read-week-rail" aria-hidden="true">
+                  <img
+                    className="learners-read-week-status"
+                    src={isSummativeComplete ? checkCircle : noCheckCircle}
+                    alt=""
+                  />
+                </div>
+                <div className="learners-read-week-body">
+                  <button
+                    ref={isSummativeActive ? activeItemRef : null}
+                    type="button"
+                    className="learners-read-week-toggle learners-read-week-toggle-link"
+                    onClick={() => handleItemSelect('assessment')}
+                    disabled={!summativeUnlocked}
+                    aria-current={isSummativeActive ? 'page' : undefined}
+                    aria-disabled={!summativeUnlocked}
+                    title={!summativeUnlocked ? 'Complete all lessons before the final assessment' : undefined}
+                  >
+                    <span className="learners-read-week-title">
+                      {!summativeUnlocked ? <Lock size={12} aria-hidden="true" /> : null}
+                      <span>Summative assessment</span>
+                    </span>
+                    <img className="learners-read-week-toggle-icon learners-read-week-toggle-icon-arrow" src={right1} alt="" />
+                  </button>
+                </div>
+              </section>
+            </div>
           </div>
         </div>
       </aside>

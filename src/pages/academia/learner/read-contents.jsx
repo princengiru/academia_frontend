@@ -207,9 +207,21 @@ const extractCorrectAnswers = (q, options, optionLabels) => {
   return [...new Set(correctAnswers)];
 };
 
+// Parse a stored exercise attempt answer into the in-memory shape used by the UI.
+// Choice questions -> array of option indices; text questions -> string.
+const parseExerciseAnswer = (answer, type) => {
+  if (answer === null || answer === undefined) return type === 'text' ? '' : [];
+  if (type === 'text') return String(answer);
+  return String(answer)
+    .split(',')
+    .map((part) => Number(part.trim()))
+    .filter((num) => !Number.isNaN(num));
+};
+
 function LearnersReadContents() {
   const preventDefault = (e) => e.preventDefault();
   const navigate = useNavigate();
+  const mainContentRef = useRef(null);
 
   // Layout State
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -1926,9 +1938,19 @@ function LearnersReadContents() {
         if (typeof options === 'string') {
           try { options = JSON.parse(options); } catch (e) { options = null; }
         }
-        const optionLabels = Array.isArray(options) ? options.map(getOptionLabel) : (options || ['Option A', 'Option B']);
-        const correctAnswers = extractCorrectAnswers(ex, options, optionLabels);
-        const exType = (ex.type === 'multiple_choice' || ex.type === 'checkbox' || ex.type === 'multi') ? 'multi' : 'single';
+        const rawType = String(ex.type || '').toLowerCase();
+        let exType;
+        if (['text', 'textarea', 'essay', 'open', 'open_ended', 'short_answer', 'long_answer'].includes(rawType)) {
+          exType = 'text';
+        } else if (['multiple_choice', 'checkbox', 'multi'].includes(rawType)) {
+          exType = 'multi';
+        } else {
+          exType = 'single';
+        }
+        const optionLabels = exType === 'text'
+          ? []
+          : (Array.isArray(options) ? options.map(getOptionLabel) : []);
+        const correctAnswers = exType === 'text' ? [] : extractCorrectAnswers(ex, options, optionLabels);
         return {
           id: ex.id || ex.exercise_id || `ex-${i}`,
           number: ex.order_index || i + 1,
@@ -1949,12 +1971,11 @@ function LearnersReadContents() {
         const att = attemptsList.find((a) => Number(a.exercise_id) === Number(m.id));
         if (att) {
           gradedMap[m.id] = true;
-          const optIdx = att.answer !== null ? Number(att.answer) : null;
-          answersMap[m.id] = isNaN(optIdx) ? null : optIdx;
+          answersMap[m.id] = parseExerciseAnswer(att.answer, m.type);
           return att.is_correct ? 'correct' : 'wrong';
         }
         gradedMap[m.id] = false;
-        answersMap[m.id] = null;
+        answersMap[m.id] = m.type === 'text' ? '' : [];
         return 'pending';
       });
       setExerciseAnswers(answersMap);
@@ -2107,6 +2128,13 @@ function LearnersReadContents() {
     loadChapterContent(activeChapterId, loadToken).catch(() => {});
   }, [activeChapterId, inboundId, loadingCourse, contentReloadKey]);
 
+  // Scroll to chapter start when chapter changes
+  useEffect(() => {
+    if (activeChapterId && mainContentRef.current) {
+      mainContentRef.current.scrollIntoView({ behavior: 'auto', block: 'start' });
+    }
+  }, [activeChapterId]);
+
   // Fetch student attempts for a course
   const fetchCourseStudentAttempts = async (courseId) => {
     if (!courseId) return;
@@ -2134,24 +2162,55 @@ function LearnersReadContents() {
   const handleExerciseOptionSelect = (idx) => {
     const question = exerciseQuestionsState[currentExerciseIndex];
     if (!question) return;
-    const isGraded = !!exerciseGradedList[question.id];
-    if (isGraded) return;
-    setExerciseAnswers(prev => ({ ...prev, [question.id]: idx }));
+    if (exerciseGradedList[question.id]) return;
+    setExerciseAnswers((prev) => {
+      const current = Array.isArray(prev[question.id]) ? prev[question.id] : [];
+      if (question.type === 'multi') {
+        const next = current.includes(idx)
+          ? current.filter((i) => i !== idx)
+          : [...current, idx];
+        return { ...prev, [question.id]: next };
+      }
+      return { ...prev, [question.id]: [idx] };
+    });
+  };
+
+  const handleExerciseTextChange = (value) => {
+    const question = exerciseQuestionsState[currentExerciseIndex];
+    if (!question) return;
+    if (exerciseGradedList[question.id]) return;
+    setExerciseAnswers((prev) => ({ ...prev, [question.id]: value }));
   };
 
   const handleExerciseAction = async () => {
     const question = exerciseQuestionsState[currentExerciseIndex];
     if (!question) return;
     const isGraded = !!exerciseGradedList[question.id];
-    const selectedOption = exerciseAnswers[question.id];
 
     if (!isGraded) {
-      if (selectedOption === null || selectedOption === undefined) return;
-      const isCorrect = (question.correctAnswers || []).includes(selectedOption);
+      const answer = exerciseAnswers[question.id];
+      let isCorrect;
+      let answerPayload;
+
+      if (question.type === 'text') {
+        const text = typeof answer === 'string' ? answer.trim() : '';
+        if (!text) return;
+        // Open-ended practice questions can't be auto-graded; count as submitted.
+        isCorrect = true;
+        answerPayload = text;
+      } else {
+        const selected = Array.isArray(answer) ? answer : [];
+        if (selected.length === 0) return;
+        const correct = question.correctAnswers || [];
+        isCorrect = selected.length === correct.length
+          && selected.every((val) => correct.includes(val));
+        answerPayload = [...selected].sort((a, b) => a - b).join(',');
+      }
+
       const newStates = [...exerciseStates];
       newStates[currentExerciseIndex] = isCorrect ? 'correct' : 'wrong';
       setExerciseStates(newStates);
-      
+
       const updatedGradedList = { ...exerciseGradedList, [question.id]: true };
       setExerciseGradedList(updatedGradedList);
 
@@ -2172,7 +2231,7 @@ function LearnersReadContents() {
               'Authorization': `Bearer ${token}`
             },
             body: JSON.stringify({
-              answer: String(selectedOption),
+              answer: answerPayload,
               is_correct: isCorrect,
               score: isCorrect ? (question.points || 1) : 0
             })
@@ -2519,7 +2578,7 @@ function LearnersReadContents() {
             courseProgressPercent={courseProgressPercent}
           />
 
-          <main className="learners-read-contents-main">
+          <main ref={mainContentRef} className="learners-read-contents-main">
             <div className="learners-read-contents-topbar">
               <button
                 type="button"
@@ -2535,12 +2594,21 @@ function LearnersReadContents() {
 
             <section className="learners-read-contents-summary-card" aria-label="Current lesson summary">
               <div className="learners-read-contents-summary-main">
-                <span style={{ fontSize: '11px', textTransform: 'uppercase', fontWeight: '700', letterSpacing: '0.05em', color: '#5B0A86', display: 'block', marginBottom: '4px' }}>
-                  {stripHtml(activeContent.weekLabel)}
-                </span>
-                <h2 style={{ fontSize: '18px', fontWeight: '600', color: '#071437', margin: 0 }}>
-                  {stripHtml(activeContent.chapterLabel)}
-                </h2>
+                {loadingCourse ? (
+                  <>
+                    <div className="lrn-skel lrn-skel-text" style={{ width: 90, marginBottom: 8 }} />
+                    <div className="lrn-skel lrn-skel-title" style={{ width: 220, maxWidth: '70%' }} />
+                  </>
+                ) : (
+                  <>
+                    <span style={{ fontSize: '11px', textTransform: 'uppercase', fontWeight: '700', letterSpacing: '0.05em', color: '#5B0A86', display: 'block', marginBottom: '4px' }}>
+                      {stripHtml(activeContent.weekLabel)}
+                    </span>
+                    <h2 style={{ fontSize: '18px', fontWeight: '600', color: '#071437', margin: 0 }}>
+                      {stripHtml(activeContent.chapterLabel)}
+                    </h2>
+                  </>
+                )}
               </div>
               <div className="learners-read-contents-summary-side">
                 <h3>Progress</h3>
@@ -2567,11 +2635,26 @@ function LearnersReadContents() {
                   }}
                 />
               ) : loadingCourse ? (
-                <div className="learners-loading">Loading course content…</div>
+                <div className="learners-read-skeleton" aria-busy="true" aria-live="polite">
+                  <span className="visually-hidden">Loading course content…</span>
+                  <div className="lrn-skel" style={{ width: '100%', height: 210, borderRadius: 12 }} />
+                  <div className="lrn-skel lrn-skel-title" style={{ width: '55%', marginTop: 22 }} />
+                  <div className="lrn-skel lrn-skel-text" style={{ width: '100%', marginTop: 16 }} />
+                  <div className="lrn-skel lrn-skel-text" style={{ width: '93%', marginTop: 9 }} />
+                  <div className="lrn-skel lrn-skel-text" style={{ width: '84%', marginTop: 9 }} />
+                  <div className="lrn-skel lrn-skel-text" style={{ width: '72%', marginTop: 9 }} />
+                </div>
               ) : showContentSections ? (
                 <>
                   {loadingChapterContent && !isAssessmentView ? (
-                    <div className="learners-loading">Loading chapter content…</div>
+                    <div className="learners-read-skeleton" aria-busy="true" aria-live="polite">
+                      <span className="visually-hidden">Loading chapter content…</span>
+                      <div className="lrn-skel lrn-skel-title" style={{ width: '48%' }} />
+                      <div className="lrn-skel" style={{ width: '100%', height: 180, borderRadius: 12, marginTop: 18 }} />
+                      <div className="lrn-skel lrn-skel-text" style={{ width: '100%', marginTop: 18 }} />
+                      <div className="lrn-skel lrn-skel-text" style={{ width: '94%', marginTop: 9 }} />
+                      <div className="lrn-skel lrn-skel-text" style={{ width: '86%', marginTop: 9 }} />
+                    </div>
                   ) : chapterLoadError && !isAssessmentView ? (
                     <LearnerLoadError
                       title="Could not load lesson"
@@ -2622,6 +2705,7 @@ function LearnersReadContents() {
                         exerciseAnswers={exerciseAnswers}
                         exerciseGradedList={exerciseGradedList}
                         handleExerciseOptionSelect={handleExerciseOptionSelect}
+                        handleExerciseTextChange={handleExerciseTextChange}
                         handleExerciseAction={handleExerciseAction}
                         isCurrentChapterCompleted={isCurrentChapterCompleted}
                         markChapterCompleteOnBackend={handleLessonComplete}

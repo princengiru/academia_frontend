@@ -1,6 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import LearnerLoadError from '../learner/LearnerLoadError';
+import ManagementLoading from './ManagementLoading';
+import { BarChart3, BookOpen, CalendarPlus, ClipboardCheck, FileText, Wallet } from 'lucide-react';
 import './dashboard-home.css';
 import hoagoto from '../../../assets/icons/hoagoto.svg';
 
@@ -283,7 +285,7 @@ const DashboardHome = () => {
   }, [dashboardData]);
 
   const schedulePreview = useMemo(() => (
-    upcomingEvents.map((ev) => {
+    upcomingEvents.slice(0, 2).map((ev) => {
       const date = new Date(ev.event_datetime || ev.createdAt);
       return {
         id: ev.id || ev._id,
@@ -316,10 +318,7 @@ const DashboardHome = () => {
       return (
         <tr>
           <td colSpan="9" className="prof-table-empty-cell">
-            <div className="prof-table-empty">
-              <span className="prof-table-empty-badge">Dashboard</span>
-              <h4>Loading records...</h4>
-            </div>
+            <ManagementLoading compact title="Loading records" message="Fetching your latest lesson history." />
           </td>
         </tr>
       );
@@ -497,10 +496,10 @@ const DashboardHome = () => {
                 <h2>Quick Actions</h2>
               </div>
               <div className="prof-quick-actions">
-                <button type="button" onClick={() => handleQuickAction('/academia/professor/prepare-course')}><span><img src="/assets/icons/ed.svg" alt="" /></span>Prepare Course</button>
-                <button type="button" onClick={() => handleQuickAction('/academia/professor/assignments')}><span><img src="/assets/icons/ed.svg" alt="" /></span>Create Test</button>
-                <button type="button" onClick={() => handleQuickAction('/academia/professor/prepare-syllabus')}><span><img src="/assets/icons/ed.svg" alt="" /></span>Prepare Syllabus</button>
-                <button type="button" onClick={() => handleQuickAction('/academia/professor/performance')}><span><img src="/assets/icons/ed.svg" alt="" /></span>Payment History</button>
+                <button type="button" onClick={() => handleQuickAction('/academia/professor/prepare-course')}><span><BookOpen size={16} strokeWidth={1.8} aria-hidden="true" /></span>Prepare Course</button>
+                <button type="button" onClick={() => handleQuickAction('/academia/professor/assignments')}><span><ClipboardCheck size={16} strokeWidth={1.8} aria-hidden="true" /></span>Create Test</button>
+                <button type="button" onClick={() => handleQuickAction('/academia/professor/prepare-syllabus')}><span><FileText size={16} strokeWidth={1.8} aria-hidden="true" /></span>Prepare Syllabus</button>
+                <button type="button" onClick={() => handleQuickAction('/academia/professor/performance')}><span><Wallet size={16} strokeWidth={1.8} aria-hidden="true" /></span>Payment History</button>
               </div>
             </div>
           </div>
@@ -517,7 +516,7 @@ const DashboardHome = () => {
 
               <div className="prof-dashboard-schedule-list">
                 {eventsLoading ? (
-                  <p className="prof-dashboard-schedule-empty">Loading upcoming events…</p>
+                  <ManagementLoading compact title="Loading events" message="Fetching your upcoming schedule." />
                 ) : schedulePreview.length > 0 ? (
                   schedulePreview.map((item) => (
                     <article key={item.id || `${item.title}-${item.time}`} className="prof-dashboard-schedule-item">
@@ -546,7 +545,7 @@ const DashboardHome = () => {
                 style={{ marginTop: 16 }}
                 onClick={() => navigate('/academia/professor/management-schedule')}
               >
-                <img src="/assets/icons/plus1.svg" alt="" />
+                <CalendarPlus size={16} strokeWidth={1.8} aria-hidden="true" />
                 Open schedule
               </button>
             </div>
@@ -588,7 +587,7 @@ const DashboardHome = () => {
                 style={{ marginTop: 16 }}
                 onClick={() => navigate('/academia/professor/performance')}
               >
-                <img src="/assets/icons/charts.svg" alt="" />
+                <BarChart3 size={16} strokeWidth={1.8} aria-hidden="true" />
                 View analytics
               </button>
             </div>

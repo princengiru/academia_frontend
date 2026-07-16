@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import LearnersPageShell from './LearnersPageShell';
 import LearnerLoadError from './LearnerLoadError';
+import LearnerLoading from './LearnerLoading';
 
 // Icons & Images
 import defaultProfile from '../../../assets/imgs/default-profile.png';
@@ -523,10 +524,7 @@ function LearnersProjects() {
             </div>
 
             {loadingProjects ? (
-              <div className="learners-projects-empty-state learners-projects-loading-state">
-                <h3>Loading projects…</h3>
-                <p>Fetching your project list.</p>
-              </div>
+              <LearnerLoading title="Loading projects" message="Fetching your project list." />
             ) : projectsError ? (
               <LearnerLoadError
                 title="Projects could not load"

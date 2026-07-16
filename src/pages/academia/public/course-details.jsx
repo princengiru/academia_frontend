@@ -29,6 +29,23 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 const extractBody = (body) => body?.data?.data || body?.data || body;
 
+const stripHtml = (html) => {
+  if (!html) return '';
+  return html
+    .replace(/<[^>]*>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/\s+/g, ' ')
+    .trim();
+};
+
+const cleanDescriptionHtml = (html) => {
+  if (!html) return '';
+  return html.replace(/&nbsp;/g, ' ').replace(/\u00a0/g, ' ');
+};
+
 function AcademiaCourseDetails() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -363,7 +380,7 @@ function AcademiaCourseDetails() {
             
             <section className="course-intro-banner">
               <h2>{course.headline}</h2>
-              <p className="summary-text">{course.summary}</p>
+              <div className="summary-text" dangerouslySetInnerHTML={{ __html: cleanDescriptionHtml(course.summary) }} />
               
               <div className="course-media-block">
                 <div className="course-image-wrap">
@@ -389,20 +406,34 @@ function AcademiaCourseDetails() {
                 {course.intro && (
                   <section className="course-section-block">
                     <h3>Course Overview</h3>
-                    <p className="overview-content">
-                      {course.intro.length > 280 && !isSummaryExpanded
-                        ? `${course.intro.slice(0, 280)}...`
-                        : course.intro}
-                      {course.intro.length > 280 && (
-                        <button
-                          type="button"
-                          className="read-more-toggle-btn"
-                          onClick={() => setIsSummaryExpanded(!isSummaryExpanded)}
-                        >
-                          {isSummaryExpanded ? 'Read less' : 'Read more'}
-                        </button>
+                    <div className="overview-content">
+                      {!isSummaryExpanded && stripHtml(course.intro).length > 280 ? (
+                        <>
+                          {stripHtml(course.intro).slice(0, 280)}...
+                          <button
+                            type="button"
+                            className="read-more-toggle-btn"
+                            onClick={() => setIsSummaryExpanded(true)}
+                          >
+                            Read more
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <div dangerouslySetInnerHTML={{ __html: cleanDescriptionHtml(course.intro) }} />
+                          {stripHtml(course.intro).length > 280 && (
+                            <button
+                              type="button"
+                              className="read-more-toggle-btn"
+                              style={{ marginTop: '8px', display: 'inline-block' }}
+                              onClick={() => setIsSummaryExpanded(false)}
+                            >
+                              Read less
+                            </button>
+                          )}
+                        </>
                       )}
-                    </p>
+                    </div>
                   </section>
                 )}
 

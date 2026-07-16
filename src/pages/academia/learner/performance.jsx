@@ -4,6 +4,7 @@ import LearnersPageShell from './LearnersPageShell';
 import './index.css';
 import { buildReaderUrl, buildScheduleItems } from './homeDashboardUtils';
 import LearnerLoadError from './LearnerLoadError';
+import LearnerLoading from './LearnerLoading';
 
 // Icons & Images
 import SavedLibraryButton from './SavedLibraryButton';
@@ -427,12 +428,7 @@ function LearnersPerformance() {
     return (
       <LearnersPageShell>
         <section className="learners-performance-page">
-          <div className="learners-card learners-empty-state learners-empty-state--compact">
-            <h3>Loading performance…</h3>
-            <div>
-              <button className="learners-btn learners-btn-primary" disabled>Loading</button>
-            </div>
-          </div>
+          <LearnerLoading title="Loading performance" message="Fetching your assessment results and progress." />
         </section>
       </LearnersPageShell>
     );
@@ -789,9 +785,7 @@ function LearnersPerformance() {
 
           <div className={`learners-performance-history-table-wrap ${historyLoading ? 'is-loading' : ''}`}>
             {historyLoading ? (
-              <div className="learners-card learners-empty-state learners-empty-state--compact">
-                <h3>Loading assessment history…</h3>
-              </div>
+              <LearnerLoading compact title="Loading assessment history" message="Fetching your recent attempts." />
             ) : historyError ? (
               <LearnerLoadError
                 title="Could not load assessment history"

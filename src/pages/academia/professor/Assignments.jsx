@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import LearnerLoadError from '../learner/LearnerLoadError';
+import ManagementLoading from './ManagementLoading';
 import './assignments.css';
 import hoagoto from '../../../assets/icons/hoagoto.svg';
 
@@ -1319,11 +1320,7 @@ const Assignments = () => {
                 {loading ? (
                   <tr>
                     <td colSpan="7" className="prof-table-empty-cell">
-                      <div className="prof-table-empty">
-                        <span className="prof-table-empty-badge">Professor dashboard</span>
-                        <h4>Loading assessments</h4>
-                        <p>Fetching instructor assessments from the backend.</p>
-                      </div>
+                      <ManagementLoading compact title="Loading assessments" message="Fetching instructor assessments from the backend." />
                     </td>
                   </tr>
                 ) : currentRows.length === 0 ? (

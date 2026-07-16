@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import LearnersPageShell from './LearnersPageShell';
 import LearnerLoadError from './LearnerLoadError';
+import LearnerLoading from './LearnerLoading';
 
 // Icons & Images
 import hoagoto from '../../../assets/icons/hoagoto.svg';
@@ -237,12 +238,7 @@ function LearnersAvailableTest() {
 
             <div className="learners-available-test-grid">
               {loading && (
-                <div className="learners-card learners-empty-state learners-empty-state--compact">
-                  <h3>Loading tests…</h3>
-                  <div>
-                    <button className="learners-btn learners-btn-primary" disabled>Loading</button>
-                  </div>
-                </div>
+                <LearnerLoading title="Loading tests" message="Fetching available quizzes and assessments." />
               )}
 
               {!loading && loadError && (
@@ -338,16 +334,7 @@ function LearnersAvailableTest() {
 
             <div className="learners-available-syllabus-list">
               {loading ? (
-                Array.from({ length: 3 }).map((_, i) => (
-                  <div key={`sy-load-${i}`} className="learners-available-syllabus-item learners-loading-card">
-                    <div className="learners-available-syllabus-copy">
-                      <h4>Loading…</h4>
-                    </div>
-                    <button type="button" className="learners-available-syllabus-follow" disabled>
-                      <span>View</span>
-                    </button>
-                  </div>
-                ))
+                <LearnerLoading compact title="Loading courses" message="Fetching your syllabus list." />
               ) : syllabusLoadError ? (
                 <div className="learners-card learners-empty-state learners-empty-state--compact">
                   <h3>Could not load courses</h3>

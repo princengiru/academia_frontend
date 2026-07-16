@@ -25,6 +25,7 @@ function LessonWorkspacePanels({
   exerciseAnswers,
   exerciseGradedList,
   handleExerciseOptionSelect,
+  handleExerciseTextChange,
   handleExerciseAction,
   isCurrentChapterCompleted,
   markChapterCompleteOnBackend,
@@ -275,6 +276,7 @@ function LessonWorkspacePanels({
                 />
               ) : hasText ? (
                 <div
+                  key={`${activeChapterId}-${activeTextPageIndex}`}
                   className="learners-book-text-page"
                   dangerouslySetInnerHTML={{ __html: formatHtmlContent(textPages[activeTextPageIndex]) }}
                 />
@@ -495,37 +497,64 @@ function LessonWorkspacePanels({
               <span>{stripHtml(exerciseQuestionsState[currentExerciseIndex]?.prompt)}</span>
             </p>
 
+            {exerciseQuestionsState[currentExerciseIndex]?.type === 'multi' && (
+              <p className="learners-read-exercise-hint">Select all that apply</p>
+            )}
+
             <div className="learners-read-assessment-options learners-read-exercise-options">
-              {exerciseQuestionsState[currentExerciseIndex]?.options?.length ? exerciseQuestionsState[currentExerciseIndex].options.map((optHusk, optIdx) => {
+              {(() => {
                 const question = exerciseQuestionsState[currentExerciseIndex];
-                const isSelected = exerciseAnswers[question.id] === optIdx;
-                const isCorrect = (question.correctAnswers || []).includes(optIdx);
                 const isGraded = !!exerciseGradedList[question.id];
-                let stateClass = '';
-                if (isGraded) {
-                  if (isSelected) {
-                    stateClass = isCorrect ? 'is-correct' : 'is-wrong';
-                  } else if (isCorrect) {
-                    stateClass = 'is-correct';
-                  }
+
+                if (question.type === 'text') {
+                  const textValue = typeof exerciseAnswers[question.id] === 'string' ? exerciseAnswers[question.id] : '';
+                  return (
+                    <textarea
+                      className="learners-read-exercise-textarea"
+                      placeholder="Type your answer here..."
+                      value={textValue}
+                      onChange={(e) => handleExerciseTextChange(e.target.value)}
+                      disabled={isGraded}
+                      rows={5}
+                    />
+                  );
                 }
+
+                if (!question.options?.length) {
+                  return <div className="learners-empty">No options available for this exercise.</div>;
+                }
+
+                const answer = exerciseAnswers[question.id];
+                const selected = Array.isArray(answer) ? answer : [];
                 const isMulti = question.type === 'multi';
-                return (
-                  <button
-                    key={`${question.id}-${optIdx}`}
-                    type="button"
-                    className={`learners-read-assessment-option learners-read-exercise-option ${isMulti ? 'is-multi' : ''} ${isSelected ? 'is-selected' : ''} ${stateClass}`}
-                    onClick={() => handleExerciseOptionSelect(optIdx)}
-                  >
-                    <span className="learners-read-assessment-option-marker">
-                      {isMulti && <img src={doneIcon} alt="" />}
-                    </span>
-                    <span>{stripHtml(typeof optHusk === 'object' ? (optHusk.text || optHusk.label || optHusk.value || optHusk.option || optHusk.option_text || optHusk.optionText || optHusk.content || JSON.stringify(optHusk)) : optHusk)}</span>
-                  </button>
-                );
-              }) : (
-                <div className="learners-empty">No options available for this exercise.</div>
-              )}
+
+                return question.options.map((optHusk, optIdx) => {
+                  const isSelected = selected.includes(optIdx);
+                  const isCorrect = (question.correctAnswers || []).includes(optIdx);
+                  let stateClass = '';
+                  if (isGraded) {
+                    if (isSelected) {
+                      stateClass = isCorrect ? 'is-correct' : 'is-wrong';
+                    } else if (isCorrect) {
+                      stateClass = 'is-correct';
+                    }
+                  }
+                  return (
+                    <button
+                      key={`${question.id}-${optIdx}`}
+                      type="button"
+                      className={`learners-read-assessment-option learners-read-exercise-option ${isMulti ? 'is-multi' : ''} ${isSelected ? 'is-selected' : ''} ${stateClass}`}
+                      onClick={() => handleExerciseOptionSelect(optIdx)}
+                      disabled={isGraded}
+                    >
+                      <span className="learners-read-assessment-option-marker">
+                        {isMulti && <img src={doneIcon} alt="" />}
+                      </span>
+                      <span>{stripHtml(typeof optHusk === 'object' ? (optHusk.text || optHusk.label || optHusk.value || optHusk.option || optHusk.option_text || optHusk.optionText || optHusk.content || JSON.stringify(optHusk)) : optHusk)}</span>
+                    </button>
+                  );
+                });
+              })()}
             </div>
 
             <button

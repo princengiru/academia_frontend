@@ -81,13 +81,25 @@ function LearnersCourses() {
 
   const extractPagination = (body) => body?.data?.pagination || body?.pagination || null;
 
+  const stripHtml = (html) => {
+    if (!html) return '';
+    return html
+      .replace(/<[^>]*>/g, '')
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/\s+/g, ' ')
+      .trim();
+  };
+
   const mapCourse = (course) => ({
     id: course.id,
     title: course.title || 'Untitled course',
     author: course.instructor_name || course.author || 'Academia',
     image: course.thumbnail ? resolveAssetUrl(course.thumbnail) : acOn,
     priceLabel: (course.price || course.price === 0) ? (Number(course.price) > 0 ? `$${course.price}` : 'Free') : (course.is_free ? 'Free' : 'Paid'),
-    description: course.description || '',
+    description: stripHtml(course.description || ''),
     startsOn: course.starts_on || course.published_at || '',
     chapterCount: Number(course.chapter_count || 0),
     category: course.category || '',

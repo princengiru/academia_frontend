@@ -85,7 +85,6 @@
   position: sticky;
   top: 18px;
   align-self: flex-start;
-  max-height: calc(100dvh - 36px);
   transition: width 0.32s ease, flex-basis 0.32s ease, opacity 0.24s ease, transform 0.32s ease;
 }
 
@@ -97,16 +96,30 @@
   padding: 20px 18px 16px;
   display: flex;
   flex-direction: column;
-  max-height: calc(100dvh - 36px);
-  overflow: hidden;
+  max-height: calc(100dvh - 90px);
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #DBDFE9 transparent;
+}
+
+.learners-read-contents-sidebar-card::-webkit-scrollbar {
+  width: 5px;
+}
+
+.learners-read-contents-sidebar-card::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.learners-read-contents-sidebar-card::-webkit-scrollbar-thumb {
+  background: #DBDFE9;
+  border-radius: 99px;
+}
+
+.learners-read-contents-sidebar-card::-webkit-scrollbar-thumb:hover {
+  background: #A1A5B7;
 }
 
 .learners-read-contents-outline-scroll {
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  -webkit-overflow-scrolling: touch;
   margin-right: -8px;
   padding-right: 8px;
   padding-bottom: 20px;
@@ -417,15 +430,15 @@
 
 .learners-read-week-toggle {
   width: 100%;
-  height: 38px;
+  min-height: 38px;
   border: none;
   border-radius: 8px;
   background: transparent;
-  padding: 10px 12px;
+  padding: 9px 12px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 10px;
   text-align: left;
   cursor: pointer;
   transition: background-color 0.2s ease;
@@ -435,7 +448,7 @@
   cursor: default;
 }
 
-.learners-read-week.has-active-lesson > .learners-read-week-body > .learners-read-week-toggle {
+.learners-read-week.has-active-lesson>.learners-read-week-body>.learners-read-week-toggle {
   background: #F7F3FA;
 }
 
@@ -454,15 +467,30 @@
   font-weight: 500;
   font-style: Medium;
   font-size: 13px;
-  line-height: 14px;
+  line-height: 18px;
   letter-spacing: 0%;
   color: #450468;
   display: inline-flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 6px;
+  min-width: 0;
 }
 
-.learners-read-week.is-locked > .learners-read-week-body > .learners-read-week-toggle .learners-read-week-title,
+.learners-read-week-title>span {
+  min-width: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+
+.learners-read-week-title>svg {
+  flex: 0 0 auto;
+  margin-top: 3px;
+}
+
+.learners-read-week.is-locked>.learners-read-week-body>.learners-read-week-toggle .learners-read-week-title,
 .learners-read-week-assessment.is-locked .learners-read-week-title {
   color: #8B93A6;
 }
@@ -572,9 +600,24 @@
   font-size: 12px;
   line-height: 16px;
   display: inline-flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 6px;
   color: #450468;
+  min-width: 0;
+}
+
+.learners-read-chapter-title>span {
+  min-width: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+
+.learners-read-chapter-title>svg {
+  flex: 0 0 auto;
+  margin-top: 2px;
 }
 
 .learners-read-chapter.is-active .learners-read-chapter-title {
@@ -963,6 +1006,46 @@
   margin-top: 22px;
 }
 
+.learners-read-exercise-hint {
+  margin: 8px 0 0 28px;
+  font-family: Inter, sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  color: #8B93A6;
+}
+
+.learners-read-exercise-textarea {
+  width: 100%;
+  min-height: 120px;
+  resize: vertical;
+  border: 1px solid #E7EAF0;
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-family: Inter, sans-serif;
+  font-size: 13px;
+  line-height: 20px;
+  color: #071437;
+  background: #FBFCFF;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.learners-read-exercise-textarea::placeholder {
+  color: #A1A5B7;
+}
+
+.learners-read-exercise-textarea:focus {
+  outline: none;
+  border-color: #5B0A86;
+  box-shadow: 0 0 0 3px rgba(91, 10, 134, 0.12);
+  background: #FFFFFF;
+}
+
+.learners-read-exercise-textarea:disabled {
+  background: #F5F6FA;
+  color: #4B5675;
+  cursor: default;
+}
+
 .learners-read-exercise-option {
   width: 100%;
   border: none;
@@ -1127,8 +1210,15 @@
 }
 
 @keyframes timerPulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.5;
+  }
 }
 
 .learners-read-assessment-time.is-expired {
@@ -1755,13 +1845,29 @@
     max-height: none;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: #DBDFE9 transparent;
+  }
+
+  .learners-read-contents-sidebar-card::-webkit-scrollbar {
+    width: 5px;
+  }
+
+  .learners-read-contents-sidebar-card::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .learners-read-contents-sidebar-card::-webkit-scrollbar-thumb {
+    background: #DBDFE9;
+    border-radius: 99px;
+  }
+
+  .learners-read-contents-sidebar-card::-webkit-scrollbar-thumb:hover {
+    background: #A1A5B7;
   }
 
   .learners-read-contents-outline-scroll {
-    flex: 1 1 auto;
-    min-height: 0;
-    overflow-y: auto;
     padding-bottom: 24px;
   }
 
@@ -3148,7 +3254,8 @@
 .learners-btn-nav.is-next {
   background: #5B0A86;
   color: #FFFFFF;
-  margin-left: auto; /* push next to the right */
+  margin-left: auto;
+  /* push next to the right */
 }
 
 .learners-btn-nav.is-next:hover {
@@ -3180,7 +3287,8 @@
 .learners-btn-nav.is-back {
   background: #8B5CF6;
   color: #FFFFFF;
-  margin: 0 auto; /* center it if it stands alone or is in review */
+  margin: 0 auto;
+  /* center it if it stands alone or is in review */
 }
 
 .learners-btn-nav.is-back:hover {
@@ -3415,7 +3523,8 @@
   font-size: 16px !important;
   line-height: 1.8 !important;
   color: #475569 !important;
-  background-color: #FDFAFA; /* Warm paper hue */
+  background-color: #FDFAFA;
+  /* Warm paper hue */
   border-radius: 8px;
   box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.02);
   height: 100%;
@@ -3436,10 +3545,23 @@
   letter-spacing: -0.02em;
 }
 
-.learners-book-text-page h1 { font-size: 2.2em; border-bottom: 2px solid #F1F5F9; padding-bottom: 0.4em; }
-.learners-book-text-page h2 { font-size: 1.8em; }
-.learners-book-text-page h3 { font-size: 1.4em; }
-.learners-book-text-page h4 { font-size: 1.2em; }
+.learners-book-text-page h1 {
+  font-size: 2.2em;
+  border-bottom: 2px solid #F1F5F9;
+  padding-bottom: 0.4em;
+}
+
+.learners-book-text-page h2 {
+  font-size: 1.8em;
+}
+
+.learners-book-text-page h3 {
+  font-size: 1.4em;
+}
+
+.learners-book-text-page h4 {
+  font-size: 1.2em;
+}
 
 .learners-book-text-page p {
   margin: 0 0 1.6em 0;
@@ -3560,4 +3682,94 @@
 
 .learners-book-text-page tr:hover td {
   background-color: #F8FAFC;
+}
+
+/* ============================================================
+   LOADING & SKELETON STATES
+   ============================================================ */
+.learners-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  min-height: 220px;
+  padding: 44px 24px;
+  font-family: "Inter", sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: #78829D;
+  text-align: center;
+}
+
+.learners-loading::before {
+  content: "";
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  border: 3px solid #E9DDF3;
+  border-top-color: #5B0A86;
+  animation: learnersSpin 0.7s linear infinite;
+}
+
+@keyframes learnersSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.learners-read-skeleton {
+  padding: 4px 2px 12px;
+}
+
+.visually-hidden {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.lrn-skel {
+  position: relative;
+  overflow: hidden;
+  background: #EDEFF3;
+  border-radius: 8px;
+}
+
+.lrn-skel::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.7), transparent);
+  animation: lrnShimmer 1.3s ease-in-out infinite;
+}
+
+.lrn-skel-text {
+  height: 12px;
+  border-radius: 6px;
+}
+
+.lrn-skel-title {
+  height: 22px;
+  border-radius: 7px;
+}
+
+@keyframes lrnShimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  .learners-loading::before,
+  .lrn-skel::after {
+    animation: none;
+  }
 }
