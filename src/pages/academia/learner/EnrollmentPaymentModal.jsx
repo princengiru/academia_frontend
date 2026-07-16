@@ -4,7 +4,7 @@ import hoaairtel from '../../../assets/icons/hoaairtel.svg';
 import hoabankcards from '../../../assets/icons/hoabankcards.svg';
 import visaPay from '../../../assets/icons/VISA-pay.svg';
 import masterPay from '../../../assets/icons/MASTER-PAY.svg';
-import { formatMoney, convertFromUsd } from './enrollmentPaymentUtils';
+import { formatMoney, convertFromUsd, fetchUsdToRwfRate } from './enrollmentPaymentUtils';
 import './EnrollmentPaymentModal.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
@@ -16,6 +16,7 @@ const GATEWAYS = [
 ];
 
 const HELPER_TEXT = 'This number is used for payments and pop-up transfer';
+const CARD_HELPER_TEXT = 'This card is used for payments and pop-up transfer';
 
 // ── Helpers ──
 const digitsOnly = (s) => (s || '').replace(/\D/g, '');
@@ -99,7 +100,7 @@ function EnrollmentPaymentModal({
   courseId,
   courseIdLabel = '—',
   amountUsd = 0,
-  currency = 'USD',
+  currency = 'RWF',
   payNumberHint = '250700000000',
   supportEmail = 'support@gonaraza.com',
   defaultGateway = 'card',
@@ -128,16 +129,42 @@ function EnrollmentPaymentModal({
   const [couponMsg, setCouponMsg] = useState('');
   const [discountUsd, setDiscountUsd] = useState(0);
   const [saveCard, setSaveCard] = useState(true);
+  const [fxRate, setFxRate] = useState(null);
 
   const basePriceUsd = Number(amountUsd) || 0;
   const effectiveUsd = couponState === 'valid'
     ? Math.max(0, basePriceUsd - discountUsd)
     : basePriceUsd;
-  const amountText = formatMoney(effectiveUsd, currency);
+
+  // MoMo / Airtel only settle in RWF — always show RWF as the charge amount.
+  // If the learner's preference is USD, keep the USD figure in parentheses.
+  const isMomoGateway = gateway === 'mtn' || gateway === 'airtel';
+  const displayCurrency = isMomoGateway ? 'RWF' : currency;
+  const rwfText = formatMoney(effectiveUsd, 'RWF', fxRate || undefined);
+  const usdText = formatMoney(effectiveUsd, 'USD', fxRate || undefined);
+  const amountText = isMomoGateway
+    ? (String(currency).toUpperCase() === 'USD' ? `${rwfText} (${usdText})` : rwfText)
+    : formatMoney(effectiveUsd, displayCurrency, fxRate || undefined);
+
+  // Gateway charge amount is always whole RWF for MoMo; cards follow preference for now.
+  const payAmount = Math.round(
+    convertFromUsd(effectiveUsd, isMomoGateway ? 'RWF' : currency, fxRate || undefined)
+  );
+  const payCurrency = isMomoGateway ? 'RWF' : currency;
 
   useEffect(() => {
     if (isOpen) setGateway(defaultGateway);
   }, [isOpen, defaultGateway]);
+
+  // Pull live USD→RWF whenever the modal opens (for accurate RWF display).
+  useEffect(() => {
+    if (!isOpen) return undefined;
+    let cancelled = false;
+    fetchUsdToRwfRate(API_BASE_URL).then((rate) => {
+      if (!cancelled) setFxRate(rate);
+    });
+    return () => { cancelled = true; };
+  }, [isOpen]);
 
   // Close on Escape
   useEffect(() => {
@@ -209,9 +236,6 @@ function EnrollmentPaymentModal({
   const cardIsSaved = gateway === 'card' && Boolean(matchedMethod) && cardNumberMasked;
   const showSaveToggle = gateway === 'card' && !cardIsSaved;
 
-  // Gateways charge whole numbers only — round the payable amount.
-  const payAmount = Math.round(convertFromUsd(effectiveUsd, currency));
-
   if (!isOpen) return null;
 
   // Inline error text — only shown once the user has typed something invalid.
@@ -244,7 +268,12 @@ function EnrollmentPaymentModal({
       const body = await res.json().catch(() => ({}));
       const data = body?.data?.data || body?.data || body;
       if (res.ok && data && data.coupon) {
-        setDiscountUsd(Number(data.discount_amount) || 0);
+        // Payable = course price − coupon (API total matches the displayed course price).
+        const payable = Number(data.total);
+        const discount = Number.isFinite(payable)
+          ? Math.max(0, basePriceUsd - payable)
+          : (Number(data.discount_amount) || 0);
+        setDiscountUsd(discount);
         setCouponState('valid');
         setCouponMsg('Coupon code valid');
       } else {
@@ -269,7 +298,7 @@ function EnrollmentPaymentModal({
       paymentMethodId: matchedMethod?.id || null,
       amountUsd: effectiveUsd,
       payAmount,
-      payCurrency: currency,
+      payCurrency,
       ...(gateway === 'card'
         ? { cardName, cardNumber, cardBrand, expiry, cvv, usingSavedCard: cardNumberMasked }
         : { phoneNumber: momoNumber, usingSavedNumber: phoneMasked }),
@@ -352,7 +381,6 @@ function EnrollmentPaymentModal({
                   onChange={(e) => setCardName(e.target.value)}
                   placeholder="Max Smith"
                 />
-                <p className="epm-help">{HELPER_TEXT}</p>
               </div>
 
               <div className="epm-field">
@@ -378,7 +406,7 @@ function EnrollmentPaymentModal({
                     <span className={`epm-amex ${cardBrand === 'amex' || cardBrand === 'unknown' ? '' : 'is-hidden'}`}>AMEX</span>
                   </div>
                 </div>
-                {cardError ? <p className="epm-error">{cardError}</p> : <p className="epm-help">{HELPER_TEXT}</p>}
+                {cardError ? <p className="epm-error">{cardError}</p> : <p className="epm-help">{CARD_HELPER_TEXT}</p>}
               </div>
 
               <div className="epm-row">
@@ -393,7 +421,7 @@ function EnrollmentPaymentModal({
                     placeholder="MM/YY"
                     maxLength={5}
                   />
-                  {expiryError ? <p className="epm-error">{expiryError}</p> : <p className="epm-help">{HELPER_TEXT}</p>}
+                  {expiryError ? <p className="epm-error">{expiryError}</p> : null}
                 </div>
 
                 <div className="epm-field epm-field--cvv">
@@ -432,7 +460,6 @@ function EnrollmentPaymentModal({
                 <polyline points="6 9 12 15 18 9" />
               </svg>
             </button>
-            <span className="epm-help epm-help--inline">{HELPER_TEXT}</span>
           </div>
           {couponOpen && (
             <div className="epm-field epm-coupon-field">
@@ -486,7 +513,7 @@ function EnrollmentPaymentModal({
               <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
               <line x1="1" y1="10" x2="23" y2="10" />
             </svg>
-            <span>{processing ? 'Processing…' : `Pay  ${amountText}`}</span>
+            <span>{processing ? 'Waiting for phone approval…' : `Pay  ${amountText}`}</span>
           </button>
 
           <div className="epm-divider" />

@@ -33,35 +33,60 @@ export function getPaymentMethodLabel(value) {
   return labels[value] || String(value || 'Payment').replace(/_/g, ' ');
 }
 
-// Course prices are stored in USD; this converts for display when the learner's
-// system currency is RWF. Adjust the rate here if a live FX source is added.
-export const USD_TO_RWF = 1300;
+// Course prices are stored in USD; MoMo charges whole RWF using a live FX rate.
+export const USD_TO_RWF_FALLBACK = 1300;
+
+let cachedFx = { rate: USD_TO_RWF_FALLBACK, fetchedAt: 0 };
+
+export async function fetchUsdToRwfRate(apiBaseUrl) {
+  const now = Date.now();
+  if (cachedFx.rate && now - cachedFx.fetchedAt < 30 * 60 * 1000) {
+    return cachedFx.rate;
+  }
+  try {
+    const res = await fetch(`${apiBaseUrl}/api/payments/fx-rate`);
+    if (res.ok) {
+      const body = await res.json();
+      const rate = Number(body?.data?.rate);
+      if (Number.isFinite(rate) && rate > 0) {
+        cachedFx = { rate, fetchedAt: now };
+        return rate;
+      }
+    }
+  } catch {
+    // fall through
+  }
+  return cachedFx.rate || USD_TO_RWF_FALLBACK;
+}
 
 export function getUserCurrency() {
   try {
     const user = JSON.parse(localStorage.getItem('user') || '{}');
-    const code = String(user.currency || 'USD').toUpperCase();
-    return code === 'RWF' ? 'RWF' : 'USD';
+    const code = String(user.currency || 'RWF').toUpperCase();
+    return code === 'USD' ? 'USD' : 'RWF';
   } catch {
-    return 'USD';
+    return 'RWF';
   }
 }
 
-export function convertFromUsd(amountUsd, currency = 'USD') {
+export function convertFromUsd(amountUsd, currency = 'USD', rate = cachedFx.rate || USD_TO_RWF_FALLBACK) {
   const value = Number(amountUsd) || 0;
-  return currency === 'RWF' ? value * USD_TO_RWF : value;
+  return currency === 'RWF' ? value * rate : value;
 }
 
 // Formats a USD base amount into the learner's currency string (e.g. "$80" / "RWF 104,000").
 // Amounts are rounded to whole numbers because the payment gateways cannot
 // charge fractional values (no decimals for RWF or the mobile-money rails).
-export function formatMoney(amountUsd, currency = 'USD') {
-  const value = Math.round(convertFromUsd(amountUsd, currency));
+export function formatMoney(amountUsd, currency = 'USD', rate = cachedFx.rate || USD_TO_RWF_FALLBACK) {
+  const value = Math.round(convertFromUsd(amountUsd, currency, rate));
   if (currency === 'RWF') {
     return `RWF ${value.toLocaleString('en-US')}`;
   }
   return `$${value.toLocaleString('en-US')}`;
 }
+
+/** @deprecated use fetchUsdToRwfRate — kept so older imports don't break */
+export const USD_TO_RWF = USD_TO_RWF_FALLBACK;
 
 export const ENROLLMENT_ALLOWED_ROLES = ['student', 'learner'];
 
@@ -184,9 +209,81 @@ export async function enrollInCourse({
 
   const data = await res.json();
   if (!res.ok) {
-    throw new Error(data?.message || 'Failed to enroll in the course.');
+    throw new Error(data?.message || data?.error?.message || 'Failed to enroll in the course.');
   }
   return data;
+}
+
+/**
+ * Start / retry a MoMo enrollment payment (MTN or Airtel).
+ * Returns invoice_uuid + pending status — then poll until successful/failed.
+ */
+export async function initiateEnrollmentPayment({
+  apiBaseUrl,
+  token,
+  courseId,
+  gateway, // 'mtn' | 'airtel'
+  phone,
+  couponCode,
+}) {
+  const res = await fetch(`${apiBaseUrl}/api/payments/enrollment/initiate`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      course_id: courseId,
+      gateway,
+      phone,
+      coupon_code: couponCode || null,
+    }),
+  });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(body?.message || body?.error?.message || 'Payment initiation failed');
+  }
+  return body?.data || body;
+}
+
+export async function getEnrollmentPaymentStatus({ apiBaseUrl, token, invoiceUuid }) {
+  const res = await fetch(
+    `${apiBaseUrl}/api/payments/enrollment/status?invoice_uuid=${encodeURIComponent(invoiceUuid)}`,
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(body?.message || body?.error?.message || 'Could not check payment status');
+  }
+  return body?.data || body;
+}
+
+/**
+ * Poll until successful / failed / timeout (default ~2 minutes).
+ */
+export async function waitForEnrollmentPayment({
+  apiBaseUrl,
+  token,
+  invoiceUuid,
+  intervalMs = 4000,
+  timeoutMs = 120000,
+  onTick,
+}) {
+  const started = Date.now();
+  while (Date.now() - started < timeoutMs) {
+    const status = await getEnrollmentPaymentStatus({ apiBaseUrl, token, invoiceUuid });
+    onTick?.(status);
+    if (status.status === 'successful') return status;
+    if (status.status === 'failed') {
+      const err = new Error('Payment failed. Please try again.');
+      err.status = status;
+      throw err;
+    }
+    await new Promise((r) => setTimeout(r, intervalMs));
+  }
+  const timeoutErr = new Error('Payment is taking longer than expected. If you approved on your phone, refresh in a moment.');
+  timeoutErr.code = 'PAYMENT_TIMEOUT';
+  throw timeoutErr;
 }
 
 export function pickDefaultPaymentValue(choices, savedMethods) {

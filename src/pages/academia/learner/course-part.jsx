@@ -23,9 +23,11 @@ import {
   fetchSavedPaymentMethods,
   getPaymentMethodLabel,
   getUserCurrency,
+  initiateEnrollmentPayment,
   isCourseFree,
   isEnrollmentRoleAllowed,
   pickDefaultPaymentValue,
+  waitForEnrollmentPayment,
 } from './enrollmentPaymentUtils';
 import { learnerPageTitle, LEARNER_PRODUCT_NAME } from './learnerBrand';
 import { buildReaderUrl, resolveCourseProgressPercent } from './homeDashboardUtils';
@@ -251,23 +253,55 @@ function CoursePart() {
     const token = localStorage.getItem('token');
     if (!token || !course?.id) return;
 
-    const paymentValue = gatewayToPaymentValue(payload?.gateway);
+    const gateway = payload?.gateway;
+    if (gateway === 'card') {
+      showToast('Bank card payments are coming soon. Please use MTN or Airtel for now.', 'warning');
+      return;
+    }
+
+    if (gateway !== 'mtn' && gateway !== 'airtel') {
+      showToast('Select MTN Mobile Money or Airtel Money to pay.', 'warning');
+      return;
+    }
+
+    const phone = payload?.phoneNumber;
+    if (!phone) {
+      showToast('Enter your mobile money phone number.', 'warning');
+      return;
+    }
+
     setIsEnrolling(true);
     try {
-      await enrollInCourse({
+      const initiated = await initiateEnrollmentPayment({
         apiBaseUrl: API_BASE_URL,
         token,
         courseId: course.id,
-        course,
-        selectedPaymentValue: paymentValue,
+        gateway,
+        phone,
         couponCode: payload?.coupon || null,
       });
-      setIsEnrolled(true);
-      setPaymentModalOpen(false);
-      showToast(`Enrollment confirmed via ${getPaymentMethodLabel(paymentValue)}.`, 'success');
-      navigate(buildReaderUrl(course.id));
+
+      showToast(initiated?.message || 'Approve the payment prompt on your phone…', 'success');
+
+      const status = await waitForEnrollmentPayment({
+        apiBaseUrl: API_BASE_URL,
+        token,
+        invoiceUuid: initiated.invoice_uuid,
+        onTick: (s) => {
+          if (s?.status === 'pending') {
+            // Keep the modal in processing state while waiting.
+          }
+        },
+      });
+
+      if (status.status === 'successful' || status.enrolled) {
+        setIsEnrolled(true);
+        setPaymentModalOpen(false);
+        showToast(`Payment successful via ${getPaymentMethodLabel(gatewayToPaymentValue(gateway))}.`, 'success');
+        navigate(buildReaderUrl(course.id));
+      }
     } catch (err) {
-      showToast(err.message || 'Failed to enroll in the course.', 'danger');
+      showToast(err.message || 'Payment failed. You can try again.', 'danger');
     } finally {
       setIsEnrolling(false);
     }
@@ -383,11 +417,14 @@ function CoursePart() {
   const showContentSections = !loading && inboundId && (hasBreakdown || hasOutcomes || hasAudience);
   const missingCourseId = !inboundId;
   // Default the payment modal to the learner's primary saved method gateway.
+  // Cards aren't live yet — fall back to MTN for paid MoMo enrollments.
   const defaultPaymentGateway = selectedPaymentValue === 'mobile_money'
     ? 'mtn'
     : selectedPaymentValue === 'airtel_money'
       ? 'airtel'
-      : 'card';
+      : selectedPaymentValue === 'credit_card'
+        ? 'card'
+        : 'mtn';
 
   useEffect(() => {
     const courseTitle = course?.title?.trim();

@@ -64,8 +64,8 @@ export const TIMEZONE_OPTIONS = [
 ];
 
 export const CURRENCY_OPTIONS = [
-  { value: 'usd', label: 'United States Dollar (USD)', icon: 'USD' },
   { value: 'rwf', label: 'Rwandan Franc (RWF)', icon: 'RWF' },
+  { value: 'usd', label: 'United States Dollar (USD)', icon: 'USD' },
   { value: 'eur', label: 'Euro (EUR)', icon: 'EUR' },
 ];
 
@@ -96,7 +96,7 @@ export const mapLanguageToApi = (language) => (String(language || '').startsWith
 
 export const mapTimezoneFromUser = (timezone) => timezone || 'gmt-5-est';
 
-export const mapCurrencyFromUser = (currency) => String(currency || 'usd').toLowerCase();
+export const mapCurrencyFromUser = (currency) => String(currency || 'rwf').toLowerCase();
 
 export const normalizeSkills = (value) => {
   if (Array.isArray(value)) return value.filter(Boolean).map(String);

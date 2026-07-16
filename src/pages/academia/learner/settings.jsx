@@ -213,7 +213,7 @@ function LearnersSettings() {
   const [preferencesDraft, setPreferencesDraft] = useState({
     language: 'en-us',
     timezone: 'gmt-5-est',
-    currency: 'usd',
+    currency: 'rwf',
     showListNames: false,
     showLinkedTaskNames: true,
     emailVisibility: false,

@@ -430,8 +430,8 @@ const PREFERENCE_TIMEZONE_OPTIONS = [
 ];
 
 const PREFERENCE_CURRENCY_OPTIONS = [
-  { value: 'usd', label: 'United States Dollar (USD)', icon: <span style={{ color: '#99A1B7', fontSize: '12px', fontWeight: 600 }}>USD</span> },
   { value: 'rwf', label: 'Rwandan Franc (RWF)', icon: <span style={{ color: '#99A1B7', fontSize: '12px', fontWeight: 600 }}>RWF</span> },
+  { value: 'usd', label: 'United States Dollar (USD)', icon: <span style={{ color: '#99A1B7', fontSize: '12px', fontWeight: 600 }}>USD</span> },
   { value: 'eur', label: 'Euro (EUR)', icon: <span style={{ color: '#99A1B7', fontSize: '12px', fontWeight: 600 }}>EUR</span> },
 ];
 
@@ -1102,7 +1102,7 @@ const LearnerAccount = () => {
   // Preferences
   const [preferenceLanguage, setPreferenceLanguage] = useState('en-us');
   const [preferenceTimezone, setPreferenceTimezone] = useState('gmt-5-est');
-  const [preferenceCurrency, setPreferenceCurrency] = useState('usd');
+  const [preferenceCurrency, setPreferenceCurrency] = useState('rwf');
   const [showListNames, setShowListNames] = useState(false);
   const [showLinkedTaskNames, setShowLinkedTaskNames] = useState(true);
   const [emailVisibility, setEmailVisibility] = useState(true);
@@ -1438,7 +1438,7 @@ const LearnerAccount = () => {
         // preferences
         setPreferenceLanguage(user.language === 'fr' ? 'fr-fr' : 'en-us');
         setPreferenceTimezone(user.timezone ? user.timezone : 'gmt-5-est');
-        setPreferenceCurrency(user.currency ? String(user.currency).toLowerCase() : 'usd');
+        setPreferenceCurrency(user.currency ? String(user.currency).toLowerCase() : 'rwf');
         setShowListNames(Boolean(user.show_list_names));
         setShowLinkedTaskNames(user.show_linked_task_names !== 0 && user.show_linked_task_names !== false);
         setEmailVisibility(Boolean(user.email_visibility));
@@ -1508,7 +1508,7 @@ const LearnerAccount = () => {
           preferences: JSON.stringify({
             preferenceLanguage: user.language === 'fr' ? 'fr-fr' : 'en-us',
             preferenceTimezone: user.timezone ? user.timezone : 'gmt-5-est',
-            preferenceCurrency: user.currency ? String(user.currency).toLowerCase() : 'usd',
+            preferenceCurrency: user.currency ? String(user.currency).toLowerCase() : 'rwf',
             showListNames: Boolean(user.show_list_names),
             showLinkedTaskNames: user.show_linked_task_names !== 0 && user.show_linked_task_names !== false,
             emailVisibility: Boolean(user.email_visibility),
