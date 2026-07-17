@@ -15,7 +15,7 @@ const PrepareCourse = () => {
 
   // --- Central State ---
   const [activeStep, setActiveStep] = useState('basic');
-  const [courseId, setCourseId] = useState(location.state?.courseId || null); 
+  const [courseId, setCourseId] = useState(location.state?.courseId || null);
   const [syllabusId, setSyllabusId] = useState(null);
   const [feedback, setFeedback] = useState({ message: '', tone: 'success', visible: false });
 
@@ -34,10 +34,15 @@ const PrepareCourse = () => {
   }, []);
 
   const stepOrder = ['basic', 'weeks', 'pricing', 'review'];
-  const getStepIcon = (stepName) => {
-    const currentIndex = stepOrder.indexOf(activeStep);
-    const thisIndex = stepOrder.indexOf(stepName);
-    return thisIndex <= currentIndex ? '/assets/icons/check-circle.svg' : '/assets/icons/no-check-circle.svg';
+  const stepNames = {
+    basic: 'Basic Information',
+    weeks: 'Curriculum Builder',
+    pricing: 'Pricing & Payments',
+    review: 'Review',
+  };
+
+  const exitBuilder = () => {
+    navigate(courseId ? '/academia/professor/management' : '/academia/professor');
   };
 
   // Props passed down to every step
@@ -50,47 +55,43 @@ const PrepareCourse = () => {
     pushFeedback
   };
 
+  const activeStepIndex = stepOrder.indexOf(activeStep);
+
   return (
       <section className="prof-page">
         <section className="prof-prepare">
-          
+
           {feedback.visible && (
             <div className={`learners-account-feedback learners-account-feedback-floating is-${feedback.tone}`}>
               {feedback.message}
             </div>
           )}
 
-          <section className="learners-home-title">
-            <div className="learners-home-title-top">
-              <h1>Prepare Online Course</h1>
-              <div className="learners-home-title-actions">
-                <a className="learners-btn learners-btn-primary" href="/academia" onClick={(e) => { e.preventDefault(); navigate('/academia'); }}>
+          <div className={`prof-prepare-card prof-course-ac-form prof-step-${activeStep}`}>
+            <div className="prof-prepare-card-head">
+              <div className="prof-prepare-card-head-row">
+                <h2>{courseId ? 'Edit Course' : 'Prepare Course'}</h2>
+                <button type="button" className="learners-btn learners-btn-primary" onClick={exitBuilder} style={{ border: 'none', cursor: 'pointer' }}>
                   <span>Exit Builder</span>
                   <img src="/assets/icons/exit-right.svg" alt="" />
-                </a>
+                </button>
               </div>
             </div>
-          </section>
 
-          <div className={`prof-prepare-card prof-step-${activeStep}`}>
-            <div className="prof-prepare-card-head">
-              <h2>Course Builder Workspace</h2>
-              <span className="prof-prepare-card-subtitle">Complete all steps to launch your new program.</span>
-            </div>
-
-            <div className="prof-prepare-steps" aria-label="Steps">
+            <div
+              className="prof-prepare-steps"
+              aria-label="Steps"
+              style={{
+                '--step-count': stepOrder.length,
+                '--step-progress': Math.max(0, activeStepIndex) / Math.max(1, stepOrder.length - 1),
+              }}
+            >
               {stepOrder.map((step, idx) => {
                 const isActive = activeStep === step;
-                const isCompleted = stepOrder.indexOf(activeStep) > stepOrder.indexOf(step);
-                const stepNames = {
-                  basic: 'Course Profile',
-                  weeks: 'Curriculum Builder',
-                  pricing: 'Pricing',
-                  review: 'Review & Publish'
-                };
+                const isCompleted = activeStepIndex > idx;
                 return (
-                  <div 
-                    key={step} 
+                  <div
+                    key={step}
                     className={`prof-prepare-step ${isActive ? 'is-active' : ''} ${isCompleted ? 'is-completed' : ''}`}
                     onClick={() => {
                       if (courseId || step === 'basic') {
@@ -99,11 +100,11 @@ const PrepareCourse = () => {
                     }}
                   >
                     <div className="prof-step-number-bubble">
-                      {isCompleted ? (
-                        <svg className="prof-step-check-svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                      {isCompleted || isActive ? (
+                        <svg className="prof-step-check-svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                           <polyline points="20 6 9 17 4 12"></polyline>
                         </svg>
-                      ) : idx + 1}
+                      ) : null}
                     </div>
                     <span className="prof-step-label">{stepNames[step]}</span>
                   </div>

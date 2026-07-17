@@ -20,6 +20,7 @@ import EnrollmentPaymentModal from './EnrollmentPaymentModal';
 import {
   buildAvailablePaymentChoices,
   enrollInCourse,
+  fetchEnrollmentStatus,
   fetchSavedPaymentMethods,
   getPaymentMethodLabel,
   getUserCurrency,
@@ -27,6 +28,7 @@ import {
   isCourseFree,
   isEnrollmentRoleAllowed,
   pickDefaultPaymentValue,
+  unenrollFromCourse,
   waitForEnrollmentPayment,
 } from './enrollmentPaymentUtils';
 import { learnerPageTitle, LEARNER_PRODUCT_NAME } from './learnerBrand';
@@ -51,7 +53,10 @@ function CoursePart() {
   const [weeks, setWeeks] = useState([]);
   const [error, setError] = useState(null);
   const [isEnrolled, setIsEnrolled] = useState(false);
+  const [enrollmentStatus, setEnrollmentStatus] = useState(null);
   const [isEnrolling, setIsEnrolling] = useState(false);
+  const [isUnenrolling, setIsUnenrolling] = useState(false);
+  const [showUnenrollConfirm, setShowUnenrollConfirm] = useState(false);
   const [toast, setToast] = useState({ message: '', visible: false, tone: 'success' });
   const [isSummaryExpanded, setIsSummaryExpanded] = useState(false);
   const [selectedPaymentValue, setSelectedPaymentValue] = useState('credit_card');
@@ -106,17 +111,15 @@ function CoursePart() {
       const token = localStorage.getItem('token');
       if (!token || !resolvedCourseId) return;
       try {
-        const res = await fetch(`${API_BASE_URL}/api/progress`, {
-          headers: { 'Authorization': `Bearer ${token}` }
+        const status = await fetchEnrollmentStatus({
+          apiBaseUrl: API_BASE_URL,
+          token,
+          courseId: resolvedCourseId,
         });
-        if (res.ok) {
-          const body = await res.json();
-          const progressList = body?.data?.progress || body?.progress || [];
-          const enrolled = progressList.some(p => Number(p.course_id) === Number(resolvedCourseId));
-          setIsEnrolled(enrolled);
-        }
+        setEnrollmentStatus(status);
+        setIsEnrolled(Boolean(status?.enrolled));
       } catch (err) {
-        console.error("Failed to check enrollment status:", err);
+        console.error('Failed to check enrollment status:', err);
       }
     };
     checkEnrollmentStatus();
@@ -247,6 +250,32 @@ function CoursePart() {
     }
 
     setPaymentModalOpen(true);
+  };
+
+  const canUnenroll = isEnrolled && enrollmentStatus?.status === 'active';
+
+  const handleUnenroll = async () => {
+    const token = localStorage.getItem('token');
+    if (!token || !course?.id) return;
+
+    setIsUnenrolling(true);
+    try {
+      await unenrollFromCourse({
+        apiBaseUrl: API_BASE_URL,
+        token,
+        courseId: course.id,
+        reason: 'Learner self-unenroll',
+      });
+      setIsEnrolled(false);
+      setEnrollmentStatus({ enrolled: false, status: 'withdrawn' });
+      setCourseProgressPercent(0);
+      setShowUnenrollConfirm(false);
+      showToast('You have left this course. Your progress was archived.', 'success');
+    } catch (err) {
+      showToast(err.message || 'Could not unenroll from this course.', 'danger');
+    } finally {
+      setIsUnenrolling(false);
+    }
   };
 
   // Maps the modal's gateway tab to the enrollment payment_method value.
@@ -747,10 +776,24 @@ function CoursePart() {
               </div>
 
               {isEnrolled ? (
-                <button type="button" className="learners-course-specific-cta" onClick={() => navigate(buildReaderUrl(course.id))}>
-                  <span>Continue learning</span>
-                  <img src={hoagoto} alt="Go" />
-                </button>
+                <>
+                  <button type="button" className="learners-course-specific-cta" onClick={() => navigate(buildReaderUrl(course.id))}>
+                    <span>Continue learning</span>
+                    <img src={hoagoto} alt="Go" />
+                  </button>
+                  {canUnenroll ? (
+                    <div className="learners-course-leave-wrap">
+                      <button
+                        type="button"
+                        className="learners-course-leave-link"
+                        onClick={() => setShowUnenrollConfirm(true)}
+                        disabled={isUnenrolling}
+                      >
+                        {isUnenrolling ? 'Leaving…' : 'Leave course'}
+                      </button>
+                    </div>
+                  ) : null}
+                </>
               ) : (
                 <button type="button" className="learners-course-specific-cta" onClick={handleJoinToday} disabled={isEnrolling || paymentsLoading}>
                   <span>{isEnrolling ? 'Joining...' : (isCourseFree(course) ? 'Enroll for free' : 'Join Today')}</span>
@@ -800,6 +843,42 @@ function CoursePart() {
         processing={isEnrolling}
         onPay={handleModalPay}
       />
+
+      {showUnenrollConfirm ? (
+        <div
+          className="learners-unenroll-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="unenroll-title"
+          onClick={() => !isUnenrolling && setShowUnenrollConfirm(false)}
+        >
+          <div className="learners-unenroll-dialog" onClick={(e) => e.stopPropagation()}>
+            <h3 id="unenroll-title">Leave this course?</h3>
+            <p>
+              Your current progress will be archived. You can re-enroll later and start fresh.
+              Certificates you already earned stay valid.
+            </p>
+            <div className="learners-unenroll-actions">
+              <button
+                type="button"
+                className="learners-btn learners-btn-light"
+                onClick={() => setShowUnenrollConfirm(false)}
+                disabled={isUnenrolling}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="learners-btn learners-btn-leave-confirm"
+                onClick={handleUnenroll}
+                disabled={isUnenrolling}
+              >
+                {isUnenrolling ? 'Leaving…' : 'Leave course'}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 }

@@ -1,0 +1,403 @@
+/* ==========================================================================
+   Prepare Syllabus — ac-forms LOOK (flat fields, bottom border)
+   with OUR Academia sizes / fonts / buttons (prepare-course tokens)
+   ========================================================================== */
+
+.prof-syllabus-ac-form {
+  --ac-field-bg: #F8FAFC;
+  --ac-field-bottom: #E2E8F0;
+}
+
+.prof-syllabus-ac-form.prof-prepare-card {
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+}
+
+.prof-syllabus-ac-form .prof-prepare-card-head {
+  padding: 20px 30px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.prof-syllabus-ac-form .prof-prepare-card-head-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.prof-syllabus-ac-form .prof-prepare-card-head h2 {
+  margin: 0;
+  font-family: Inter, sans-serif;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: 0;
+  color: #071437;
+  background: none;
+  -webkit-background-clip: unset;
+  background-clip: unset;
+  -webkit-text-fill-color: unset;
+}
+
+/* Stepper - equal columns; markers and labels consistently centered */
+.prof-syllabus-ac-form .prof-prepare-steps {
+  display: grid;
+  grid-template-columns: repeat(var(--step-count, 2), minmax(0, 1fr));
+  align-items: start;
+  justify-content: stretch;
+  padding: 28px 30px 18px;
+  background: #fff;
+  border-bottom: 1px solid var(--border-color);
+  max-width: none;
+  margin: 0;
+  gap: 0;
+  position: relative;
+}
+
+.prof-syllabus-ac-form .prof-prepare-steps::before {
+  left: calc(100% / var(--step-count, 2) / 2);
+  right: calc(100% / var(--step-count, 2) / 2);
+  top: 39px;
+  height: 2px;
+  background: #E8ECF3;
+  z-index: 0;
+}
+
+.prof-syllabus-ac-form.prof-step-outlines .prof-prepare-steps::after {
+  content: "";
+  position: absolute;
+  left: calc(100% / var(--step-count, 2) / 2);
+  width: calc((100% - (100% / var(--step-count, 2))) * 1);
+  top: 39px;
+  height: 2px;
+  background: #450468;
+  z-index: 0;
+}
+
+.prof-syllabus-ac-form .prof-prepare-step {
+  flex: none;
+  width: 100%;
+  gap: 8px;
+  position: relative;
+  z-index: 1;
+  align-items: center;
+  text-align: center;
+}
+
+.prof-syllabus-ac-form .prof-step-number-bubble {
+  width: 22px;
+  height: 22px;
+  border: none;
+  border-radius: 50%;
+  background: #F0F0F0;
+  color: #fff;
+  box-shadow: none;
+  font-size: 0;
+  position: relative;
+  z-index: 1;
+}
+
+.prof-syllabus-ac-form .prof-prepare-step.is-active .prof-step-number-bubble,
+.prof-syllabus-ac-form .prof-prepare-step.is-completed .prof-step-number-bubble {
+  background: #450468;
+  background-image: none;
+  border: none;
+  color: #fff;
+  box-shadow: none;
+}
+
+.prof-syllabus-ac-form .prof-prepare-step.is-active .prof-step-label,
+.prof-syllabus-ac-form .prof-prepare-step.is-completed .prof-step-label {
+  color: #7483A4;
+  font-weight: 500;
+}
+
+.prof-syllabus-ac-form .prof-step-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: #A1A5B7;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.prof-syllabus-ac-form .prof-step-check-svg {
+  stroke: #fff;
+}
+
+/* Labels — our sizes */
+.prof-syllabus-ac-form .prof-field-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-dark);
+  margin-bottom: 8px;
+}
+
+.prof-syllabus-ac-form .prof-field-group {
+  margin-bottom: 20px;
+}
+
+/* Fields — look from mock, scale from prepare-course */
+.prof-syllabus-ac-form .prof-step-input-premium,
+.prof-syllabus-ac-form .prof-step-textarea-premium,
+.prof-syllabus-ac-form .prof-dropdown-toggle-premium {
+  padding: 10px 12px;
+  border: none;
+  border-bottom: 1px solid var(--ac-field-bottom);
+  border-radius: 0;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-medium);
+  background-color: var(--ac-field-bg);
+  box-shadow: none;
+  outline: none;
+  appearance: none;
+  transition: var(--transition-fast);
+}
+
+.prof-syllabus-ac-form .prof-step-input-premium::placeholder,
+.prof-syllabus-ac-form .prof-step-textarea-premium::placeholder {
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+.prof-syllabus-ac-form .prof-step-input-premium:focus,
+.prof-syllabus-ac-form .prof-step-textarea-premium:focus,
+.prof-syllabus-ac-form .prof-dropdown-toggle-premium:focus,
+.prof-syllabus-ac-form .prof-dropdown-toggle-premium[aria-expanded="true"] {
+  border: none;
+  border-bottom: 1px solid var(--primary-color);
+  box-shadow: none;
+}
+
+.prof-syllabus-ac-form .prof-dropdown-toggle-premium:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.prof-syllabus-ac-form .prof-dropdown-value {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-medium);
+}
+
+.prof-syllabus-ac-form .prof-dropdown-caret-svg {
+  color: var(--text-muted);
+  stroke: var(--text-muted);
+  width: 12px;
+  height: 12px;
+}
+
+.prof-syllabus-ac-form .prof-dropdown-menu-premium .dropdown-item {
+  font-size: 13px;
+  color: var(--text-medium);
+  padding: 8px 12px;
+}
+
+.prof-syllabus-ac-form .prof-dropdown-menu-premium .dropdown-item:hover {
+  background: var(--bg-light);
+  color: var(--primary-color);
+}
+
+/* Quill — same field shell, compact toolbar */
+.prof-syllabus-ac-form .prof-quill-wrapper-premium {
+  border: none;
+  border-bottom: 1px solid var(--ac-field-bottom);
+  border-radius: 0;
+  background-color: var(--ac-field-bg);
+  box-shadow: none;
+  overflow: hidden;
+}
+
+.prof-syllabus-ac-form .prof-quill-wrapper-premium .ql-toolbar.ql-snow {
+  border: none;
+  border-bottom: 1px solid var(--ac-field-bottom);
+  background: transparent;
+  padding: 8px 12px;
+  flex-wrap: wrap;
+}
+
+.prof-syllabus-ac-form .prof-quill-wrapper-premium .ql-toolbar .ql-formats {
+  margin-right: 8px;
+}
+
+.prof-syllabus-ac-form .prof-quill-wrapper-premium .ql-toolbar button,
+.prof-syllabus-ac-form .prof-quill-wrapper-premium .ql-toolbar .ql-picker {
+  color: #7483A4;
+}
+
+.prof-syllabus-ac-form .prof-quill-wrapper-premium .ql-toolbar button {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+}
+
+.prof-syllabus-ac-form .prof-quill-wrapper-premium .ql-toolbar button:hover,
+.prof-syllabus-ac-form .prof-quill-wrapper-premium .ql-toolbar button.ql-active,
+.prof-syllabus-ac-form .prof-quill-wrapper-premium .ql-toolbar .ql-picker-label:hover,
+.prof-syllabus-ac-form .prof-quill-wrapper-premium .ql-toolbar .ql-picker-label.ql-active {
+  color: var(--primary-color);
+  background: rgba(69, 4, 104, 0.08);
+}
+
+.prof-syllabus-ac-form .prof-quill-wrapper-premium .ql-toolbar .ql-stroke {
+  stroke: currentColor;
+}
+
+.prof-syllabus-ac-form .prof-quill-wrapper-premium .ql-toolbar .ql-fill {
+  fill: currentColor;
+}
+
+.prof-syllabus-ac-form .prof-quill-wrapper-premium .ql-container.ql-snow {
+  border: none;
+  font-family: Inter, sans-serif;
+  font-size: 13px;
+  color: var(--text-medium);
+  background: transparent;
+}
+
+.prof-syllabus-ac-form .prof-quill-wrapper-premium .ql-editor {
+  min-height: 120px;
+  max-height: 480px;
+  padding: 12px 14px;
+  font-family: Inter, sans-serif;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text-medium);
+  background: transparent;
+  resize: vertical;
+  overflow-y: auto;
+}
+
+.prof-syllabus-ac-form .prof-quill-wrapper-premium .ql-editor.ql-blank::before {
+  color: var(--text-muted);
+  font-style: normal;
+  font-size: 13px;
+  left: 12px;
+  right: 12px;
+}
+
+/* Dropzone — flat field mood, compact */
+.prof-syllabus-ac-form .prof-outline-file-dropzone {
+  border: none;
+  border-bottom: 1px solid var(--ac-field-bottom);
+  border-radius: 0;
+  background: var(--ac-field-bg);
+  box-shadow: none;
+  padding: 12px;
+  gap: 8px;
+}
+
+.prof-syllabus-ac-form .prof-outline-file-dropzone:hover,
+.prof-syllabus-ac-form .prof-outline-file-dropzone.is-dragging {
+  border-bottom-color: var(--primary-color);
+  background: rgba(69, 4, 104, 0.04);
+}
+
+/* Flat sections — no card backgrounds / shadows */
+.prof-syllabus-ac-form .prof-sidebar-card-premium {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0;
+}
+
+.prof-syllabus-ac-form .prof-sidebar-card-premium h4 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-dark);
+}
+
+.prof-syllabus-ac-form .prof-empty-timeline-card {
+  background: transparent;
+}
+
+.prof-syllabus-ac-form .prof-timeline-card {
+  background: transparent;
+  box-shadow: none;
+}
+
+.prof-syllabus-ac-form .prof-timeline-card:hover {
+  transform: none;
+  box-shadow: none;
+  border-color: var(--border-focus);
+}
+
+/* Footer — our button row, not giant full-width mock buttons */
+.prof-syllabus-ac-form .prof-actions-footer-premium {
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border-color);
+}
+
+.prof-syllabus-ac-form .prof-actions-footer-premium .prof-btn-primary-premium,
+.prof-syllabus-ac-form .prof-outline-editor-actions .prof-btn-primary-premium {
+  width: auto;
+  padding: 10px 22px;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: var(--radius-md);
+  background: var(--primary-color);
+  background-image: none;
+  color: #fff;
+  border: none;
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+}
+
+.prof-syllabus-ac-form .prof-actions-footer-premium .prof-btn-primary-premium:hover:not(:disabled),
+.prof-syllabus-ac-form .prof-outline-editor-actions .prof-btn-primary-premium:hover:not(:disabled) {
+  background: #38094d;
+  background-image: none;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(69, 4, 104, 0.18);
+}
+
+.prof-syllabus-ac-form .prof-outline-editor-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.prof-syllabus-ac-form .prof-outline-editor-actions .prof-btn-primary-premium {
+  width: 100%;
+}
+
+/* Clickable checklist cards — keep layout, show selection */
+.prof-syllabus-ac-form .prof-timeline-card {
+  cursor: pointer;
+}
+
+.prof-syllabus-ac-form .prof-timeline-card.is-selected {
+  border-color: rgba(69, 4, 104, 0.35);
+  box-shadow: 0 0 0 2px rgba(69, 4, 104, 0.12), var(--shadow-sm);
+  background: #fbf7fd;
+}
+
+.prof-syllabus-ac-form .prof-timeline-card.is-selected .prof-timeline-badge {
+  background: var(--primary-color);
+}
+
+@media (max-width: 768px) {
+  .prof-syllabus-ac-form .prof-actions-footer-premium {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+
+  .prof-syllabus-ac-form .prof-actions-footer-premium .prof-btn-primary-premium {
+    width: 100%;
+  }
+}

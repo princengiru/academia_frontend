@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import LearnersPageShell from './LearnersPageShell';
 import LearnerLoadError from './LearnerLoadError';
+import { unenrollFromCourse } from './enrollmentPaymentUtils';
 
 // Icons & Images
 import hoagoto from '../../../assets/icons/hoagoto.svg';
@@ -81,6 +82,9 @@ function LearnersCourses() {
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [sortOrder, setSortOrder] = useState('Newest');
   const [loadError, setLoadError] = useState('');
+  const [unenrollTarget, setUnenrollTarget] = useState(null);
+  const [isUnenrolling, setIsUnenrolling] = useState(false);
+  const [coursesReloadKey, setCoursesReloadKey] = useState(0);
 
   const PAGE_SIZE = 18;
 
@@ -263,7 +267,28 @@ function LearnersCourses() {
     return () => {
       cancelled = true;
     };
-  }, [API_BASE_URL, currentPage, selectedFilter, debouncedSearchTerm, selectedCategory]);
+  }, [API_BASE_URL, currentPage, selectedFilter, debouncedSearchTerm, selectedCategory, coursesReloadKey]);
+
+  const handleUnenrollCourse = useCallback(async () => {
+    const token = localStorage.getItem('token');
+    if (!token || !unenrollTarget?.id) return;
+
+    setIsUnenrolling(true);
+    try {
+      await unenrollFromCourse({
+        apiBaseUrl: API_BASE_URL,
+        token,
+        courseId: unenrollTarget.id,
+        reason: 'Learner self-unenroll',
+      });
+      setUnenrollTarget(null);
+      setCoursesReloadKey((key) => key + 1);
+    } catch (err) {
+      setLoadError(err?.message || 'Could not leave this course.');
+    } finally {
+      setIsUnenrolling(false);
+    }
+  }, [API_BASE_URL, unenrollTarget]);
 
   // Client-Side Sorting
   const sortedCourses = React.useMemo(() => {
@@ -582,9 +607,24 @@ function LearnersCourses() {
                     </div>
                     <div>
                       <small>{course.startsOn || ''}</small>
-                      <a className="learners-course-open" href="/academia/learner/course-part" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleCourseClick(course); }}>
-                        <img src={acEn} alt="Enroll" />
-                      </a>
+                      <div className="learners-course-card-actions">
+                        {selectedFilter === 'My Courses' ? (
+                          <button
+                            type="button"
+                            className="learners-course-leave-btn"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setUnenrollTarget(course);
+                            }}
+                          >
+                            Leave
+                          </button>
+                        ) : null}
+                        <a className="learners-course-open" href="/academia/learner/course-part" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleCourseClick(course); }}>
+                          <img src={acEn} alt="Enroll" />
+                        </a>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -702,6 +742,40 @@ function LearnersCourses() {
         </div>
       </section>
       </section>
+
+      {unenrollTarget ? (
+        <div
+          className="learners-unenroll-overlay"
+          role="dialog"
+          aria-modal="true"
+          onClick={() => !isUnenrolling && setUnenrollTarget(null)}
+        >
+          <div className="learners-unenroll-dialog" onClick={(e) => e.stopPropagation()}>
+            <h3>Leave {unenrollTarget.title}?</h3>
+            <p>
+              Your progress will be archived. You can re-enroll later and start fresh.
+            </p>
+            <div className="learners-unenroll-actions">
+              <button
+                type="button"
+                className="learners-btn learners-btn-light"
+                onClick={() => setUnenrollTarget(null)}
+                disabled={isUnenrolling}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="learners-btn learners-btn-leave-confirm"
+                onClick={handleUnenrollCourse}
+                disabled={isUnenrolling}
+              >
+                {isUnenrolling ? 'Leaving…' : 'Leave course'}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </LearnersPageShell>
   );
 }

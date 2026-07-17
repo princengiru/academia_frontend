@@ -51,6 +51,7 @@ const HOALearners = () => {
 
   // --- Modal Specific Data State ---
   const [learnerProfile, setLearnerProfile] = useState(null);
+  const [learnerArchives, setLearnerArchives] = useState([]);
   const [isProfileLoading, setIsProfileLoading] = useState(false);
 
   // --- Main Data State ---
@@ -90,6 +91,7 @@ const HOALearners = () => {
   const [hoverData, setHoverData] = useState({ chartId: null, text: '', tooltipClass: '', x: 0, y: 0 });
 
   const [openRowMenuId, setOpenRowMenuId] = useState(null);
+  const [openEnrollmentMenuId, setOpenEnrollmentMenuId] = useState(null);
   const [isDrawerMenuOpen, setIsDrawerMenuOpen] = useState(false);
   const [confirmAction, setConfirmAction] = useState(null);
   const [confirmLoading, setConfirmLoading] = useState(false);
@@ -300,22 +302,46 @@ const HOALearners = () => {
   // --- Fetch Detailed Profile ---
   const fetchLearnerProfile = async (id) => {
     setIsProfileLoading(true);
-    setLearnerProfile(null); // Reset previous data
+    setLearnerProfile(null);
+    setLearnerArchives([]);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`${API_BASE_URL}/api/admin/learners/${id}/profile`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const headers = { Authorization: `Bearer ${token}` };
+      const [profileRes, archivesRes] = await Promise.all([
+        fetch(`${API_BASE_URL}/api/admin/learners/${id}/profile`, { headers }),
+        fetch(`${API_BASE_URL}/api/admin/learners/${id}/archives`, { headers }),
+      ]);
 
-      if (res.ok) {
-        const body = await res.json();
-        // Adjust this based on whether the API wraps it in a 'data' object
-        setLearnerProfile(body.data || body);
+      if (profileRes.ok) {
+        const body = await profileRes.json();
+        const profile = body.data || body;
+        setLearnerProfile({
+          ...profile,
+          enrollments: profile.enrollments || (profile.enrolledCourses || []).map((course) => ({
+            id: course.enrollment_id || course.id,
+            course_id: course.id,
+            course_name: course.title,
+            course: {
+              title: course.title,
+              instructor_name: course.instructor_name,
+              type: 'Online Course',
+            },
+            enrolled_at: course.enrolled_at,
+            progress_percentage: course.progress_percentage ?? course.progress?.overall_progress ?? 0,
+            status: course.status || 'active',
+          })),
+        });
       } else {
-        console.error("Failed to fetch profile. Status:", res.status);
+        console.error('Failed to fetch profile. Status:', profileRes.status);
+      }
+
+      if (archivesRes.ok) {
+        const archivesBody = await archivesRes.json();
+        const archives = Array.isArray(archivesBody?.data) ? archivesBody.data : (archivesBody?.data?.data || []);
+        setLearnerArchives(archives);
       }
     } catch (error) {
-      console.error("Error fetching learner profile:", error);
+      console.error('Error fetching learner profile:', error);
     } finally {
       setIsProfileLoading(false);
     }
@@ -331,7 +357,24 @@ const HOALearners = () => {
     setIsModalOpen(false);
     setActiveLearnerId(null);
     setActiveTab('lessons');
-    setLearnerProfile(null); // Clean up on close
+    setLearnerProfile(null);
+    setLearnerArchives([]);
+    setOpenEnrollmentMenuId(null);
+  };
+
+  const handleUnenrollEnrollment = (courseId, courseTitle) => {
+    if (!activeLearnerId || !courseId) return;
+    setOpenEnrollmentMenuId(null);
+    setConfirmAction({
+      kind: 'unenroll',
+      ids: [activeLearnerId],
+      courseId,
+      courseTitle,
+      title: 'Unenroll learner from course?',
+      message: `${courseTitle || 'This course'} will be removed from the learner's active enrollments. Progress will be archived and they can re-enroll later.`,
+      confirmLabel: 'Unenroll',
+      destructive: true,
+    });
   };
 
   const handleSingleStatusChange = (learnerId, action) => {
@@ -383,7 +426,7 @@ const HOALearners = () => {
   const executeConfirmAction = async () => {
     if (!confirmAction || confirmLoading) return;
 
-    const { kind, ids } = confirmAction;
+    const { kind, ids, courseId, courseTitle } = confirmAction;
     const token = localStorage.getItem('token');
     if (!token) {
       navigate('/academia/auth/signin');
@@ -442,6 +485,24 @@ const HOALearners = () => {
         });
         if (!res.ok) throw new Error('Failed to delete selected learners');
         showToast('Selected learners deleted successfully!', 'success');
+      } else if (kind === 'unenroll') {
+        const res = await fetch(`${API_BASE_URL}/api/admin/learners/${ids[0]}/unenroll`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            course_id: courseId,
+            reason: `Admin unenroll from ${courseTitle || 'course'}`,
+          }),
+        });
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          throw new Error(body?.message || body?.error?.message || 'Failed to unenroll learner');
+        }
+        if (activeLearnerId === ids[0]) fetchLearnerProfile(ids[0]);
+        showToast('Learner unenrolled successfully.', 'success');
       }
 
       setConfirmAction(null);
@@ -1053,17 +1114,31 @@ const HOALearners = () => {
                       ) : (
                         <table className="hoa-list-table mod-table">
                           <thead>
-                            {/* ... (Keep your existing thead mapping) ... */}
+                            <tr>
+                              <th style={{ width: '40px' }} />
+                              <th><div className="th-content" onClick={() => handleModalSort('title')}>Course</div></th>
+                              <th><div className="th-content">Instructor</div></th>
+                              <th><div className="th-content">Type</div></th>
+                              <th className="text-center"><div className="th-content justify-center">Progress</div></th>
+                              <th className="status-col"><div className="th-content">Status</div></th>
+                              <th className="action-col" />
+                            </tr>
                           </thead>
                           <tbody>
                             {/* Map over real enrollments if they exist, otherwise fallback or show empty state */}
                             {(learnerProfile?.enrollments || []).length > 0 ? (
-                               getSortedData(learnerProfile.enrollments, modalSortConfig).map((enrollment) => (
-                                <tr key={enrollment.id || enrollment.course_id}>
+                               getSortedData(learnerProfile.enrollments, modalSortConfig).map((enrollment) => {
+                                const courseId = enrollment.course_id || enrollment.id;
+                                const courseTitle = enrollment.course?.title || enrollment.course_name || 'Unknown Course';
+                                const statusKey = String(enrollment.status || 'active').toLowerCase();
+                                const canUnenroll = statusKey === 'active';
+                                const rowKey = enrollment.id || `${courseId}-${activeLearnerId}`;
+                                return (
+                                <tr key={rowKey}>
                                   <td><input type="checkbox" className="hoa-checkbox" /></td>
                                   <td>
                                     <div className="user-meta">
-                                      <h5>{enrollment.course?.title || enrollment.course_name || 'Unknown Course'}</h5>
+                                      <h5>{courseTitle}</h5>
                                       <p style={{ fontSize: '11px', color: '#A1A5B7' }}>{new Date(enrollment.enrolled_at || enrollment.created_at).toLocaleDateString()}</p>
                                     </div>
                                   </td>
@@ -1080,16 +1155,40 @@ const HOALearners = () => {
                                   </td>
                                   <td className="fw-600 text-center">{enrollment.progress_percentage || 0}%</td>
                                   <td className="status-col">
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'flex-end' }}>
-                                      <span className={`mod-status-pill st-${(enrollment.status || 'active').toLowerCase()}`}>{enrollment.status || 'Active'}</span>
-                                      <button className="icon-more-btn">⋮</button>
-                                    </div>
+                                    <span className={`mod-status-pill st-${statusKey}`}>{enrollment.status || 'Active'}</span>
+                                  </td>
+                                  <td className="action-col">
+                                    {canUnenroll ? (
+                                      <div className="hoa-row-action-menu">
+                                        <button
+                                          type="button"
+                                          className="table-link-icon"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setOpenEnrollmentMenuId(openEnrollmentMenuId === rowKey ? null : rowKey);
+                                          }}
+                                        >
+                                          <img src={hoaverticaldots} alt="Actions" style={{ width: '12px', opacity: 0.7 }} />
+                                        </button>
+                                        {openEnrollmentMenuId === rowKey ? (
+                                          <div className="hoa-row-dropdown-menu">
+                                            <button
+                                              type="button"
+                                              className="hoa-row-dropdown-item is-danger"
+                                              onClick={() => handleUnenrollEnrollment(courseId, courseTitle)}
+                                            >
+                                              Unenroll
+                                            </button>
+                                          </div>
+                                        ) : null}
+                                      </div>
+                                    ) : null}
                                   </td>
                                 </tr>
-                              ))
+                              ); })
                             ) : (
                               <tr>
-                                <td colSpan="6" style={{ textAlign: 'center', padding: '24px', color: '#64748B' }}>
+                                <td colSpan="7" style={{ textAlign: 'center', padding: '24px', color: '#64748B' }}>
                                   No course enrollments found for this learner.
                                 </td>
                               </tr>
@@ -1098,6 +1197,51 @@ const HOALearners = () => {
                         </table>
                       )}
                     </div>
+
+                    {!isProfileLoading && learnerArchives.length > 0 ? (
+                      <div className="hoa-archives-section">
+                        <div className="hoa-section-head">
+                          <h3>Archived attempts</h3>
+                          <p>Progress snapshots from previous unenrollments</p>
+                        </div>
+                        <div className="hoa-list-container modal-table-container">
+                          <table className="hoa-list-table mod-table hoa-archives-table">
+                            <thead>
+                              <tr>
+                                <th><div className="th-content">Course</div></th>
+                                <th className="text-center"><div className="th-content justify-center">Attempt</div></th>
+                                <th className="text-center"><div className="th-content justify-center">Progress</div></th>
+                                <th><div className="th-content">Archived</div></th>
+                                <th><div className="th-content">Reason</div></th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {learnerArchives.map((archive) => (
+                                <tr key={archive.id}>
+                                  <td>
+                                    <div className="user-meta">
+                                      <h5>{archive.course_title || `Course #${archive.course_id}`}</h5>
+                                    </div>
+                                  </td>
+                                  <td className="fw-600 text-center">{archive.enrollment_attempt || 1}</td>
+                                  <td className="fw-600 text-center">{archive.completion_percentage || 0}%</td>
+                                  <td>
+                                    <div className="user-meta">
+                                      <p>{archive.archived_at ? new Date(archive.archived_at).toLocaleString() : '—'}</p>
+                                    </div>
+                                  </td>
+                                  <td>
+                                    <div className="user-meta">
+                                      <p>{archive.archive_reason || '—'}</p>
+                                    </div>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    ) : null}
 
                     {/* Documents / Certificates */}
                     <div className="docs-header" style={{ marginTop: '20px' }}>

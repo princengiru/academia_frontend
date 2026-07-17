@@ -1038,6 +1038,98 @@
   height: 15px;
 }
 
+.learners-course-leave-wrap {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid #EEF1F6;
+  text-align: center;
+}
+
+.learners-course-leave-link {
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: "Inter", sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 16px;
+  color: #99A1B7;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.learners-course-leave-link:hover:not(:disabled) {
+  color: #78829D;
+}
+
+.learners-course-leave-link:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.learners-unenroll-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10050;
+  background: rgba(15, 23, 42, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.learners-unenroll-dialog {
+  width: min(420px, 100%);
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid #EEF1F6;
+  padding: 24px;
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.18);
+}
+
+.learners-unenroll-dialog h3 {
+  margin: 0 0 8px;
+  font-size: 18px;
+  color: #0F172A;
+}
+
+.learners-unenroll-dialog p {
+  margin: 0 0 20px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #64748B;
+}
+
+.learners-unenroll-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.learners-btn-light {
+  background: #fff;
+  border: 1px solid #DBDFE9;
+  color: #4B5675;
+}
+
+.learners-btn-leave-confirm {
+  background: #450468;
+  border: none;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 0 14px;
+  height: 36px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.learners-btn-leave-confirm:disabled {
+  opacity: 0.7;
+  cursor: wait;
+}
+
 .learners-course-specific-cta-secondary {
   margin-top: 0;
   background: #F7F3FA;

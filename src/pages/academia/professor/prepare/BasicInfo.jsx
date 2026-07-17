@@ -264,14 +264,6 @@ const BasicInfo = ({ courseId, setCourseId, setActiveStep, pushFeedback }) => {
 
   return (
     <div className="prof-step-pane is-active animate-fade-in">
-      
-      <div className="prof-step-header">
-        <h3>Course Marketing Profile</h3>
-        <p>
-          This information will be visible on the public course landing page. Make it compelling to attract students.
-        </p>
-      </div>
-
       {categoriesError ? (
         <LearnerLoadError
           title="Could not load categories"

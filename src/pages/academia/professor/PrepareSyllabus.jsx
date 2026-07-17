@@ -1,23 +1,31 @@
 import React, { useState, useRef, useMemo, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
 import LearnerLoadError from '../learner/LearnerLoadError';
 import './prepare-course.css';
+import './prepare-syllabus.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 const LEVELS = ['Beginner', 'Intermediate', 'Advanced'];
 
 const PrepareSyllabus = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
   const feedbackTimerRef = useRef(null);
+
+  const initialSyllabusId = location.state?.syllabusId || searchParams.get('id') || null;
 
   // --- Central Wizard State ---
   const [activeStep, setActiveStep] = useState('profile'); // 'profile' or 'outlines'
-  const [syllabusId, setSyllabusId] = useState(null);
+  const [syllabusId, setSyllabusId] = useState(initialSyllabusId);
   const [feedback, setFeedback] = useState({ message: '', tone: 'success', visible: false });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDraggingFile, setIsDraggingFile] = useState(false);
+  const [isLoadingSyllabus, setIsLoadingSyllabus] = useState(Boolean(initialSyllabusId));
+  const [syllabusLoadError, setSyllabusLoadError] = useState('');
+  const [syllabusReloadKey, setSyllabusReloadKey] = useState(0);
 
   // --- Data Lists ---
   const [categories, setCategories] = useState([]);
@@ -41,6 +49,7 @@ const PrepareSyllabus = () => {
 
   // --- Outlines State ---
   const [bufferedOutlines, setBufferedOutlines] = useState([]);
+  const [selectedOutlineIndex, setSelectedOutlineIndex] = useState(null);
   const [outlineDraft, setOutlineDraft] = useState({
     title: '',
     abstract: '',
@@ -51,15 +60,25 @@ const PrepareSyllabus = () => {
   });
 
   const outlineFileInputRef = useRef(null);
+  const emptyOutlineDraft = {
+    title: '',
+    abstract: '',
+    explanation: '',
+    topicId: '',
+    topicName: '',
+    file: null
+  };
 
-  // --- Quill Config ---
+  // Same rich toolbar as Prepare Course (BasicInfo)
   const quillModules = useMemo(() => ({
     toolbar: [
       [{ header: [3, 4, false] }],
       ['bold', 'italic', 'underline', 'code'],
       [{ list: 'ordered' }, { list: 'bullet' }],
       ['code-block'],
-      ['link', 'clean'],
+      [{ align: [] }],
+      ['link'],
+      ['clean'],
     ],
   }), []);
 
@@ -103,6 +122,101 @@ const PrepareSyllabus = () => {
     };
     fetchCategories();
   }, [categoriesReloadKey]);
+
+  // Load existing syllabus when editing
+  useEffect(() => {
+    if (!syllabusId) {
+      setIsLoadingSyllabus(false);
+      return;
+    }
+
+    const loadSyllabus = async () => {
+      setIsLoadingSyllabus(true);
+      setSyllabusLoadError('');
+      try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(`${API_BASE_URL}/api/syllabuses/${syllabusId}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (!res.ok || !data.data) {
+          throw new Error(data.message || 'Could not load syllabus details.');
+        }
+
+        const s = data.data;
+        const matchedLevel = LEVELS.find(
+          (lvl) => lvl.toLowerCase() === String(s.education_level || '').toLowerCase()
+        ) || LEVELS[0];
+
+        setProfile({
+          title: s.title || '',
+          description: s.description || '',
+          categoryId: s.category_id || '',
+          categoryName: '',
+          subcategoryId: s.subcategory_id || '',
+          subcategoryName: '',
+          level: matchedLevel,
+          audience: s.target_audience || '',
+          goals: s.objectives || ''
+        });
+
+        if (Array.isArray(s.outlines) && s.outlines.length > 0) {
+          setBufferedOutlines(s.outlines.map((out) => ({
+            id: out.id,
+            title: out.title || '',
+            abstract: out.description || '',
+            explanation: out.explanation || '',
+            topicId: out.topic_id || '',
+            topicName: '',
+            file: out.file_url
+              ? { name: out.file_name || String(out.file_url).split('/').pop(), url: out.file_url }
+              : null,
+          })));
+        } else {
+          setBufferedOutlines([]);
+        }
+
+        if (s.category_id) {
+          const subRes = await fetch(`${API_BASE_URL}/api/categories/${s.category_id}/subcategories`);
+          const subData = await subRes.json();
+          if (subRes.ok && subData.success && Array.isArray(subData.data)) {
+            setSubcategories(subData.data);
+            const matchedSub = subData.data.find((sub) => String(sub.id) === String(s.subcategory_id));
+            if (matchedSub) {
+              setProfile((prev) => ({ ...prev, subcategoryName: matchedSub.name }));
+            }
+
+            if (s.subcategory_id) {
+              const topicRes = await fetch(`${API_BASE_URL}/api/categories/subcategories/${s.subcategory_id}/topics`);
+              const topicData = await topicRes.json();
+              if (topicRes.ok && topicData.success && Array.isArray(topicData.data)) {
+                setTopics(topicData.data);
+                setBufferedOutlines((prev) => prev.map((out) => {
+                  const matchedTopic = topicData.data.find((tp) => String(tp.id) === String(out.topicId));
+                  return matchedTopic ? { ...out, topicName: matchedTopic.name } : out;
+                }));
+              }
+            }
+          }
+        }
+      } catch (err) {
+        setSyllabusLoadError(err.message || 'Could not load syllabus details.');
+      } finally {
+        setIsLoadingSyllabus(false);
+      }
+    };
+
+    loadSyllabus();
+  }, [syllabusId, syllabusReloadKey]);
+
+  // Resolve category name once category list is available
+  useEffect(() => {
+    if (!profile.categoryId || categories.length === 0) return;
+    const matched = categories.find((cat) => String(cat.id) === String(profile.categoryId));
+    if (matched && profile.categoryName !== matched.name) {
+      setProfile((prev) => ({ ...prev, categoryName: matched.name }));
+    }
+  }, [categories, profile.categoryId, profile.categoryName]);
 
   // Fetch Subcategories when Category changes
   const handleCategorySelect = async (catId, catName) => {
@@ -170,18 +284,59 @@ const PrepareSyllabus = () => {
     }
   };
 
-  const addOutlineToBuffer = () => {
+  const clearOutlineSelection = () => {
+    setSelectedOutlineIndex(null);
+    setOutlineDraft({ ...emptyOutlineDraft });
+    if (outlineFileInputRef.current) outlineFileInputRef.current.value = '';
+  };
+
+  const selectOutlineForEdit = (idx) => {
+    const out = bufferedOutlines[idx];
+    if (!out) return;
+    setSelectedOutlineIndex(idx);
+    setOutlineDraft({
+      title: out.title || '',
+      abstract: out.abstract || '',
+      explanation: out.explanation || '',
+      topicId: out.topicId || '',
+      topicName: out.topicName || '',
+      file: out.file || null
+    });
+    if (outlineFileInputRef.current) outlineFileInputRef.current.value = '';
+  };
+
+  const saveOutlineToBuffer = () => {
     if (!outlineDraft.title.trim()) {
       return pushFeedback('Outline topic title is required.', 'error');
     }
-    setBufferedOutlines(prev => [...prev, { ...outlineDraft }]);
-    setOutlineDraft({ title: '', abstract: '', explanation: '', topicId: '', topicName: '', file: null });
+
+    if (selectedOutlineIndex !== null) {
+      setBufferedOutlines((prev) => prev.map((item, i) => (
+        i === selectedOutlineIndex
+          ? { ...item, ...outlineDraft, dirty: true }
+          : item
+      )));
+      pushFeedback('Outline updated in checklist.', 'success');
+      return;
+    }
+
+    setBufferedOutlines((prev) => [...prev, { ...outlineDraft }]);
+    setOutlineDraft({ ...emptyOutlineDraft });
     if (outlineFileInputRef.current) outlineFileInputRef.current.value = '';
     pushFeedback('Topic outline added to buffer.', 'success');
   };
 
   const removeBufferedOutline = (idx) => {
-    setBufferedOutlines(prev => prev.filter((_, i) => i !== idx));
+    setBufferedOutlines((prev) => prev.filter((_, i) => i !== idx));
+    if (selectedOutlineIndex === idx) {
+      clearOutlineSelection();
+    } else if (selectedOutlineIndex !== null && selectedOutlineIndex > idx) {
+      setSelectedOutlineIndex((prev) => prev - 1);
+    }
+  };
+
+  const exitBuilder = () => {
+    navigate(syllabusId ? '/academia/professor/management-syllabuses' : '/academia/professor');
   };
 
   // --- Save / Create Step 1 ---
@@ -252,16 +407,30 @@ const PrepareSyllabus = () => {
     const token = localStorage.getItem('token');
 
     try {
-      // Collect outlines
       const outlinesToSave = [...bufferedOutlines];
       if (outlineDraft.title.trim()) {
-        outlinesToSave.push({ ...outlineDraft });
+        if (selectedOutlineIndex !== null) {
+          outlinesToSave[selectedOutlineIndex] = {
+            ...outlinesToSave[selectedOutlineIndex],
+            ...outlineDraft,
+            dirty: true,
+          };
+        } else {
+          outlinesToSave.push({ ...outlineDraft });
+        }
       }
 
       for (let i = 0; i < outlinesToSave.length; i++) {
         const outline = outlinesToSave[i];
-        const outData = new FormData();
+        const hasNewFile = outline.file instanceof File;
+        const isDirty = Boolean(outline.dirty) || hasNewFile;
 
+        // Unchanged existing outlines stay as-is
+        if (outline.id && !isDirty) {
+          continue;
+        }
+
+        const outData = new FormData();
         outData.append('title', outline.title);
         outData.append('description', outline.abstract);
         outData.append('explanation', outline.explanation || outline.abstract);
@@ -269,12 +438,17 @@ const PrepareSyllabus = () => {
         if (outline.topicId) {
           outData.append('topic_id', Number(outline.topicId));
         }
-        if (outline.file) {
+        if (hasNewFile) {
           outData.append('file', outline.file);
         }
 
-        const res = await fetch(`${API_BASE_URL}/api/syllabuses/${syllabusId}/outlines`, {
-          method: 'POST',
+        const endpoint = outline.id
+          ? `${API_BASE_URL}/api/syllabuses/outlines/${outline.id}`
+          : `${API_BASE_URL}/api/syllabuses/${syllabusId}/outlines`;
+        const method = outline.id ? 'PUT' : 'POST';
+
+        const res = await fetch(endpoint, {
+          method,
           headers: { Authorization: `Bearer ${token}` },
           body: outData
         });
@@ -285,7 +459,6 @@ const PrepareSyllabus = () => {
         }
       }
 
-      // Publish Syllabus
       const pubRes = await fetch(`${API_BASE_URL}/api/syllabuses/${syllabusId}`, {
         method: 'PUT',
         headers: {
@@ -300,7 +473,9 @@ const PrepareSyllabus = () => {
         throw new Error(pubErr.message || 'Failed to publish syllabus.');
       }
 
-      navigate('/academia/professor', { state: { toastMessage: 'Syllabus successfully published!', toastTone: 'success' } });
+      navigate('/academia/professor/management-syllabuses', {
+        state: { toastMessage: 'Syllabus successfully published!', toastTone: 'success' }
+      });
     } catch (err) {
       pushFeedback(err.message, 'error');
     } finally {
@@ -322,27 +497,19 @@ const PrepareSyllabus = () => {
             </div>
           )}
 
-          <section className="learners-home-title">
-            <div className="learners-home-title-top">
-              <h1>Prepare Course Syllabus</h1>
-              <div className="learners-home-title-actions">
-                <button type="button" className="learners-btn learners-btn-primary" onClick={() => navigate('/academia/professor')} style={{ border: 'none', cursor: 'pointer' }}>
+          <div className={`prof-prepare-card prof-syllabus-ac-form prof-step-${activeStep}`}>
+            <div className="prof-prepare-card-head">
+              <div className="prof-prepare-card-head-row">
+                <h2>{syllabusId ? 'Edit Syllabus' : 'Prepare Syllabus'}</h2>
+                <button type="button" className="learners-btn learners-btn-primary" onClick={exitBuilder} style={{ border: 'none', cursor: 'pointer' }}>
                   <span>Exit Builder</span>
                   <img src="/assets/icons/exit-right.svg" alt="" />
                 </button>
               </div>
             </div>
-          </section>
 
-          <div className={`prof-prepare-card prof-step-${activeStep}`}>
-            <div className="prof-prepare-card-head">
-              <h2>Syllabus Builder Workspace</h2>
-              <span className="prof-prepare-card-subtitle">Define the high-level roadmap and outline details for your syllabus.</span>
-            </div>
-
-            {/* Stepper */}
-            <div className="prof-prepare-steps" aria-label="Steps" style={{ maxWidth: '400px', margin: '0 auto 32px' }}>
-              {steps.map((step, idx) => {
+            <div className="prof-prepare-steps" aria-label="Steps" style={{ '--step-count': 2 }}>
+              {steps.map((step) => {
                 const isActive = activeStep === step.id;
                 const isCompleted = activeStep === 'outlines' && step.id === 'profile';
                 return (
@@ -356,11 +523,11 @@ const PrepareSyllabus = () => {
                     }}
                   >
                     <div className="prof-step-number-bubble">
-                      {isCompleted ? (
-                        <svg className="prof-step-check-svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                      {isCompleted || isActive ? (
+                        <svg className="prof-step-check-svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                           <polyline points="20 6 9 17 4 12"></polyline>
                         </svg>
-                      ) : idx + 1}
+                      ) : null}
                     </div>
                     <span className="prof-step-label">{step.label}</span>
                   </div>
@@ -368,9 +535,20 @@ const PrepareSyllabus = () => {
               })}
             </div>
 
-            {/* Step Panes */}
             <div className="prof-prepare-body">
-              {categoriesError ? (
+              {syllabusLoadError ? (
+                <LearnerLoadError
+                  title="Could not load syllabus"
+                  message={syllabusLoadError}
+                  onRetry={() => setSyllabusReloadKey((key) => key + 1)}
+                />
+              ) : null}
+
+              {isLoadingSyllabus ? (
+                <p style={{ fontSize: '13px', color: '#64748B', padding: '24px 0' }}>Loading syllabus details…</p>
+              ) : null}
+
+              {categoriesError && !syllabusLoadError ? (
                 <LearnerLoadError
                   title="Could not load categories"
                   message={categoriesError}
@@ -378,14 +556,8 @@ const PrepareSyllabus = () => {
                 />
               ) : null}
 
-              {activeStep === 'profile' && (
+              {!isLoadingSyllabus && !syllabusLoadError && activeStep === 'profile' && (
                 <div className="prof-step-pane is-active animate-fade-in">
-                  <div className="prof-step-header">
-                    <h3>Syllabus Profile Details</h3>
-                    <p>Describe what this syllabus covers, the subject domain, and who it is targetted at.</p>
-                  </div>
-
-                  {/* Title */}
                   <div className="prof-field-group">
                     <label className="prof-field-label">Syllabus Title</label>
                     <input
@@ -397,9 +569,7 @@ const PrepareSyllabus = () => {
                     />
                   </div>
 
-                  {/* Categories Grid */}
                   <div className="prof-grid-two">
-                    {/* Category Dropdown */}
                     <div className="prof-field-group">
                       <label className="prof-field-label">Category</label>
                       <div className="dropdown prof-generic-dropdown">
@@ -421,7 +591,6 @@ const PrepareSyllabus = () => {
                       </div>
                     </div>
 
-                    {/* Subcategory Dropdown */}
                     <div className="prof-field-group">
                       <label className="prof-field-label">Subcategory</label>
                       <div className="dropdown prof-generic-dropdown">
@@ -444,7 +613,6 @@ const PrepareSyllabus = () => {
                     </div>
                   </div>
 
-                  {/* Level */}
                   <div className="prof-field-group">
                     <label className="prof-field-label">Target Education Level</label>
                     <div className="dropdown prof-generic-dropdown">
@@ -466,7 +634,6 @@ const PrepareSyllabus = () => {
                     </div>
                   </div>
 
-                  {/* Intro Description */}
                   <div className="prof-field-group">
                     <label className="prof-field-label">Syllabus Intro / Summary</label>
                     <div className="prof-quill-wrapper-premium">
@@ -480,7 +647,6 @@ const PrepareSyllabus = () => {
                     </div>
                   </div>
 
-                  {/* Target Audience */}
                   <div className="prof-field-group">
                     <label className="prof-field-label">Target Audience</label>
                     <div className="prof-quill-wrapper-premium">
@@ -494,41 +660,35 @@ const PrepareSyllabus = () => {
                     </div>
                   </div>
 
-                  {/* Objectives */}
                   <div className="prof-field-group">
-                    <label className="prof-field-label">Learning Objectives (What will they achieve?)</label>
+                    <label className="prof-field-label">Learning Goals / Objectives</label>
                     <div className="prof-quill-wrapper-premium">
                       <ReactQuill
                         theme="snow"
                         modules={quillModules}
                         value={profile.goals}
                         onChange={(val) => handleProfileChange('goals', val)}
-                        placeholder="e.g. Master clean coding, build responsive layouts, set up scalable databases..."
+                        placeholder="What will learners achieve after completing this syllabus?"
                       />
                     </div>
                   </div>
 
-                  {/* Footer Actions */}
                   <div className="prof-actions-footer-premium">
-                    <button type="button" className="prof-btn-back-premium" onClick={() => navigate('/academia/professor')}>
-                      Cancel
-                    </button>
-                    <button type="button" className="prof-btn-primary-premium" onClick={saveSyllabusProfile} disabled={isSubmitting}>
-                      {isSubmitting ? 'Saving Profile...' : 'Save & Continue to Outlines'}
+                    <button
+                      type="button"
+                      className="prof-btn-primary-premium"
+                      onClick={saveSyllabusProfile}
+                      disabled={isSubmitting || Boolean(categoriesError)}
+                    >
+                      {isSubmitting ? 'Saving Profile...' : (syllabusId ? 'Update & Continue to Outlines' : 'Save & Continue to Outlines')}
                     </button>
                   </div>
                 </div>
               )}
 
-              {activeStep === 'outlines' && (
+              {!isLoadingSyllabus && !syllabusLoadError && activeStep === 'outlines' && (
                 <div className="prof-step-pane is-active animate-fade-in">
-                  <div className="prof-step-header">
-                    <h3>Syllabus Outline Topics</h3>
-                    <p>Map out the individual learning topics and attach learning resources or document guides.</p>
-                  </div>
-
                   <div className="prof-grid-two-unequal">
-                    {/* Outline List (Left) */}
                     <div className="prof-timeline-pane">
                       <h4 className="prof-pane-title">Syllabus Content Checklist</h4>
                       {bufferedOutlines.length === 0 ? (
@@ -543,7 +703,19 @@ const PrepareSyllabus = () => {
                       ) : (
                         <div className="prof-timeline-container">
                           {bufferedOutlines.map((out, idx) => (
-                            <div key={idx} className="prof-timeline-card">
+                            <div
+                              key={out.id || idx}
+                              className={`prof-timeline-card ${selectedOutlineIndex === idx ? 'is-selected' : ''}`}
+                              role="button"
+                              tabIndex={0}
+                              onClick={() => selectOutlineForEdit(idx)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                  e.preventDefault();
+                                  selectOutlineForEdit(idx);
+                                }
+                              }}
+                            >
                               <div className="prof-timeline-badge">
                                 <span>{idx + 1}</span>
                               </div>
@@ -570,7 +742,10 @@ const PrepareSyllabus = () => {
                               <button
                                 type="button"
                                 className="prof-timeline-remove-btn"
-                                onClick={() => removeBufferedOutline(idx)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  removeBufferedOutline(idx);
+                                }}
                               >
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                   <polyline points="3 6 5 6 21 6"></polyline>
@@ -583,11 +758,9 @@ const PrepareSyllabus = () => {
                       )}
                     </div>
 
-                    {/* Topic Builder Form (Right) */}
                     <div className="prof-sidebar-card-premium">
-                      <h4>Compose Outline Topic</h4>
+                      <h4>{selectedOutlineIndex !== null ? 'Edit Outline Topic' : 'Compose Outline Topic'}</h4>
 
-                      {/* Outline Title */}
                       <div className="prof-field-group">
                         <label className="prof-field-label">Outline Title</label>
                         <input
@@ -599,7 +772,6 @@ const PrepareSyllabus = () => {
                         />
                       </div>
 
-                      {/* Topic Selector */}
                       <div className="prof-field-group">
                         <label className="prof-field-label">Select Database Topic</label>
                         <div className="dropdown prof-generic-dropdown">
@@ -624,7 +796,6 @@ const PrepareSyllabus = () => {
                         </div>
                       </div>
 
-                      {/* Abstract / Summary */}
                       <div className="prof-field-group">
                         <label className="prof-field-label">Short Explanation</label>
                         <div className="prof-quill-wrapper-premium">
@@ -638,7 +809,6 @@ const PrepareSyllabus = () => {
                         </div>
                       </div>
 
-                      {/* Document File Dropzone */}
                       <div className="prof-field-group">
                         <label className="prof-field-label">Topic Presentation Material (PDF/PPT)</label>
                         <div
@@ -668,16 +838,29 @@ const PrepareSyllabus = () => {
                         </div>
                       </div>
 
-                      {/* Add Outline Button */}
-                      <button type="button" className="prof-btn-secondary-premium" onClick={addOutlineToBuffer} style={{ width: '100%' }}>
-                        + Add Outline Topic
-                      </button>
+                      <div className="prof-outline-editor-actions">
+                        <button
+                          type="button"
+                          className="prof-btn-primary-premium"
+                          onClick={saveOutlineToBuffer}
+                        >
+                          {selectedOutlineIndex !== null ? 'Update Outline in Checklist' : 'Add Topic to Checklist'}
+                        </button>
+                        {selectedOutlineIndex !== null && (
+                          <button
+                            type="button"
+                            className="prof-btn-primary-premium"
+                            onClick={clearOutlineSelection}
+                          >
+                            Compose New Topic
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
 
-                  {/* Footer Actions */}
                   <div className="prof-actions-footer-premium">
-                    <button type="button" className="prof-btn-back-premium" onClick={() => setActiveStep('profile')}>
+                    <button type="button" className="prof-btn-primary-premium" onClick={() => setActiveStep('profile')}>
                       Back to Profile
                     </button>
                     <button type="button" className="prof-btn-primary-premium" onClick={publishSyllabusAndOutlines} disabled={isSubmitting}>

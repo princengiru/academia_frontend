@@ -416,11 +416,6 @@ const Curriculum = ({ courseId, setActiveStep, pushFeedback }) => {
 
   return (
     <div className="prof-step-pane is-active animate-fade-in">
-      <div className="prof-step-header">
-        <h3>Classroom Curriculum Builder</h3>
-        <p>This is the actual classroom content enrolled students will consume. Organize your course into Weeks, Chapters, and Exercises.</p>
-      </div>
-
       <div className="prof-grid-two-unequal">
 
         {/* Left Column: Form to Add Chapter */}
@@ -429,7 +424,7 @@ const Curriculum = ({ courseId, setActiveStep, pushFeedback }) => {
             <h4 className="prof-settings-panel-title">Week Settings</h4>
 
             {savedStructure.length > 0 && (
-              <div className="prof-segment-control" style={{ display: 'flex', border: '1px solid #EEF1F7', borderRadius: '8px', padding: '4px', marginBottom: '16px', background: '#F8FAFC' }}>
+              <div className="prof-segment-control" role="group" aria-label="Week mode">
                 <button
                   type="button"
                   className={`prof-segment-btn ${weekMode === 'new' ? 'is-active' : ''}`}
@@ -453,19 +448,6 @@ const Curriculum = ({ courseId, setActiveStep, pushFeedback }) => {
                     setBufferedExercises([]);
                     setUploadedAttachments([]);
                     setPendingAttachments([]);
-                  }}
-                  style={{
-                    flex: 1,
-                    border: 'none',
-                    padding: '8px 12px',
-                    borderRadius: '6px',
-                    fontSize: '13px',
-                    fontWeight: '500',
-                    cursor: 'pointer',
-                    background: weekMode === 'new' ? '#fff' : 'transparent',
-                    color: weekMode === 'new' ? '#071437' : '#7483A4',
-                    boxShadow: weekMode === 'new' ? '0 1px 3px rgba(0,0,0,0.05)' : 'none',
-                    transition: 'all 0.2s ease'
                   }}
                 >
                   Create New Week
@@ -497,19 +479,6 @@ const Curriculum = ({ courseId, setActiveStep, pushFeedback }) => {
                       setUploadedAttachments([]);
                       setPendingAttachments([]);
                     }
-                  }}
-                  style={{
-                    flex: 1,
-                    border: 'none',
-                    padding: '8px 12px',
-                    borderRadius: '6px',
-                    fontSize: '13px',
-                    fontWeight: '500',
-                    cursor: 'pointer',
-                    background: weekMode === 'existing' ? '#fff' : 'transparent',
-                    color: weekMode === 'existing' ? '#071437' : '#7483A4',
-                    boxShadow: weekMode === 'existing' ? '0 1px 3px rgba(0,0,0,0.05)' : 'none',
-                    transition: 'all 0.2s ease'
                   }}
                 >
                   Add to Existing Week
@@ -595,7 +564,7 @@ const Curriculum = ({ courseId, setActiveStep, pushFeedback }) => {
           <h4 className="prof-section-divider-title">1. Chapter Content</h4>
 
           {weekMode === 'existing' && selectedWeekId && chaptersInWeek.length > 0 && (
-            <div className="prof-segment-control" style={{ display: 'flex', border: '1px solid #EEF1F7', borderRadius: '8px', padding: '4px', marginBottom: '16px', background: '#F8FAFC' }}>
+            <div className="prof-segment-control" role="group" aria-label="Chapter mode">
               <button
                 type="button"
                 className={`prof-segment-btn ${chapterMode === 'new' ? 'is-active' : ''}`}
@@ -609,19 +578,6 @@ const Curriculum = ({ courseId, setActiveStep, pushFeedback }) => {
                   setUploadedAttachments([]);
                   setPendingAttachments([]);
                 }}
-                style={{
-                  flex: 1,
-                  border: 'none',
-                  padding: '8px 12px',
-                  borderRadius: '6px',
-                  fontSize: '13px',
-                  fontWeight: '500',
-                  cursor: 'pointer',
-                  background: chapterMode === 'new' ? '#fff' : 'transparent',
-                  color: chapterMode === 'new' ? '#071437' : '#7483A4',
-                  boxShadow: chapterMode === 'new' ? '0 1px 3px rgba(0,0,0,0.05)' : 'none',
-                  transition: 'all 0.2s ease'
-                }}
               >
                 Create New Chapter
               </button>
@@ -634,19 +590,6 @@ const Curriculum = ({ courseId, setActiveStep, pushFeedback }) => {
                     const firstChap = chaptersInWeek[0];
                     handleSelectChapter(selectedWeekId, firstChap);
                   }
-                }}
-                style={{
-                  flex: 1,
-                  border: 'none',
-                  padding: '8px 12px',
-                  borderRadius: '6px',
-                  fontSize: '13px',
-                  fontWeight: '500',
-                  cursor: 'pointer',
-                  background: chapterMode === 'existing' ? '#fff' : 'transparent',
-                  color: chapterMode === 'existing' ? '#071437' : '#7483A4',
-                  boxShadow: chapterMode === 'existing' ? '0 1px 3px rgba(0,0,0,0.05)' : 'none',
-                  transition: 'all 0.2s ease'
                 }}
               >
                 Edit Existing Chapter
@@ -1144,7 +1087,7 @@ const Curriculum = ({ courseId, setActiveStep, pushFeedback }) => {
       </div>
 
       <div className="prof-actions-footer-premium">
-        <button type="button" className="prof-btn-back-premium" onClick={() => setActiveStep('basic')}>Back to Course Profile</button>
+        <button type="button" className="prof-btn-primary-premium" onClick={() => setActiveStep('basic')}>Back to Course Profile</button>
         <button type="button" className="prof-btn-primary-premium" onClick={() => setActiveStep('pricing')}>
           Done Building Curriculum &rarr; Go to Pricing
         </button>
