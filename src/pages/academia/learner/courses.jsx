@@ -16,15 +16,48 @@ import acLock from '../../../assets/icons/ac-lock.svg';
 import SavedLibraryButton from './SavedLibraryButton';
 import './courses.css';
 
+const PAGINATION_DOTS = 'dots';
+
+// Build a compact, non-cluttered page list, e.g. [1, 2, 3, 4, 5, 'dots', 20].
+// siblingCount = how many pages to show on each side of the current page.
+const buildPaginationItems = (currentPage, totalPages, siblingCount = 1) => {
+  const range = (start, end) => Array.from({ length: end - start + 1 }, (_, i) => start + i);
+
+  // first + last + current + 2*siblings + 2 dot slots
+  const totalSlots = siblingCount * 2 + 5;
+  if (totalPages <= totalSlots) return range(1, totalPages);
+
+  const leftSibling = Math.max(currentPage - siblingCount, 1);
+  const rightSibling = Math.min(currentPage + siblingCount, totalPages);
+  const showLeftDots = leftSibling > 2;
+  const showRightDots = rightSibling < totalPages - 1;
+
+  if (!showLeftDots && showRightDots) {
+    // Near the start: 1 2 3 4 5 ... 20
+    const leftCount = 3 + siblingCount * 2;
+    return [...range(1, leftCount), PAGINATION_DOTS, totalPages];
+  }
+  if (showLeftDots && !showRightDots) {
+    // Near the end: 1 ... 16 17 18 19 20
+    const rightCount = 3 + siblingCount * 2;
+    return [1, PAGINATION_DOTS, ...range(totalPages - rightCount + 1, totalPages)];
+  }
+  // In the middle: 1 ... 9 10 11 ... 20
+  return [1, PAGINATION_DOTS, ...range(leftSibling, rightSibling), PAGINATION_DOTS, totalPages];
+};
+
 function LearnersCourses() {
   const navigate = useNavigate();
 
-  const handleCourseClick = (id) => {
-    if (!id) {
+  // Prefer the public course_uuid for redirects so internal primary keys are
+  // never exposed in the URL. Falls back to id only if a uuid is unavailable.
+  const handleCourseClick = (course) => {
+    const ref = (course && (course.uuid || course.id)) || null;
+    if (!ref) {
       navigate('/academia/learner/course-part');
       return;
     }
-    navigate(`/academia/learner/course-part?id=${id}`);
+    navigate(`/academia/learner/course-part?id=${encodeURIComponent(ref)}`);
   };
 
   const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
@@ -48,6 +81,8 @@ function LearnersCourses() {
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [sortOrder, setSortOrder] = useState('Newest');
   const [loadError, setLoadError] = useState('');
+
+  const PAGE_SIZE = 18;
 
   // Sync URL search parameters with states
   useEffect(() => {
@@ -95,6 +130,7 @@ function LearnersCourses() {
 
   const mapCourse = (course) => ({
     id: course.id,
+    uuid: course.course_uuid || null,
     title: course.title || 'Untitled course',
     author: course.instructor_name || course.author || 'Academia',
     image: course.thumbnail ? resolveAssetUrl(course.thumbnail) : acOn,
@@ -155,25 +191,25 @@ function LearnersCourses() {
         const categoryQuery = selectedCategory ? `&category=${encodeURIComponent(selectedCategory)}` : '';
 
         if (selectedFilter === 'All') {
-          res = await fetch(`${API_BASE_URL}/api/courses/public/available?page=${currentPage}&limit=10${searchQuery}${categoryQuery}`);
+          res = await fetch(`${API_BASE_URL}/api/courses/public/available?page=${currentPage}&limit=${PAGE_SIZE}${searchQuery}${categoryQuery}`);
           body = await res.json();
           if (!res.ok) throw new Error(body.message || 'Failed to load courses');
           list = extractCourseList(body);
           pagination = extractPagination(body);
         } else if (selectedFilter === 'Free') {
-          res = await fetch(`${API_BASE_URL}/api/courses/public/free?page=${currentPage}&limit=10${searchQuery}${categoryQuery}`);
+          res = await fetch(`${API_BASE_URL}/api/courses/public/free?page=${currentPage}&limit=${PAGE_SIZE}${searchQuery}${categoryQuery}`);
           body = await res.json();
           if (!res.ok) throw new Error(body.message || 'Failed to load free courses');
           list = extractCourseList(body);
           pagination = extractPagination(body);
         } else if (selectedFilter === 'Popular') {
-          res = await fetch(`${API_BASE_URL}/api/courses/public/popular?page=${currentPage}&limit=10${searchQuery}${categoryQuery}`);
+          res = await fetch(`${API_BASE_URL}/api/courses/public/popular?page=${currentPage}&limit=${PAGE_SIZE}${searchQuery}${categoryQuery}`);
           body = await res.json();
           if (!res.ok) throw new Error(body.message || 'Failed to load popular courses');
           list = extractCourseList(body);
           pagination = extractPagination(body);
         } else if (selectedFilter === 'Paid') {
-          res = await fetch(`${API_BASE_URL}/api/courses/public/available?page=${currentPage}&limit=10${searchQuery}${categoryQuery}`);
+          res = await fetch(`${API_BASE_URL}/api/courses/public/available?page=${currentPage}&limit=${PAGE_SIZE}${searchQuery}${categoryQuery}`);
           body = await res.json();
           if (!res.ok) throw new Error(body.message || 'Failed to load courses');
           list = extractCourseList(body).filter((course) => {
@@ -254,13 +290,25 @@ function LearnersCourses() {
 
   const syllabusItems = syllabusCourses.slice(0, 6).map((course) => ({
     id: course.id,
+    ref: course.uuid || course.id,
     title: course.title,
     metaLeft: course.category || course.level || 'Course syllabus',
     metaRight: `${course.chapterCount || 0} Outlines`,
     icon: course.id % 2 === 0 ? acLock : acPlus,
   }));
 
-  const pageNumbers = Array.from({ length: Math.max(1, totalPages) }, (_, index) => index + 1);
+  const safeTotalPages = Math.max(1, totalPages);
+  const showPagination = safeTotalPages > 1;
+  const pageItems = buildPaginationItems(currentPage, safeTotalPages);
+
+  const goToPage = (page) => {
+    const next = Math.min(Math.max(1, page), safeTotalPages);
+    if (next === currentPage) return;
+    setCurrentPage(next);
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
 
   return (
     <LearnersPageShell>
@@ -517,7 +565,7 @@ function LearnersCourses() {
               )}
 
               {!loading && sortedCourses && sortedCourses.length > 0 ? sortedCourses.map((course) => (
-                <div key={course.id} className="osc-item" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleCourseClick(course.id); }} style={{ cursor: 'pointer' }}>
+                <div key={course.uuid || course.id} className="osc-item" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleCourseClick(course); }} style={{ cursor: 'pointer' }}>
                   <div className="osc-item-img">
                     <img src={course.image || acOn} alt={course.title || 'Online Course'} />
                   </div>
@@ -526,7 +574,7 @@ function LearnersCourses() {
                       <p>{course.priceLabel}</p>
                     </div>
                     <div>
-                      <h6><a href="/academia/learner/course-part" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleCourseClick(course.id); }}>{course.title}</a></h6>
+                      <h6><a href="/academia/learner/course-part" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleCourseClick(course); }}>{course.title}</a></h6>
                       <small>{course.author}</small>
                     </div>
                     <div>
@@ -534,7 +582,7 @@ function LearnersCourses() {
                     </div>
                     <div>
                       <small>{course.startsOn || ''}</small>
-                      <a className="learners-course-open" href="/academia/learner/course-part" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleCourseClick(course.id); }}>
+                      <a className="learners-course-open" href="/academia/learner/course-part" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleCourseClick(course); }}>
                         <img src={acEn} alt="Enroll" />
                       </a>
                     </div>
@@ -548,31 +596,38 @@ function LearnersCourses() {
               ))}
             </div>
 
-            {sortedCourses && sortedCourses.length > 0 && (
+            {!loading && showPagination && (
               <div className="learners-courses-pagination">
                 <button
                   type="button"
-                  onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+                  onClick={() => goToPage(currentPage - 1)}
                   disabled={currentPage === 1}
+                  aria-label="Previous page"
                 >
                   <img src={acLe2} alt="Previous" />
                 </button>
                 <div>
-                  {pageNumbers.map((page) => (
-                    <button
-                      key={page}
-                      type="button"
-                      className={page === currentPage ? 'active' : ''}
-                      onClick={() => setCurrentPage(page)}
-                    >
-                      {page}
-                    </button>
+                  {pageItems.map((item, index) => (
+                    item === PAGINATION_DOTS ? (
+                      <span key={`dots-${index}`} className="learners-courses-pagination-dots" aria-hidden="true">…</span>
+                    ) : (
+                      <button
+                        key={item}
+                        type="button"
+                        className={item === currentPage ? 'active' : ''}
+                        onClick={() => goToPage(item)}
+                        aria-current={item === currentPage ? 'page' : undefined}
+                      >
+                        {item}
+                      </button>
+                    )
                   ))}
                 </div>
                 <button
                   type="button"
-                  onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
-                  disabled={currentPage >= totalPages}
+                  onClick={() => goToPage(currentPage + 1)}
+                  disabled={currentPage >= safeTotalPages}
+                  aria-label="Next page"
                 >
                   <img src={acRi} alt="Next" />
                 </button>
@@ -597,7 +652,7 @@ function LearnersCourses() {
                   <div className="fgbl-item-l">
                     <h4 
                       style={{ margin: '0 0 6px 0', fontSize: '15px', color: '#071437', fontWeight: '600', textDecoration: 'none', cursor: 'pointer' }}
-                      onClick={() => navigate(`/academia/learner/course-part?id=${husk.id}`)}
+                      onClick={() => navigate(`/academia/learner/course-part?id=${encodeURIComponent(husk.ref)}`)}
                     >
                       {husk.title}
                     </h4>
@@ -608,7 +663,7 @@ function LearnersCourses() {
                   <div className="fgbl-item-r">
                     <button 
                       type="button" 
-                      onClick={() => navigate(`/academia/learner/course-part?id=${husk.id}`)}
+                      onClick={() => navigate(`/academia/learner/course-part?id=${encodeURIComponent(husk.ref)}`)}
                       className="learners-btn-view-syllabus"
                       style={{
                         background: 'transparent',

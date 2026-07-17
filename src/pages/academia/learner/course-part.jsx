@@ -16,17 +16,18 @@ import acBook from '../../../assets/icons/ac-book.svg';
 import hoabasics from '../../../assets/icons/hoabasics.svg';
 import hoagoto from '../../../assets/icons/hoagoto.svg';
 import SavedLibraryButton from './SavedLibraryButton';
-import EnrollmentPaymentPicker from './EnrollmentPaymentPicker';
+import EnrollmentPaymentModal from './EnrollmentPaymentModal';
 import {
   buildAvailablePaymentChoices,
-  buildAccountPaymentHref,
   enrollInCourse,
   fetchSavedPaymentMethods,
   getPaymentMethodLabel,
-  hasSavedPaymentMethods,
+  getUserCurrency,
+  initiateEnrollmentPayment,
   isCourseFree,
   isEnrollmentRoleAllowed,
   pickDefaultPaymentValue,
+  waitForEnrollmentPayment,
 } from './enrollmentPaymentUtils';
 import { learnerPageTitle, LEARNER_PRODUCT_NAME } from './learnerBrand';
 import { buildReaderUrl, resolveCourseProgressPercent } from './homeDashboardUtils';
@@ -53,10 +54,11 @@ function CoursePart() {
   const [isEnrolling, setIsEnrolling] = useState(false);
   const [toast, setToast] = useState({ message: '', visible: false, tone: 'success' });
   const [isSummaryExpanded, setIsSummaryExpanded] = useState(false);
-  const [paymentChoices, setPaymentChoices] = useState([]);
   const [selectedPaymentValue, setSelectedPaymentValue] = useState('credit_card');
   const [paymentsLoading, setPaymentsLoading] = useState(false);
   const [savedPaymentMethods, setSavedPaymentMethods] = useState([]);
+  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
+  const [userCurrency, setUserCurrency] = useState(getUserCurrency());
   const [courseProgressPercent, setCourseProgressPercent] = useState(0);
 
   const resolveAssetUrl = (value) => {
@@ -95,10 +97,14 @@ function CoursePart() {
     }
   }, [legacyStateId, searchParams, setSearchParams]);
 
+  // inboundId may be a public course_uuid, so enrollment/progress checks key off
+  // the resolved numeric course id once the course has loaded.
+  const resolvedCourseId = course?.id;
+
   useEffect(() => {
     const checkEnrollmentStatus = async () => {
       const token = localStorage.getItem('token');
-      if (!token || !inboundId) return;
+      if (!token || !resolvedCourseId) return;
       try {
         const res = await fetch(`${API_BASE_URL}/api/progress`, {
           headers: { 'Authorization': `Bearer ${token}` }
@@ -106,7 +112,7 @@ function CoursePart() {
         if (res.ok) {
           const body = await res.json();
           const progressList = body?.data?.progress || body?.progress || [];
-          const enrolled = progressList.some(p => Number(p.course_id) === Number(inboundId));
+          const enrolled = progressList.some(p => Number(p.course_id) === Number(resolvedCourseId));
           setIsEnrolled(enrolled);
         }
       } catch (err) {
@@ -114,14 +120,14 @@ function CoursePart() {
       }
     };
     checkEnrollmentStatus();
-  }, [inboundId]);
+  }, [resolvedCourseId]);
 
   useEffect(() => {
     const loadCourseProgress = async () => {
       const token = localStorage.getItem('token');
-      if (!token || !inboundId || !isEnrolled) return;
+      if (!token || !resolvedCourseId || !isEnrolled) return;
       try {
-        const res = await fetch(`${API_BASE_URL}/api/progress/${inboundId}`, {
+        const res = await fetch(`${API_BASE_URL}/api/progress/${resolvedCourseId}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (!res.ok) return;
@@ -136,22 +142,38 @@ function CoursePart() {
       }
     };
     loadCourseProgress();
-  }, [inboundId, isEnrolled]);
+  }, [resolvedCourseId, isEnrolled]);
+
+  // Pull the learner's system currency (USD/RWF) so the modal shows the right money.
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/profile`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) return;
+        const body = await res.json();
+        const cur = body?.data?.user?.currency;
+        if (!cancelled && cur) setUserCurrency(String(cur).toUpperCase() === 'RWF' ? 'RWF' : 'USD');
+      } catch {
+        // keep localStorage-derived default
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
 
     const loadPaymentChoices = async () => {
-      if (!course || isEnrolled) {
-        setPaymentChoices([]);
-        return;
-      }
+      if (!course || isEnrolled) return;
 
       const courseIsFree = isCourseFree(course);
       if (courseIsFree) {
-        const freeChoices = buildAvailablePaymentChoices([], true);
         if (!cancelled) {
-          setPaymentChoices(freeChoices);
           setSelectedPaymentValue('free');
           setPaymentsLoading(false);
         }
@@ -165,15 +187,13 @@ function CoursePart() {
         const choices = buildAvailablePaymentChoices(methods, false);
         if (!cancelled) {
           setSavedPaymentMethods(methods);
-          setPaymentChoices(choices);
+          // Default the modal to the learner's primary saved method's gateway
           setSelectedPaymentValue(pickDefaultPaymentValue(choices, methods));
         }
       } catch (err) {
         console.error('Failed to load payment methods:', err);
         if (!cancelled) {
-          const fallbackChoices = buildAvailablePaymentChoices([], false);
-          setPaymentChoices(fallbackChoices);
-          setSelectedPaymentValue(pickDefaultPaymentValue(fallbackChoices, []));
+          setSelectedPaymentValue(pickDefaultPaymentValue(buildAvailablePaymentChoices([], false), []));
         }
       } finally {
         if (!cancelled) setPaymentsLoading(false);
@@ -204,28 +224,91 @@ function CoursePart() {
       return;
     }
 
-    const courseIsFree = isCourseFree(course);
-    if (!courseIsFree && !hasSavedPaymentMethods(savedPaymentMethods)) {
-      const returnPath = `/academia/learner/course-part?id=${course.id}`;
-      showToast('Add a payment method in Account before enrolling.', 'warning');
-      navigate(buildAccountPaymentHref(returnPath));
+    // Free courses enroll immediately; paid courses open the payment modal.
+    if (isCourseFree(course)) {
+      setIsEnrolling(true);
+      try {
+        await enrollInCourse({
+          apiBaseUrl: API_BASE_URL,
+          token,
+          courseId: course.id,
+          course,
+          selectedPaymentValue: 'free',
+        });
+        setIsEnrolled(true);
+        showToast('Enrollment confirmed.', 'success');
+        navigate(buildReaderUrl(course.id));
+      } catch (err) {
+        showToast(err.message || 'Failed to enroll in the course.', 'danger');
+      } finally {
+        setIsEnrolling(false);
+      }
       return;
     }
-    
+
+    setPaymentModalOpen(true);
+  };
+
+  // Maps the modal's gateway tab to the enrollment payment_method value.
+  const gatewayToPaymentValue = (gateway) => {
+    if (gateway === 'mtn') return 'mobile_money';
+    if (gateway === 'airtel') return 'airtel_money';
+    return 'credit_card';
+  };
+
+  const handleModalPay = async (payload) => {
+    const token = localStorage.getItem('token');
+    if (!token || !course?.id) return;
+
+    const gateway = payload?.gateway;
+    if (gateway === 'card') {
+      showToast('Bank card payments are coming soon. Please use MTN or Airtel for now.', 'warning');
+      return;
+    }
+
+    if (gateway !== 'mtn' && gateway !== 'airtel') {
+      showToast('Select MTN Mobile Money or Airtel Money to pay.', 'warning');
+      return;
+    }
+
+    const phone = payload?.phoneNumber;
+    if (!phone) {
+      showToast('Enter your mobile money phone number.', 'warning');
+      return;
+    }
+
     setIsEnrolling(true);
     try {
-      await enrollInCourse({
+      const initiated = await initiateEnrollmentPayment({
         apiBaseUrl: API_BASE_URL,
         token,
         courseId: course.id,
-        course,
-        selectedPaymentValue,
+        gateway,
+        phone,
+        couponCode: payload?.coupon || null,
       });
-      setIsEnrolled(true);
-      showToast(`Enrollment confirmed via ${getPaymentMethodLabel(selectedPaymentValue)}.`, 'success');
-      navigate(buildReaderUrl(course.id));
+
+      showToast(initiated?.message || 'Approve the payment prompt on your phone…', 'success');
+
+      const status = await waitForEnrollmentPayment({
+        apiBaseUrl: API_BASE_URL,
+        token,
+        invoiceUuid: initiated.invoice_uuid,
+        onTick: (s) => {
+          if (s?.status === 'pending') {
+            // Keep the modal in processing state while waiting.
+          }
+        },
+      });
+
+      if (status.status === 'successful' || status.enrolled) {
+        setIsEnrolled(true);
+        setPaymentModalOpen(false);
+        showToast(`Payment successful via ${getPaymentMethodLabel(gatewayToPaymentValue(gateway))}.`, 'success');
+        navigate(buildReaderUrl(course.id));
+      }
     } catch (err) {
-      showToast(err.message || 'Failed to enroll in the course.', 'danger');
+      showToast(err.message || 'Payment failed. You can try again.', 'danger');
     } finally {
       setIsEnrolling(false);
     }
@@ -342,8 +425,15 @@ function CoursePart() {
   const hasAudience = !!course?.audience;
   const showContentSections = !loading && inboundId && (hasBreakdown || hasOutcomes || hasAudience);
   const missingCourseId = !inboundId;
-  const enrollmentReturnPath = inboundId ? `/academia/learner/course-part?id=${inboundId}` : '/academia/learner/courses';
-  const requiresPaymentSetup = Boolean(course && !isCourseFree(course) && !paymentsLoading && !hasSavedPaymentMethods(savedPaymentMethods));
+  // Default the payment modal to the learner's primary saved method gateway.
+  // Cards aren't live yet — fall back to MTN for paid MoMo enrollments.
+  const defaultPaymentGateway = selectedPaymentValue === 'mobile_money'
+    ? 'mtn'
+    : selectedPaymentValue === 'airtel_money'
+      ? 'airtel'
+      : selectedPaymentValue === 'credit_card'
+        ? 'card'
+        : 'mtn';
 
   useEffect(() => {
     const courseTitle = course?.title?.trim();
@@ -662,22 +752,10 @@ function CoursePart() {
                   <img src={hoagoto} alt="Go" />
                 </button>
               ) : (
-                <>
-                  {!isEnrolled && (
-                    <EnrollmentPaymentPicker
-                      choices={paymentChoices}
-                      value={selectedPaymentValue}
-                      onChange={setSelectedPaymentValue}
-                      loading={paymentsLoading}
-                      requiresPaymentSetup={requiresPaymentSetup}
-                      accountHref={buildAccountPaymentHref(enrollmentReturnPath)}
-                    />
-                  )}
-                  <button type="button" className="learners-course-specific-cta" onClick={handleJoinToday} disabled={isEnrolling || paymentsLoading || requiresPaymentSetup}>
-                    <span>{isEnrolling ? 'Joining...' : (isCourseFree(course) ? 'Enroll for free' : 'Join Today')}</span>
-                    <img src={jo1} alt="Join" />
-                  </button>
-                </>
+                <button type="button" className="learners-course-specific-cta" onClick={handleJoinToday} disabled={isEnrolling || paymentsLoading}>
+                  <span>{isEnrolling ? 'Joining...' : (isCourseFree(course) ? 'Enroll for free' : 'Join Today')}</span>
+                  <img src={jo1} alt="Join" />
+                </button>
               )}
             </div>
           </aside>
@@ -709,6 +787,19 @@ function CoursePart() {
           <span>{toast.message}</span>
         </div>
       )}
+
+      <EnrollmentPaymentModal
+        isOpen={paymentModalOpen}
+        onClose={() => setPaymentModalOpen(false)}
+        courseId={course?.id}
+        courseIdLabel={course?.id ? `TR${course.id}GON` : '—'}
+        amountUsd={course?.rawPrice || 0}
+        currency={userCurrency}
+        defaultGateway={defaultPaymentGateway}
+        savedMethods={savedPaymentMethods}
+        processing={isEnrolling}
+        onPay={handleModalPay}
+      />
     </section>
   );
 }

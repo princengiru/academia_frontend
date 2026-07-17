@@ -37,6 +37,7 @@ import AccountQuickLinks from '../learner/AccountQuickLinks';
 import './settings.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const SIGN_IN_PATH = '/academia/auth/signin';
 
 const activityFilters = ['This week', 'Last week', 'This month', 'All time'];
 
@@ -46,6 +47,7 @@ const FIELD_TOOLTIPS = {
   telephone: 'Your contact number with country code for account recovery and message notifications.',
   userType: 'Your account type on the Academia platform.',
   role: 'Your professional role or job title shown on your project profile.',
+  password: 'Your account password. Use Reset Password to change it.',
 };
 
 const FieldInfo = ({ tip }) => (
@@ -130,6 +132,24 @@ function ProfessorSettings() {
   const [reviewedActivityIds, setReviewedActivityIds] = useState([]);
   const [notificationEmailEnabled, setNotificationEmailEnabled] = useState(true);
   const [notificationMessageEnabled, setNotificationMessageEnabled] = useState(true);
+  const [passwordVisible, setPasswordVisible] = useState(false);
+  const [showPasswordForm, setShowPasswordForm] = useState(false);
+  const [passwordForm, setPasswordForm] = useState({ current: '', next: '', confirm: '' });
+  const [passwordSaving, setPasswordSaving] = useState(false);
+  const [accountStatus, setAccountStatus] = useState(null);
+  const [twoFactorProcessing, setTwoFactorProcessing] = useState(false);
+  const [twoFactorStage, setTwoFactorStage] = useState('idle');
+  const [twoFactorOtp, setTwoFactorOtp] = useState('');
+  const [confirmDeactivation, setConfirmDeactivation] = useState(false);
+  const [confirmDeletion, setConfirmDeletion] = useState(false);
+  const [deactivating, setDeactivating] = useState(false);
+  const [deactivateStage, setDeactivateStage] = useState('idle');
+  const [deactivatePassword, setDeactivatePassword] = useState('');
+  const [deactivateOtp, setDeactivateOtp] = useState('');
+  const [deleteStage, setDeleteStage] = useState('idle');
+  const [deletePassword, setDeletePassword] = useState('');
+  const [deleteOtp, setDeleteOtp] = useState('');
+  const [deletingAccount, setDeletingAccount] = useState(false);
 
   const [profileAvatarPath, setProfileAvatarPath] = useState('');
   const [cropModalOpen, setCropModalOpen] = useState(false);
@@ -172,7 +192,7 @@ function ProfessorSettings() {
   const [preferencesDraft, setPreferencesDraft] = useState({
     language: 'en-us',
     timezone: 'gmt-5-est',
-    currency: 'usd',
+    currency: 'rwf',
     showListNames: false,
     showLinkedTaskNames: true,
     emailVisibility: false,
@@ -295,6 +315,7 @@ function ProfessorSettings() {
       apiFetch('/api/projects/my'),
       apiFetch('/api/followers/stats'),
       apiFetch('/api/profile/notification-settings'),
+      apiFetch('/api/auth/account-status'),
     ]);
 
     let firstError = '';
@@ -365,6 +386,11 @@ function ProfessorSettings() {
       }
     }
 
+    const accountResult = requests[4];
+    if (accountResult.status === 'fulfilled') {
+      setAccountStatus(accountResult.value?.data || accountResult.value || null);
+    }
+
     if (firstError) {
       setError(firstError);
     }
@@ -408,6 +434,9 @@ function ProfessorSettings() {
   const userTypeLabel = formatRoleLabel(profile.role);
   const jobTitleLabel = projectProfileDraft.jobTitle?.trim() || '—';
   const telephoneDisplay = formatTelephoneDisplay(profile.phone, profile.country);
+  const notificationsMasterEnabled = notificationEmailEnabled || notificationMessageEnabled;
+  const is2FAEnabled = Boolean(accountStatus?.twoFactorEnabled);
+  const isAccountActive = accountStatus?.isActive !== false && accountStatus?.is_active !== false;
   const experienceLabel = formatExperienceLabel(projectProfileDraft.yearsExperience);
   const followersLabel = `${formatNumber(followerCount)} Followers`;
   const locationLabel = formatLocationDisplay(profile);
@@ -644,6 +673,228 @@ function ProfessorSettings() {
     pushFeedback('Activity cleared.', 'success');
   };
 
+  const handleChangePassword = async () => {
+    if (!passwordForm.current || !passwordForm.next) {
+      pushFeedback('Enter your current and new password.', 'error');
+      return;
+    }
+
+    if (passwordForm.next.length < 6) {
+      pushFeedback('New password must be at least 6 characters.', 'error');
+      return;
+    }
+
+    if (passwordForm.next !== passwordForm.confirm) {
+      pushFeedback('New passwords do not match.', 'error');
+      return;
+    }
+
+    try {
+      setPasswordSaving(true);
+      await apiFetch('/api/auth/change-password', {
+        method: 'POST',
+        body: JSON.stringify({
+          currentPassword: passwordForm.current,
+          newPassword: passwordForm.next,
+        }),
+      });
+      setPasswordForm({ current: '', next: '', confirm: '' });
+      setShowPasswordForm(false);
+      pushFeedback('Password changed successfully.', 'success');
+    } catch (passwordError) {
+      pushFeedback(passwordError.message || 'Couldn\'t change password. Please try again.', 'error');
+    } finally {
+      setPasswordSaving(false);
+    }
+  };
+
+  const startEnableTwoFactor = async () => {
+    try {
+      setTwoFactorProcessing(true);
+      await apiFetch('/api/auth/enable-2fa', { method: 'POST' });
+      setTwoFactorStage('enable-pending');
+      setTwoFactorOtp('');
+      pushFeedback('Verification code sent to your email.', 'success');
+    } catch (twoFactorError) {
+      pushFeedback(twoFactorError.message || 'Couldn\'t start two-factor setup. Please try again.', 'error');
+    } finally {
+      setTwoFactorProcessing(false);
+    }
+  };
+
+  const verifyEnableTwoFactor = async () => {
+    if (twoFactorOtp.trim().length !== 6) {
+      pushFeedback('Enter the 6-digit code from your email.', 'error');
+      return;
+    }
+
+    try {
+      setTwoFactorProcessing(true);
+      const res = await apiFetch('/api/auth/verify-otp-enable-2fa', {
+        method: 'POST',
+        body: JSON.stringify({ otp: twoFactorOtp.trim() }),
+      });
+      setAccountStatus((current) => ({
+        ...(current || {}),
+        twoFactorEnabled: Boolean(res?.data?.twoFactorEnabled ?? true),
+      }));
+      setTwoFactorStage('idle');
+      setTwoFactorOtp('');
+      pushFeedback('Two-factor authentication enabled.', 'success');
+    } catch (twoFactorError) {
+      pushFeedback(twoFactorError.message || 'Couldn\'t enable two-factor authentication. Please try again.', 'error');
+    } finally {
+      setTwoFactorProcessing(false);
+    }
+  };
+
+  const startDisableTwoFactor = async () => {
+    try {
+      setTwoFactorProcessing(true);
+      await apiFetch('/api/auth/disable-2fa', { method: 'POST' });
+      setTwoFactorStage('disable-pending');
+      setTwoFactorOtp('');
+      pushFeedback('Verification code sent to your email.', 'success');
+    } catch (twoFactorError) {
+      pushFeedback(twoFactorError.message || 'Couldn\'t start two-factor disable. Please try again.', 'error');
+    } finally {
+      setTwoFactorProcessing(false);
+    }
+  };
+
+  const verifyDisableTwoFactor = async () => {
+    if (twoFactorOtp.trim().length !== 6) {
+      pushFeedback('Enter the 6-digit code from your email.', 'error');
+      return;
+    }
+
+    try {
+      setTwoFactorProcessing(true);
+      const res = await apiFetch('/api/auth/disable-2fa', {
+        method: 'POST',
+        body: JSON.stringify({ otp: twoFactorOtp.trim() }),
+      });
+      setAccountStatus((current) => ({
+        ...(current || {}),
+        twoFactorEnabled: Boolean(res?.data?.twoFactorEnabled ?? false),
+      }));
+      setTwoFactorStage('idle');
+      setTwoFactorOtp('');
+      pushFeedback('Two-factor authentication disabled.', 'success');
+    } catch (twoFactorError) {
+      pushFeedback(twoFactorError.message || 'Couldn\'t disable two-factor authentication. Please try again.', 'error');
+    } finally {
+      setTwoFactorProcessing(false);
+    }
+  };
+
+  const cancelTwoFactorFlow = () => {
+    setTwoFactorStage('idle');
+    setTwoFactorOtp('');
+  };
+
+  const handleRequestDeactivateAccount = async () => {
+    if (!confirmDeactivation) {
+      pushFeedback('Please confirm account deactivation.', 'error');
+      return;
+    }
+
+    if (!deactivatePassword) {
+      pushFeedback('Enter your current password to continue.', 'error');
+      return;
+    }
+
+    try {
+      setDeactivating(true);
+      await apiFetch('/api/auth/request-deactivate-account', {
+        method: 'POST',
+        body: JSON.stringify({ currentPassword: deactivatePassword }),
+      });
+      setDeactivateStage('otp-pending');
+      pushFeedback('Verification code sent to your email.', 'success');
+    } catch (deactivateError) {
+      pushFeedback(deactivateError.message || 'Could not start account deactivation.', 'error');
+    } finally {
+      setDeactivating(false);
+    }
+  };
+
+  const handleConfirmDeactivateAccount = async () => {
+    if (!confirmDeactivation) {
+      pushFeedback('Please confirm account deactivation.', 'error');
+      return;
+    }
+
+    if (deactivateOtp.trim().length !== 6) {
+      pushFeedback('Enter the 6-digit verification code.', 'error');
+      return;
+    }
+
+    try {
+      setDeactivating(true);
+      await apiFetch('/api/auth/confirm-deactivate-account', {
+        method: 'POST',
+        body: JSON.stringify({
+          otp: deactivateOtp.trim(),
+          reason: 'User requested deactivation from settings',
+        }),
+      });
+      localStorage.removeItem('token');
+      navigate(SIGN_IN_PATH);
+    } catch (deactivateError) {
+      pushFeedback(deactivateError.message || 'Could not deactivate account. Please try again.', 'error');
+    } finally {
+      setDeactivating(false);
+    }
+  };
+
+  const handleRequestDeleteAccount = async () => {
+    if (!deletePassword) {
+      pushFeedback('Enter your current password to continue.', 'error');
+      return;
+    }
+
+    try {
+      setDeletingAccount(true);
+      await apiFetch('/api/auth/request-delete-account', {
+        method: 'POST',
+        body: JSON.stringify({ currentPassword: deletePassword }),
+      });
+      setDeleteStage('otp-pending');
+      pushFeedback('Verification code sent to your email.', 'success');
+    } catch (deleteError) {
+      pushFeedback(deleteError.message || 'Could not start account deletion.', 'error');
+    } finally {
+      setDeletingAccount(false);
+    }
+  };
+
+  const handleConfirmDeleteAccount = async () => {
+    if (!confirmDeletion) {
+      pushFeedback('Please confirm account deletion.', 'error');
+      return;
+    }
+
+    if (deleteOtp.trim().length !== 6) {
+      pushFeedback('Enter the 6-digit verification code.', 'error');
+      return;
+    }
+
+    try {
+      setDeletingAccount(true);
+      await apiFetch('/api/auth/confirm-delete-account', {
+        method: 'POST',
+        body: JSON.stringify({ otp: deleteOtp.trim() }),
+      });
+      localStorage.removeItem('token');
+      navigate(SIGN_IN_PATH);
+    } catch (deleteError) {
+      pushFeedback(deleteError.message || 'Could not delete account. Please try again.', 'error');
+    } finally {
+      setDeletingAccount(false);
+    }
+  };
+
   const openProjectsUpload = () => {
     navigate('/academia/professor/projects');
   };
@@ -674,7 +925,9 @@ function ProfessorSettings() {
             <div className="learners-projects-profile-copy">
               <div className="learners-projects-profile-name-row">
                 <h1>{profile.name || 'Loading profile...'}</h1>
-                <span className="learners-projects-status-badge">Active</span>
+                <span className={`learners-projects-status-badge ${isAccountActive ? '' : 'is-inactive'}`}>
+                  {isAccountActive ? 'Active' : 'Inactive'}
+                </span>
                 <span className="learners-projects-count-badge">
                   <img src={badge1} alt="Badge" />
                   <span>{headerBadgeValue}</span>
