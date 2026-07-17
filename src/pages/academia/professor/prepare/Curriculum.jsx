@@ -55,11 +55,13 @@ const Curriculum = ({ courseId, setActiveStep, pushFeedback }) => {
   // --- Quill Configuration ---
   const quillModules = useMemo(() => ({
     toolbar: [
-      ['bold', 'italic', 'underline'],
-      [{ 'list': 'ordered' }, { 'list': 'bullet' }],
-      [{ 'align': [] }],
+      [{ header: [3, 4, false] }],
+      ['bold', 'italic', 'underline', 'code'],
+      [{ list: 'ordered' }, { list: 'bullet' }],
+      ['code-block'],
+      [{ align: [] }],
       ['link', 'image'],
-      ['clean']
+      ['clean'],
     ],
   }), []);
 
@@ -745,7 +747,15 @@ const Curriculum = ({ courseId, setActiveStep, pushFeedback }) => {
 
           <div className="prof-field-group">
             <label className="prof-field-label">Chapter Welcome / Intro Message</label>
-            <textarea className="prof-step-input-premium" rows="2" placeholder="Welcome message for this chapter..." value={chapterDraft.intro_message} onChange={(e) => handleChapterDraftChange('intro_message', e.target.value)} style={{ resize: 'vertical' }} />
+            <div className="prof-quill-wrapper-premium">
+              <ReactQuill
+                theme="snow"
+                modules={quillModules}
+                value={chapterDraft.intro_message}
+                onChange={(val) => handleChapterDraftChange('intro_message', val)}
+                placeholder="Welcome message for this chapter..."
+              />
+            </div>
           </div>
 
           <div className="prof-field-group">

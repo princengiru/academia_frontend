@@ -55,9 +55,11 @@ const PrepareSyllabus = () => {
   // --- Quill Config ---
   const quillModules = useMemo(() => ({
     toolbar: [
-      ['bold', 'italic', 'underline'],
-      [{ 'list': 'ordered' }, { 'list': 'bullet' }],
-      ['link', 'clean']
+      [{ header: [3, 4, false] }],
+      ['bold', 'italic', 'underline', 'code'],
+      [{ list: 'ordered' }, { list: 'bullet' }],
+      ['code-block'],
+      ['link', 'clean'],
     ],
   }), []);
 
@@ -481,27 +483,29 @@ const PrepareSyllabus = () => {
                   {/* Target Audience */}
                   <div className="prof-field-group">
                     <label className="prof-field-label">Target Audience</label>
-                    <textarea
-                      className="prof-step-input-premium"
-                      rows="3"
-                      placeholder="Who should read this syllabus? e.g. Self-taught coders, high school graduates..."
-                      value={profile.audience}
-                      onChange={(e) => handleProfileChange('audience', e.target.value)}
-                      style={{ resize: 'vertical' }}
-                    />
+                    <div className="prof-quill-wrapper-premium">
+                      <ReactQuill
+                        theme="snow"
+                        modules={quillModules}
+                        value={profile.audience}
+                        onChange={(val) => handleProfileChange('audience', val)}
+                        placeholder="Who should read this syllabus? e.g. Self-taught coders, high school graduates..."
+                      />
+                    </div>
                   </div>
 
                   {/* Objectives */}
                   <div className="prof-field-group">
                     <label className="prof-field-label">Learning Objectives (What will they achieve?)</label>
-                    <textarea
-                      className="prof-step-input-premium"
-                      rows="3"
-                      placeholder="e.g. Master clean coding, build responsive layouts, set up scalable databases..."
-                      value={profile.goals}
-                      onChange={(e) => handleProfileChange('goals', e.target.value)}
-                      style={{ resize: 'vertical' }}
-                    />
+                    <div className="prof-quill-wrapper-premium">
+                      <ReactQuill
+                        theme="snow"
+                        modules={quillModules}
+                        value={profile.goals}
+                        onChange={(val) => handleProfileChange('goals', val)}
+                        placeholder="e.g. Master clean coding, build responsive layouts, set up scalable databases..."
+                      />
+                    </div>
                   </div>
 
                   {/* Footer Actions */}

@@ -327,17 +327,16 @@
 
 .prof-quill-wrapper-premium .ql-container.ql-snow {
   border: none;
-  /* min-height: 120px; */
   font-family: 'Inter', sans-serif;
   font-size: 14px;
 }
 
-.prof-quill-wrapper-premium .ql-container.ql-blank {
-  min-height: 120px;
-}
-
 .prof-quill-wrapper-premium .ql-editor {
   padding: 12px 16px;
+  min-height: 120px;
+  max-height: 640px;
+  resize: vertical;
+  overflow-y: auto;
 }
 
 /* --- Image & File Upload Dropzones --- */
