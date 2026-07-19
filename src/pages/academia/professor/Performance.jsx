@@ -26,19 +26,31 @@ const averageBucket = (values, start, end) => {
   return Math.round(slice.reduce((sum, value) => sum + value, 0) / slice.length);
 };
 
-const normalizePaymentRow = (row, index) => ({
-  id: row?.id ?? row?._id ?? `pay-${index}`,
-  course: row?.course_name || row?.courseTitle || row?.course || 'Unknown Course',
-  date: row?.created_at || row?.date ? new Date(row?.created_at || row?.date).toLocaleDateString() : 'N/A',
-  reason: row?.reason || row?.payment_type || 'Course Purchase',
-  payee: row?.payee_name || row?.student_name || row?.payee || 'Unknown Student',
-  country: row?.country || row?.student_country || 'N/A',
-  grossPaid: row?.gross_paid || row?.amount || row?.grossPaid || '---',
-  fee: row?.fee || row?.platform_fee || '---',
-  netPaid: row?.net_paid || row?.net_amount || row?.netPaid || '---',
-  status: row?.status || 'Pending',
-  statusTone: String(row?.status || '').toLowerCase() === 'paid' || String(row?.status || '').toLowerCase() === 'completed' ? 'passed' : 'progress',
-});
+const normalizePaymentRow = (row, index) => {
+  const gross = row?.amount_paid ?? row?.gross_paid ?? row?.amount ?? row?.grossPaid;
+  const fee = row?.fees_per_amount ?? row?.fee ?? row?.platform_fee ?? row?.service_fee;
+  const net = row?.net_paid ?? row?.net_amount ?? (
+    gross != null && fee != null && Number.isFinite(Number(gross)) && Number.isFinite(Number(fee))
+      ? Number(gross) - Number(fee)
+      : row?.netPaid
+  );
+  const status = row?.payment_status || row?.status || 'Pending';
+  const dateRaw = row?.payment_date || row?.paid_at || row?.created_at || row?.date;
+
+  return {
+    id: row?.id ?? row?._id ?? `pay-${index}`,
+    course: row?.course_title || row?.course_name || row?.courseTitle || row?.course || 'Unknown Course',
+    date: dateRaw ? new Date(dateRaw).toLocaleDateString() : 'N/A',
+    reason: row?.payment_reason || row?.reason || row?.payment_type || 'Course Purchase',
+    payee: row?.payer_name || row?.payee_name || row?.student_name || row?.payee || 'Unknown Student',
+    country: row?.country || row?.student_country || 'N/A',
+    grossPaid: gross != null && gross !== '' ? Number(gross).toFixed(2) : '---',
+    fee: fee != null && fee !== '' ? Number(fee).toFixed(2) : '---',
+    netPaid: net != null && net !== '' ? Number(net).toFixed(2) : '---',
+    status,
+    statusTone: String(status).toLowerCase() === 'paid' || String(status).toLowerCase() === 'completed' ? 'passed' : 'progress',
+  };
+};
 
 const mapDashboardToAnalytics = (dashboard = {}) => {
   const metrics = dashboard.assessmentMetrics || {};
@@ -114,17 +126,32 @@ const Performance = () => {
     setAnalyticsLoading(true);
     setAnalyticsError('');
     try {
-      const res = await fetch(`${API_BASE_URL}/api/dashboard/instructor`, {
-        headers: { Authorization: `Bearer ${token}` },
-        signal,
-      });
-      const body = await res.json();
-      if (res.ok) {
-        setAnalytics(mapDashboardToAnalytics(body?.data || {}));
-      } else {
-        setAnalytics(null);
-        setAnalyticsError(body?.message || body?.error?.message || 'Could not load analytics.');
+      const headers = { Authorization: `Bearer ${token}` };
+      const [dashRes, invoiceRes] = await Promise.all([
+        fetch(`${API_BASE_URL}/api/dashboard/instructor`, { headers, signal }),
+        fetch(`${API_BASE_URL}/api/instructor/analytics`, { headers, signal }),
+      ]);
+
+      const dashBody = await dashRes.json().catch(() => ({}));
+      const invoiceBody = await invoiceRes.json().catch(() => ({}));
+
+      if (!dashRes.ok && !invoiceRes.ok) {
+        throw new Error(
+          dashBody?.message ||
+            invoiceBody?.error?.message ||
+            invoiceBody?.message ||
+            'Could not load analytics.'
+        );
       }
+
+      const mapped = mapDashboardToAnalytics(dashBody?.data || {});
+      if (invoiceRes.ok) {
+        const financial = invoiceBody?.data?.financial || {};
+        if (financial.total_amount_paid != null) {
+          mapped.totalRevenue = Number(financial.total_amount_paid) || 0;
+        }
+      }
+      setAnalytics(mapped);
     } catch (err) {
       if (err.name !== 'AbortError') {
         setAnalytics(null);
@@ -235,7 +262,7 @@ const Performance = () => {
 
   // --- Derived Analytics State ---
   const performanceStats = useMemo(() => [
-    { value: `${analytics?.totalRevenue || 0} USD`, label: 'Total Paid', trend: analytics?.revenueTrend, trendTone: (analytics?.revenueTrend || '').includes('-') ? 'down' : 'up' },
+    { value: `${analytics?.totalRevenue || 0}`, label: 'Total Paid', trend: analytics?.revenueTrend, trendTone: (analytics?.revenueTrend || '').includes('-') ? 'down' : 'up' },
     { value: `${analytics?.courseRevenue || 0} USD`, label: 'Course Payments' },
     { value: `${analytics?.syllabusRevenue || 0} USD`, label: 'Syllabus Payment' },
     { value: `${analytics?.averageScore || 0}%`, label: 'Average Score', trend: analytics?.scoreTrend, trendTone: (analytics?.scoreTrend || '').includes('-') ? 'down' : 'up' },
