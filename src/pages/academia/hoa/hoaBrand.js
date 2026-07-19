@@ -7,6 +7,7 @@ export const HOA_PAGE_TITLES = {
   learners: 'Learners',
   tutors: 'Tutors',
   reports: 'Reports',
+  finance: 'Finance',
   settings: 'Settings',
   account: 'Account',
   assignments: 'Assignments',
