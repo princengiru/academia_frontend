@@ -12,6 +12,7 @@ export function resolveProfessorCurrentPage(pathname = '') {
   if (path.startsWith('/academia/professor/assignments')) return 'assignments';
   if (path.startsWith('/academia/professor/projects') || path.startsWith('/academia/professor/view-project')) return 'projects';
   if (path.startsWith('/academia/professor/performance')) return 'performance';
+  if (path.startsWith('/academia/professor/earnings')) return 'earnings';
   if (path.startsWith('/academia/professor/management') || path.startsWith('/academia/professor/prepare-')) return 'management';
   if (path.startsWith('/academia/professor/settings')) return 'settings';
   if (path.startsWith('/academia/professor/account')) return 'account';
