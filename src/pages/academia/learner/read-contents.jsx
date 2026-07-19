@@ -1452,7 +1452,8 @@ function LearnersReadContents() {
                   id: `formative-${a.id}`,
                   assessmentId: a.id,
                   title: a.title || `Quiz ${ai + 1}`,
-                  completed: false
+                  completed: false,
+                  after_chapter_id: a.after_chapter_id ?? null,
                 }))
               };
             })

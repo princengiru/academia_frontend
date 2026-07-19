@@ -1,7 +1,8 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import LearnersPageShell from './LearnersPageShell';
 import LearnerLoadError from './LearnerLoadError';
+import LearnerEmptyState from './LearnerEmptyState';
 import { unenrollFromCourse } from './enrollmentPaymentUtils';
 
 // Icons & Images
@@ -12,12 +13,30 @@ import acOn from '../../../assets/imgs/ac-on.jpg';
 import acEn from '../../../assets/icons/ac-en.svg';
 import acLe2 from '../../../assets/icons/ac-le2.svg';
 import acRi from '../../../assets/icons/ac-ri.svg';
-import acPlus from '../../../assets/icons/ac-plus.svg';
-import acLock from '../../../assets/icons/ac-lock.svg';
 import SavedLibraryButton from './SavedLibraryButton';
 import './courses.css';
 
 const PAGINATION_DOTS = 'dots';
+const SIDEBAR_TOPIC_LIMIT = 6;
+
+const flattenSyllabusTopics = (tree) => {
+  const list = [];
+  (Array.isArray(tree) ? tree : []).forEach((category) => {
+    (Array.isArray(category?.subcategories) ? category.subcategories : []).forEach((subcat) => {
+      (Array.isArray(subcat?.topics) ? subcat.topics : []).forEach((topic) => {
+        list.push({
+          id: topic.id,
+          name: topic.name || 'Untitled topic',
+          description: topic.description || '',
+          outlineCount: Array.isArray(topic.papers) ? topic.papers.length : Number(topic.outline_count || topic.outlines_count || 0),
+          subcategoryName: subcat.name || '',
+          categoryName: category.name || '',
+        });
+      });
+    });
+  });
+  return list;
+};
 
 // Build a compact, non-cluttered page list, e.g. [1, 2, 3, 4, 5, 'dots', 20].
 // siblingCount = how many pages to show on each side of the current page.
@@ -76,7 +95,9 @@ function LearnersCourses() {
   const [selectedCategory, setSelectedCategory] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [syllabusCourses, setSyllabusCourses] = useState([]);
+  const [syllabusTopics, setSyllabusTopics] = useState([]);
+  const [syllabusTopicsLoading, setSyllabusTopicsLoading] = useState(true);
+  const [syllabusTopicsError, setSyllabusTopicsError] = useState('');
   
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
@@ -165,21 +186,32 @@ function LearnersCourses() {
     return () => clearTimeout(handler);
   }, [searchTerm, setSearchParams]);
 
-  // Load Courses
+  // Load syllabus topics (taxonomy tree) for the sidebar — not courses
   useEffect(() => {
-    // Load a small syllabus list independent of the current filter so sidebar stays populated
+    let cancelled = false;
     (async () => {
+      setSyllabusTopicsLoading(true);
+      setSyllabusTopicsError('');
       try {
-        const res = await fetch(`${API_BASE_URL}/api/courses/public/available?page=1&limit=6`);
-        const body = await res.json();
-        if (!res.ok) throw new Error(body.message || 'Failed to load syllabus courses');
-        const list = extractCourseList(body);
-        setSyllabusCourses(list.map(mapCourse));
+        const res = await fetch(`${API_BASE_URL}/api/categories/tree`);
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(body?.message || 'Failed to load syllabus topics');
+        const tree = Array.isArray(body?.data) ? body.data : [];
+        if (!cancelled) setSyllabusTopics(flattenSyllabusTopics(tree));
       } catch (err) {
-        setSyllabusCourses([]);
+        if (!cancelled) {
+          setSyllabusTopics([]);
+          setSyllabusTopicsError(err?.message || 'Could not load syllabus topics.');
+        }
+      } finally {
+        if (!cancelled) setSyllabusTopicsLoading(false);
       }
     })();
+    return () => { cancelled = true; };
+  }, [API_BASE_URL]);
 
+  // Load Courses
+  useEffect(() => {
     let cancelled = false;
 
     const loadCourses = async () => {
@@ -313,14 +345,20 @@ function LearnersCourses() {
     return list; // Newest (Default from DB)
   }, [courses, sortOrder]);
 
-  const syllabusItems = syllabusCourses.slice(0, 6).map((course) => ({
-    id: course.id,
-    ref: course.uuid || course.id,
-    title: course.title,
-    metaLeft: course.category || course.level || 'Course syllabus',
-    metaRight: `${course.chapterCount || 0} Outlines`,
-    icon: course.id % 2 === 0 ? acLock : acPlus,
-  }));
+  const syllabusItems = useMemo(
+    () => syllabusTopics.slice(0, SIDEBAR_TOPIC_LIMIT).map((topic) => ({
+      id: topic.id,
+      title: topic.name,
+      metaLeft: topic.subcategoryName || topic.categoryName || 'Syllabus topic',
+      metaRight: `${topic.outlineCount} Outline${topic.outlineCount === 1 ? '' : 's'}`,
+    })),
+    [syllabusTopics]
+  );
+
+  const openSyllabusTopic = (topicId) => {
+    if (!topicId) return;
+    navigate(`/academia/syllabus-part?topicId=${encodeURIComponent(topicId)}`);
+  };
 
   const safeTotalPages = Math.max(1, totalPages);
   const showPagination = safeTotalPages > 1;
@@ -679,31 +717,43 @@ function LearnersCourses() {
             <div className="learners-courses-section-head learners-courses-section-head-right">
               <div>
                 <h2>Syllabus</h2>
-                <p>Browse course outlines</p>
+                <p>Browse topics and outlines</p>
               </div>
-              <button type="button" className="learners-courses-see-all" onClick={() => navigate('/academia/learner/courses')}>
+              <button type="button" className="learners-courses-see-all" onClick={() => navigate('/academia/syllabuses')}>
                 See All
               </button>
             </div>
 
             <div className="learners-syllabus-list">
-              {syllabusItems.length > 0 ? syllabusItems.map((husk) => (
-                <div key={husk.id} className="fgbl-item learners-syllabus-item" style={{ background: '#FCFCFC', border: '1px solid #E2E8F0', padding: '16px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              {syllabusTopicsLoading ? (
+                <p className="learners-syllabus-loading">Loading topics…</p>
+              ) : syllabusTopicsError ? (
+                <LearnerEmptyState
+                  inline
+                  title="Could not load topics"
+                  message={syllabusTopicsError}
+                  actionLabel="Browse syllabuses"
+                  actionTo="/academia/syllabuses"
+                />
+              ) : syllabusItems.length > 0 ? syllabusItems.map((topic) => (
+                <div key={topic.id} className="fgbl-item learners-syllabus-item" style={{ background: '#FCFCFC', border: '1px solid #E2E8F0', padding: '16px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div className="fgbl-item-l">
-                    <h4 
+                    <h4
                       style={{ margin: '0 0 6px 0', fontSize: '15px', color: '#071437', fontWeight: '600', textDecoration: 'none', cursor: 'pointer' }}
-                      onClick={() => navigate(`/academia/learner/course-part?id=${encodeURIComponent(husk.ref)}`)}
+                      onClick={() => openSyllabusTopic(topic.id)}
                     >
-                      {husk.title}
+                      {topic.title}
                     </h4>
                     <p style={{ margin: 0, fontSize: '13px', color: '#99A1B7' }}>
-                      <span>{husk.metaRight}</span>
+                      <span>{topic.metaLeft}</span>
+                      <span style={{ margin: '0 6px' }}>·</span>
+                      <span>{topic.metaRight}</span>
                     </p>
                   </div>
                   <div className="fgbl-item-r">
-                    <button 
-                      type="button" 
-                      onClick={() => navigate(`/academia/learner/course-part?id=${encodeURIComponent(husk.ref)}`)}
+                    <button
+                      type="button"
+                      onClick={() => openSyllabusTopic(topic.id)}
                       className="learners-btn-view-syllabus"
                       style={{
                         background: 'transparent',
@@ -724,18 +774,18 @@ function LearnersCourses() {
                         <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                         <circle cx="12" cy="12" r="3"></circle>
                       </svg>
-                      <span>View syllabus</span>
+                      <span>View outlines</span>
                     </button>
                   </div>
                 </div>
               )) : (
-                <div className="learners-empty-state learners-empty-state--courses">
-                  <h4>No syllabus available</h4>
-                  <p>Browse the catalog to explore available courses.</p>
-                  <button type="button" className="learners-btn learners-btn-primary" onClick={() => navigate('/academia/learner/courses')}>
-                    Browse courses
-                  </button>
-                </div>
+                <LearnerEmptyState
+                  inline
+                  title="No topics available"
+                  message="Syllabus topics and outlines will appear here when published."
+                  actionLabel="Browse syllabuses"
+                  actionTo="/academia/syllabuses"
+                />
               )}
             </div>
           </aside>

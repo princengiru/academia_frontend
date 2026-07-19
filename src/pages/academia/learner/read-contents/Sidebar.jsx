@@ -6,7 +6,7 @@ import noCheckCircle from '../../../../assets/icons/no-check-circle.svg';
 import acCl from '../../../../assets/icons/ac-cl.svg';
 import acOp from '../../../../assets/icons/ac-op.svg';
 import right1 from '../../../../assets/icons/right1.svg';
-import { isSameOutlineItemId, isOutlineItemUnlocked, isWeekAccessible, isSummativeUnlocked } from './sidebarUtils';
+import { isSameOutlineItemId, isOutlineItemUnlocked, isWeekAccessible, isSummativeUnlocked, getWeekOutlineItems } from './sidebarUtils';
 
 function Sidebar({
   courseReader,
@@ -161,36 +161,38 @@ function Sidebar({
                         {hasChildren && (
                           <div className="learners-read-week-panel">
                             <div className="learners-read-chapters">
-                              {huskWeek.chapters?.map((huskChapter) => {
-                                const isActive = isSameOutlineItemId(activeChapterId, huskChapter.id);
-                                const isUnlocked = isOutlineItemUnlocked(outlineWeeksState, huskChapter.id, isSummativeComplete);
-                                return (
-                                  <button
-                                    key={huskChapter.id}
-                                    ref={isActive ? activeItemRef : null}
-                                    type="button"
-                                    className={`learners-read-chapter ${isActive ? 'is-active' : ''} ${isUnlocked ? '' : 'is-locked'}`}
-                                    onClick={() => handleItemSelect(huskChapter.id)}
-                                    disabled={!isUnlocked}
-                                    aria-current={isActive ? 'page' : undefined}
-                                    aria-disabled={!isUnlocked}
-                                    title={!isUnlocked ? 'Complete earlier lessons to unlock' : stripHtml(huskChapter.title)}
-                                  >
-                                    <span className="learners-read-chapter-line" aria-hidden="true" />
-                                    <span className="learners-read-chapter-title">
-                                      {!isUnlocked ? <Lock size={12} aria-hidden="true" /> : null}
-                                      <span>{stripHtml(huskChapter.title)}</span>
-                                    </span>
-                                    <img
-                                      src={huskChapter.completed ? checkCircle : noCheckCircle}
-                                      alt=""
-                                      aria-hidden="true"
-                                    />
-                                  </button>
-                                );
-                              })}
+                              {getWeekOutlineItems(huskWeek).map((entry) => {
+                                if (entry.kind === 'chapter') {
+                                  const huskChapter = entry.data;
+                                  const isActive = isSameOutlineItemId(activeChapterId, huskChapter.id);
+                                  const isUnlocked = isOutlineItemUnlocked(outlineWeeksState, huskChapter.id, isSummativeComplete);
+                                  return (
+                                    <button
+                                      key={huskChapter.id}
+                                      ref={isActive ? activeItemRef : null}
+                                      type="button"
+                                      className={`learners-read-chapter ${isActive ? 'is-active' : ''} ${isUnlocked ? '' : 'is-locked'}`}
+                                      onClick={() => handleItemSelect(huskChapter.id)}
+                                      disabled={!isUnlocked}
+                                      aria-current={isActive ? 'page' : undefined}
+                                      aria-disabled={!isUnlocked}
+                                      title={!isUnlocked ? 'Complete earlier lessons to unlock' : stripHtml(huskChapter.title)}
+                                    >
+                                      <span className="learners-read-chapter-line" aria-hidden="true" />
+                                      <span className="learners-read-chapter-title">
+                                        {!isUnlocked ? <Lock size={12} aria-hidden="true" /> : null}
+                                        <span>{stripHtml(huskChapter.title)}</span>
+                                      </span>
+                                      <img
+                                        src={huskChapter.completed ? checkCircle : noCheckCircle}
+                                        alt=""
+                                        aria-hidden="true"
+                                      />
+                                    </button>
+                                  );
+                                }
 
-                              {huskWeek.assessments?.map((huskAss) => {
+                                const huskAss = entry.data;
                                 const isActive = isSameOutlineItemId(activeChapterId, huskAss.id);
                                 const isUnlocked = isOutlineItemUnlocked(outlineWeeksState, huskAss.id, isSummativeComplete);
                                 return (
@@ -208,6 +210,7 @@ function Sidebar({
                                     <span className="learners-read-chapter-line" aria-hidden="true" />
                                     <span className="learners-read-chapter-title learners-read-assessment-title">
                                       <ClipboardList size={14} color="#5B0A86" aria-hidden="true" />
+                                      {!isUnlocked ? <Lock size={12} aria-hidden="true" /> : null}
                                       <span>{stripHtml(huskAss.title)}</span>
                                     </span>
                                     <img

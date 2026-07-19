@@ -635,6 +635,15 @@
     gap: 18px;
 }
 
+.learners-syllabus-loading {
+    margin: 0;
+    padding: 12px 4px;
+    font-family: Inter, sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    color: #78829d;
+}
+
 .learners-syllabus-item {
     border: 0.5px solid #E2E8F0;
     backdrop-filter: blur(22.899999618530273px);

@@ -3,6 +3,35 @@ export function isSameOutlineItemId(a, b) {
   return String(a) === String(b);
 }
 
+/** Build interleaved week items: chapter → quizzes placed after it → leftover quizzes at end. */
+export function getWeekOutlineItems(week) {
+  const chapters = Array.isArray(week?.chapters) ? week.chapters : [];
+  const assessments = Array.isArray(week?.assessments) ? [...week.assessments] : [];
+  const items = [];
+  const used = new Set();
+
+  const quizzesAfter = (chapterId) => assessments
+    .filter((a) => a.after_chapter_id != null && String(a.after_chapter_id) === String(chapterId))
+    .sort((a, b) => Number(a.assessmentId || a.id) - Number(b.assessmentId || b.id));
+
+  chapters.forEach((chapter) => {
+    items.push({ kind: 'chapter', data: chapter });
+    quizzesAfter(chapter.id).forEach((assessment) => {
+      used.add(String(assessment.id));
+      items.push({ kind: 'formative', data: assessment });
+    });
+  });
+
+  assessments
+    .filter((a) => !used.has(String(a.id)))
+    .sort((a, b) => Number(a.assessmentId || a.id) - Number(b.assessmentId || b.id))
+    .forEach((assessment) => {
+      items.push({ kind: 'formative', data: assessment });
+    });
+
+  return items;
+}
+
 export function findWeekIdForOutlineItem(weeks, itemId) {
   if (!itemId || itemId === 'assessment' || !Array.isArray(weeks)) return null;
 
@@ -41,23 +70,24 @@ export function iterateOutlineItems(weeks, isSummativeComplete = false) {
   if (!Array.isArray(weeks)) return items;
 
   weeks.forEach((week) => {
-    week.chapters?.forEach((chapter) => {
-      items.push({
-        type: 'chapter',
-        id: chapter.id,
-        title: chapter.title,
-        weekId: week.id,
-        completed: Boolean(chapter.completed),
-      });
-    });
-    week.assessments?.forEach((assessment) => {
-      items.push({
-        type: 'formative',
-        id: assessment.id,
-        title: assessment.title,
-        weekId: week.id,
-        completed: Boolean(assessment.completed),
-      });
+    getWeekOutlineItems(week).forEach((entry) => {
+      if (entry.kind === 'chapter') {
+        items.push({
+          type: 'chapter',
+          id: entry.data.id,
+          title: entry.data.title,
+          weekId: week.id,
+          completed: Boolean(entry.data.completed),
+        });
+      } else {
+        items.push({
+          type: 'formative',
+          id: entry.data.id,
+          title: entry.data.title,
+          weekId: week.id,
+          completed: Boolean(entry.data.completed),
+        });
+      }
     });
   });
 
@@ -102,14 +132,9 @@ export function isWeekAccessible(weeks, weekId, isSummativeComplete = false) {
   const week = weeks?.find((w) => isSameOutlineItemId(w.id, weekId));
   if (!week) return false;
 
-  const firstChapter = week.chapters?.[0];
-  if (firstChapter) {
-    return isOutlineItemUnlocked(weeks, firstChapter.id, isSummativeComplete);
-  }
-
-  const firstAssessment = week.assessments?.[0];
-  if (firstAssessment) {
-    return isOutlineItemUnlocked(weeks, firstAssessment.id, isSummativeComplete);
+  const firstItem = getWeekOutlineItems(week)[0];
+  if (firstItem) {
+    return isOutlineItemUnlocked(weeks, firstItem.data.id, isSummativeComplete);
   }
 
   return false;
@@ -164,17 +189,15 @@ export function getNextOutlineItem(weeks, currentId, isSummativeComplete = false
 export function getNextAssessment(weeks, isSummativeComplete = false) {
   if (isSummativeComplete) return null;
 
-  for (const week of weeks || []) {
-    for (const assessment of week.assessments || []) {
-      if (!assessment.completed) {
-        return {
-          id: assessment.id,
-          title: assessment.title,
-          type: 'formative',
-          weekId: week.id,
-        };
-      }
-    }
+  const items = iterateOutlineItems(weeks, isSummativeComplete);
+  const nextFormative = items.find((item) => item.type === 'formative' && !item.completed);
+  if (nextFormative) {
+    return {
+      id: nextFormative.id,
+      title: nextFormative.title,
+      type: 'formative',
+      weekId: nextFormative.weekId,
+    };
   }
 
   if (isSummativeUnlocked(weeks, isSummativeComplete)) {

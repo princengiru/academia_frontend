@@ -1,0 +1,95 @@
+.learner-empty-state {
+  display: flex;
+  justify-content: center;
+  padding: 40px 20px 48px;
+  width: 100%;
+}
+
+.learner-empty-state-card {
+  width: min(560px, 100%);
+  text-align: center;
+  background: #ffffff;
+  border: 1px dashed #dbe0ea;
+  border-radius: 12px;
+  padding: 32px 24px;
+}
+
+.learner-empty-state-card h3 {
+  margin: 0 0 8px;
+  font-family: Inter, Poppins, sans-serif;
+  font-size: 20px;
+  line-height: 28px;
+  font-weight: 700;
+  color: #071437;
+}
+
+.learner-empty-state-card p {
+  margin: 0;
+  font-family: Inter, Poppins, sans-serif;
+  font-size: 13px;
+  line-height: 20px;
+  color: #78829d;
+  max-width: none;
+}
+
+.learner-empty-state-actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 18px;
+}
+
+.learner-empty-state-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  padding: 0 16px;
+  border-radius: 8px;
+  font-family: Inter, Poppins, sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.learner-empty-state-btn--primary {
+  border: none;
+  background: #450468;
+  color: #ffffff;
+}
+
+.learner-empty-state-btn--primary:hover {
+  background: #360353;
+  color: #ffffff;
+}
+
+.learner-empty-state--inline {
+  padding: 20px 0;
+}
+
+.learner-empty-state--inline .learner-empty-state-card {
+  width: 100%;
+  padding: 24px 18px;
+}
+
+.learner-empty-state--inline .learner-empty-state-card h3 {
+  font-size: 16px;
+  line-height: 22px;
+}
+
+/* Span full course grid on learner home */
+.learner-empty-state--courses {
+  grid-column: 1 / -1;
+  padding: 12px 0 8px;
+}
+
+.learner-empty-state--courses .learner-empty-state-card {
+  width: 100%;
+  min-height: 220px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
