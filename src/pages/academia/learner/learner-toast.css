@@ -1,0 +1,124 @@
+.learner-toast {
+  position: fixed;
+  top: 18px;
+  right: 18px;
+  z-index: 9999;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 360px;
+  max-width: calc(100vw - 36px);
+  min-height: 56px;
+  padding: 16px 40px 16px 16px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.5;
+  letter-spacing: 0.01em;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+  animation: learnerToastIn 0.2s ease-out;
+}
+
+.learner-toast-message {
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+  font-weight: 500;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.learner-toast-close {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  transform: translateY(-50%);
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0.72;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.15s ease, background-color 0.15s ease, transform 0.15s ease;
+}
+
+.learner-toast-close:hover {
+  opacity: 1;
+  transform: translateY(-50%) scale(1.08);
+}
+
+.learner-toast-close:active {
+  opacity: 1;
+  transform: translateY(-50%) scale(0.96);
+}
+
+.learner-toast--success {
+  background: #DCFCE7;
+  border: 1px solid #86EFAC;
+}
+
+.learner-toast--success .learner-toast-message,
+.learner-toast--success .learner-toast-close {
+  color: #04B440;
+}
+
+.learner-toast--success .learner-toast-close:hover {
+  background: rgba(4, 180, 64, 0.16);
+}
+
+.learner-toast--error {
+  background: #FEE2E2;
+  border: 1px solid #FCA5A5;
+}
+
+.learner-toast--error .learner-toast-message,
+.learner-toast--error .learner-toast-close {
+  color: #D81A48;
+}
+
+.learner-toast--error .learner-toast-close:hover {
+  background: rgba(216, 26, 72, 0.14);
+}
+
+.learner-toast--warning {
+  background: #FEF3C7;
+  border: 1px solid #FCD34D;
+}
+
+.learner-toast--warning .learner-toast-message,
+.learner-toast--warning .learner-toast-close {
+  color: #DFA000;
+}
+
+.learner-toast--warning .learner-toast-close:hover {
+  background: rgba(223, 160, 0, 0.16);
+}
+
+@keyframes learnerToastIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 480px) {
+  .learner-toast {
+    top: 12px;
+    right: 12px;
+    left: 12px;
+    width: auto;
+    max-width: none;
+  }
+}

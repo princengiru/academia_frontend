@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState, useRef } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import LearnersPageShell from './LearnersPageShell';
 import LearnerLoadError from './LearnerLoadError';
@@ -15,6 +15,7 @@ import acShare from '../../../assets/icons/ac-share.svg';
 import acLe2 from '../../../assets/icons/ac-le2.svg';
 import acRi from '../../../assets/icons/ac-ri.svg';
 import './certificates.css';
+import { useLearnerToast } from './useLearnerToast';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
@@ -119,23 +120,9 @@ function normalizeCertificate(raw) {
 
 function LearnersCertificates() {
   const navigate = useNavigate();
+  const { showToast } = useLearnerToast();
   const [certificates, setCertificates] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
-  const toastTimerRef = useRef(null);
-  const showToast = (message, type = 'success') => {
-    setToast({ show: true, message, type });
-    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
-    toastTimerRef.current = setTimeout(() => {
-      setToast({ show: false, message: '', type: 'success' });
-    }, type === 'error' ? 8000 : 5000);
-  };
-
-  useEffect(() => {
-    return () => {
-      if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
-    };
-  }, []);
   const [error, setError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedRange, setSelectedRange] = useState('This Month');
@@ -565,27 +552,6 @@ function LearnersCertificates() {
           </div>
         )}
       </section>
-      {toast.show && (
-        <div className={`toast-${toast.type}`} style={{
-          position: 'fixed',
-          bottom: '24px',
-          right: '24px',
-          backgroundColor: toast.type === 'success' ? '#10B981' : '#EF4444',
-          color: '#FFFFFF',
-          padding: '12px 24px',
-          borderRadius: '8px',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          zIndex: 9999,
-        }}>
-          <span className="toast-icon" style={{ fontWeight: 'bold' }}>
-            {toast.type === 'success' ? '✓' : '✕'}
-          </span>
-          <span className="toast-message" style={{ fontSize: '13px', fontWeight: 500 }}>{toast.message}</span>
-        </div>
-      )}
     </LearnersPageShell>
   );
 }

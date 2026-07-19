@@ -17,6 +17,7 @@ import accMinus from '../../assets/icons/acc-minus.svg';
 import { getProfilePhotoDisplayUrl } from '../../pages/academia/learner/profilePhotoUtils';
 import { formatRoleLabel } from '../../pages/academia/learner/learnerProfileShared';
 import { LEARNER_PRODUCT_TAGLINE } from '../../pages/academia/learner/learnerBrand';
+import { LearnerToastProvider } from '../../pages/academia/learner/useLearnerToast';
 import acSav from '../../assets/icons/ac-sav.svg';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
@@ -252,6 +253,7 @@ function LearnersLayout() {
   };
 
   return (
+    <LearnerToastProvider>
     <div className="dashboard" data-role="learners">
       {isSidebarOpen && (
         <button
@@ -443,6 +445,7 @@ function LearnersLayout() {
         </div>
       )}
     </div>
+    </LearnerToastProvider>
   );
 }
 

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useLocation, useSearchParams, useNavigate } from 'react-router-dom';
 
 // Assets (kept as imports so bundler resolves them)
@@ -17,17 +17,20 @@ import hoabasics from '../../../assets/icons/hoabasics.svg';
 import hoagoto from '../../../assets/icons/hoagoto.svg';
 import SavedLibraryButton from './SavedLibraryButton';
 import EnrollmentPaymentModal from './EnrollmentPaymentModal';
+import { useLearnerToast } from './useLearnerToast';
 import {
   buildAvailablePaymentChoices,
   enrollInCourse,
   fetchSavedPaymentMethods,
   getPaymentMethodLabel,
   getUserCurrency,
+  humanizePaymentFailure,
   initiateEnrollmentPayment,
   isCourseFree,
   isEnrollmentRoleAllowed,
   pickDefaultPaymentValue,
   waitForEnrollmentPayment,
+  watchEnrollmentPayment,
 } from './enrollmentPaymentUtils';
 import { learnerPageTitle, LEARNER_PRODUCT_NAME } from './learnerBrand';
 import { buildReaderUrl, resolveCourseProgressPercent } from './homeDashboardUtils';
@@ -52,7 +55,7 @@ function CoursePart() {
   const [error, setError] = useState(null);
   const [isEnrolled, setIsEnrolled] = useState(false);
   const [isEnrolling, setIsEnrolling] = useState(false);
-  const [toast, setToast] = useState({ message: '', visible: false, tone: 'success' });
+  const { showToast } = useLearnerToast();
   const [isSummaryExpanded, setIsSummaryExpanded] = useState(false);
   const [selectedPaymentValue, setSelectedPaymentValue] = useState('credit_card');
   const [paymentsLoading, setPaymentsLoading] = useState(false);
@@ -60,6 +63,12 @@ function CoursePart() {
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
   const [userCurrency, setUserCurrency] = useState(getUserCurrency());
   const [courseProgressPercent, setCourseProgressPercent] = useState(0);
+  const paymentWatchRef = useRef(null);
+
+  const stopPaymentWatch = () => {
+    paymentWatchRef.current?.stop?.();
+    paymentWatchRef.current = null;
+  };
 
   const resolveAssetUrl = (value) => {
     if (!value) return acOn;
@@ -75,14 +84,11 @@ function CoursePart() {
       .replace(/&nbsp;/g, ' ');
   };
 
-  const showToast = (message, tone = 'success') => {
-    setToast({ message, visible: true, tone });
-    setTimeout(() => {
-      setToast((prev) => ({ ...prev, visible: false }));
-    }, 4000);
-  };
-
   const navigate = useNavigate();
+
+  useEffect(() => () => {
+    stopPaymentWatch();
+  }, []);
 
   useEffect(() => {
     if (!searchParams.get('id') && legacyStateId) {
@@ -270,6 +276,7 @@ function CoursePart() {
       return;
     }
 
+    stopPaymentWatch();
     setIsEnrolling(true);
     try {
       const initiated = await initiateEnrollmentPayment({
@@ -287,11 +294,6 @@ function CoursePart() {
         apiBaseUrl: API_BASE_URL,
         token,
         invoiceUuid: initiated.invoice_uuid,
-        onTick: (s) => {
-          if (s?.status === 'pending') {
-            // Keep the modal in processing state while waiting.
-          }
-        },
       });
 
       if (status.status === 'successful' || status.enrolled) {
@@ -301,10 +303,43 @@ function CoursePart() {
         navigate(buildReaderUrl(course.id));
       }
     } catch (err) {
-      showToast(err.message || 'Payment failed. You can try again.', 'danger');
+      if (err?.code === 'PAYMENT_TIMEOUT' && err?.invoiceUuid) {
+        showToast(err.message, 'warning');
+        // Button stops waiting, but keep watching quietly while the modal stays open.
+        paymentWatchRef.current = watchEnrollmentPayment({
+          apiBaseUrl: API_BASE_URL,
+          token,
+          invoiceUuid: err.invoiceUuid,
+          onStatus: (status) => {
+            if (status.status === 'successful' || status.enrolled) {
+              setIsEnrolled(true);
+              setPaymentModalOpen(false);
+              showToast(
+                `Payment successful via ${getPaymentMethodLabel(gatewayToPaymentValue(gateway))}.`,
+                'success'
+              );
+              navigate(buildReaderUrl(course.id));
+              return;
+            }
+            if (status.status === 'failed') {
+              showToast(
+                humanizePaymentFailure(status.message || status.failure_reason),
+                'error'
+              );
+            }
+          },
+        });
+      } else {
+        showToast(humanizePaymentFailure(err.message) || 'Payment failed. You can try again.', 'error');
+      }
     } finally {
       setIsEnrolling(false);
     }
+  };
+
+  const handlePaymentModalClose = () => {
+    stopPaymentWatch();
+    setPaymentModalOpen(false);
   };
 
   useEffect(() => {
@@ -721,15 +756,10 @@ function CoursePart() {
         </section>
 
       </section>
-      {toast.visible && (
-        <div className={`toast-notification is-${toast.tone}`} role="alert" aria-live="assertive">
-          <span>{toast.message}</span>
-        </div>
-      )}
 
       <EnrollmentPaymentModal
         isOpen={paymentModalOpen}
-        onClose={() => setPaymentModalOpen(false)}
+        onClose={handlePaymentModalClose}
         courseId={course?.id}
         courseIdLabel={course?.id ? `TR${course.id}GON` : '—'}
         amountUsd={course?.rawPrice || 0}

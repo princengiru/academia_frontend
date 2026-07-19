@@ -21,6 +21,7 @@ import popupClose from '../../../assets/icons/popup-close.svg';
 import acSee from '../../../assets/icons/ac-see.svg';
 import fileIcon from '../../../assets/icons/file.svg';
 import './view-project.css';
+import { useLearnerToast } from './useLearnerToast';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
@@ -180,7 +181,7 @@ function LearnersViewProject() {
   const [toolsExpanded, setToolsExpanded] = useState(false);
   const [teamExpanded, setTeamExpanded] = useState(false);
   const [replyingToCommentId, setReplyingToCommentId] = useState(null);
-  const [actionNotice, setActionNotice] = useState('');
+  const { showToast } = useLearnerToast();
   const composerRef = useRef(null);
   const commentsListRef = useRef(null);
 
@@ -370,7 +371,7 @@ function LearnersViewProject() {
       setCommentsCount((prev) => prev + 1);
     } catch (err) {
       console.error('Comment submit failed', err);
-      setActionNotice(err?.message || 'Could not post comment.');
+      showToast(err?.message || 'Could not post comment.', 'error');
     }
   };
 
@@ -386,13 +387,13 @@ function LearnersViewProject() {
       }
       if (navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(url);
-        setActionNotice('Project link copied to clipboard.');
+        showToast('Project link copied to clipboard.');
         return;
       }
-      setActionNotice(url);
+      showToast(url);
     } catch (err) {
       if (err?.name !== 'AbortError') {
-        setActionNotice('Could not share this project.');
+        showToast('Could not share this project.', 'error');
       }
     }
   };
@@ -567,12 +568,6 @@ function LearnersViewProject() {
   const displayEngagement = zenithProject?.engagement || [];
   const displayComments = zenithProject?.comments || [];
 
-  useEffect(() => {
-    if (!actionNotice) return undefined;
-    const timer = window.setTimeout(() => setActionNotice(''), 4000);
-    return () => window.clearTimeout(timer);
-  }, [actionNotice]);
-
   return (
     <LearnersPageShell>
       <section className="learners-view-project-page">
@@ -722,10 +717,6 @@ function LearnersViewProject() {
                   <img src={acShare} alt="Share" />
                 </button>
               </div>
-
-              {actionNotice ? (
-                <p className="learners-view-project-action-notice" role="status">{actionNotice}</p>
-              ) : null}
 
               <div className="learners-view-project-engagement-row">
                 {displayEngagement.length > 0 ? displayEngagement.map((husk, idx) => (

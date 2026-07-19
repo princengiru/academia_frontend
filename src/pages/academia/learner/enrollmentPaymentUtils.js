@@ -260,6 +260,7 @@ export async function getEnrollmentPaymentStatus({ apiBaseUrl, token, invoiceUui
 
 /**
  * Poll until successful / failed / timeout (default ~2 minutes).
+ * On timeout throws with code PAYMENT_TIMEOUT (caller may keep watching quietly).
  */
 export async function waitForEnrollmentPayment({
   apiBaseUrl,
@@ -275,15 +276,124 @@ export async function waitForEnrollmentPayment({
     onTick?.(status);
     if (status.status === 'successful') return status;
     if (status.status === 'failed') {
-      const err = new Error('Payment failed. Please try again.');
+      const err = new Error(
+        humanizePaymentFailure(status.message || status.failure_reason)
+      );
       err.status = status;
+      err.code = 'PAYMENT_FAILED';
       throw err;
     }
     await new Promise((r) => setTimeout(r, intervalMs));
   }
-  const timeoutErr = new Error('Payment is taking longer than expected. If you approved on your phone, refresh in a moment.');
+  const timeoutErr = new Error(
+    'Still waiting for Mobile Money. Keep this window open — we’ll update you if it completes.'
+  );
   timeoutErr.code = 'PAYMENT_TIMEOUT';
+  timeoutErr.invoiceUuid = invoiceUuid;
   throw timeoutErr;
+}
+
+/**
+ * Quiet background poll after the Pay button times out.
+ * Stops on successful / failed, when stop() is called, or when maxMs elapses.
+ */
+export function watchEnrollmentPayment({
+  apiBaseUrl,
+  token,
+  invoiceUuid,
+  intervalMs = 6000,
+  maxMs = 15 * 60 * 1000,
+  onStatus,
+}) {
+  let stopped = false;
+  let sleepTimer = null;
+
+  const stop = () => {
+    stopped = true;
+    if (sleepTimer) {
+      clearTimeout(sleepTimer);
+      sleepTimer = null;
+    }
+  };
+
+  const sleep = (ms) => new Promise((resolve) => {
+    sleepTimer = setTimeout(() => {
+      sleepTimer = null;
+      resolve();
+    }, ms);
+  });
+
+  const run = async () => {
+    const started = Date.now();
+    while (!stopped && Date.now() - started < maxMs) {
+      await sleep(intervalMs);
+      if (stopped) return;
+      try {
+        const status = await getEnrollmentPaymentStatus({ apiBaseUrl, token, invoiceUuid });
+        if (stopped) return;
+        if (status.status === 'successful' || status.status === 'failed') {
+          onStatus?.(status);
+          stop();
+          return;
+        }
+      } catch {
+        // Ignore transient network errors while watching quietly.
+      }
+    }
+  };
+
+  run();
+  return { stop };
+}
+
+/** Map gateway failure text into a clear learner message. */
+export function humanizePaymentFailure(rawReason) {
+  const text = String(rawReason || '').trim();
+  const lower = text.toLowerCase();
+  const compact = lower.replace(/[^a-z0-9]/g, '');
+  if (!text) return 'Payment failed. Please try again.';
+  if (
+    lower.includes('insufficient')
+    || lower.includes('not enough')
+    || lower.includes('low balance')
+    || lower.includes('lack of fund')
+    || lower.includes('no fund')
+    || compact.includes('nofund')
+    || compact.includes('insufficientfund')
+  ) {
+    return 'Insufficient Mobile Money balance. Top up your account and try again.';
+  }
+  // FDI/MoMo often returns this vague string for wallet-side failures (incl. low balance).
+  if (
+    compact.includes('internalprocessingerror')
+    || compact.includes('internalerror')
+    || (compact.includes('processing') && compact.includes('error'))
+    || lower.includes('transaction failed')
+    || lower.includes('unable to process')
+  ) {
+    return 'Mobile Money could not complete this payment. This is often due to insufficient balance — top up and try again.';
+  }
+  if (
+    lower.includes('cancel')
+    || lower.includes('declin')
+    || lower.includes('reject')
+    || lower.includes('timed out')
+    || lower.includes('timeout')
+    || lower.includes('expired')
+  ) {
+    return 'Payment was cancelled or timed out on your phone. Please try again.';
+  }
+  // Don't show raw technical gateway strings to learners.
+  if (
+    compact.includes('error')
+    || compact.includes('exception')
+    || compact.includes('failure')
+    || /^[A-Z0-9_]+$/.test(text)
+  ) {
+    return 'Mobile Money could not complete this payment. Check your balance and try again.';
+  }
+  if (text.length <= 160 && !/^[{[]/.test(text)) return text;
+  return 'Payment failed. Please try again.';
 }
 
 export function pickDefaultPaymentValue(choices, savedMethods) {

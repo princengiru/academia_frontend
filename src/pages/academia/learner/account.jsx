@@ -28,6 +28,7 @@ import hoaemailnotifications from '../../../assets/icons/hoaemailnotifications.s
 import defaultProfileImage from '../../../assets/imgs/default-profile.png';
 import ProfilePhotoCropModal from './ProfilePhotoCropModal';
 import HoasButtonSpinner from './HoasButtonSpinner';
+import { useLearnerToast } from './useLearnerToast';
 import { getProfilePhotoDisplayUrl, isCustomProfilePhoto } from './profilePhotoUtils';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
@@ -1001,6 +1002,7 @@ const SectionCard = ({ id, title, children, onSave, sectionRef, showDiscard = tr
 const LearnerAccount = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { showToast: pushFeedback } = useLearnerToast();
   const enrollmentReturnPath = searchParams.get('return');
   const [saved, setSaved] = useState({});
   const [activeSection, setActiveSection] = useState('general');
@@ -1011,8 +1013,6 @@ const LearnerAccount = () => {
   const socialPopoverRef = useRef(null);
   const sectionBaselinesRef = useRef({});
 
-  const feedbackTimerRef = useRef(null);
-  const [feedback, setFeedback] = useState({ type: '', message: '' });
   const [baselineTick, setBaselineTick] = useState(0);
 
   const [profileLoading, setProfileLoading] = useState(true);
@@ -1131,23 +1131,6 @@ const LearnerAccount = () => {
   const [deletingAccount, setDeletingAccount] = useState(false);
 
   const getToken = () => localStorage.getItem('token');
-
-  const pushFeedback = useCallback((message, type = 'success') => {
-    if (feedbackTimerRef.current) {
-      window.clearTimeout(feedbackTimerRef.current);
-    }
-    setFeedback({ type, message });
-    feedbackTimerRef.current = window.setTimeout(() => {
-      setFeedback({ type: '', message: '' });
-      feedbackTimerRef.current = null;
-    }, 3500);
-  }, []);
-
-  useEffect(() => () => {
-    if (feedbackTimerRef.current) {
-      window.clearTimeout(feedbackTimerRef.current);
-    }
-  }, []);
 
   const apiFetch = useCallback(async (path, options = {}) => {
     const token = getToken();
@@ -2623,29 +2606,6 @@ const LearnerAccount = () => {
   return (
     <LearnersPageShell>
       <div className="hoas-page-wrapper">
-        {feedback.message && (
-          <div
-            style={{
-              position: 'fixed',
-              top: 18,
-              right: 18,
-              zIndex: 9999,
-              background: feedback.type === 'error' ? '#FEE2E2' : '#DCFCE7',
-              color: feedback.type === 'error' ? '#991B1B' : '#166534',
-              border: `1px solid ${feedback.type === 'error' ? '#FCA5A5' : '#86EFAC'}`,
-              padding: '10px 12px',
-              borderRadius: 10,
-              maxWidth: 420,
-              fontSize: 13,
-              boxShadow: '0 10px 30px rgba(0,0,0,0.12)',
-            }}
-            role="status"
-            aria-live="polite"
-          >
-            {feedback.message}
-          </div>
-        )}
-
         {enrollmentReturnPath && enrollmentReturnPath.startsWith('/academia/') ? (
           <div
             style={{

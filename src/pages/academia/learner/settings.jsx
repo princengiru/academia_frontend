@@ -19,6 +19,7 @@ import {
   serializeProjectProfileDraft,
 } from './learnerProfileShared';
 import { formatTelephoneDisplay, PHONE_COUNTRIES } from './phoneCountries';
+import { useLearnerToast } from './useLearnerToast';
 
 import defaultProfile from '../../../assets/imgs/default-profile.png';
 import badge1 from '../../../assets/icons/badge-1.svg';
@@ -133,14 +134,13 @@ function isWithinFilter(value, filter) {
 function LearnersSettings() {
   const navigate = useNavigate();
   const photoInputRef = useRef(null);
-  const feedbackTimerRef = useRef(null);
   const basicBaselineRef = useRef('');
   const preferencesBaselineRef = useRef('');
   const projectProfileBaselineRef = useRef('');
+  const { showToast: pushFeedback } = useLearnerToast();
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [feedback, setFeedback] = useState({ type: '', message: '' });
   const [activeTab, setActiveTab] = useState('overview');
   const [activityFilter, setActivityFilter] = useState('This week');
   const [projects, setProjects] = useState([]);
@@ -232,17 +232,6 @@ function LearnersSettings() {
   const [savingProjectProfile, setSavingProjectProfile] = useState(false);
   const [photoUploading, setPhotoUploading] = useState(false);
   const [baselineTick, setBaselineTick] = useState(0);
-
-  const pushFeedback = useCallback((message, type = 'success') => {
-    if (feedbackTimerRef.current) {
-      window.clearTimeout(feedbackTimerRef.current);
-    }
-    setFeedback({ type, message });
-    feedbackTimerRef.current = window.setTimeout(() => {
-      setFeedback({ type: '', message: '' });
-      feedbackTimerRef.current = null;
-    }, 3500);
-  }, []);
 
   const getToken = () => localStorage.getItem('token');
 
@@ -422,12 +411,6 @@ function LearnersSettings() {
 
   useEffect(() => {
     loadSettings();
-
-    return () => {
-      if (feedbackTimerRef.current) {
-        clearTimeout(feedbackTimerRef.current);
-      }
-    };
   }, []);
 
   useEffect(() => {
@@ -991,29 +974,6 @@ function LearnersSettings() {
             message={error}
             onRetry={error === 'Please sign in to view your settings.' ? undefined : loadSettings}
           />
-        )}
-
-        {feedback.message && (
-          <div
-            style={{
-              position: 'fixed',
-              top: 18,
-              right: 18,
-              zIndex: 9999,
-              background: feedback.type === 'error' ? '#FEE2E2' : '#DCFCE7',
-              color: feedback.type === 'error' ? '#991B1B' : '#166534',
-              border: `1px solid ${feedback.type === 'error' ? '#FCA5A5' : '#86EFAC'}`,
-              padding: '10px 12px',
-              borderRadius: 10,
-              maxWidth: 420,
-              fontSize: 13,
-              boxShadow: '0 10px 30px rgba(0,0,0,0.12)',
-            }}
-            role="status"
-            aria-live="polite"
-          >
-            {feedback.message}
-          </div>
         )}
 
         <section className="learners-settings-shell">
