@@ -196,7 +196,27 @@ const Management = () => {
 
       const rawCourses = data?.data?.courses || [];
       const rawSyllabuses = data?.data?.syllabuses || [];
-      const earnings = data?.data?.courseEarnings || [];
+      let earnings = data?.data?.courseEarnings || [];
+
+      // Prefer invoice-based per-course summary when available (same as Earnings page)
+      try {
+        const byCourseRes = await fetch(`${API_BASE_URL}/api/instructor/payment-summary-by-course`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (byCourseRes.ok) {
+          const byCourseBody = await byCourseRes.json();
+          const courses = byCourseBody?.data?.courses;
+          if (Array.isArray(courses) && courses.length > 0) {
+            earnings = courses.map((c) => ({
+              id: c.id,
+              students: c.total_students ?? 0,
+              course_revenue: c.total_revenue ?? 0,
+            }));
+          }
+        }
+      } catch {
+        // keep dashboard courseEarnings
+      }
 
       const mapped = rawCourses.map((c) => {
         const earn = earnings.find(e => e.id === c.id) || {};
