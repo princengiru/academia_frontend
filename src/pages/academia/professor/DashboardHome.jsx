@@ -2,9 +2,11 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom';
 import LearnerLoadError from '../learner/LearnerLoadError';
 import ManagementLoading from './ManagementLoading';
-import { BarChart3, BookOpen, CalendarPlus, ClipboardCheck, FileText, Wallet } from 'lucide-react';
+import { useCurrency, flagOptions } from '../../../hooks/useCurrency';
+import { BookOpen, CalendarPlus, ClipboardCheck, FileText, Wallet } from 'lucide-react';
 import './dashboard-home.css';
 import hoagoto from '../../../assets/icons/hoagoto.svg';
+import hoadowncaret from '../../../assets/icons/hoadowncaret.svg';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
@@ -43,6 +45,9 @@ const normalizeCourseRow = (row, index) => {
 
 const DashboardHome = () => {
   const navigate = useNavigate();
+  const { currency, setCurrency, formatAmount, formatRaw } = useCurrency();
+  const [openFlagDropdown, setOpenFlagDropdown] = useState(false);
+  const flagRef = useRef(null);
 
   // --- OVERALL DASHBOARD STATE ---
   const [dashboardData, setDashboardData] = useState(null);
@@ -74,6 +79,16 @@ const DashboardHome = () => {
     }, 500);
     return () => clearTimeout(handler);
   }, [searchTerm]);
+
+  useEffect(() => {
+    const onPointerDown = (event) => {
+      if (flagRef.current && !flagRef.current.contains(event.target)) {
+        setOpenFlagDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', onPointerDown);
+    return () => document.removeEventListener('mousedown', onPointerDown);
+  }, []);
 
   const loadDashboard = useCallback(async (signal) => {
     const token = localStorage.getItem('token');
@@ -280,12 +295,15 @@ const DashboardHome = () => {
   const statusLabel = STATUS_FILTERS.find((item) => item.value === statusFilter)?.label || 'All';
 
   const courseRevenueTotal = useMemo(() => {
+    // Prefer invoice total from dashboard; fall back to sum of per-course invoice earnings
+    const fromDashboard = Number(dashboardData?.totalRevenue);
+    if (Number.isFinite(fromDashboard) && fromDashboard > 0) return fromDashboard;
     const earnings = Array.isArray(dashboardData?.courseEarnings) ? dashboardData.courseEarnings : [];
     return earnings.reduce((sum, item) => sum + Number(item.course_revenue || 0), 0);
   }, [dashboardData]);
 
   const schedulePreview = useMemo(() => (
-    upcomingEvents.slice(0, 2).map((ev) => {
+    upcomingEvents.slice(0, 1).map((ev) => {
       const date = new Date(ev.event_datetime || ev.createdAt);
       return {
         id: ev.id || ev._id,
@@ -371,7 +389,9 @@ const DashboardHome = () => {
         </td>
         <td className="prof-table-score">{item.rating ?? '---'}</td>
         <td className="prof-table-rating">{item.rating ?? '---'} <img src="/assets/icons/star.svg" alt="" /></td>
-        <td className="prof-table-profit">{item.revenue.toFixed(1)} USD</td>
+        <td className="prof-table-profit">
+          {item.revenue > 0 ? formatAmount(item.revenue) : '—'}
+        </td>
         <td className="prof-table-status">
           <span className={`prof-status-pill ${item.status === 'published' ? 'prof-status-pill--ok' : 'prof-status-pill--muted'}`}>
             <span className="dot"></span>{item.status || 'published'}
@@ -499,7 +519,7 @@ const DashboardHome = () => {
                 <button type="button" onClick={() => handleQuickAction('/academia/professor/prepare-course')}><span><BookOpen size={16} strokeWidth={1.8} aria-hidden="true" /></span>Prepare Course</button>
                 <button type="button" onClick={() => handleQuickAction('/academia/professor/assignments')}><span><ClipboardCheck size={16} strokeWidth={1.8} aria-hidden="true" /></span>Create Test</button>
                 <button type="button" onClick={() => handleQuickAction('/academia/professor/prepare-syllabus')}><span><FileText size={16} strokeWidth={1.8} aria-hidden="true" /></span>Prepare Syllabus</button>
-                <button type="button" onClick={() => handleQuickAction('/academia/professor/performance')}><span><Wallet size={16} strokeWidth={1.8} aria-hidden="true" /></span>Payment History</button>
+                <button type="button" onClick={() => handleQuickAction('/academia/professor/earnings')}><span><Wallet size={16} strokeWidth={1.8} aria-hidden="true" /></span>Payment History</button>
               </div>
             </div>
           </div>
@@ -558,37 +578,57 @@ const DashboardHome = () => {
                 </button>
               </div>
 
-              <div className="prof-activity-row">
-                <div className="prof-activity-item">
-                  <div className="prof-activity-metric">
-                    <span className="prof-activity-value">{loading ? '…' : dashboardData?.totalStudents || 0}</span>
-                  </div>
-                  <div className="prof-activity-label">Students</div>
+              <div className="prof-revenue-box">
+                <div className="prof-revenue-amount">
+                  <strong>
+                    {loading
+                      ? '…'
+                      : courseRevenueTotal > 0
+                        ? formatRaw(courseRevenueTotal)
+                        : '—'}
+                  </strong>
+                  <span className="prof-currency-dropdown" ref={flagRef}>
+                    <button
+                      type="button"
+                      className="prof-currency-trigger"
+                      onClick={() => setOpenFlagDropdown((open) => !open)}
+                      aria-expanded={openFlagDropdown}
+                    >
+                      <span>{currency.label}</span>
+                      <img src={currency.flag} alt="" />
+                      <img src={hoadowncaret} alt="" className="prof-currency-caret" />
+                    </button>
+                    {openFlagDropdown ? (
+                      <div className="prof-currency-menu" role="listbox">
+                        {flagOptions.map((option) => (
+                          <button
+                            key={option.label}
+                            type="button"
+                            className={`prof-currency-option ${currency.label === option.label ? 'active' : ''}`}
+                            onClick={() => {
+                              setCurrency(option);
+                              setOpenFlagDropdown(false);
+                            }}
+                          >
+                            <img src={option.flag} alt="" />
+                            <span>{option.label}</span>
+                          </button>
+                        ))}
+                      </div>
+                    ) : null}
+                  </span>
                 </div>
-                <div className="prof-activity-divider" aria-hidden="true" />
-                <div className="prof-activity-item">
-                  <div className="prof-activity-metric">
-                    <span className="prof-activity-value">{loading ? '…' : assessmentMetrics.passedStudents || 0}</span>
-                  </div>
-                  <div className="prof-activity-label">Passed</div>
-                </div>
-                <div className="prof-activity-divider" aria-hidden="true" />
-                <div className="prof-activity-item">
-                  <div className="prof-activity-metric">
-                    <span className="prof-activity-value">{loading ? '…' : `${courseRevenueTotal} USD`}</span>
-                  </div>
-                  <div className="prof-activity-label">Revenue</div>
-                </div>
+                <p>Total Revenue</p>
               </div>
 
               <button
                 type="button"
                 className="prof-add-event"
                 style={{ marginTop: 16 }}
-                onClick={() => navigate('/academia/professor/performance')}
+                onClick={() => navigate('/academia/professor/earnings')}
               >
-                <BarChart3 size={16} strokeWidth={1.8} aria-hidden="true" />
-                View analytics
+                <Wallet size={16} strokeWidth={1.8} aria-hidden="true" />
+                View earnings
               </button>
             </div>
           </div>
@@ -649,7 +689,7 @@ const DashboardHome = () => {
                   <th><span className="prof-table-head-text">Tot. Students</span></th>
                   <th><span className="prof-table-head-text">Avg. Score</span></th>
                   <th><span className="prof-table-head-text">Rating</span></th>
-                  <th><span className="prof-table-head-text">Tot. Profits (USD)</span></th>
+                  <th><span className="prof-table-head-text">Tot. Profits</span></th>
                   <th className="prof-table-status-col"></th>
                 </tr>
               </thead>
