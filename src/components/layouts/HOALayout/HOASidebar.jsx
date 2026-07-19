@@ -19,7 +19,7 @@ const PLANNING_NAV_ITEMS = [
 const HOASidebar = ({ currentPage, isOpen = false, onClose, onLogout }) => {
   const navigate = useNavigate();
 
-  const dashboardPages = ['index', 'learners', 'tutors', 'reports', 'settings'];
+  const dashboardPages = ['index', 'learners', 'tutors', 'reports', 'finance', 'settings'];
   const managementPages = ['assignments', 'passed-courses', 'retaken-courses', 'failed-courses'];
   const uploadPages = ['syllabus', 'online-courses', 'projects', 'certificates'];
   const uploadsPanelPages = [...uploadPages];
@@ -131,6 +131,9 @@ const HOASidebar = ({ currentPage, isOpen = false, onClose, onLogout }) => {
                 </NavLink>
                 <NavLink to="/academia/hoa/reports" className={getSidebarLinkClassName} onClick={onClose}>
                   <span>Reports</span>
+                </NavLink>
+                <NavLink to="/academia/hoa/finance" className={getSidebarLinkClassName} onClick={onClose}>
+                  <span>Finance</span>
                 </NavLink>
               </div>
             )}
