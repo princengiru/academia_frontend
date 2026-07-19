@@ -410,3 +410,30 @@ export function pickDefaultPaymentValue(choices, savedMethods) {
 
   return choices[0].value;
 }
+
+export async function fetchEnrollmentStatus({ apiBaseUrl, token, courseId }) {
+  const res = await fetch(`${apiBaseUrl}/api/courses/${courseId}/enrollment-status`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(body?.message || body?.error?.message || 'Could not check enrollment status.');
+  }
+  return body?.data ?? body;
+}
+
+export async function unenrollFromCourse({ apiBaseUrl, token, courseId, reason }) {
+  const res = await fetch(`${apiBaseUrl}/api/courses/${courseId}/unenroll`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ reason: reason || null }),
+  });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(body?.message || body?.error?.message || 'Failed to unenroll from course.');
+  }
+  return body?.data ?? body;
+}

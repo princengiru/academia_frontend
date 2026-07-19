@@ -1,16 +1,19 @@
 import React, { useState, useEffect } from 'react';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-const CURRENCIES = ['USD', 'EUR', 'GBP', 'RWF'];
+const CURRENCIES = [
+  { code: 'USD', symbol: '$', label: 'US Dollar' },
+  { code: 'EUR', symbol: '€', label: 'Euro' },
+  { code: 'GBP', symbol: '£', label: 'British Pound' },
+  { code: 'RWF', symbol: 'RF', label: 'Rwandan Franc' },
+];
 
 const Pricing = ({ courseId, setActiveStep, pushFeedback }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
-  // --- Local State ---
-  const [pricing, setPricing] = useState({ 
-    isFree: false, 
-    amount: 50, 
-    currency: CURRENCIES[0] 
+  const [pricing, setPricing] = useState({
+    isFree: false,
+    amount: '',
+    currency: CURRENCIES[0].code,
   });
 
   useEffect(() => {
@@ -19,61 +22,60 @@ const Pricing = ({ courseId, setActiveStep, pushFeedback }) => {
       try {
         const token = localStorage.getItem('token');
         const res = await fetch(`${API_BASE_URL}/api/courses/${courseId}`, {
-          headers: { Authorization: `Bearer ${token}` }
+          headers: { Authorization: `Bearer ${token}` },
         });
         const data = await res.json();
         if (res.ok && data.data) {
           const course = data.data;
+          const price = parseFloat(course.price);
+          const isFree = !price || price === 0;
           setPricing({
-            isFree: parseFloat(course.price) === 0,
-            amount: parseFloat(course.price) || 0,
-            currency: 'USD'
+            isFree,
+            amount: isFree ? '' : String(price),
+            currency: course.currency || CURRENCIES[0].code,
           });
         }
       } catch (err) {
-        console.error("Failed to fetch course pricing details:", err);
+        console.error('Failed to fetch course pricing details:', err);
       }
     };
     fetchPricing();
   }, [courseId]);
 
   const { isFree, amount, currency } = pricing;
+  const activeCurrency = CURRENCIES.find((c) => c.code === currency) || CURRENCIES[0];
 
-  // --- Handlers ---
   const handlePricingChange = (field, value) => {
-    setPricing(prev => ({ ...prev, [field]: value }));
+    setPricing((prev) => ({ ...prev, [field]: value }));
   };
 
-  // --- API Submission Flow ---
   const savePricing = async () => {
-    // GUARDRAIL: Prevent saving if the user skipped Step 1
     if (!courseId) {
       return pushFeedback('Course ID is missing. Please go back to Step 1 and hit Save.', 'error');
     }
 
-    // Client-side Validation
     if (!isFree && Number(amount) <= 0) {
       return pushFeedback('Paid courses must have a price greater than 0.', 'error');
     }
-    
+
     setIsSubmitting(true);
     const token = localStorage.getItem('token');
 
     try {
-      const payload = { 
-        is_free: isFree, 
-        price: isFree ? 0 : Number(amount), 
-        subscription_price: isFree ? 0 : Number(amount), // Assuming one-time and sub price match for now
-        currency: currency 
+      const payload = {
+        is_free: isFree,
+        price: isFree ? 0 : Number(amount),
+        subscription_price: isFree ? 0 : Number(amount),
+        currency,
       };
 
       const res = await fetch(`${API_BASE_URL}/api/courses/${courseId}`, {
         method: 'PUT',
-        headers: { 
-          'Content-Type': 'application/json', 
-          'Authorization': `Bearer ${token}` 
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
       });
 
       if (!res.ok) {
@@ -82,130 +84,119 @@ const Pricing = ({ courseId, setActiveStep, pushFeedback }) => {
       }
 
       pushFeedback('Pricing saved successfully.', 'success');
-      setActiveStep('review'); // Move to the final step
-    } catch (error) { 
-      pushFeedback(error.message, 'error'); 
-    } finally { 
-      setIsSubmitting(false); 
+      setActiveStep('review');
+    } catch (error) {
+      pushFeedback(error.message, 'error');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
     <div className="prof-step-pane is-active animate-fade-in">
-      <div className="prof-step-header">
-        <h3>Pricing & Monetization</h3>
-        <p>
-          Select a pricing model for your course. Free courses drive more enrollments, while paid courses generate revenue.
-        </p>
-      </div>
-
-      {/* --- PRO PRICING CARDS --- */}
       <div className="prof-field-group">
-        <label className="prof-field-label">Select Pricing Model</label>
-        
-        <div className="prof-pricing-model-grid">
-          
-          {/* Free Card */}
-          <div 
+        <label className="prof-field-label">Access type</label>
+        <div className="prof-pricing-access" role="radiogroup" aria-label="Access type">
+          <button
+            type="button"
+            role="radio"
+            aria-checked={isFree}
+            className={`prof-pricing-access__option ${isFree ? 'is-selected' : ''}`}
             onClick={() => handlePricingChange('isFree', true)}
-            className={`prof-pricing-card ${isFree ? 'is-selected' : ''}`}
           >
-            <div className="prof-pricing-card-checkbox">
-              <input 
-                type="radio" 
-                checked={isFree} 
-                onChange={() => handlePricingChange('isFree', true)} 
-              />
-              <span className="prof-pricing-card-dot"></span>
-            </div>
-            <div className="prof-pricing-card-info">
-              <strong>Free Course</strong>
-              <span>
-                Allow anyone to enroll at no cost. Great for building an audience and capturing leads.
-              </span>
-            </div>
-          </div>
-
-          {/* Paid Card */}
-          <div 
+            <span className="prof-pricing-access__title">Free</span>
+            <span className="prof-pricing-access__hint">Anyone can enroll at no cost</span>
+          </button>
+          <button
+            type="button"
+            role="radio"
+            aria-checked={!isFree}
+            className={`prof-pricing-access__option ${!isFree ? 'is-selected' : ''}`}
             onClick={() => handlePricingChange('isFree', false)}
-            className={`prof-pricing-card ${!isFree ? 'is-selected' : ''}`}
           >
-            <div className="prof-pricing-card-checkbox">
-              <input 
-                type="radio" 
-                checked={!isFree} 
-                onChange={() => handlePricingChange('isFree', false)} 
-              />
-              <span className="prof-pricing-card-dot"></span>
-            </div>
-            <div className="prof-pricing-card-info">
-              <strong>Paid Course</strong>
-              <span>
-                Charge a one-time fee for lifetime access. Platform service fees will apply to sales.
-              </span>
-            </div>
-          </div>
-
+            <span className="prof-pricing-access__title">Paid</span>
+            <span className="prof-pricing-access__hint">One-time fee for lifetime access</span>
+          </button>
         </div>
       </div>
 
-      {/* --- PRICE INPUTS (Only visible if Paid) --- */}
       {!isFree && (
-        <div className="prof-paid-details-card animate-fade-in">
-          <div className="prof-field-group">
-            <label className="prof-field-label">Course Price</label>
-            <div className="prof-price-input-wrapper">
-              <span className="prof-price-currency-symbol">
-                {currency === 'USD' ? '$' : currency === 'EUR' ? '€' : currency === 'GBP' ? '£' : 'RF'}
-              </span>
-              <input 
-                className="prof-step-input-premium" 
-                type="number" 
-                min="1" 
-                step="0.01"
-                value={amount} 
-                onChange={(e) => handlePricingChange('amount', e.target.value)} 
-              />
+        <div className="prof-pricing-amount animate-fade-in">
+          <div className="prof-grid-two">
+            <div className="prof-field-group">
+              <label className="prof-field-label" htmlFor="course-price-amount">
+                Course price
+              </label>
+              <div className="prof-price-input-wrapper">
+                <span className="prof-price-currency-symbol" aria-hidden="true">
+                  {activeCurrency.symbol}
+                </span>
+                <input
+                  id="course-price-amount"
+                  className="prof-step-input-premium"
+                  type="number"
+                  min="1"
+                  step="0.01"
+                  placeholder="0.00"
+                  value={amount}
+                  onChange={(e) => handlePricingChange('amount', e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="prof-field-group">
+              <label className="prof-field-label">Currency</label>
+              <div className="dropdown prof-generic-dropdown">
+                <button className="prof-dropdown-toggle-premium" type="button" data-bs-toggle="dropdown">
+                  <span className="prof-dropdown-value">
+                    {activeCurrency.code}
+                    <span className="prof-pricing-currency-meta"> · {activeCurrency.label}</span>
+                  </span>
+                  <svg className="prof-dropdown-caret-svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                  </svg>
+                </button>
+                <ul className="dropdown-menu prof-dropdown-menu-premium">
+                  {CURRENCIES.map((curr) => (
+                    <li key={curr.code}>
+                      <button
+                        className="dropdown-item"
+                        type="button"
+                        onClick={() => handlePricingChange('currency', curr.code)}
+                      >
+                        {curr.code} · {curr.label}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
           </div>
-          
-          <div className="prof-field-group">
-            <label className="prof-field-label">Currency</label>
-            <div className="dropdown prof-generic-dropdown">
-              <button className="prof-dropdown-toggle-premium" type="button" data-bs-toggle="dropdown">
-                <span className="prof-dropdown-value">{currency}</span>
-                <svg className="prof-dropdown-caret-svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="6 9 12 15 18 9"></polyline>
-                </svg>
-              </button>
-              <ul className="dropdown-menu prof-dropdown-menu-premium">
-                {CURRENCIES.map(curr => (
-                  <li key={curr}>
-                    <button className="dropdown-item" type="button" onClick={() => handlePricingChange('currency', curr)}>
-                      {curr}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
+
+          <p className="prof-pricing-note">
+            Learners pay once for lifetime access. Platform service fees apply to sales.
+          </p>
         </div>
       )}
 
-      {/* --- FOOTER ACTIONS --- */}
+      {isFree && (
+        <p className="prof-pricing-note">
+          This course will appear as free. You can switch to paid anytime before publishing.
+        </p>
+      )}
+
       <div className="prof-actions-footer-premium">
-        <button 
-          type="button" 
-          className="prof-btn-back-premium" 
-          onClick={() => setActiveStep('weeks')} 
+        <button
+          type="button"
+          className="prof-btn-primary-premium"
+          onClick={() => setActiveStep('weeks')}
         >
           Back to Curriculum
         </button>
-        <button 
-          type="button" 
-          className="prof-btn-primary-premium" 
-          onClick={savePricing} 
+        <button
+          type="button"
+          className="prof-btn-primary-premium"
+          onClick={savePricing}
           disabled={isSubmitting}
         >
           {isSubmitting ? 'Saving...' : 'Save Pricing & Review'}

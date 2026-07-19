@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import LearnersPageShell from './LearnersPageShell';
 import LearnerLoadError from './LearnerLoadError';
+import LearnerLoading from './LearnerLoading';
 
 // Icons & Images
 import defaultProfile from '../../../assets/imgs/default-profile.png';
@@ -435,10 +436,7 @@ function LearnersCertificates() {
         </section>
 
         {loading ? (
-          <div className="learners-certificates-empty-state">
-            <h3>Loading certificates...</h3>
-            <p>Fetching your earned certificates and progress.</p>
-          </div>
+          <LearnerLoading title="Loading certificates" message="Fetching your earned certificates and progress." />
         ) : error ? (
           <LearnerLoadError
             title="Certificates could not load"

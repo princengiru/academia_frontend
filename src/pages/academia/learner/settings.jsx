@@ -1,11 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import LearnersPageShell from './LearnersPageShell';
-import LearnerLoadError from './LearnerLoadError';
-import ProfilePhotoCropModal from './ProfilePhotoCropModal';
-import ProfilePhotoViewModal from './ProfilePhotoViewModal';
-import HoasButtonSpinner from './HoasButtonSpinner';
-import { getProfilePhotoDisplayUrl, isCustomProfilePhoto } from './profilePhotoUtils';
+import LearnerLoadError from '../learner/LearnerLoadError';
+import ProfilePhotoCropModal from '../learner/ProfilePhotoCropModal';
+import HoasButtonSpinner from '../learner/HoasButtonSpinner';
+import { getProfilePhotoDisplayUrl, isCustomProfilePhoto } from '../learner/profilePhotoUtils';
 import {
   buildBasicDraftFromUser,
   buildPreferencesDraftFromUser,
@@ -18,7 +16,7 @@ import {
   serializePreferencesDraft,
   serializeProjectProfileDraft,
 } from './learnerProfileShared';
-import { formatTelephoneDisplay, PHONE_COUNTRIES } from './phoneCountries';
+import { formatTelephoneDisplay } from './phoneCountries';
 import { useLearnerToast } from './useLearnerToast';
 
 import defaultProfile from '../../../assets/imgs/default-profile.png';
@@ -35,14 +33,8 @@ import trashIcon from '../../../assets/icons/trash.svg';
 import dotsVertical from '../../../assets/icons/dots-vertical.svg';
 import exitDown from '../../../assets/icons/exit-down.svg';
 import leEm from '../../../assets/icons/le-em.svg';
-
-import acEye from '../../../assets/icons/ac-eye.svg';
-import LearnerRefresh from '../../../assets/icons/LearnerRefresh.svg';
-import LearnerUpload from '../../../assets/icons/LearnerUpload.svg';
-import LearnerWarning from '../../../assets/icons/LearnerWarning.svg';
-import LearnerSuccess from '../../../assets/icons/LearnerSuccess.svg';
-import AccountQuickLinks from './AccountQuickLinks';
-import './projects.css';
+import AccountQuickLinks from '../learner/AccountQuickLinks';
+// import './projects-settings.css';
 import './settings.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
@@ -63,18 +55,6 @@ const FieldInfo = ({ tip }) => (
   <span className="learners-settings-info-trigger" data-tip={tip} tabIndex={0} role="button" aria-label={tip}>
     <img src={acInn} alt="" />
   </span>
-);
-
-const ReadOnlyField = ({ label, tip, value, className = '' }) => (
-  <div className={`learners-settings-field ${className}`.trim()}>
-    <div className="learners-settings-field-head">
-      <label>{label}</label>
-      {tip ? <FieldInfo tip={tip} /> : null}
-    </div>
-    <div className="learners-settings-display-input">
-      <span className="learners-settings-display-input-value">{value}</span>
-    </div>
-  </div>
 );
 
 const SettingsSaveButton = ({ children, disabled, saving, onClick, savingLabel = 'Saving...', className = 'learners-settings-inline-save' }) => (
@@ -131,7 +111,7 @@ function isWithinFilter(value, filter) {
   return true;
 }
 
-function LearnersSettings() {
+function ProfessorSettings() {
   const navigate = useNavigate();
   const photoInputRef = useRef(null);
   const basicBaselineRef = useRef('');
@@ -173,7 +153,6 @@ function LearnersSettings() {
 
   const [profileAvatarPath, setProfileAvatarPath] = useState('');
   const [cropModalOpen, setCropModalOpen] = useState(false);
-  const [profilePhotoViewOpen, setProfilePhotoViewOpen] = useState(false);
   const [cropImageSrc, setCropImageSrc] = useState('');
   const [uploadError, setUploadError] = useState('');
 
@@ -181,7 +160,7 @@ function LearnersSettings() {
     name: '',
     email: '',
     phone: '',
-    role: 'student',
+    role: 'instructor',
     visibility: 'public',
     avatar: defaultProfile,
     bio: '',
@@ -198,7 +177,7 @@ function LearnersSettings() {
   const [basicDraft, setBasicDraft] = useState({
     name: '',
     phone: '',
-    role: 'student',
+    role: 'instructor',
     visibility: 'public',
     bio: '',
     address: '',
@@ -306,7 +285,7 @@ function LearnersSettings() {
   }, [apiFetch]);
 
   const openAccountSection = useCallback((section) => {
-    navigate(`/academia/learner/account?section=${section}`);
+    navigate(`/academia/professor/account?section=${section}`);
   }, [navigate]);
 
   const loadSettings = async () => {
@@ -900,11 +879,11 @@ function LearnersSettings() {
   };
 
   const openProjectsUpload = () => {
-    navigate('/academia/learner/projects');
+    navigate('/academia/professor/projects');
   };
 
   return (
-    <LearnersPageShell>
+    <>
       <section className="learners-settings-page learners-projects-page" onClick={(event) => {
         if (!event.target.closest('.learners-settings-activity-menu')) setOpenActivityMenuId(null);
         if (!event.target.closest('.learners-settings-activity-filter-wrap')) setActivityFilterOpen(false);
@@ -922,14 +901,9 @@ function LearnersSettings() {
 
         <section className="learners-projects-profile-strip">
           <div className="learners-projects-profile-strip-main">
-            <button
-              type="button"
-              className="learners-projects-profile-avatar learners-settings-profile-avatar"
-              onClick={() => setProfilePhotoViewOpen(true)}
-              aria-label={`View ${profile.name || 'profile'} photo`}
-            >
+            <div className="learners-projects-profile-avatar learners-settings-profile-avatar">
               <img src={profile.avatar} alt={profile.name || 'Profile'} onError={handleProfileImageError} />
-            </button>
+            </div>
 
             <div className="learners-projects-profile-copy">
               <div className="learners-projects-profile-name-row">
@@ -944,7 +918,7 @@ function LearnersSettings() {
               </div>
 
               <div className="learners-projects-profile-meta">
-                <span>{jobTitleLabel !== '—' ? jobTitleLabel : userTypeLabel}</span>
+                <span>{userTypeLabel}</span>
                 <span>&bull;</span>
                 <span>{profile.email || 'No email on file'}</span>
               </div>
@@ -954,9 +928,9 @@ function LearnersSettings() {
           <div className="learners-projects-profile-actions">
             <button type="button" className="learners-projects-primary-btn" onClick={openProjectsUpload}>
               <span>Upload new project</span>
-              <img src={LearnerUpload} alt="Upload" />
+              <img src={exitDown} alt="Upload" />
             </button>
-            <button type="button" className="learners-projects-secondary-btn" onClick={() => navigate('/academia/learner/account')}>
+            <button type="button" className="learners-projects-secondary-btn" onClick={() => navigate('/academia/professor/account')}>
               Account settings
             </button>
           </div>
@@ -988,7 +962,7 @@ function LearnersSettings() {
             <div className="learners-projects-side-card learners-projects-side-card-profile">
               <div className="learners-projects-side-card-head">
                 <span
-                  className={`learners-projects-availability${projectProfileDraft.availableToHire ? ' is-available' : ' is-unavailable'}`}
+                  className="learners-projects-availability"
                   role="button"
                   tabIndex={0}
                   onClick={toggleAvailability}
@@ -999,14 +973,7 @@ function LearnersSettings() {
                     }
                   }}
                 >
-                  {projectProfileDraft.availableToHire ? (
-                    <>
-                      <span className="learners-projects-availability-dot" aria-hidden="true" />
-                      Available Now
-                    </>
-                  ) : (
-                    'Not available'
-                  )}
+                  {projectProfileDraft.availableToHire ? 'Available Now' : 'Not available'}
                 </span>
                 <button
                   type="button"
@@ -1210,7 +1177,7 @@ function LearnersSettings() {
                 <article className="learners-settings-panel">
                   <div className="learners-settings-empty-state learners-settings-activity-empty">
                     <strong>Loading settings</strong>
-                    <span>Loading your learning profile and activity.</span>
+                    <span>Loading your teaching profile and activity.</span>
                   </div>
                 </article>
               ) : null}
@@ -1227,68 +1194,44 @@ function LearnersSettings() {
                     </div>
 
                     <div className="learners-settings-form-grid">
-                      <ReadOnlyField
-                        label="Full Name"
-                        tip={FIELD_TOOLTIPS.fullName}
-                        value={profile.name || '—'}
-                        className="is-full"
-                      />
-
-                      <ReadOnlyField
-                        label="E-mail"
-                        tip={FIELD_TOOLTIPS.email}
-                        value={profile.email || '—'}
-                      />
-
-                      <ReadOnlyField
-                        label="Telephone"
-                        tip={FIELD_TOOLTIPS.telephone}
-                        value={
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                              {(PHONE_COUNTRIES.find((c) => c.code === (profile.country || 'RW')) || PHONE_COUNTRIES.find((c) => c.code === 'RW'))?.flag || '🇷🇼'}
-                              <img src={drop1} alt="" style={{ width: '8px', opacity: 0.5, marginLeft: '2px' }} />
-                            </span>
-                            <div style={{ width: '1px', height: '16px', background: '#E1E7F0' }} />
-                            <span>{telephoneDisplay}</span>
-                          </div>
-                        }
-                      />
-
-                      <ReadOnlyField
-                        label="User Type"
-                        tip={FIELD_TOOLTIPS.userType}
-                        value={userTypeLabel}
-                      />
-
-
-                      <ReadOnlyField
-                        label="Role"
-                        tip={FIELD_TOOLTIPS.role}
-                        value={jobTitleLabel}
-                      />
-
-                      <div className="learners-settings-field is-full learners-settings-notification-field">
+                      <div className="learners-settings-field is-full">
                         <div className="learners-settings-field-head">
-                          <label>Send Notification To</label>
-                          <button
-                            type="button"
-                            className={`learners-settings-switch ${notificationsMasterEnabled ? 'is-on' : ''}`}
-                            aria-pressed={notificationsMasterEnabled}
-                            aria-label="Notification channels enabled"
-                            onClick={() => openAccountSection('notifications')}
-                          />
+                          <label>Full Name</label>
+                          <FieldInfo tip={FIELD_TOOLTIPS.fullName} />
                         </div>
-                        <div className={`learners-settings-notification-options ${notificationsMasterEnabled ? '' : 'is-disabled'}`}>
-                          <label>
-                            <input type="checkbox" checked={notificationEmailEnabled} readOnly disabled />
-                            Email
-                          </label>
-                          <label>
-                            <input type="checkbox" checked={notificationMessageEnabled} readOnly disabled />
-                            Message (Telephone)
-                          </label>
+                        <div className="learners-settings-field-value learners-settings-field-control is-plain">{profile.name || '—'}</div>
+                      </div>
+
+                      <div className="learners-settings-field">
+                        <div className="learners-settings-field-head">
+                          <label>E-mail</label>
+                          <FieldInfo tip={FIELD_TOOLTIPS.email} />
                         </div>
+                        <div className="learners-settings-field-value learners-settings-field-control is-plain">{profile.email || '—'}</div>
+                      </div>
+
+                      <div className="learners-settings-field">
+                        <div className="learners-settings-field-head">
+                          <label>Telephone</label>
+                          <FieldInfo tip={FIELD_TOOLTIPS.telephone} />
+                        </div>
+                        <div className="learners-settings-field-value learners-settings-field-control is-plain">{telephoneDisplay}</div>
+                      </div>
+
+                      <div className="learners-settings-field">
+                        <div className="learners-settings-field-head">
+                          <label>User Type</label>
+                          <FieldInfo tip={FIELD_TOOLTIPS.userType} />
+                        </div>
+                        <div className="learners-settings-field-value learners-settings-field-control is-plain">{userTypeLabel}</div>
+                      </div>
+
+                      <div className="learners-settings-field">
+                        <div className="learners-settings-field-head">
+                          <label>Role</label>
+                          <FieldInfo tip={FIELD_TOOLTIPS.role} />
+                        </div>
+                        <div className="learners-settings-field-value learners-settings-field-control is-plain">{jobTitleLabel}</div>
                       </div>
                     </div>
 
@@ -1297,277 +1240,8 @@ function LearnersSettings() {
                     </p>
                   </article>
 
-
-                  <article className="learners-settings-panel">
-                    <div className="learners-settings-panel-head">
-                      <h3>Security &amp; Privacy</h3>
-                      <button type="button" className="learners-settings-ghost-btn" onClick={() => setShowPasswordForm(true)}>
-                        <img src={LearnerRefresh} alt="Reset" />
-                        <span>Reset Password</span>
-                      </button>
-                    </div>
-
-                    <div className="learners-settings-form-grid">
-                      <div className="learners-settings-field is-full">
-                        <div className="learners-settings-field-head">
-                          <label>Password</label>
-                        </div>
-                        {!showPasswordForm ? (
-                          <div className="learners-settings-display-input learners-settings-display-input-password">
-                            <span className="learners-settings-display-input-value">
-                              {passwordVisible ? 'Your password is hidden for security' : '••••••••••••'}
-                            </span>
-                            <FieldInfo tip={FIELD_TOOLTIPS.password} />
-                            <button type="button" className="learners-settings-icon-btn learners-settings-password-toggle" onClick={() => setPasswordVisible((current) => !current)} aria-label="Toggle password visibility">
-                              <img src={acEye} alt="Show" />
-                            </button>
-                          </div>
-                        ) : (
-                          <div className="learners-settings-side-form">
-                            <input
-                              type="password"
-                              className="learners-settings-inline-input"
-                              value={passwordForm.current}
-                              onChange={(event) => setPasswordForm((current) => ({ ...current, current: event.target.value }))}
-                              placeholder="Current password"
-                              autoComplete="current-password"
-                            />
-                            <input
-                              type="password"
-                              className="learners-settings-inline-input"
-                              value={passwordForm.next}
-                              onChange={(event) => setPasswordForm((current) => ({ ...current, next: event.target.value }))}
-                              placeholder="New password"
-                              autoComplete="new-password"
-                            />
-                            <input
-                              type="password"
-                              className="learners-settings-inline-input"
-                              value={passwordForm.confirm}
-                              onChange={(event) => setPasswordForm((current) => ({ ...current, confirm: event.target.value }))}
-                              placeholder="Confirm new password"
-                              autoComplete="new-password"
-                            />
-                            <div className="learners-settings-inline-actions" style={{ marginTop: 12 }}>
-                              <SettingsSaveButton onClick={handleChangePassword} saving={passwordSaving} savingLabel="Updating...">
-                                Update password
-                              </SettingsSaveButton>
-                              <button
-                                type="button"
-                                className="learners-settings-inline-cancel"
-                                onClick={() => {
-                                  setShowPasswordForm(false);
-                                  setPasswordForm({ current: '', next: '', confirm: '' });
-                                }}
-                                disabled={passwordSaving}
-                              >
-                                Cancel
-                              </button>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="learners-settings-field is-full">
-                        <div className="learners-settings-callout is-security">
-                          <div className="learners-settings-callout-icon-badge is-security" aria-hidden="true">
-                            <img src={LearnerSuccess} alt="" />
-                          </div>
-                          <div className="learners-settings-callout-copy">
-                            <strong>Secure Your Account</strong>
-                            <p>
-                              {is2FAEnabled
-                                ? 'Two-factor authentication is enabled on your account.'
-                                : 'Two-factor authentication adds an extra layer of security to your account. To log in, you will need to provide a 2FA code.'}
-                            </p>
-                          </div>
-                          {twoFactorStage === 'idle' && (
-                            <button
-                              type="button"
-                              className="learners-settings-callout-btn"
-                              onClick={is2FAEnabled ? startDisableTwoFactor : startEnableTwoFactor}
-                              disabled={twoFactorProcessing}
-                            >
-                              {twoFactorProcessing ? 'Sending...' : is2FAEnabled ? 'Disable' : 'Enable'}
-                            </button>
-                          )}
-                        </div>
-                      </div>
-
-                      {(twoFactorStage === 'enable-pending' || twoFactorStage === 'disable-pending') && (
-                        <div className="learners-settings-field is-full learners-settings-side-form">
-                          <div className="learners-settings-field-head">
-                            <label>Verification code</label>
-                          </div>
-                          <input
-                            type="text"
-                            className="learners-settings-inline-input"
-                            value={twoFactorOtp}
-                            onChange={(event) => setTwoFactorOtp(event.target.value.replace(/\D/g, '').slice(0, 6))}
-                            placeholder="Enter 6-digit code"
-                            maxLength={6}
-                          />
-                          <div className="learners-settings-inline-actions" style={{ marginTop: 12 }}>
-                            <SettingsSaveButton
-                              onClick={twoFactorStage === 'enable-pending' ? verifyEnableTwoFactor : verifyDisableTwoFactor}
-                              disabled={twoFactorOtp.length !== 6}
-                              saving={twoFactorProcessing}
-                            >
-                              Verify
-                            </SettingsSaveButton>
-                            <button type="button" className="learners-settings-inline-cancel" onClick={cancelTwoFactorFlow} disabled={twoFactorProcessing}>
-                              Cancel
-                            </button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </article>
-
-                  <article className="learners-settings-panel">
-                    <div className="learners-settings-panel-head">
-                      <h3>Account Privacy</h3>
-                    </div>
-
-                    <div className="learners-settings-callout is-warning">
-                      <img src={LearnerWarning} alt="Warning" />
-                      <div className="learners-settings-callout-copy">
-                        <strong>You Are Deactivating Your Account</strong>
-                        <p>
-                          Deactivation requires your current password and a verification code sent to your email. You can sign in again later to reactivate your account.
-                          {' '}
-                          <button type="button" className="learners-settings-read-more" onClick={() => navigate('/academia/learner/account')}>
-                            Learn more
-                          </button>
-                        </p>
-                      </div>
-                    </div>
-
-                    <label className="learners-settings-confirm-row">
-                      <input
-                        type="checkbox"
-                        checked={confirmDeactivation}
-                        onChange={(event) => setConfirmDeactivation(event.target.checked)}
-                      />
-                      <span>I confirm my account deactivation</span>
-                    </label>
-
-                    {deactivateStage === 'idle' ? (
-                      <div className="learners-settings-side-form" style={{ marginTop: 16 }}>
-                        <input
-                          type="password"
-                          className="learners-settings-inline-input"
-                          value={deactivatePassword}
-                          onChange={(event) => setDeactivatePassword(event.target.value)}
-                          placeholder="Current password"
-                          autoComplete="current-password"
-                        />
-                        <button
-                          type="button"
-                          className="learners-settings-danger-btn is-full"
-                          onClick={handleRequestDeactivateAccount}
-                          disabled={!confirmDeactivation || !deactivatePassword || deactivating}
-                        >
-                          {deactivating ? 'Sending code...' : 'Deactivate Account'}
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="learners-settings-side-form" style={{ marginTop: 16 }}>
-                        <input
-                          type="text"
-                          className="learners-settings-inline-input"
-                          value={deactivateOtp}
-                          onChange={(event) => setDeactivateOtp(event.target.value.replace(/\D/g, '').slice(0, 6))}
-                          placeholder="Enter 6-digit verification code"
-                          maxLength={6}
-                        />
-                        <div className="learners-settings-inline-actions">
-                          <SettingsSaveButton onClick={handleConfirmDeactivateAccount} disabled={deactivateOtp.length !== 6 || deactivating} saving={deactivating}>
-                            Confirm deactivation
-                          </SettingsSaveButton>
-                          <button
-                            type="button"
-                            className="learners-settings-inline-cancel"
-                            onClick={() => {
-                              setDeactivateStage('idle');
-                              setDeactivateOtp('');
-                            }}
-                            disabled={deactivating}
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="learners-settings-callout is-warning" style={{ marginTop: 24 }}>
-                      <img src={LearnerWarning} alt="Warning" />
-                      <div className="learners-settings-callout-copy">
-                        <strong>Delete Account Permanently</strong>
-                        <p>
-                          Deleting your account is permanent. You will need your current password and a verification code sent to your email.
-                        </p>
-                      </div>
-                    </div>
-
-                    {deleteStage === 'idle' ? (
-                      <div className="learners-settings-side-form" style={{ marginTop: 16 }}>
-                        <input
-                          type="password"
-                          className="learners-settings-inline-input"
-                          value={deletePassword}
-                          onChange={(event) => setDeletePassword(event.target.value)}
-                          placeholder="Current password"
-                          autoComplete="current-password"
-                        />
-                        <label className="learners-settings-confirm-row">
-                          <input
-                            type="checkbox"
-                            checked={confirmDeletion}
-                            onChange={(event) => setConfirmDeletion(event.target.checked)}
-                          />
-                          <span>I confirm my account deletion</span>
-                        </label>
-                        <button
-                          type="button"
-                          className="learners-settings-danger-btn is-full"
-                          onClick={handleRequestDeleteAccount}
-                          disabled={!confirmDeletion || !deletePassword || deletingAccount}
-                        >
-                          {deletingAccount ? 'Sending code...' : 'Delete Account'}
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="learners-settings-side-form" style={{ marginTop: 16 }}>
-                        <input
-                          type="text"
-                          className="learners-settings-inline-input"
-                          value={deleteOtp}
-                          onChange={(event) => setDeleteOtp(event.target.value.replace(/\D/g, '').slice(0, 6))}
-                          placeholder="Enter 6-digit verification code"
-                          maxLength={6}
-                        />
-                        <div className="learners-settings-inline-actions">
-                          <SettingsSaveButton onClick={handleConfirmDeleteAccount} disabled={deleteOtp.length !== 6 || deletingAccount} saving={deletingAccount}>
-                            Confirm deletion
-                          </SettingsSaveButton>
-                          <button
-                            type="button"
-                            className="learners-settings-inline-cancel"
-                            onClick={() => {
-                              setDeleteStage('idle');
-                              setDeleteOtp('');
-                            }}
-                            disabled={deletingAccount}
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </article>
-
                   <AccountQuickLinks
+                    audience="professor"
                     onOpenSection={openAccountSection}
                     notificationEmailEnabled={notificationEmailEnabled}
                     notificationMessageEnabled={notificationMessageEnabled}
@@ -1678,15 +1352,8 @@ function LearnersSettings() {
         onConfirm={handlePhotoCropConfirm}
         exporting={photoUploading}
       />
-
-      <ProfilePhotoViewModal
-        isOpen={profilePhotoViewOpen}
-        imageSrc={profile.avatar}
-        userName={profile.name}
-        onClose={() => setProfilePhotoViewOpen(false)}
-      />
-    </LearnersPageShell>
+    </>
   );
 }
 
-export default LearnersSettings;
+export default ProfessorSettings;

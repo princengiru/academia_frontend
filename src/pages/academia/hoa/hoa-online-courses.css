@@ -672,6 +672,98 @@
     font-weight: 400;
 }
 
+.hoa-online-courses-page .oc-rich-content {
+    padding: 14px 16px;
+    border: 1px solid #F1F1F4;
+    border-radius: 12px;
+    background: #FBFCFF;
+}
+
+.hoa-online-courses-page .oc-rich-content > *:first-child {
+    margin-top: 0;
+}
+
+.hoa-online-courses-page .oc-rich-content > *:last-child {
+    margin-bottom: 0;
+}
+
+.hoa-online-courses-page .oc-rich-content h1,
+.hoa-online-courses-page .oc-rich-content h2,
+.hoa-online-courses-page .oc-rich-content h3,
+.hoa-online-courses-page .oc-rich-content h4 {
+    color: #071437;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+}
+
+.hoa-online-courses-page .oc-rich-content h1,
+.hoa-online-courses-page .oc-rich-content h2,
+.hoa-online-courses-page .oc-rich-content h3 {
+    font-size: 17px;
+    line-height: 24px;
+    margin: 0 0 8px;
+}
+
+.hoa-online-courses-page .oc-rich-content h4 {
+    font-size: 14px;
+    line-height: 20px;
+    margin: 14px 0 6px;
+}
+
+.hoa-online-courses-page .oc-rich-content p {
+    margin: 0 0 10px;
+    color: #4B5675;
+    font-size: 13px;
+    line-height: 21px;
+}
+
+.hoa-online-courses-page .oc-rich-content ul,
+.hoa-online-courses-page .oc-rich-content ol {
+    margin: 6px 0 12px;
+    padding-left: 20px;
+}
+
+.hoa-online-courses-page .oc-rich-content li {
+    margin: 4px 0;
+    color: #6A7287;
+    font-size: 13px;
+    line-height: 20px;
+}
+
+.hoa-online-courses-page .oc-rich-content strong {
+    color: #4B5675;
+    font-weight: 700;
+}
+
+.hoa-online-courses-page .oc-rich-content code {
+    padding: 1px 6px;
+    border-radius: 4px;
+    background: #F3F0F7;
+    color: #5B0A86;
+    font-size: 12px;
+}
+
+.hoa-online-courses-page .oc-rich-content pre {
+    margin: 10px 0;
+    padding: 12px 14px;
+    overflow-x: auto;
+    border-radius: 8px;
+    background: #1e1b2e;
+    color: #e6e1f5;
+}
+
+.hoa-online-courses-page .oc-rich-content pre code {
+    padding: 0;
+    background: transparent;
+    color: inherit;
+}
+
+.hoa-online-courses-page .oc-rich-content img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+}
+
 .hoa-online-courses-page .oc-overview-hero-img {
     width: 100%;
     height: 379px;
@@ -1412,6 +1504,9 @@
     height: 24px;
     border-radius: 6px;
     border: 1px solid transparent;
+    background: none;
+    padding: 0;
+    cursor: pointer;
     transition: 0.2s;
 }
 
@@ -1887,6 +1982,9 @@
     height: 24px;
     border-radius: 6px;
     border: 1px solid transparent;
+    background: none;
+    padding: 0;
+    cursor: pointer;
     transition: 0.2s;
 }
 
@@ -2149,4 +2247,97 @@
 .hoa-online-courses-page .modal-pagination .page-num.active {
     background: #F1F1F4 !important;
     color: #450468 !important;
+}
+
+.hoa-online-courses-page .list-user-col {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.hoa-online-courses-page .list-user-col img {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.hoa-online-courses-page .hoa-row-action-menu {
+    position: relative;
+    display: inline-flex;
+    justify-content: flex-end;
+}
+
+.hoa-online-courses-page .hoa-row-dropdown-menu {
+    position: absolute;
+    right: 0;
+    top: 100%;
+    background: #fff;
+    border: 1px solid #EEF1F6;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    z-index: 100;
+    min-width: 120px;
+    padding: 4px;
+}
+
+.hoa-online-courses-page .hoa-row-dropdown-item {
+    width: 100%;
+    border: none;
+    background: transparent;
+    text-align: left;
+    padding: 8px 10px;
+    font-size: 12px;
+    cursor: pointer;
+    font-weight: 500;
+    color: #4B5675;
+}
+
+.hoa-online-courses-page .hoa-row-dropdown-item:hover {
+    background: #F8FAFC;
+}
+
+.hoa-online-courses-page .hoa-row-dropdown-item.is-danger {
+    color: #EF4444;
+}
+
+.hoa-online-courses-page .oc-students-table-wrap {
+    margin-top: 16px;
+    overflow: visible;
+}
+
+.hoa-online-courses-page .oc-students-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.hoa-online-courses-page .oc-students-table th {
+    background: #FFFFFF;
+    border-top: 1px solid #EEF1F6;
+    border-bottom: 1px solid #EEF1F6;
+    padding: 12px 10px;
+    text-align: left;
+    white-space: nowrap;
+}
+
+.hoa-online-courses-page .oc-students-table td {
+    padding: 12px 10px;
+    border-bottom: 1px solid #F1F5F9;
+    vertical-align: middle;
+}
+
+.hoa-online-courses-page .oc-students-table .action-col {
+    width: 48px;
+    text-align: right;
+    position: relative;
+    overflow: visible;
+}
+
+.hoa-online-courses-page .oc-students-table .hoa-row-action-menu {
+    overflow: visible;
+}
+
+.hoa-online-courses-page .oc-students-table .hoa-row-dropdown-menu {
+    z-index: 20;
 }

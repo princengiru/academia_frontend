@@ -123,11 +123,13 @@ const BasicInfo = ({ courseId, setCourseId, setActiveStep, pushFeedback }) => {
   // --- Quill Configuration ---
   const quillModules = useMemo(() => ({
     toolbar: [
-      ['bold', 'italic', 'underline'],
-      [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-      [{ 'align': [] }],
+      [{ header: [3, 4, false] }],
+      ['bold', 'italic', 'underline', 'code'],
+      [{ list: 'ordered' }, { list: 'bullet' }],
+      ['code-block'],
+      [{ align: [] }],
       ['link'],
-      ['clean']
+      ['clean'],
     ],
   }), []);
 
@@ -262,14 +264,6 @@ const BasicInfo = ({ courseId, setCourseId, setActiveStep, pushFeedback }) => {
 
   return (
     <div className="prof-step-pane is-active animate-fade-in">
-      
-      <div className="prof-step-header">
-        <h3>Course Marketing Profile</h3>
-        <p>
-          This information will be visible on the public course landing page. Make it compelling to attract students.
-        </p>
-      </div>
-
       {categoriesError ? (
         <LearnerLoadError
           title="Could not load categories"
@@ -462,31 +456,33 @@ const BasicInfo = ({ courseId, setCourseId, setActiveStep, pushFeedback }) => {
         </div>
       </div>
 
+      {/* --- RICH TEXT EDITORS (match seed HTML: description, intro, audience, objectives) --- */}
       <div className="prof-field-group">
-        <label className="prof-field-label">Short Description</label>
-        <textarea 
-          className="prof-step-input-premium" 
-          rows="3" 
-          placeholder="Provide a concise summary of the course..." 
-          value={description} 
-          onChange={(e) => handleInputChange('description', e.target.value)} 
-          style={{ resize: 'vertical' }}
-        />
+        <label className="prof-field-label">Course Description</label>
+        <div className="prof-quill-wrapper-premium">
+          <ReactQuill
+            theme="snow"
+            modules={quillModules}
+            value={description}
+            onChange={(val) => handleInputChange('description', val)}
+            placeholder="Provide a rich overview of the course (headings, lists, emphasis)..."
+          />
+        </div>
       </div>
 
       <div className="prof-field-group">
-        <label className="prof-field-label">Welcome/Intro Message for Enrolled Students</label>
-        <textarea 
-          className="prof-step-input-premium" 
-          rows="3" 
-          placeholder="A welcome message that students see when they enroll..." 
-          value={intro_message} 
-          onChange={(e) => handleInputChange('intro_message', e.target.value)} 
-          style={{ resize: 'vertical' }}
-        />
+        <label className="prof-field-label">Welcome / Intro Message for Enrolled Students</label>
+        <div className="prof-quill-wrapper-premium">
+          <ReactQuill
+            theme="snow"
+            modules={quillModules}
+            value={intro_message}
+            onChange={(val) => handleInputChange('intro_message', val)}
+            placeholder="A welcome message students see when they enroll..."
+          />
+        </div>
       </div>
-      
-      {/* --- RICH TEXT EDITORS --- */}
+
       <div className="prof-field-group">
         <label className="prof-field-label">Target Audience (Who is this for?)</label>
         <div className="prof-quill-wrapper-premium">

@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import LearnersPageShell from './LearnersPageShell';
+import LearnerLoading from './LearnerLoading';
 
 // Icons & Images
 import defaultProfile from '../../../assets/imgs/default-profile.png';
@@ -660,10 +661,7 @@ function LearnersViewProject() {
 
                 <section className="learners-view-project-gallery" aria-label="Project gallery">
                   {loading ? (
-                    <div className="learners-view-project-empty-state">
-                      <h3>Loading gallery…</h3>
-                      <p>Preparing the project gallery.</p>
-                    </div>
+                    <LearnerLoading compact title="Loading gallery" message="Preparing the project gallery." />
                   ) : displayGallery.length > 0 ? (
                     displayGallery.map((husk, idx) => (
                       <div key={idx} className={`learners-view-project-gallery-item ${husk.class}`}>
@@ -739,10 +737,7 @@ function LearnersViewProject() {
 
               <div className="learners-view-project-comments-list" ref={commentsListRef}>
                 {loading ? (
-                  <div className="learners-view-project-empty-state">
-                    <h3>Loading comments…</h3>
-                    <p>Loading comments.</p>
-                  </div>
+                  <LearnerLoading compact title="Loading comments" message="Fetching the latest discussion." />
                 ) : displayComments.length > 0 ? (
                   displayComments.map((husk) => (
                     <article key={husk.id || `${husk.name}-${husk.time}`} className="learners-view-project-comment">

@@ -1298,6 +1298,105 @@
     border-color: #7239EA33;
   }
 
+  .st-active {
+    background: #EAFFF1;
+    color: #17C653;
+    border-color: #17C65333;
+  }
+
+  .st-withdrawn {
+    background: #FFEEF3;
+    color: #F8285A;
+    border-color: #F8285A33;
+  }
+
+  .st-completed {
+    background: #EFF6FF;
+    color: #1B84FF;
+    border-color: #1B84FF33;
+  }
+
+  .hoa-enrollment-status-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+  }
+
+  .hoa-row-action-menu {
+    position: relative;
+    display: inline-flex;
+    justify-content: flex-end;
+  }
+
+  .hoa-row-dropdown-menu {
+    position: absolute;
+    right: 0;
+    top: 100%;
+    background: #fff;
+    border: 1px solid #EEF1F6;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    z-index: 100;
+    min-width: 120px;
+    padding: 4px;
+  }
+
+  .hoa-row-dropdown-item {
+    width: 100%;
+    border: none;
+    background: transparent;
+    text-align: left;
+    padding: 8px 10px;
+    font-size: 12px;
+    cursor: pointer;
+    font-weight: 500;
+    color: #4B5675;
+  }
+
+  .hoa-row-dropdown-item:hover {
+    background: #F8FAFC;
+  }
+
+  .hoa-row-dropdown-item.is-danger {
+    color: #EF4444;
+  }
+
+  .hoa-archives-section {
+    margin-top: 28px;
+    padding-top: 24px;
+    border-top: 1px solid #EEF1F6;
+  }
+
+  .hoa-section-head {
+    margin-bottom: 14px;
+  }
+
+  .hoa-section-head h3 {
+    margin: 0 0 4px;
+    font-size: 16px;
+    color: #071437;
+    font-weight: 600;
+  }
+
+  .hoa-section-head p {
+    margin: 0;
+    font-size: 12px;
+    color: #A1A5B7;
+  }
+
+  .hoa-archives-table .user-meta h5 {
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .hoa-archives-table .user-meta p {
+    font-size: 12px;
+    color: #4B5675;
+    white-space: normal;
+    max-width: 220px;
+  }
+
   .icon-more-btn {
     background: transparent;
     border: none;

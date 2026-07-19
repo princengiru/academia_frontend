@@ -503,6 +503,115 @@
   text-decoration: underline;
 }
 
+/* Rich text rendered from stored HTML (summary, intro, audience, outcomes) */
+.learners-course-rich {
+  font-family: "Inter", sans-serif;
+  font-size: 13px;
+  line-height: 21px;
+  color: #78829D;
+}
+
+.learners-course-rich > *:first-child {
+  margin-top: 0;
+}
+
+.learners-course-rich > *:last-child {
+  margin-bottom: 0;
+}
+
+.learners-course-rich h3,
+.learners-course-rich h4 {
+  color: #071437;
+  font-weight: 600;
+  margin: 16px 0 6px;
+}
+
+.learners-course-rich h3 {
+  font-size: 15px;
+  line-height: 22px;
+}
+
+.learners-course-rich h4 {
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.learners-course-rich p {
+  margin: 0 0 10px;
+  font-size: 13px;
+  line-height: 21px;
+  color: #78829D;
+}
+
+.learners-course-rich ul,
+.learners-course-rich ol {
+  margin: 6px 0 12px;
+  padding-left: 20px;
+}
+
+.learners-course-rich li {
+  margin: 4px 0;
+  font-size: 13px;
+  line-height: 20px;
+  color: #78829D;
+}
+
+.learners-course-rich strong {
+  color: #071437;
+  font-weight: 600;
+}
+
+.learners-course-rich a {
+  color: #450468;
+  text-decoration: underline;
+}
+
+.learners-course-rich code {
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 12px;
+  background: #F3F0F7;
+  color: #5B0A86;
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.learners-course-rich pre {
+  background: #1e1b2e;
+  color: #e6e1f5;
+  padding: 12px 14px;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin: 10px 0;
+}
+
+.learners-course-rich pre code {
+  background: transparent;
+  color: inherit;
+  padding: 0;
+  font-size: 12px;
+}
+
+.learners-course-intro.is-clamped {
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.learners-course-readmore {
+  align-self: flex-start;
+  background: none;
+  border: none;
+  padding: 0;
+  margin-top: 4px;
+  color: #5B0A86;
+  font-family: "Inter", sans-serif;
+  font-weight: 600;
+  font-size: 12px;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
 .learners-course-specific-syllabus-wrap {
   gap: 12px;
 }
@@ -929,6 +1038,98 @@
   height: 15px;
 }
 
+.learners-course-leave-wrap {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid #EEF1F6;
+  text-align: center;
+}
+
+.learners-course-leave-link {
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: "Inter", sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 16px;
+  color: #99A1B7;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.learners-course-leave-link:hover:not(:disabled) {
+  color: #78829D;
+}
+
+.learners-course-leave-link:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.learners-unenroll-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10050;
+  background: rgba(15, 23, 42, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.learners-unenroll-dialog {
+  width: min(420px, 100%);
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid #EEF1F6;
+  padding: 24px;
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.18);
+}
+
+.learners-unenroll-dialog h3 {
+  margin: 0 0 8px;
+  font-size: 18px;
+  color: #0F172A;
+}
+
+.learners-unenroll-dialog p {
+  margin: 0 0 20px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #64748B;
+}
+
+.learners-unenroll-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.learners-btn-light {
+  background: #fff;
+  border: 1px solid #DBDFE9;
+  color: #4B5675;
+}
+
+.learners-btn-leave-confirm {
+  background: #450468;
+  border: none;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 0 14px;
+  height: 36px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.learners-btn-leave-confirm:disabled {
+  opacity: 0.7;
+  cursor: wait;
+}
+
 .learners-course-specific-cta-secondary {
   margin-top: 0;
   background: #F7F3FA;
@@ -1179,4 +1380,59 @@
   filter: blur(4px);
   pointer-events: none;
   user-select: none;
+}
+
+/* ============================================================
+   LOADING SKELETONS
+   ============================================================ */
+.visually-hidden {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.lrn-skel {
+  position: relative;
+  overflow: hidden;
+  background: #EDEFF3;
+  border-radius: 8px;
+}
+
+.lrn-skel::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.7), transparent);
+  animation: lrnShimmer 1.3s ease-in-out infinite;
+}
+
+.lrn-skel-text {
+  height: 12px;
+  border-radius: 6px;
+}
+
+.lrn-skel-title {
+  height: 22px;
+  border-radius: 7px;
+}
+
+.learners-course-specific-stat .lrn-skel + .lrn-skel {
+  margin-top: 8px;
+}
+
+@keyframes lrnShimmer {
+  100% { transform: translateX(100%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lrn-skel::after {
+    animation: none;
+  }
 }

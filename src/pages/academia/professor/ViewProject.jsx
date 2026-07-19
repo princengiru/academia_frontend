@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import LearnerLoadError from '../learner/LearnerLoadError';
+import ManagementLoading from './ManagementLoading';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import './view-project.css';
 
@@ -444,10 +445,7 @@ const ViewProject = () => {
 
               <section className="learners-view-project-gallery" aria-label="Project gallery">
                 {loading ? (
-                  <div className="learners-view-project-empty-state">
-                    <h3>Loading gallery…</h3>
-                    <p>Preparing the project gallery.</p>
-                  </div>
+                  <ManagementLoading compact title="Loading gallery" message="Preparing the project gallery." />
                 ) : displayGallery.length > 0 ? (
                   displayGallery.map((item, idx) => (
                     <div key={idx} className={`learners-view-project-gallery-item ${item.class}`}>
@@ -532,10 +530,7 @@ const ViewProject = () => {
 
             <div className="learners-view-project-comments-list" ref={commentsListRef}>
               {loading ? (
-                <div className="learners-view-project-empty-state">
-                  <h3>Loading comments…</h3>
-                  <p>Fetching project comments.</p>
-                </div>
+                <ManagementLoading compact title="Loading comments" message="Fetching project comments." />
               ) : commentsList.length > 0 ? (
                 commentsList.map((comment) => (
                   <article key={comment.id} className="learners-view-project-comment">

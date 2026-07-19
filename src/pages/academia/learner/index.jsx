@@ -8,15 +8,14 @@ import defaultProfile from '../../../assets/imgs/default-profile.png';
 import hoagoto from '../../../assets/icons/hoagoto.svg';
 import SavedLibraryButton from './SavedLibraryButton';
 import badge1 from '../../../assets/icons/badge-1.svg';
-import userIcon from '../../../assets/icons/user.svg';
-import locationIcon from '../../../assets/icons/location.svg';
-import mailIcon from '../../../assets/icons/mail.svg';
 import acLe2 from '../../../assets/icons/ac-le2.svg';
 import acRi from '../../../assets/icons/ac-ri.svg';
 import checkCircle from '../../../assets/icons/check-circle1.svg';
 import acFf from '../../../assets/icons/ac-ff.svg';
 import drop1 from '../../../assets/icons/drop1.svg';
 import leAr from '../../../assets/icons/le-ar.svg';
+import wellc from '../../../assets/icons/wellc.svg';
+import { CircleUserRound, MapPin, Mail } from 'lucide-react';
 import {
   buildEnrollmentNotice,
   buildContinueLearningTarget,
@@ -32,10 +31,24 @@ import {
   shiftWeek,
 } from './homeDashboardUtils';
 import LearnerLoadError from './LearnerLoadError';
+import LearnerLoading from './LearnerLoading';
 import './index.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-const COURSES_PAGE_SIZE = 4;
+const COURSES_PAGE_SIZE = 6;
+
+const stripHtml = (html) => {
+  if (!html) return '';
+  return html
+    .replace(/<[^>]*>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/\s+/g, ' ')
+    .trim();
+};
+
 function LearnersIndex() {
   const navigate = useNavigate();
   
@@ -49,6 +62,7 @@ function LearnersIndex() {
   const [courseFilter, setCourseFilter] = useState('all');
   const [coursesPage, setCoursesPage] = useState(1);
   const [calendarAnchor, setCalendarAnchor] = useState(() => new Date());
+  const [showWelcomeModal, setShowWelcomeModal] = useState(false);
   const [scheduleItems, setScheduleItems] = useState([]);
   const [dashboardBody, setDashboardBody] = useState(null);
   const [performanceBody, setPerformanceBody] = useState(null);
@@ -99,7 +113,11 @@ function LearnersIndex() {
           badges: user.badges || 0,
         });
 
-        setProfileCompletion(Number(body?.data?.profilePercentage || 0));
+        const percentage = Number(body?.data?.profilePercentage || 0);
+        setProfileCompletion(percentage);
+        if (percentage < 100 && localStorage.getItem('dismissedWelcomeModal') !== 'true') {
+          setShowWelcomeModal(true);
+        }
 
         // optional stats from backend if present
         const backendStats = body?.data?.stats;
@@ -232,7 +250,7 @@ function LearnersIndex() {
     id: course.id,
     title: course.title || 'Untitled course',
     author: course.instructor_name || course.author || 'Academia',
-    description: course.description || 'No description available yet.',
+    description: stripHtml(course.description || 'No description available yet.'),
     image: resolveAssetUrl(course.thumbnail),
     startsOn: course.starts_on
       ? `Starts ${new Date(course.starts_on).toLocaleDateString()}`
@@ -240,6 +258,17 @@ function LearnersIndex() {
         ? `Published ${new Date(course.published_at).toLocaleDateString()}`
         : 'Available now',
   }));
+
+  const handleDismissWelcomeModal = () => {
+    localStorage.setItem('dismissedWelcomeModal', 'true');
+    setShowWelcomeModal(false);
+  };
+
+  const handleCompleteInformation = () => {
+    localStorage.setItem('dismissedWelcomeModal', 'true');
+    setShowWelcomeModal(false);
+    navigate('/academia/learner/account');
+  };
 
   const weekDates = useMemo(() => buildWeekDates(calendarAnchor), [calendarAnchor]);
   const weekTitle = useMemo(() => getWeekTitle(calendarAnchor), [calendarAnchor]);
@@ -340,18 +369,24 @@ function LearnersIndex() {
                 </div>
 
                 <div className="learners-profile-hero-meta">
-                  <span className="learners-meta-chip learners-meta-chip--pill">
-                    <img src={userIcon} alt="" />
-                    <span>{profileLoading ? 'Personal user' : profile.role}</span>
-                  </span>
-                  <span className="learners-meta-chip">
-                    <img src={locationIcon} alt="" />
-                    <span>{profileLoading ? '' : profile.location}</span>
-                  </span>
-                  <span className="learners-meta-chip">
-                    <img src={mailIcon} alt="" />
-                    <span>{profileLoading ? '' : profile.email}</span>
-                  </span>
+                  {!profileLoading && profile.role ? (
+                    <span className="learners-meta-chip learners-meta-chip--pill">
+                      <CircleUserRound size={15} strokeWidth={1.9} aria-hidden="true" />
+                      <span>{profile.role}</span>
+                    </span>
+                  ) : null}
+                  {!profileLoading && profile.location ? (
+                    <span className="learners-meta-chip learners-meta-chip--pill">
+                      <MapPin size={15} strokeWidth={1.9} aria-hidden="true" />
+                      <span>{profile.location}</span>
+                    </span>
+                  ) : null}
+                  {!profileLoading && profile.email ? (
+                    <span className="learners-meta-chip learners-meta-chip--pill">
+                      <Mail size={15} strokeWidth={1.9} aria-hidden="true" />
+                      <span>{profile.email}</span>
+                    </span>
+                  ) : null}
                 </div>
               </div>
           </div>
@@ -527,10 +562,7 @@ function LearnersIndex() {
 
           <div className="learners-courses-grid">
             {coursesLoading ? (
-              <div className="learners-card learners-empty-state">
-                <h3>Loading courses...</h3>
-                <p>Please wait while we fetch your enrolled courses.</p>
-              </div>
+              <LearnerLoading title="Loading courses" message="Please wait while we fetch your enrolled courses." />
             ) : paginatedCourses.items.length > 0 ? (
               paginatedCourses.items.map((course) => (
                 <div
@@ -613,10 +645,7 @@ function LearnersIndex() {
 
           <div className="learners-recommended">
             {coursesLoading ? (
-              <div className="learners-card learners-empty-state learners-empty-state--compact">
-                <h3>Loading recommendations...</h3>
-                <p>Please wait while we fetch suitable courses for you.</p>
-              </div>
+              <LearnerLoading compact title="Loading recommendations" message="Please wait while we fetch suitable courses for you." />
             ) : mappedRecommended.length > 0 ? (
               mappedRecommended.map((course) => (
                 <a className="learners-reco-item" href="#" key={course.id} onClick={(event) => { event.preventDefault(); handleCourseClick(course.id); }}>
@@ -649,6 +678,33 @@ function LearnersIndex() {
         </div>
         </div>
       </section>
+
+      {/* Welcome & Info Completion Modal */}
+      {showWelcomeModal && (
+        <div className="learners-welcome-modal-overlay" onClick={handleDismissWelcomeModal}>
+          <div className="learners-welcome-modal-card" onClick={(e) => e.stopPropagation()}>
+            <button className="learners-welcome-modal-close" onClick={handleDismissWelcomeModal} aria-label="Close">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+            <img src={wellc} alt="Welcome" className="learners-welcome-modal-illustration" />
+            <h2 className="learners-welcome-modal-title">Welcome to Gonaraza Academia</h2>
+            <p className="learners-welcome-modal-subtitle">
+              We're thrilled to have you on board and excited for the journey ahead together.
+            </p>
+            <div className="learners-welcome-modal-actions">
+              <button className="learners-welcome-modal-btn-primary" onClick={handleCompleteInformation}>
+                Complete Information
+              </button>
+              <button className="learners-welcome-modal-btn-text" onClick={handleDismissWelcomeModal}>
+                Skip for now
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

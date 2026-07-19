@@ -23,6 +23,7 @@ import hoagraycalendar from '../../../assets/icons/hoagraycalendar.svg';
 import hoapaperstack from '../../../assets/icons/hoapaperstack.svg';
 import hoapayicon from '../../../assets/icons/hoapayicon.svg';
 import hoabasics from '../../../assets/icons/hoabasics.svg';
+import hoaverticaldots from '../../../assets/icons/hoaverticaldots.svg';
 // Custom inline SVGs for specific icons
 const IconUserBust = () => (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
@@ -130,6 +131,10 @@ const HOAOnlineCourses = () => {
     const [approveModalOpen, setApproveModalOpen] = useState(false);
     const [approveCourseId, setApproveCourseId] = useState(null);
 
+    const [openStudentMenuId, setOpenStudentMenuId] = useState(null);
+    const [confirmAction, setConfirmAction] = useState(null);
+    const [confirmLoading, setConfirmLoading] = useState(false);
+
     const showToast = (message, type = 'success') => {
         setToast({ show: true, message, type });
         setTimeout(() => {
@@ -192,6 +197,10 @@ const HOAOnlineCourses = () => {
             const result = await res.json();
             if (result.success && Array.isArray(result.data)) {
                 setCourseEnrollments(result.data);
+            } else if (result.success && Array.isArray(result.data?.data)) {
+                setCourseEnrollments(result.data.data);
+            } else if (Array.isArray(result.enrollments)) {
+                setCourseEnrollments(result.enrollments);
             } else {
                 setCourseEnrollments([]);
             }
@@ -509,6 +518,64 @@ const HOAOnlineCourses = () => {
     const closeModal = () => {
         setIsModalOpen(false);
         setSelectedCourse(null);
+        setOpenStudentMenuId(null);
+        setConfirmAction(null);
+    };
+
+    const handleUnenrollStudent = (student) => {
+        const userId = student?.user_id ?? student?.userId;
+        const courseId = selectedCourse?.id ?? student?.course_id;
+        if (!courseId || !userId) {
+            showToast('Missing student or course id for unenroll.', 'error');
+            return;
+        }
+        setOpenStudentMenuId(null);
+        setConfirmAction({
+            kind: 'unenroll',
+            userId,
+            courseId,
+            studentName: student?.student_name || 'This student',
+            title: 'Unenroll student from course?',
+            message: `${student?.student_name || 'This student'} will be removed from "${selectedCourse?.title || 'this course'}". Progress will be archived and they can re-enroll later.`,
+            confirmLabel: 'Unenroll',
+            destructive: true,
+        });
+    };
+
+    const executeConfirmAction = async () => {
+        if (!confirmAction || confirmLoading) return;
+
+        const token = localStorage.getItem('token');
+        if (!token) return;
+
+        setConfirmLoading(true);
+        try {
+            if (confirmAction.kind === 'unenroll') {
+                const courseId = confirmAction.courseId || selectedCourse?.id;
+                const res = await fetch(`${API_BASE_URL}/api/admin/learners/${confirmAction.userId}/unenroll`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${token}`,
+                    },
+                    body: JSON.stringify({
+                        course_id: courseId,
+                        reason: `Admin unenroll from ${selectedCourse?.title || 'course'}`,
+                    }),
+                });
+                const body = await res.json().catch(() => ({}));
+                if (!res.ok) {
+                    throw new Error(body?.message || body?.error?.message || 'Failed to unenroll student');
+                }
+                showToast('Student unenrolled successfully.', 'success');
+                if (courseId) fetchCourseEnrollments(courseId);
+            }
+            setConfirmAction(null);
+        } catch (err) {
+            showToast(err.message || 'Action failed', 'error');
+        } finally {
+            setConfirmLoading(false);
+        }
     };
 
     return (
@@ -808,16 +875,16 @@ const HOAOnlineCourses = () => {
                                 {/* Modal Stats Row */}
                                 <div className="oc-modal-stats-row">
                                     <div className="oc-mod-stat">
-                                        <h3>0 <span style={{ fontSize: 10, color: '#A1A5B7' }}>USD <img src={hoausflag} style={{ width: 10, borderRadius: '50%', margin: '0 2px' }} alt="" /> <img src={hoadowncaret} style={{ width: 8 }} alt="" /></span></h3>
+                                        <h3>{courseEnrollments.length || selectedCourse.student_count || selectedCourse.enrollment_count || 0}</h3>
                                         <p>Total Students</p>
                                     </div>
                                     <div className="oc-mod-stat">
-                                        <h3>0 <span style={{ fontSize: 10, color: '#A1A5B7' }}>RWF <img src={rwanda} style={{ width: 10, borderRadius: '50%', margin: '0 2px' }} alt="" /> <img src={hoadowncaret} style={{ width: 8 }} alt="" /></span></h3>
-                                        <p>Upload Amount</p>
+                                        <h3>{parseFloat(selectedCourse.price) > 0 ? formatAmount(Number(selectedCourse.price) || 0) : 'Free'}</h3>
+                                        <p>List price</p>
                                     </div>
                                     <div className="oc-mod-stat">
-                                        <h3>0 <span style={{ fontSize: 10, color: '#A1A5B7' }}>USD <img src={hoausflag} style={{ width: 10, borderRadius: '50%', margin: '0 2px' }} alt="" /> <img src={hoadowncaret} style={{ width: 8 }} alt="" /></span></h3>
-                                        <p>Courses Income</p>
+                                        <h3>—</h3>
+                                        <p>Course income <span style={{ color: '#99a1b7' }}>see Finance</span></p>
                                     </div>
                                     <div className="oc-mod-stat" style={{ borderRight: 'none' }}>
                                         <h3>{selectedCourse.created_at ? new Date(selectedCourse.created_at).toLocaleDateString() : 'N/A'} <span style={{ fontSize: 10, color: '#A1A5B7' }}>{selectedCourse.created_at ? new Date(selectedCourse.created_at).toLocaleTimeString() : ''}</span></h3>
@@ -875,7 +942,10 @@ const HOAOnlineCourses = () => {
                                             </div>
 
                                             <h3 className="oc-overview-subtitle">{selectedCourse.subtitle || 'Course Overview'}</h3>
-                                            <p className="oc-overview-desc" dangerouslySetInnerHTML={{ __html: selectedCourse.description || 'No description provided.' }} />
+                                            <div
+                                                className="oc-overview-desc oc-rich-content"
+                                                dangerouslySetInnerHTML={{ __html: selectedCourse.description || 'No description provided.' }}
+                                            />
 
                                             {selectedCourse.thumbnail_url || selectedCourse.thumbnail ? (
                                                 <img 
@@ -927,7 +997,11 @@ const HOAOnlineCourses = () => {
                                             </div>
 
                                             <h3 className="oc-section-title">Target Audience & Objectives</h3>
-                                            <p className="oc-overview-desc" style={{ marginBottom: 32 }} dangerouslySetInnerHTML={{ __html: selectedCourse.target_audience || selectedCourse.objectives || 'No details provided.' }} />
+                                            <div
+                                                className="oc-overview-desc oc-rich-content"
+                                                style={{ marginBottom: 32 }}
+                                                dangerouslySetInnerHTML={{ __html: selectedCourse.target_audience || selectedCourse.objectives || 'No details provided.' }}
+                                            />
 
                                             <h3 className="oc-section-title">Course Breakdown</h3>
                                             <div className="oc-breakdown-list">
@@ -1018,31 +1092,76 @@ const HOAOnlineCourses = () => {
                                                     <p style={{ color: '#64748B', fontSize: '13px', margin: 0 }}>No student enrollments for this course.</p>
                                                 </div>
                                             ) : (
-                                                <div style={{ overflowX: 'auto', marginTop: '16px' }}>
-                                                    <table className="oc-students-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+                                                <div className="oc-students-table-wrap">
+                                                    <table className="hoa-list-table oc-students-table">
                                                         <thead>
-                                                            <tr style={{ borderBottom: '1px solid #EEF1F6', textAlign: 'left' }}>
-                                                                <th style={{ padding: '12px 8px', fontSize: '12px', fontWeight: '600', color: '#8A92A6' }}>STUDENT</th>
-                                                                <th style={{ padding: '12px 8px', fontSize: '12px', fontWeight: '600', color: '#8A92A6' }}>EMAIL</th>
-                                                                <th style={{ padding: '12px 8px', fontSize: '12px', fontWeight: '600', color: '#8A92A6' }}>ENROLLED DATE</th>
+                                                            <tr>
+                                                                <th><div className="th-content">Student</div></th>
+                                                                <th><div className="th-content">Email</div></th>
+                                                                <th><div className="th-content">Enrolled</div></th>
+                                                                <th className="action-col" />
                                                             </tr>
                                                         </thead>
                                                         <tbody>
                                                             {courseEnrollments.map((student) => {
-                                                                const avatarSrc = student.avatar ? (student.avatar.startsWith('http') ? student.avatar : `${API_BASE_URL}${student.avatar}`) : '/assets/imgs/default-profile.png';
+                                                                const avatarSrc = student.avatar
+                                                                    ? (student.avatar.startsWith('http') ? student.avatar : `${API_BASE_URL}${student.avatar}`)
+                                                                    : '/assets/imgs/default-profile.png';
+                                                                const rowKey = String(student.id || student.user_id);
                                                                 return (
-                                                                    <tr key={student.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
-                                                                        <td style={{ padding: '16px 8px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                                                            <img 
-                                                                                src={avatarSrc} 
-                                                                                alt={student.student_name} 
-                                                                                style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover' }} 
-                                                                                onError={(e) => { e.target.src = '/assets/imgs/default-profile.png'; }}
-                                                                            />
-                                                                            <span style={{ fontSize: '14px', fontWeight: '600', color: '#071437' }}>{student.student_name}</span>
+                                                                    <tr key={rowKey}>
+                                                                        <td>
+                                                                            <div className="list-user-col">
+                                                                                <img
+                                                                                    src={avatarSrc}
+                                                                                    alt={student.student_name}
+                                                                                    onError={(e) => { e.target.src = '/assets/imgs/default-profile.png'; }}
+                                                                                />
+                                                                                <div className="user-meta">
+                                                                                    <h5>{student.student_name}</h5>
+                                                                                </div>
+                                                                            </div>
                                                                         </td>
-                                                                        <td style={{ padding: '16px 8px', fontSize: '13px', color: '#4B5675' }}>{student.student_email}</td>
-                                                                        <td style={{ padding: '16px 8px', fontSize: '13px', color: '#4B5675' }}>{student.created_at ? new Date(student.created_at).toLocaleDateString() : 'N/A'}</td>
+                                                                        <td>
+                                                                            <div className="user-meta">
+                                                                                <p>{student.student_email}</p>
+                                                                            </div>
+                                                                        </td>
+                                                                        <td>
+                                                                            <div className="user-meta">
+                                                                                <p>{student.created_at ? new Date(student.created_at).toLocaleDateString() : 'N/A'}</p>
+                                                                            </div>
+                                                                        </td>
+                                                                        <td className="action-col">
+                                                                            <div className="hoa-row-action-menu">
+                                                                                <button
+                                                                                    type="button"
+                                                                                    className="table-link-icon"
+                                                                                    onClick={(e) => {
+                                                                                        e.preventDefault();
+                                                                                        e.stopPropagation();
+                                                                                        setOpenStudentMenuId(openStudentMenuId === rowKey ? null : rowKey);
+                                                                                    }}
+                                                                                >
+                                                                                    <img src={hoaverticaldots} alt="Actions" style={{ width: '12px', opacity: 0.7 }} />
+                                                                                </button>
+                                                                                {openStudentMenuId === rowKey ? (
+                                                                                    <div className="hoa-row-dropdown-menu">
+                                                                                        <button
+                                                                                            type="button"
+                                                                                            className="hoa-row-dropdown-item is-danger"
+                                                                                            onClick={(e) => {
+                                                                                                e.preventDefault();
+                                                                                                e.stopPropagation();
+                                                                                                handleUnenrollStudent(student);
+                                                                                            }}
+                                                                                        >
+                                                                                            Unenroll
+                                                                                        </button>
+                                                                                    </div>
+                                                                                ) : null}
+                                                                            </div>
+                                                                        </td>
                                                                     </tr>
                                                                 );
                                                             })}
@@ -1227,6 +1346,79 @@ const HOAOnlineCourses = () => {
                     }}>
                         {toast.message}
                     </span>
+                </div>
+            )}
+
+            {/* Unenroll / confirm actions — fixed overlay (must sit above course drawer) */}
+            {confirmAction && (
+                <div
+                    style={{
+                        position: 'fixed',
+                        inset: 0,
+                        zIndex: 10050,
+                        background: 'rgba(15, 23, 42, 0.45)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: 16,
+                    }}
+                    onClick={() => !confirmLoading && setConfirmAction(null)}
+                >
+                    <div
+                        role="dialog"
+                        aria-modal="true"
+                        onClick={(e) => e.stopPropagation()}
+                        style={{
+                            width: 'min(420px, calc(100vw - 32px))',
+                            background: '#fff',
+                            borderRadius: '12px',
+                            border: '1px solid #EEF1F6',
+                            padding: '24px',
+                            boxShadow: '0 16px 40px rgba(15, 23, 42, 0.18)',
+                        }}
+                    >
+                        <h3 style={{ margin: '0 0 8px', fontSize: '18px', color: '#0F172A' }}>{confirmAction.title}</h3>
+                        <p style={{ margin: '0 0 20px', fontSize: '13px', lineHeight: 1.5, color: '#64748B' }}>{confirmAction.message}</p>
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                            <button
+                                type="button"
+                                disabled={confirmLoading}
+                                onClick={() => setConfirmAction(null)}
+                                style={{
+                                    height: '36px',
+                                    padding: '0 14px',
+                                    borderRadius: '6px',
+                                    border: '1px solid #DBDFE9',
+                                    background: '#fff',
+                                    color: '#4B5675',
+                                    fontSize: '12px',
+                                    fontWeight: 600,
+                                    cursor: 'pointer',
+                                }}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="button"
+                                disabled={confirmLoading}
+                                onClick={executeConfirmAction}
+                                style={{
+                                    height: '36px',
+                                    padding: '0 14px',
+                                    borderRadius: '6px',
+                                    border: 'none',
+                                    background: confirmAction.destructive ? '#EF4444' : '#450468',
+                                    color: '#fff',
+                                    fontSize: '12px',
+                                    fontWeight: 600,
+                                    cursor: confirmLoading ? 'wait' : 'pointer',
+                                    opacity: confirmLoading ? 0.75 : 1,
+                                }}
+                            >
+                                {confirmLoading ? 'Working…' : confirmAction.confirmLabel}
+                            </button>
+                        </div>
+                    </div>
                 </div>
             )}
 

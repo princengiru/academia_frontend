@@ -53,9 +53,11 @@ const Syllabus = ({ courseId, syllabusId, setSyllabusId, setActiveStep, pushFeed
   // --- Quill Configuration ---
   const quillModules = useMemo(() => ({
     toolbar: [
-      ['bold', 'italic', 'underline'],
-      [{ 'list': 'ordered' }, { 'list': 'bullet' }],
-      ['link', 'clean']
+      [{ header: [3, 4, false] }],
+      ['bold', 'italic', 'underline', 'code'],
+      [{ list: 'ordered' }, { list: 'bullet' }],
+      ['code-block'],
+      ['link', 'clean'],
     ],
   }), []);
 

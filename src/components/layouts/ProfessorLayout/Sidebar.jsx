@@ -86,6 +86,11 @@ const Sidebar = ({
           <span>Performance</span>
         </NavLink>
 
+        <NavLink to="/academia/professor/earnings" className={linkClassName} onClick={onClose}>
+          <img src="/assets/icons/hoadollar.svg" alt="Earnings" />
+          <span>Earnings</span>
+        </NavLink>
+
         <NavLink
           to="/academia/professor/management"
           className={managementActive ? 'active-menu' : ''}

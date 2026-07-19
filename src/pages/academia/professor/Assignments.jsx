@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import LearnerLoadError from '../learner/LearnerLoadError';
+import ManagementLoading from './ManagementLoading';
 import './assignments.css';
 import hoagoto from '../../../assets/icons/hoagoto.svg';
 
@@ -390,6 +391,7 @@ const Assignments = () => {
     is_published: false,
     course_id: '',
     week_id: '',
+    after_chapter_id: '',
     questions: [],
   });
 
@@ -428,6 +430,10 @@ const Assignments = () => {
   const assessmentTypeLabel = assessmentTypeOptions.find((option) => option.value === createForm.assessmentType)?.label || 'Select type';
   const courseLabel = instructorCourses.find((course) => String(course.id) === String(createForm.course_id))?.title || 'Select a course';
   const weekLabel = courseWeeks.find((week) => String(week.id) === String(createForm.week_id))?.title || 'Select a week';
+  const selectedWeekChapters = courseWeeks.find((week) => String(week.id) === String(createForm.week_id))?.chapters || [];
+  const afterChapterLabel = !createForm.after_chapter_id
+    ? 'After all chapters (end of week)'
+    : (selectedWeekChapters.find((c) => String(c.id) === String(createForm.after_chapter_id))?.title || 'After selected chapter');
   const questionTypeLabel = QUESTION_TYPE_OPTIONS.find((option) => option.value === newQuestion.question_type)?.label || 'Select type';
 
   // --- Core API Fetches ---
@@ -519,7 +525,8 @@ const Assignments = () => {
         const token = localStorage.getItem('token');
         if (!token) return;
 
-        const response = await fetch(`${API_BASE_URL}/api/courses/${createForm.course_id}/weeks`, {
+        // Prefer nested course payload so each week includes chapters for quiz placement.
+        const response = await fetch(`${API_BASE_URL}/api/courses/${createForm.course_id}`, {
           headers: { Authorization: `Bearer ${token}` },
           signal: controller.signal
         });
@@ -530,14 +537,22 @@ const Assignments = () => {
           return;
         }
 
-        const weeks = Array.isArray(body?.data?.weeks) ? body.data.weeks : [];
+        const courseData = body?.data || body;
+        const weeks = Array.isArray(courseData?.weeks) ? courseData.weeks : [];
         setCourseWeeks(weeks);
         setCreateForm((previous) => {
           const hasWeek = weeks.some((w) => String(w.id) === String(previous.week_id));
-          if (hasWeek) return previous;
+          if (hasWeek) {
+            const week = weeks.find((w) => String(w.id) === String(previous.week_id));
+            const chapterStillValid = !previous.after_chapter_id
+              || (week?.chapters || []).some((c) => String(c.id) === String(previous.after_chapter_id));
+            if (chapterStillValid) return previous;
+            return { ...previous, after_chapter_id: '' };
+          }
           return {
             ...previous,
             week_id: weeks.length > 0 ? String(weeks[0].id) : '',
+            after_chapter_id: '',
           };
         });
       } catch (error) {
@@ -572,6 +587,7 @@ const Assignments = () => {
       is_published: false,
       course_id: instructorCourses.length > 0 ? String(instructorCourses[0].id) : '',
       week_id: '',
+      after_chapter_id: '',
       questions: [],
     });
     setCourseWeeks([]);
@@ -671,6 +687,9 @@ const Assignments = () => {
         is_published: Boolean(details.is_published),
         course_id: String(details.course_id || ''),
         week_id: String(details.week_id || ''),
+        after_chapter_id: details.after_chapter_id != null && details.after_chapter_id !== ''
+          ? String(details.after_chapter_id)
+          : '',
         questions: mappedQuestions,
       });
       
@@ -930,6 +949,10 @@ const Assignments = () => {
     if (!isFormative) {
       payload.prerequisite_pass_formative = Boolean(createForm.prerequisite_pass_formative);
       payload.min_course_progress = Number(createForm.min_course_progress) || 100;
+    } else {
+      payload.after_chapter_id = createForm.after_chapter_id
+        ? Number(createForm.after_chapter_id)
+        : null;
     }
 
     setCreateLoading(true);
@@ -1319,11 +1342,7 @@ const Assignments = () => {
                 {loading ? (
                   <tr>
                     <td colSpan="7" className="prof-table-empty-cell">
-                      <div className="prof-table-empty">
-                        <span className="prof-table-empty-badge">Professor dashboard</span>
-                        <h4>Loading assessments</h4>
-                        <p>Fetching instructor assessments from the backend.</p>
-                      </div>
+                      <ManagementLoading compact title="Loading assessments" message="Fetching instructor assessments from the backend." />
                     </td>
                   </tr>
                 ) : currentRows.length === 0 ? (
@@ -1698,6 +1717,7 @@ const Assignments = () => {
                 </label>
 
                 {createForm.assessmentKind === 'formative' ? (
+                  <>
                   <label className="assessments-modal-field">
                     <span>Week</span>
                     <div className="dropdown assessments-modal-dropdown">
@@ -1715,7 +1735,7 @@ const Assignments = () => {
                             type="button"
                             className="dropdown-item"
                             onClick={() => {
-                              updateCreateField('week_id', '');
+                              setCreateForm((prev) => ({ ...prev, week_id: '', after_chapter_id: '' }));
                               setOpenDropdownId(null);
                             }}
                           >
@@ -1728,7 +1748,11 @@ const Assignments = () => {
                               type="button"
                               className="dropdown-item"
                               onClick={() => {
-                                updateCreateField('week_id', String(week.id));
+                                setCreateForm((prev) => ({
+                                  ...prev,
+                                  week_id: String(week.id),
+                                  after_chapter_id: '',
+                                }));
                                 setOpenDropdownId(null);
                               }}
                             >
@@ -1739,6 +1763,50 @@ const Assignments = () => {
                       </ul>
                     </div>
                   </label>
+
+                  <label className="assessments-modal-field">
+                    <span>Place in week</span>
+                    <div className="dropdown assessments-modal-dropdown">
+                      <button
+                        className="assessments-modal-dropdown-btn dropdown-toggle"
+                        type="button"
+                        onClick={() => setOpenDropdownId(openDropdownId === 'after-chapter' ? null : 'after-chapter')}
+                        disabled={!createForm.week_id}
+                      >
+                        <span>{afterChapterLabel}</span>
+                        <img src="/assets/icons/drop.svg" alt="" />
+                      </button>
+                      <ul className={`dropdown-menu assessments-modal-dropdown-menu ${openDropdownId === 'after-chapter' ? 'show' : ''}`} style={{ display: openDropdownId === 'after-chapter' ? 'block' : 'none' }}>
+                        <li>
+                          <button
+                            type="button"
+                            className="dropdown-item"
+                            onClick={() => {
+                              updateCreateField('after_chapter_id', '');
+                              setOpenDropdownId(null);
+                            }}
+                          >
+                            After all chapters (end of week)
+                          </button>
+                        </li>
+                        {selectedWeekChapters.map((chapter) => (
+                          <li key={chapter.id}>
+                            <button
+                              type="button"
+                              className="dropdown-item"
+                              onClick={() => {
+                                updateCreateField('after_chapter_id', String(chapter.id));
+                                setOpenDropdownId(null);
+                              }}
+                            >
+                              After: {chapter.title || `Chapter ${chapter.id}`}
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </label>
+                  </>
                 ) : (
                   <label className="assessments-modal-field">
                     <span>Minimum course progress</span>

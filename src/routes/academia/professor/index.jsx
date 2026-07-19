@@ -6,6 +6,7 @@ import Assignments from '../../../pages/academia/professor/Assignments';
 import Projects from '../../../pages/academia/professor/Projects';
 import ViewProject from '../../../pages/academia/professor/ViewProject';
 import Performance from '../../../pages/academia/professor/Performance';
+import Earnings from '../../../pages/academia/professor/Earnings';
 import Management from '../../../pages/academia/professor/Management';
 import ManagementSchedule from '../../../pages/academia/professor/ManagementSchedule';
 import ManagementLessonsRanks from '../../../pages/academia/professor/ManagementLessonsRanks';
@@ -21,6 +22,7 @@ function AcademiaProfessorRoutes() {
       <Route path="projects" element={<Projects />} />
       <Route path="view-project" element={<ViewProject />} />
       <Route path="performance" element={<Performance />} />
+      <Route path="earnings" element={<Earnings />} />
       <Route path="management" element={<Management />} />
       <Route path="management-syllabuses" element={<Management />} />
       <Route path="management-schedule" element={<ManagementSchedule />} />

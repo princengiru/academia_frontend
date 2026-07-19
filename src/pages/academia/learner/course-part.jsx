@@ -21,6 +21,7 @@ import { useLearnerToast } from './useLearnerToast';
 import {
   buildAvailablePaymentChoices,
   enrollInCourse,
+  fetchEnrollmentStatus,
   fetchSavedPaymentMethods,
   getPaymentMethodLabel,
   getUserCurrency,
@@ -29,6 +30,7 @@ import {
   isCourseFree,
   isEnrollmentRoleAllowed,
   pickDefaultPaymentValue,
+  unenrollFromCourse,
   waitForEnrollmentPayment,
   watchEnrollmentPayment,
 } from './enrollmentPaymentUtils';
@@ -54,8 +56,11 @@ function CoursePart() {
   const [weeks, setWeeks] = useState([]);
   const [error, setError] = useState(null);
   const [isEnrolled, setIsEnrolled] = useState(false);
+  const [enrollmentStatus, setEnrollmentStatus] = useState(null);
   const [isEnrolling, setIsEnrolling] = useState(false);
   const { showToast } = useLearnerToast();
+  const [isUnenrolling, setIsUnenrolling] = useState(false);
+  const [showUnenrollConfirm, setShowUnenrollConfirm] = useState(false);
   const [isSummaryExpanded, setIsSummaryExpanded] = useState(false);
   const [selectedPaymentValue, setSelectedPaymentValue] = useState('credit_card');
   const [paymentsLoading, setPaymentsLoading] = useState(false);
@@ -84,6 +89,13 @@ function CoursePart() {
       .replace(/&nbsp;/g, ' ');
   };
 
+  const stripHtml = (html) =>
+    (html || '')
+      .replace(/<[^>]*>/g, ' ')
+      .replace(/&nbsp;/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
   const navigate = useNavigate();
 
   useEffect(() => () => {
@@ -105,17 +117,15 @@ function CoursePart() {
       const token = localStorage.getItem('token');
       if (!token || !resolvedCourseId) return;
       try {
-        const res = await fetch(`${API_BASE_URL}/api/progress`, {
-          headers: { 'Authorization': `Bearer ${token}` }
+        const status = await fetchEnrollmentStatus({
+          apiBaseUrl: API_BASE_URL,
+          token,
+          courseId: resolvedCourseId,
         });
-        if (res.ok) {
-          const body = await res.json();
-          const progressList = body?.data?.progress || body?.progress || [];
-          const enrolled = progressList.some(p => Number(p.course_id) === Number(resolvedCourseId));
-          setIsEnrolled(enrolled);
-        }
+        setEnrollmentStatus(status);
+        setIsEnrolled(Boolean(status?.enrolled));
       } catch (err) {
-        console.error("Failed to check enrollment status:", err);
+        console.error('Failed to check enrollment status:', err);
       }
     };
     checkEnrollmentStatus();
@@ -246,6 +256,32 @@ function CoursePart() {
     }
 
     setPaymentModalOpen(true);
+  };
+
+  const canUnenroll = isEnrolled && enrollmentStatus?.status === 'active';
+
+  const handleUnenroll = async () => {
+    const token = localStorage.getItem('token');
+    if (!token || !course?.id) return;
+
+    setIsUnenrolling(true);
+    try {
+      await unenrollFromCourse({
+        apiBaseUrl: API_BASE_URL,
+        token,
+        courseId: course.id,
+        reason: 'Learner self-unenroll',
+      });
+      setIsEnrolled(false);
+      setEnrollmentStatus({ enrolled: false, status: 'withdrawn' });
+      setCourseProgressPercent(0);
+      setShowUnenrollConfirm(false);
+      showToast('You have left this course. Your progress was archived.', 'success');
+    } catch (err) {
+      showToast(err.message || 'Could not unenroll from this course.', 'danger');
+    } finally {
+      setIsUnenrolling(false);
+    }
   };
 
   // Maps the modal's gateway tab to the enrollment payment_method value.
@@ -445,6 +481,8 @@ function CoursePart() {
     { label: 'subscription', value: course?.price || '—', icon: acBook },
   ];
 
+  const introIsLong = stripHtml(course?.intro).length > 320;
+
   const breakdownWeeks = Array.isArray(weeks) ? weeks : [];
   const hasBreakdown = breakdownWeeks.length > 0;
   const hasOutcomes = !!course?.objectives;
@@ -502,13 +540,24 @@ function CoursePart() {
       <section className="learners-course-specific">
         <div className="learners-course-specific-head">
           <div>
-            <h1>{loading ? 'Loading...' : course?.title || 'Untitled course'}</h1>
-            <p>
-              Prepared by <strong>{loading ? '...' : course?.author || 'Author'}</strong>
-            </p>
-            {isEnrolled && !loading ? (
-              <p className="learners-course-specific-progress">{courseProgressPercent}% complete</p>
-            ) : null}
+            {loading && inboundId ? (
+              <>
+                <div className="lrn-skel lrn-skel-title" style={{ width: 280, maxWidth: '80%' }} />
+                <div className="lrn-skel lrn-skel-text" style={{ width: 170, marginTop: 12 }} />
+              </>
+            ) : error ? (
+              <h1>Course unavailable</h1>
+            ) : (
+              <>
+                <h1>{course?.title || 'Untitled course'}</h1>
+                <p>
+                  Prepared by <strong>{course?.author || 'Author'}</strong>
+                </p>
+                {isEnrolled ? (
+                  <p className="learners-course-specific-progress">{courseProgressPercent}% complete</p>
+                ) : null}
+              </>
+            )}
           </div>
         </div>
 
@@ -518,14 +567,63 @@ function CoursePart() {
             message={error}
             onRetry={() => window.location.reload()}
           />
-        ) : null}
-
+        ) : loading && inboundId ? (
+          <div className="learners-course-specific-grid">
+            <div className="learners-course-specific-main">
+              <section className="learners-course-specific-hero">
+                <div className="learners-course-specific-hero-copy">
+                  <div className="lrn-skel lrn-skel-title" style={{ width: '65%' }} />
+                  <div className="lrn-skel lrn-skel-text" style={{ width: '100%', marginTop: 14 }} />
+                  <div className="lrn-skel lrn-skel-text" style={{ width: '92%', marginTop: 9 }} />
+                  <div className="lrn-skel lrn-skel-text" style={{ width: '80%', marginTop: 9 }} />
+                </div>
+                <div className="learners-course-specific-media-wrap">
+                  <div className="lrn-skel" style={{ width: '100%', height: 210, borderRadius: 12 }} />
+                  <div className="learners-course-specific-stats">
+                    {[0, 1, 2, 3].map((i) => (
+                      <div key={i} className="learners-course-specific-stat">
+                        <div className="lrn-skel lrn-skel-text" style={{ width: '60%' }} />
+                        <div className="lrn-skel lrn-skel-text" style={{ width: '40%' }} />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </section>
+              <section className="learners-course-specific-section">
+                <div className="lrn-skel lrn-skel-title" style={{ width: 160 }} />
+                <div className="lrn-skel lrn-skel-text" style={{ width: '100%', marginTop: 14 }} />
+                <div className="lrn-skel lrn-skel-text" style={{ width: '95%', marginTop: 9 }} />
+                <div className="lrn-skel lrn-skel-text" style={{ width: '88%', marginTop: 9 }} />
+              </section>
+            </div>
+            <aside className="learners-course-specific-side">
+              <div className="learners-course-specific-side-card">
+                <div className="lrn-skel lrn-skel-title" style={{ width: '80%' }} />
+                <div className="learners-course-specific-features" style={{ marginTop: 16 }}>
+                  {[0, 1, 2, 3, 4].map((i) => (
+                    <div key={i} className="learners-course-specific-feature">
+                      <div className="lrn-skel" style={{ width: 20, height: 20, borderRadius: 6, flex: '0 0 auto' }} />
+                      <div className="lrn-skel lrn-skel-text" style={{ width: '70%' }} />
+                    </div>
+                  ))}
+                </div>
+                <div className="lrn-skel" style={{ width: '100%', height: 46, borderRadius: 12, marginTop: 18 }} />
+              </div>
+            </aside>
+          </div>
+        ) : (
+        <>
         <div className="learners-course-specific-grid">
           <div className="learners-course-specific-main">
             <section className="learners-course-specific-hero">
               <div className="learners-course-specific-hero-copy">
                 <h2>{course?.headline || ''}</h2>
-                <p>{course?.summary || ''}</p>
+                {course?.summary ? (
+                  <div
+                    className="learners-course-rich"
+                    dangerouslySetInnerHTML={{ __html: formatHtmlContent(course.summary) }}
+                  />
+                ) : null}
               </div>
 
               <div className="learners-course-specific-media-wrap">
@@ -563,33 +661,24 @@ function CoursePart() {
               </div>
             ) : showContentSections ? (
               <>
-                <section className="learners-course-specific-section">
-                  <h3>Introduction</h3>
-                  <p>
-                    {course?.intro && course.intro.length > 200 && !isSummaryExpanded
-                      ? `${course.intro.slice(0, 200)}...`
-                      : course?.intro || ''}
-                    {course?.intro && course.intro.length > 200 && (
+                {course?.intro ? (
+                  <section className="learners-course-specific-section">
+                    <h3>Introduction</h3>
+                    <div
+                      className={`learners-course-rich learners-course-intro${introIsLong && !isSummaryExpanded ? ' is-clamped' : ''}`}
+                      dangerouslySetInnerHTML={{ __html: formatHtmlContent(course.intro) }}
+                    />
+                    {introIsLong && (
                       <button
                         type="button"
+                        className="learners-course-readmore"
                         onClick={() => setIsSummaryExpanded(!isSummaryExpanded)}
-                        style={{
-                          background: 'none',
-                          border: 'none',
-                          color: '#5B0A86',
-                          fontWeight: 600,
-                          marginLeft: '6px',
-                          padding: 0,
-                          fontSize: '12px',
-                          cursor: 'pointer',
-                          textDecoration: 'underline'
-                        }}
                       >
                         {isSummaryExpanded ? 'Read less' : 'Read more'}
                       </button>
                     )}
-                  </p>
-                </section>
+                  </section>
+                ) : null}
 
                 {hasBreakdown && (
                   <section className="learners-course-specific-section learners-course-specific-syllabus-wrap">
@@ -684,14 +773,14 @@ function CoursePart() {
                 {course?.audience && (
                   <section className="learners-course-specific-section learners-course-specific-audience">
                     <h3>Who is the course for?</h3>
-                    <div className="learners-audience-content" dangerouslySetInnerHTML={{ __html: formatHtmlContent(course.audience) }} />
+                    <div className="learners-course-rich learners-audience-content" dangerouslySetInnerHTML={{ __html: formatHtmlContent(course.audience) }} />
                   </section>
                 )}
 
                 {hasOutcomes && (
                   <section className="learners-course-specific-section learners-course-specific-outcomes">
                     <h3>What will you achieve?</h3>
-                    <div className="learners-outcomes-content" dangerouslySetInnerHTML={{ __html: formatHtmlContent(course.objectives) }} />
+                    <div className="learners-course-rich learners-outcomes-content" dangerouslySetInnerHTML={{ __html: formatHtmlContent(course.objectives) }} />
                   </section>
                 )}
               </>
@@ -722,10 +811,24 @@ function CoursePart() {
               </div>
 
               {isEnrolled ? (
-                <button type="button" className="learners-course-specific-cta" onClick={() => navigate(buildReaderUrl(course.id))}>
-                  <span>Continue learning</span>
-                  <img src={hoagoto} alt="Go" />
-                </button>
+                <>
+                  <button type="button" className="learners-course-specific-cta" onClick={() => navigate(buildReaderUrl(course.id))}>
+                    <span>Continue learning</span>
+                    <img src={hoagoto} alt="Go" />
+                  </button>
+                  {canUnenroll ? (
+                    <div className="learners-course-leave-wrap">
+                      <button
+                        type="button"
+                        className="learners-course-leave-link"
+                        onClick={() => setShowUnenrollConfirm(true)}
+                        disabled={isUnenrolling}
+                      >
+                        {isUnenrolling ? 'Leaving…' : 'Leave course'}
+                      </button>
+                    </div>
+                  ) : null}
+                </>
               ) : (
                 <button type="button" className="learners-course-specific-cta" onClick={handleJoinToday} disabled={isEnrolling || paymentsLoading}>
                   <span>{isEnrolling ? 'Joining...' : (isCourseFree(course) ? 'Enroll for free' : 'Join Today')}</span>
@@ -754,7 +857,8 @@ function CoursePart() {
             </div>
           </div>
         </section>
-
+        </>
+        )}
       </section>
 
       <EnrollmentPaymentModal
@@ -769,6 +873,42 @@ function CoursePart() {
         processing={isEnrolling}
         onPay={handleModalPay}
       />
+
+      {showUnenrollConfirm ? (
+        <div
+          className="learners-unenroll-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="unenroll-title"
+          onClick={() => !isUnenrolling && setShowUnenrollConfirm(false)}
+        >
+          <div className="learners-unenroll-dialog" onClick={(e) => e.stopPropagation()}>
+            <h3 id="unenroll-title">Leave this course?</h3>
+            <p>
+              Your current progress will be archived. You can re-enroll later and start fresh.
+              Certificates you already earned stay valid.
+            </p>
+            <div className="learners-unenroll-actions">
+              <button
+                type="button"
+                className="learners-btn learners-btn-light"
+                onClick={() => setShowUnenrollConfirm(false)}
+                disabled={isUnenrolling}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="learners-btn learners-btn-leave-confirm"
+                onClick={handleUnenroll}
+                disabled={isUnenrolling}
+              >
+                {isUnenrolling ? 'Leaving…' : 'Leave course'}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 }

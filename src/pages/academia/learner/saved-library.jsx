@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import LearnersPageShell from './LearnersPageShell';
 import LearnerLoadError from './LearnerLoadError';
+import LearnerLoading from './LearnerLoading';
 import hoagoto from '../../../assets/icons/hoagoto.svg';
 import acEye from '../../../assets/icons/ac-eye.svg';
 import acSav from '../../../assets/icons/ac-sav.svg';
@@ -70,10 +71,7 @@ function LearnersSavedLibrary() {
         </section>
 
         {loading && (
-          <div className="learners-projects-empty-state learners-projects-loading-state">
-            <h3>Loading saved items…</h3>
-            <p>Loading your saved items…</p>
-          </div>
+          <LearnerLoading title="Loading saved items" message="Fetching your saved projects and journals." />
         )}
 
         {!loading && error && (

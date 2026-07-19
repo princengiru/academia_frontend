@@ -163,6 +163,10 @@ const Management = () => {
     }, 4000);
   };
 
+  // In-app delete confirm (avoids browser "localhost says" dialog)
+  const [deleteConfirm, setDeleteConfirm] = useState(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+
   useEffect(() => {
     if (location.state?.toastMessage) {
       showToast(location.state.toastMessage, location.state.toastTone || 'success');
@@ -192,7 +196,27 @@ const Management = () => {
 
       const rawCourses = data?.data?.courses || [];
       const rawSyllabuses = data?.data?.syllabuses || [];
-      const earnings = data?.data?.courseEarnings || [];
+      let earnings = data?.data?.courseEarnings || [];
+
+      // Prefer invoice-based per-course summary when available (same as Earnings page)
+      try {
+        const byCourseRes = await fetch(`${API_BASE_URL}/api/instructor/payment-summary-by-course`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (byCourseRes.ok) {
+          const byCourseBody = await byCourseRes.json();
+          const courses = byCourseBody?.data?.courses;
+          if (Array.isArray(courses) && courses.length > 0) {
+            earnings = courses.map((c) => ({
+              id: c.id,
+              students: c.total_students ?? 0,
+              course_revenue: c.total_revenue ?? 0,
+            }));
+          }
+        }
+      } catch {
+        // keep dashboard courseEarnings
+      }
 
       const mapped = rawCourses.map((c) => {
         const earn = earnings.find(e => e.id === c.id) || {};
@@ -421,7 +445,7 @@ const Management = () => {
   };
 
   const handleEditSyllabus = (syllabusId) => {
-    navigate('/academia/professor/prepare-syllabus', { state: { syllabusId } });
+    navigate(`/academia/professor/prepare-syllabus?id=${syllabusId}`, { state: { syllabusId } });
   };
 
   const handlePublishCourse = async (courseId) => {
@@ -474,7 +498,6 @@ const Management = () => {
   };
 
   const handleDeleteCourse = async (courseId) => {
-    if (!window.confirm('Are you sure you want to delete this course? This will remove all chapters and content.')) return;
     try {
       const token = localStorage.getItem('token');
       const res = await fetch(`${API_BASE_URL}/api/courses/${courseId}`, {
@@ -486,17 +509,18 @@ const Management = () => {
         showToast('Course deleted successfully!', 'success');
         setSelectedCourse(null);
         loadDashboardData();
-      } else {
-        showToast(data.message || 'Failed to delete course', 'error');
+        return true;
       }
+      showToast(data.message || 'Failed to delete course', 'error');
+      return false;
     } catch (err) {
       console.error(err);
       showToast('Error deleting course', 'error');
+      return false;
     }
   };
 
   const handleDeleteSyllabus = async (syllabusId) => {
-    if (!window.confirm('Are you sure you want to delete this syllabus?')) return;
     try {
       const token = localStorage.getItem('token');
       const res = await fetch(`${API_BASE_URL}/api/syllabuses/${syllabusId}`, {
@@ -508,12 +532,29 @@ const Management = () => {
         showToast('Syllabus deleted successfully!', 'success');
         setSelectedMySyllabus(null);
         loadDashboardData();
-      } else {
-        showToast(data.message || 'Failed to delete syllabus', 'error');
+        return true;
       }
+      showToast(data.message || 'Failed to delete syllabus', 'error');
+      return false;
     } catch (err) {
       console.error(err);
       showToast('Error deleting syllabus', 'error');
+      return false;
+    }
+  };
+
+  const confirmDeleteAction = async () => {
+    if (!deleteConfirm || deleteLoading) return;
+    setDeleteLoading(true);
+    try {
+      if (deleteConfirm.type === 'syllabus') {
+        await handleDeleteSyllabus(deleteConfirm.id);
+      } else if (deleteConfirm.type === 'course') {
+        await handleDeleteCourse(deleteConfirm.id);
+      }
+    } finally {
+      setDeleteLoading(false);
+      setDeleteConfirm(null);
     }
   };
 
@@ -991,7 +1032,12 @@ const Management = () => {
                           </button>
                         )}
                         <button 
-                          onClick={() => handleDeleteCourse(selectedCourse.id)}
+                          onClick={() => setDeleteConfirm({
+                            type: 'course',
+                            id: selectedCourse.id,
+                            title: 'Delete course?',
+                            message: `Delete "${selectedCourse.title}"? This will remove all chapters and content. This cannot be undone.`,
+                          })}
                           style={{ padding: '8px 16px', borderRadius: '8px', background: '#FFF5F5', border: '1px solid #FEE2E2', color: '#EF4444', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}
                         >
                           Delete
@@ -1067,7 +1113,7 @@ const Management = () => {
                             </div>
 
                             <h3 className="oc-overview-subtitle">Description</h3>
-                            <p className="oc-overview-desc" dangerouslySetInnerHTML={{ __html: cleanDescriptionHtml(selectedCourse.description) }} />
+                            <div className="oc-overview-desc" dangerouslySetInnerHTML={{ __html: cleanDescriptionHtml(selectedCourse.description) }} />
 
                             <div className="oc-info-cards" style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', margin: '20px 0' }}>
                               <div className="oc-info-card" style={{ flex: 1, minWidth: '130px' }}>
@@ -1505,7 +1551,12 @@ const Management = () => {
                           </button>
                         )}
                         <button 
-                          onClick={() => handleDeleteSyllabus(selectedMySyllabus.id)}
+                          onClick={() => setDeleteConfirm({
+                            type: 'syllabus',
+                            id: selectedMySyllabus.id,
+                            title: 'Delete syllabus?',
+                            message: `Delete "${selectedMySyllabus.title}"? This will remove the syllabus and its outlines. This cannot be undone.`,
+                          })}
                           style={{ padding: '6px 14px', borderRadius: '6px', background: '#FFF5F5', border: '1px solid #FEE2E2', color: '#EF4444', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}
                         >
                           Delete
@@ -1648,6 +1699,78 @@ const Management = () => {
               {toast.type === 'success' ? '✓' : '✕'}
             </span>
             <span className="toast-message">{toast.message}</span>
+          </div>
+        )}
+
+        {deleteConfirm && (
+          <div
+            style={{
+              position: 'fixed',
+              inset: 0,
+              zIndex: 10050,
+              background: 'rgba(15, 23, 42, 0.45)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '16px',
+            }}
+            onClick={() => !deleteLoading && setDeleteConfirm(null)}
+          >
+            <div
+              role="dialog"
+              aria-modal="true"
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                width: 'min(420px, calc(100vw - 32px))',
+                background: '#fff',
+                borderRadius: '12px',
+                border: '1px solid #EEF1F6',
+                padding: '24px',
+                boxShadow: '0 16px 40px rgba(15, 23, 42, 0.18)',
+              }}
+            >
+              <h3 style={{ margin: '0 0 8px', fontSize: '18px', color: '#0F172A' }}>{deleteConfirm.title}</h3>
+              <p style={{ margin: '0 0 20px', fontSize: '13px', lineHeight: 1.5, color: '#64748B' }}>{deleteConfirm.message}</p>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                <button
+                  type="button"
+                  disabled={deleteLoading}
+                  onClick={() => setDeleteConfirm(null)}
+                  style={{
+                    height: '36px',
+                    padding: '0 14px',
+                    borderRadius: '6px',
+                    border: '1px solid #DBDFE9',
+                    background: '#fff',
+                    color: '#4B5675',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={deleteLoading}
+                  onClick={confirmDeleteAction}
+                  style={{
+                    height: '36px',
+                    padding: '0 14px',
+                    borderRadius: '6px',
+                    border: 'none',
+                    background: '#EF4444',
+                    color: '#fff',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    cursor: deleteLoading ? 'wait' : 'pointer',
+                    opacity: deleteLoading ? 0.75 : 1,
+                  }}
+                >
+                  {deleteLoading ? 'Deleting…' : 'Delete'}
+                </button>
+              </div>
+            </div>
           </div>
         )}
 

@@ -254,12 +254,13 @@
 
 .public-course-details-page .curriculum-week-group {
   display: flex;
-  gap: 20px;
+  flex-direction: column;
+  gap: 14px;
 }
 
 .public-course-details-page .week-header {
-  width: 100px;
-  flex-shrink: 0;
+  width: auto;
+  align-self: flex-start;
 }
 
 .public-course-details-page .week-tag {
@@ -270,7 +271,6 @@
   font-size: 12px;
   font-weight: 600;
   display: inline-block;
-  white-space: nowrap;
 }
 
 .public-course-details-page .week-details {
@@ -777,4 +777,68 @@
   .public-course-details-page .week-header {
     width: auto;
   }
+}
+
+/* Premium typography inside public course details descriptions */
+.public-course-details-page .summary-text,
+.public-course-details-page .overview-content {
+  font-family: 'Inter', sans-serif;
+  color: #4B5675;
+  line-height: 1.6;
+}
+
+.public-course-details-page .summary-text p,
+.public-course-details-page .overview-content p {
+  margin-bottom: 14px;
+  line-height: 1.6;
+}
+
+.public-course-details-page .summary-text p:last-child,
+.public-course-details-page .overview-content p:last-child {
+  margin-bottom: 0;
+}
+
+.public-course-details-page .summary-text h1,
+.public-course-details-page .summary-text h2,
+.public-course-details-page .summary-text h3,
+.public-course-details-page .summary-text h4,
+.public-course-details-page .overview-content h1,
+.public-course-details-page .overview-content h2,
+.public-course-details-page .overview-content h3,
+.public-course-details-page .overview-content h4 {
+  font-family: 'Outfit', 'Inter', sans-serif;
+  color: #071437;
+  font-weight: 600;
+  line-height: 1.35;
+  margin-top: 20px;
+  margin-bottom: 10px;
+  letter-spacing: -0.015em;
+}
+
+.public-course-details-page .summary-text h1,
+.public-course-details-page .overview-content h1 { font-size: 18px !important; }
+.public-course-details-page .summary-text h2,
+.public-course-details-page .overview-content h2 { font-size: 16px !important; }
+.public-course-details-page .summary-text h3,
+.public-course-details-page .overview-content h3 { font-size: 14.5px !important; }
+.public-course-details-page .summary-text h4,
+.public-course-details-page .overview-content h4 { font-size: 13.5px !important; }
+
+.public-course-details-page .summary-text ul,
+.public-course-details-page .summary-text ol,
+.public-course-details-page .overview-content ul,
+.public-course-details-page .overview-content ol {
+  margin: 10px 0 14px 20px;
+  padding: 0;
+}
+
+.public-course-details-page .summary-text li,
+.public-course-details-page .overview-content li {
+  margin-bottom: 6px;
+  line-height: 1.5;
+}
+
+.public-course-details-page .summary-text li strong,
+.public-course-details-page .overview-content li strong {
+  color: #071437;
 }

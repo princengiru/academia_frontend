@@ -1,0 +1,583 @@
+.hoa-finance-page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 8px 0 28px;
+  font-family: Inter, sans-serif;
+  color: #071437;
+}
+
+/* ——— Page header ——— */
+.hoa-finance-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.hoa-finance-head h1 {
+  margin: 0 0 6px;
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.3;
+  color: #071437;
+}
+
+.hoa-finance-head p {
+  margin: 0;
+  max-width: 560px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #78829d;
+  line-height: 1.45;
+}
+
+.hoa-finance-head-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.hoa-finance-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  padding: 0 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.hoa-finance-btn--secondary {
+  background: #fff;
+  border-color: #eef1f6;
+  color: #071437;
+}
+
+.hoa-finance-btn--ghost {
+  background: transparent;
+  border-color: #eef1f6;
+  color: #450468;
+}
+
+.hoa-finance-btn--secondary:hover,
+.hoa-finance-btn--ghost:hover {
+  border-color: #cdb6dd;
+}
+
+/* ——— KPI strip ——— */
+.hoa-finance-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.hoa-finance-stat {
+  background: #fff;
+  border: 1px solid #eef1f6;
+  border-radius: 10px;
+  padding: 16px 18px;
+}
+
+.hoa-finance-stat span {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #78829d;
+}
+
+.hoa-finance-stat strong {
+  display: block;
+  font-size: 20px;
+  font-weight: 700;
+  color: #071437;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.hoa-finance-stat em {
+  display: block;
+  margin-top: 6px;
+  font-style: normal;
+  font-size: 11px;
+  font-weight: 500;
+  color: #99a1b7;
+  line-height: 1.35;
+}
+
+.hoa-finance-legend {
+  margin: 0;
+  padding: 12px 14px;
+  border: 1px solid #eef1f6;
+  border-radius: 8px;
+  background: #fcfcfc;
+  font-size: 12px;
+  font-weight: 500;
+  color: #78829d;
+  line-height: 1.5;
+}
+
+.hoa-finance-legend strong {
+  color: #071437;
+  font-weight: 600;
+}
+
+.hoa-finance-banner {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: 1px solid #dbe0ea;
+  background: #f8fafc;
+  color: #4b5675;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.hoa-finance-counts {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.hoa-finance-count {
+  background: #fff;
+  border: 1px solid #eef1f6;
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+
+.hoa-finance-count span {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #78829d;
+}
+
+.hoa-finance-count strong {
+  font-size: 18px;
+  font-weight: 700;
+  color: #071437;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ——— Panel / table card ——— */
+.hoa-finance-panel {
+  background: #fff;
+  border: 1px solid #eef1f6;
+  border-radius: 10px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.hoa-finance-panel-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 18px 20px 14px;
+}
+
+.hoa-finance-panel-head h2 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: #071437;
+  line-height: 1.3;
+}
+
+.hoa-finance-panel-sub {
+  margin: 4px 0 0;
+  max-width: 560px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #a1a5b7;
+  line-height: 1.45;
+}
+
+.hoa-finance-link {
+  margin-top: 2px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #450468;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.hoa-finance-link:hover {
+  text-decoration: underline;
+}
+
+/* ——— Toolbar ——— */
+.hoa-finance-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 12px 20px;
+  border-top: 1px solid #eef1f6;
+  border-bottom: 1px solid #eef1f6;
+  background: #fafafa;
+}
+
+.hoa-finance-search {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  min-width: 220px;
+  flex: 1 1 220px;
+  max-width: 320px;
+  padding: 0 12px;
+  border: 1px solid #eef1f6;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.hoa-finance-search img {
+  width: 14px;
+  height: 14px;
+  opacity: 0.45;
+  flex: 0 0 auto;
+}
+
+.hoa-finance-search input {
+  width: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 13px;
+  font-weight: 500;
+  color: #071437;
+}
+
+.hoa-finance-search input::placeholder {
+  color: #a1a5b7;
+}
+
+.hoa-finance-tools {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.hoa-finance-dd {
+  position: relative;
+  display: inline-flex;
+}
+
+.hoa-finance-dd-btn {
+  min-height: 36px;
+  border: 1px solid #e5e8f0;
+  border-radius: 8px;
+  background: #fcfcfd;
+  padding: 0 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.hoa-finance-dd-btn img {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+  opacity: 0.7;
+}
+
+.hoa-finance-dd-btn span {
+  font-size: 12px;
+  font-weight: 500;
+  color: #78829d;
+  line-height: 16px;
+}
+
+.hoa-finance-dd-btn--filter {
+  background: #f3e8ff;
+  border-color: #e3c9f2;
+}
+
+.hoa-finance-dd-btn--filter span {
+  color: #450468;
+  font-weight: 600;
+}
+
+.hoa-finance-dd-btn--filter.is-active {
+  background: #450468;
+  border-color: #450468;
+}
+
+.hoa-finance-dd-btn--filter.is-active span {
+  color: #fff;
+}
+
+.hoa-finance-dd-btn--filter.is-active img {
+  filter: brightness(0) invert(1);
+  opacity: 1;
+}
+
+.hoa-finance-dd-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 20;
+  min-width: 196px;
+  padding: 6px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 16px 32px rgba(15, 23, 42, 0.08);
+}
+
+.hoa-finance-dd-menu--end {
+  left: auto;
+  right: 0;
+}
+
+.hoa-finance-dd-item {
+  width: 100%;
+  border: none;
+  background: transparent;
+  text-align: left;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #4b5675;
+  cursor: pointer;
+}
+
+.hoa-finance-dd-item:hover {
+  background: #f8fafc;
+}
+
+.hoa-finance-dd-item.active {
+  background: #f7f3fa;
+  color: #450468;
+}
+
+.hoa-finance-page-btn {
+  min-width: 54px;
+  min-height: 32px;
+  border: 1px solid #eef1f6;
+  border-radius: 8px;
+  background: #fff;
+  padding: 0 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.hoa-finance-page-btn span {
+  color: #450468;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* ——— Table ——— */
+.hoa-finance-table-wrap {
+  overflow-x: auto;
+  width: 100%;
+}
+
+.hoa-finance-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  min-width: 900px;
+}
+
+.hoa-finance-table th,
+.hoa-finance-table td {
+  padding: 14px 16px;
+  text-align: left;
+  vertical-align: middle;
+  font-size: 13px;
+  color: #4b5675;
+  border-bottom: 1px solid #f1f1f4;
+}
+
+.hoa-finance-table thead th {
+  background: #fafafa;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #78829d;
+  white-space: nowrap;
+  border-bottom: 1px solid #eef1f6;
+}
+
+.hoa-finance-table tbody tr:hover td {
+  background: #fcfcfc;
+}
+
+.hoa-finance-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.hoa-finance-table td.is-primary {
+  color: #071437;
+  font-weight: 600;
+}
+
+.hoa-finance-table td.is-primary .hoa-finance-muted {
+  font-weight: 500;
+}
+
+.hoa-finance-table .is-num,
+.hoa-finance-table th.is-num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.hoa-finance-table .is-num {
+  font-weight: 600;
+  color: #071437;
+}
+
+.hoa-finance-th-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: none;
+  background: transparent;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  text-transform: inherit;
+  letter-spacing: inherit;
+  cursor: pointer;
+}
+
+.hoa-finance-th-btn:hover,
+.hoa-finance-th-btn.is-active {
+  color: #450468;
+}
+
+.hoa-finance-muted {
+  display: block;
+  margin-top: 3px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #99a1b7;
+  line-height: 1.3;
+}
+
+.hoa-finance-status {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: capitalize;
+  white-space: nowrap;
+  background: #f8f5ff;
+  color: #7a5af8;
+}
+
+.hoa-finance-status.is-paid {
+  background: #e8fff3;
+  color: #0b7a45;
+}
+
+.hoa-finance-status.is-failed {
+  background: #feecec;
+  color: #b42318;
+}
+
+.hoa-finance-status.is-pending {
+  background: #fff6e5;
+  color: #b54708;
+}
+
+/* ——— Footer ——— */
+.hoa-finance-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 12px 20px;
+  border-top: 1px solid #eef1f6;
+  background: #fafafa;
+}
+
+.hoa-finance-page-size,
+.hoa-finance-pagination {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #78829d;
+}
+
+.hoa-finance-pagination button {
+  min-height: 34px;
+  width: 34px;
+  border: 1px solid #eef1f6;
+  border-radius: 8px;
+  background: #fff;
+  padding: 0 10px;
+  font-size: 12px;
+  color: #071437;
+  cursor: pointer;
+}
+
+.hoa-finance-pagination button:hover:not(:disabled) {
+  border-color: #cdb6dd;
+  color: #450468;
+}
+
+.hoa-finance-pagination button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.hoa-finance-note {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #99a1b7;
+}
+
+@media (max-width: 960px) {
+  .hoa-finance-stats,
+  .hoa-finance-counts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .hoa-finance-stats,
+  .hoa-finance-counts {
+    grid-template-columns: 1fr;
+  }
+
+  .hoa-finance-search {
+    max-width: none;
+    width: 100%;
+  }
+
+  .hoa-finance-tools,
+  .hoa-finance-dd,
+  .hoa-finance-dd-btn {
+    width: 100%;
+  }
+}

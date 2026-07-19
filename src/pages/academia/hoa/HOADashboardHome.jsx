@@ -104,20 +104,68 @@ const HOADashboardHome = () => {
       const token = localStorage.getItem('token');
       const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
 
-      const [statsRes, syllabusesRes, coursesRes, projectsRes] = await Promise.all([
+      const [statsRes, summaryRes, tutorRevRes, syllabusesRes, coursesRes, projectsRes] = await Promise.all([
         fetch(`${API_BASE_URL}/api/dashboard/metrics`, { headers }).catch(() => null),
+        fetch(`${API_BASE_URL}/api/admin/reports/payment-summary`, { headers }).catch(() => null),
+        fetch(`${API_BASE_URL}/api/admin/reports/revenue-by-instructor?limit=100`, { headers }).catch(() => null),
         fetch(`${API_BASE_URL}/api/syllabuses/admin/pending-approval`, { headers }).catch(() => null),
         fetch(`${API_BASE_URL}/api/courses/admin/pending-approval`, { headers }).catch(() => null),
-        fetch(`${API_BASE_URL}/api/projects/admin/pending`, { headers }).catch(() => null) // Added Projects
+        fetch(`${API_BASE_URL}/api/projects/admin/pending`, { headers }).catch(() => null)
       ]);
 
       if (!mounted) return;
 
       if (statsRes?.ok) {
         const statsBody = await statsRes.json();
-        setDashboardStats(statsBody?.data || statsBody || {});
+        const raw = statsBody?.data || statsBody || {};
+        // API returns snake_case (total_revenue, total_students, …); UI historically used short names
+        setDashboardStats({
+          ...raw,
+          revenue: raw.total_revenue ?? raw.revenue ?? 0,
+          students: raw.total_students ?? raw.students ?? 0,
+          tutors: raw.total_tutors ?? raw.tutors ?? 0,
+          totalSyllabus: raw.total_syllabus ?? raw.totalSyllabus ?? 0,
+          totalCourses: raw.total_courses ?? raw.totalCourses ?? 0,
+          certificates: raw.total_certificates ?? raw.certificates ?? 0,
+          uploads: raw.total_projects ?? raw.uploads ?? 0,
+          totalProjects: raw.total_projects ?? raw.totalProjects ?? 0,
+          totalAssignments: raw.total_assignments ?? raw.totalAssignments ?? 0,
+          totalEvents: raw.total_events ?? raw.totalEvents ?? 0,
+          avgRating: raw.average_rating ?? raw.avgRating ?? 0,
+          avgScore: raw.average_score ?? raw.avgScore ?? 0,
+          studentsGrowth: raw.students_growth_percentage ?? raw.studentsGrowth ?? 0,
+          tutorsGrowth: raw.tutors_growth_percentage ?? raw.tutorsGrowth ?? 0,
+          revenueGrowth: raw.revenue_growth_percentage ?? raw.revenueGrowth ?? 0,
+        });
       } else {
         setDashboardStats({});
+      }
+
+      // Prefer invoice payment-summary as finance source of truth
+      if (summaryRes?.ok) {
+        const summaryBody = await summaryRes.json();
+        const summary = summaryBody?.data || {};
+        const totals = summary.totals || {};
+        setDashboardStats((prev) => ({
+          ...prev,
+          revenue: totals.total_paid ?? summary.total_paid?.amount ?? prev.revenue ?? 0,
+          totalGross: totals.total_gross ?? null,
+          totalFees: totals.total_fees ?? null,
+          totalVat: totals.total_vat ?? null,
+          paidCount: totals.paid_count ?? null,
+          financeSource: 'payment-summary',
+        }));
+      }
+
+      if (tutorRevRes?.ok) {
+        const tutorBody = await tutorRevRes.json();
+        const instructors = Array.isArray(tutorBody?.data?.instructors) ? tutorBody.data.instructors : [];
+        const tutorRevenue = instructors.reduce((sum, row) => sum + Number(row.total_revenue || 0), 0);
+        setDashboardStats((prev) => ({
+          ...prev,
+          tutorRevenue,
+          tutorPaidCount: instructors.reduce((sum, row) => sum + Number(row.paid_count || 0), 0),
+        }));
       }
 
       let pendingList = [];
@@ -482,7 +530,7 @@ const HOADashboardHome = () => {
           <div className="hoa-revenue-section">
             <div className="section-header">
               <span className="section-title">GROSS REVENUE</span>
-              <Link to="/academia/hoa/reports" className="manage-link">Manage funds <img src={hoaviewall} style={{width: '5.2px', height: '9.2px'}} alt="" /></Link>
+              <Link to="/academia/hoa/finance" className="manage-link">Manage funds <img src={hoaviewall} style={{width: '5.2px', height: '9.2px'}} alt="" /></Link>
             </div>
             
             <div className="revenue-amount-box outline-box" style={{width: '300px', borderRadius: '8px'}}>
@@ -491,23 +539,22 @@ const HOADashboardHome = () => {
               </div>
               <div className="amount-details">
                 <div className="amt-row">
-                  <h3>+ {formatAmount(`${dashboardStats?.revenue || '0'} USD`).replace(' USD', '').replace(' RWF', '')} <span>{currency.label}</span></h3>
+                  <h3>+ {formatAmount(Number(dashboardStats?.revenue) || 0).replace(' USD', '').replace(' RWF', '')} <span>{currency.label}</span></h3>
                   {renderFlagDropdown('revenue')}
                 </div>
-                <p>TOTAL REVENUE</p>
+                <p>TOTAL COLLECTED {dashboardStats?.financeSource === 'payment-summary' ? null : <span className="hoa-dashboard-muted">from metrics</span>}</p>
               </div>
             </div>
 
-            <p className="hoa-dashboard-muted">Revenue breakdown by category is not available from the current API.</p>
-
-            {/* Legend */}
-            <div className="revenue-legend">
-              <span><i className="dot color-syllabus"></i> Syllabus</span>
-              <span><i className="dot color-online"></i> Online Courses</span>
-              <span><i className="dot color-tutors"></i> Tutors upload payments</span>
-              <span><i className="dot color-certs"></i> Certificates</span>
-              <span><i className="dot color-tax"></i> Tax</span>
-            </div>
+            {(dashboardStats?.totalFees != null || dashboardStats?.totalVat != null) ? (
+              <div className="split-footer-stats" style={{ marginTop: 12 }}>
+                <div><strong>{formatAmount(Number(dashboardStats.totalGross) || 0)}</strong> Gross</div>
+                <div><strong>{formatAmount(Number(dashboardStats.totalFees) || 0)}</strong> Fees</div>
+                <div><strong>{formatAmount(Number(dashboardStats.totalVat) || 0)}</strong> VAT</div>
+              </div>
+            ) : (
+              <p className="hoa-dashboard-muted">Open Finance for fee/VAT breakdown and payment history.</p>
+            )}
           </div>
         </div>
 
@@ -524,22 +571,22 @@ const HOADashboardHome = () => {
               </div>
               <div className="amount-details">
                 <div className="amt-row">
-                  <h3>{dashboardStats?.revenue != null && dashboardStats?.revenue !== '' ? `+ ${formatAmount(`${dashboardStats.revenue} USD`).replace(' USD', '').replace(' RWF', '')}` : '—'} <span>{currency.label}</span></h3>
+                  <h3>{dashboardStats?.paidCount != null ? dashboardStats.paidCount : '—'} <span>paid</span></h3>
                   {renderFlagDropdown('learner')}
                 </div>
-                <p>TOTAL REVENUE <span className="hoa-dashboard-muted">Not tracked yet</span></p>
+                <p>PAID ENROLLMENTS <span className="hoa-dashboard-muted">invoice count</span></p>
               </div>
             </div>
             <div className="split-footer-stats">
-              <div><strong>{dashboardStats?.learnerProjectUploads ?? '—'}</strong> Project Uploads</div>
-              <div><strong>{dashboardStats?.learnerAvgHours ?? '—'}</strong> Avg. Learning Hours</div>
+              <div><strong>{dashboardStats?.students ?? '—'}</strong> Learners</div>
+              <div><strong>{dashboardStats?.totalCourses ?? '—'}</strong> Courses</div>
             </div>
           </div>
 
           <div className="hoa-card hoa-split-stat">
             <div className="section-header">
               <span className="section-title">TUTOR'S STATS</span>
-              <Link to="/academia/hoa/tutors" className="manage-link">See Details <img src={hoaviewall} style={{width: '5.2px', height: '9.2px'}} alt="" /></Link>
+              <Link to="/academia/hoa/finance" className="manage-link">Finance <img src={hoaviewall} style={{width: '5.2px', height: '9.2px'}} alt="" /></Link>
             </div>
             <div className="revenue-amount-box outline-box">
               <div className="icon-circle">
@@ -547,15 +594,20 @@ const HOADashboardHome = () => {
               </div>
               <div className="amount-details">
                 <div className="amt-row">
-                  <h3>{dashboardStats?.tutorRevenue != null && dashboardStats?.tutorRevenue !== '' ? `+ ${formatAmount(`${dashboardStats.tutorRevenue} USD`).replace(' USD', '').replace(' RWF', '')}` : '—'} <span>USD</span></h3>
+                  <h3>
+                    {dashboardStats?.tutorRevenue != null
+                      ? `+ ${formatAmount(Number(dashboardStats.tutorRevenue) || 0).replace(' USD', '').replace(' RWF', '')}`
+                      : '—'}{' '}
+                    <span>{currency.label}</span>
+                  </h3>
                   {renderFlagDropdown('tutor')}
                 </div>
-                <p>TOTAL REVENUE <span className="hoa-dashboard-muted">Not tracked yet</span></p>
+                <p>COURSE SALES <span className="hoa-dashboard-muted">by instructor invoices</span></p>
               </div>
             </div>
             <div className="split-footer-stats">
-              <div><strong>{dashboardStats?.tutorProjectUploads ?? '—'}</strong> Project Uploads</div>
-              <div><strong>{dashboardStats?.tutorAvgUploads ?? '—'}</strong> Avg. Uploads</div>
+              <div><strong>{dashboardStats?.tutors ?? '—'}</strong> Tutors</div>
+              <div><strong>{dashboardStats?.tutorPaidCount ?? '—'}</strong> Paid invoices</div>
             </div>
           </div>
         </div>

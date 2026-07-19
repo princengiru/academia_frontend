@@ -752,3 +752,54 @@
     transform: translateY(0);
   }
 }
+
+/* Premium typography and layout styles for course descriptions */
+.oc-overview-desc {
+  font-family: 'Inter', sans-serif;
+  font-size: 13.5px;
+  color: #4B5675;
+  line-height: 1.6;
+  margin-bottom: 24px;
+}
+
+.oc-overview-desc p {
+  margin-bottom: 14px;
+  line-height: 1.6;
+}
+
+.oc-overview-desc p:last-child {
+  margin-bottom: 0;
+}
+
+.oc-overview-desc h1,
+.oc-overview-desc h2,
+.oc-overview-desc h3,
+.oc-overview-desc h4 {
+  font-family: 'Outfit', 'Inter', sans-serif;
+  color: #071437;
+  font-weight: 600;
+  line-height: 1.35;
+  margin-top: 20px;
+  margin-bottom: 10px;
+  letter-spacing: -0.015em;
+}
+
+.oc-overview-desc h1 { font-size: 18px !important; }
+.oc-overview-desc h2 { font-size: 16px !important; }
+.oc-overview-desc h3 { font-size: 14.5px !important; }
+.oc-overview-desc h4 { font-size: 13.5px !important; }
+
+.oc-overview-desc ul,
+.oc-overview-desc ol {
+  margin: 10px 0 14px 20px;
+  padding: 0;
+}
+
+.oc-overview-desc li {
+  margin-bottom: 6px;
+  line-height: 1.5;
+}
+
+.oc-overview-desc li strong {
+  color: #071437;
+}
