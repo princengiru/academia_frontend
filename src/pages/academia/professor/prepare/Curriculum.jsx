@@ -44,6 +44,8 @@ const Curriculum = ({ courseId, setActiveStep, pushFeedback }) => {
   const quillRef = useRef(null);
 
   const [bufferedExercises, setBufferedExercises] = useState([]);
+  const [editingExerciseIndex, setEditingExerciseIndex] = useState(null);
+  const [selectedExerciseIndexes, setSelectedExerciseIndexes] = useState(() => new Set());
   const [exerciseMode, setExerciseMode] = useState('checkbox');
   const [exerciseText, setExerciseText] = useState('');
   const [exercisePoints, setExercisePoints] = useState(1);
@@ -233,6 +235,41 @@ const Curriculum = ({ courseId, setActiveStep, pushFeedback }) => {
     setAnswers([...answers, { id: newId, text: '', isCorrect: false }]);
   };
 
+  const resetExerciseForm = () => {
+    setExerciseText('');
+    setExercisePoints(1);
+    setExerciseMode('checkbox');
+    setAnswers([{ id: 1, text: '', isCorrect: true }, { id: 2, text: '', isCorrect: false }]);
+    setEditingExerciseIndex(null);
+  };
+
+  const loadExerciseIntoEditor = (ex, index) => {
+    // Clicking the active question again cancels edit mode
+    if (editingExerciseIndex === index) {
+      resetExerciseForm();
+      return;
+    }
+    setEditingExerciseIndex(index);
+    setExerciseText(ex.question || '');
+    setExercisePoints(Number(ex.points) || 1);
+    const mode = ex.type === 'text' ? 'optional' : (ex.type === 'radio' || ex.type === 'checkbox' ? ex.type : 'checkbox');
+    setExerciseMode(mode);
+    if (mode === 'optional') {
+      setAnswers([{ id: 1, text: '', isCorrect: false }, { id: 2, text: '', isCorrect: false }]);
+      return;
+    }
+    const opts = Array.isArray(ex.options) ? ex.options : [];
+    if (opts.length === 0) {
+      setAnswers([{ id: 1, text: '', isCorrect: true }, { id: 2, text: '', isCorrect: false }]);
+      return;
+    }
+    setAnswers(opts.map((opt, i) => ({
+      id: i + 1,
+      text: opt.label || opt.value || opt.text || '',
+      isCorrect: Boolean(opt.is_correct ?? opt.isCorrect),
+    })));
+  };
+
   const addExerciseToBuffer = () => {
     if (!exerciseText.trim()) return pushFeedback('Please type an exercise question.', 'error');
     const newExercise = {
@@ -242,14 +279,64 @@ const Curriculum = ({ courseId, setActiveStep, pushFeedback }) => {
       correct_answer: exerciseMode !== 'optional' ? answers.filter(a => a.isCorrect).map(a => a.text).join(', ') : null,
       points: Number(exercisePoints) || 1
     };
-    setBufferedExercises(prev => [...prev, newExercise]);
-    setExerciseText('');
-    setExercisePoints(1);
-    setAnswers([{ id: 1, text: '', isCorrect: false }, { id: 2, text: '', isCorrect: false }]);
+
+    if (editingExerciseIndex != null) {
+      setBufferedExercises((prev) => prev.map((ex, i) => (i === editingExerciseIndex ? newExercise : ex)));
+      resetExerciseForm();
+      pushFeedback('Exercise updated.', 'success');
+      return;
+    }
+
+    setBufferedExercises((prev) => [...prev, newExercise]);
+    resetExerciseForm();
     pushFeedback('Task added to Chapter buffer.', 'success');
   };
 
-  const removeBufferedExercise = (index) => setBufferedExercises(prev => prev.filter((_, i) => i !== index));
+  const removeBufferedExercise = (index) => {
+    setBufferedExercises((prev) => prev.filter((_, i) => i !== index));
+    setSelectedExerciseIndexes((prev) => {
+      const next = new Set();
+      prev.forEach((i) => {
+        if (i < index) next.add(i);
+        else if (i > index) next.add(i - 1);
+      });
+      return next;
+    });
+    if (editingExerciseIndex === index) resetExerciseForm();
+    else if (editingExerciseIndex != null && editingExerciseIndex > index) {
+      setEditingExerciseIndex((current) => current - 1);
+    }
+  };
+
+  const toggleExerciseSelected = (index, event) => {
+    event.stopPropagation();
+    setSelectedExerciseIndexes((prev) => {
+      const next = new Set(prev);
+      if (next.has(index)) next.delete(index);
+      else next.add(index);
+      return next;
+    });
+  };
+
+  const toggleSelectAllExercises = () => {
+    setSelectedExerciseIndexes((prev) => {
+      if (prev.size === bufferedExercises.length) return new Set();
+      return new Set(bufferedExercises.map((_, i) => i));
+    });
+  };
+
+  const removeSelectedExercises = () => {
+    if (selectedExerciseIndexes.size === 0) return;
+    setBufferedExercises((prev) => prev.filter((_, i) => !selectedExerciseIndexes.has(i)));
+    if (editingExerciseIndex != null && selectedExerciseIndexes.has(editingExerciseIndex)) {
+      resetExerciseForm();
+    } else if (editingExerciseIndex != null) {
+      const removedBefore = [...selectedExerciseIndexes].filter((i) => i < editingExerciseIndex).length;
+      setEditingExerciseIndex(editingExerciseIndex - removedBefore);
+    }
+    setSelectedExerciseIndexes(new Set());
+    pushFeedback('Selected exercises removed.', 'success');
+  };
 
   // --- API Submission Flow ---
   const saveWeekAndChapter = async (advanceStep = false) => {
@@ -257,7 +344,7 @@ const Curriculum = ({ courseId, setActiveStep, pushFeedback }) => {
       return pushFeedback('Course ID is missing. Please go back to Step 1 and hit Save.', 'error');
     }
 
-    if (weekMode === 'new' && !weekDraft.title.trim()) {
+    if (!weekDraft.title.trim()) {
       return pushFeedback('Week title is required.', 'error');
     }
     if (weekMode === 'existing' && !selectedWeekId) {
@@ -276,24 +363,36 @@ const Curriculum = ({ courseId, setActiveStep, pushFeedback }) => {
       let weekId = selectedWeekId;
       let weekNumber = weekDraft.weekNumber;
 
+      const weekPayload = {
+        title: weekDraft.title,
+        description: weekDraft.description || 'Weekly objectives',
+        learning_objectives: weekDraft.learningObjectives
+          ? weekDraft.learningObjectives.split(',').map((o) => o.trim()).filter(Boolean)
+          : [weekDraft.description || 'Weekly objectives'],
+        week_number: Number(weekDraft.weekNumber),
+        duration_days: Number(weekDraft.durationDays) || 7,
+      };
+
       if (weekMode === 'new') {
         // 1. Create Week (Pure JSON)
         const weekRes = await fetch(`${API_BASE_URL}/api/courses/${courseId}/weeks`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-          body: JSON.stringify({
-            title: weekDraft.title,
-            description: weekDraft.description || "Weekly objectives",
-            learning_objectives: weekDraft.learningObjectives
-              ? weekDraft.learningObjectives.split(',').map(o => o.trim()).filter(Boolean)
-              : [weekDraft.description || "Weekly objectives"],
-            week_number: Number(weekDraft.weekNumber),
-            duration_days: Number(weekDraft.durationDays) || 7
-          })
+          body: JSON.stringify(weekPayload),
         });
         const weekData = await weekRes.json();
         if (!weekRes.ok) throw new Error(weekData.message || 'Failed to create week.');
         weekId = weekData?.data?.id || weekData?.id;
+        weekNumber = Number(weekDraft.weekNumber);
+      } else {
+        // 1b. Update existing week details
+        const weekRes = await fetch(`${API_BASE_URL}/api/weeks/${weekId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify(weekPayload),
+        });
+        const weekData = await weekRes.json().catch(() => ({}));
+        if (!weekRes.ok) throw new Error(weekData.message || 'Failed to update week.');
         weekNumber = Number(weekDraft.weekNumber);
       }
 
@@ -538,26 +637,26 @@ const Curriculum = ({ courseId, setActiveStep, pushFeedback }) => {
             <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr', gap: '16px', marginBottom: '16px' }}>
               <div className="prof-field-group" style={{ margin: 0 }}>
                 <label className="prof-field-label">Week Name</label>
-                <input className="prof-step-input-premium" type="text" placeholder="e.g. Week 1: Basics" value={weekDraft.title} onChange={(e) => handleWeekChange('title', e.target.value)} disabled={weekMode === 'existing'} />
+                <input className="prof-step-input-premium" type="text" placeholder="e.g. Week 1: Basics" value={weekDraft.title} onChange={(e) => handleWeekChange('title', e.target.value)} />
               </div>
               <div className="prof-field-group" style={{ margin: 0 }}>
                 <label className="prof-field-label">Week Number</label>
-                <input className="prof-step-input-premium" type="number" min="1" value={weekDraft.weekNumber} onChange={(e) => handleWeekChange('weekNumber', e.target.value)} disabled={weekMode === 'existing'} />
+                <input className="prof-step-input-premium" type="number" min="1" value={weekDraft.weekNumber} onChange={(e) => handleWeekChange('weekNumber', e.target.value)} />
               </div>
               <div className="prof-field-group" style={{ margin: 0 }}>
                 <label className="prof-field-label">Duration (Days)</label>
-                <input className="prof-step-input-premium" type="number" min="1" value={weekDraft.durationDays} onChange={(e) => handleWeekChange('durationDays', e.target.value)} disabled={weekMode === 'existing'} />
+                <input className="prof-step-input-premium" type="number" min="1" value={weekDraft.durationDays} onChange={(e) => handleWeekChange('durationDays', e.target.value)} />
               </div>
             </div>
 
             <div className="prof-field-group" style={{ margin: '0 0 16px 0' }}>
               <label className="prof-field-label">Week Description</label>
-              <textarea className="prof-step-input-premium" rows="2" placeholder="Brief summary of this week..." value={weekDraft.description} onChange={(e) => handleWeekChange('description', e.target.value)} style={{ resize: 'vertical' }} disabled={weekMode === 'existing'} />
+              <textarea className="prof-step-input-premium" rows="2" placeholder="Brief summary of this week..." value={weekDraft.description} onChange={(e) => handleWeekChange('description', e.target.value)} style={{ resize: 'vertical' }} />
             </div>
 
             <div className="prof-field-group" style={{ margin: 0 }}>
               <label className="prof-field-label">Learning Objectives (Comma separated)</label>
-              <input className="prof-step-input-premium" type="text" placeholder="e.g. Understand JS context, Master loops, Learn scopes" value={weekDraft.learningObjectives} onChange={(e) => handleWeekChange('learningObjectives', e.target.value)} disabled={weekMode === 'existing'} />
+              <input className="prof-step-input-premium" type="text" placeholder="e.g. Understand JS context, Master loops, Learn scopes" value={weekDraft.learningObjectives} onChange={(e) => handleWeekChange('learningObjectives', e.target.value)} />
             </div>
           </div>
 
@@ -889,26 +988,99 @@ const Curriculum = ({ courseId, setActiveStep, pushFeedback }) => {
 
           {bufferedExercises.length > 0 && (
             <div className="prof-exercises-buffer-list">
-              {bufferedExercises.map((ex, idx) => (
-                <div key={idx} className="prof-exercise-buffer-card">
-                  <div className="prof-exercise-buffer-content">
-                    <span className="prof-exercise-type-tag">{ex.type} ({ex.points} pts)</span>
-                    <p>{ex.question}</p>
-                  </div>
-                  <button type="button" className="prof-exercise-buffer-remove" onClick={() => removeBufferedExercise(idx)}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <polyline points="3 6 5 6 21 6"></polyline>
-                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                    </svg>
+              <div className="prof-exercises-buffer-toolbar">
+                <label className="prof-exercises-buffer-select-all">
+                  <input
+                    type="checkbox"
+                    checked={selectedExerciseIndexes.size > 0 && selectedExerciseIndexes.size === bufferedExercises.length}
+                    onChange={toggleSelectAllExercises}
+                  />
+                  <span>
+                    {selectedExerciseIndexes.size > 0
+                      ? `${selectedExerciseIndexes.size} selected`
+                      : `${bufferedExercises.length} question${bufferedExercises.length === 1 ? '' : 's'}`}
+                  </span>
+                </label>
+                {selectedExerciseIndexes.size > 0 ? (
+                  <button type="button" className="prof-exercises-buffer-bulk-remove" onClick={removeSelectedExercises}>
+                    Delete selected
                   </button>
-                </div>
-              ))}
+                ) : (
+                  <span className="prof-exercises-buffer-hint">Click to edit · click again to cancel</span>
+                )}
+              </div>
+
+              {bufferedExercises.map((ex, idx) => {
+                const isEditing = editingExerciseIndex === idx;
+                const isSelected = selectedExerciseIndexes.has(idx);
+                return (
+                  <div
+                    key={idx}
+                    className={`prof-exercise-buffer-card${isEditing ? ' is-editing' : ''}${isSelected ? ' is-selected' : ''}`}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => loadExerciseIntoEditor(ex, idx)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        loadExerciseIntoEditor(ex, idx);
+                      }
+                    }}
+                  >
+                    <label className="prof-exercise-buffer-check" onClick={(e) => e.stopPropagation()}>
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={(e) => toggleExerciseSelected(idx, e)}
+                        aria-label={`Select exercise ${idx + 1}`}
+                      />
+                    </label>
+                    <div className="prof-exercise-buffer-content">
+                      <span className="prof-exercise-type-tag">{ex.type} ({ex.points} pts)</span>
+                      <p>{ex.question}</p>
+                      {isEditing ? <span className="prof-exercise-editing-badge">Editing</span> : null}
+                    </div>
+                    <div className="prof-exercise-buffer-actions">
+                      <button
+                        type="button"
+                        className="prof-exercise-buffer-edit"
+                        title={isEditing ? 'Cancel edit' : 'Edit question'}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          loadExerciseIntoEditor(ex, idx);
+                        }}
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M12 20h9" />
+                          <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
+                        </svg>
+                      </button>
+                      <button
+                        type="button"
+                        className="prof-exercise-buffer-remove"
+                        title="Delete question"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeBufferedExercise(idx);
+                        }}
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <polyline points="3 6 5 6 21 6"></polyline>
+                          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
 
-          <div className="prof-exercise-creator-card">
+          <div className={`prof-exercise-creator-card${editingExerciseIndex != null ? ' is-editing-form' : ''}`}>
             <div className="prof-field-group">
-              <label className="prof-field-label">New Question</label>
+              <label className="prof-field-label">
+                {editingExerciseIndex != null ? `Edit Question #${editingExerciseIndex + 1}` : 'New Question'}
+              </label>
               <textarea className="prof-step-textarea-premium" rows="2" placeholder="Type the exercise question..." value={exerciseText} onChange={(e) => setExerciseText(e.target.value)}></textarea>
             </div>
 
@@ -989,9 +1161,16 @@ const Curriculum = ({ courseId, setActiveStep, pushFeedback }) => {
                 </button>
               ) : <div></div>}
 
-              <button type="button" onClick={addExerciseToBuffer} className="prof-btn-attach-question">
-                Attach Question
-              </button>
+              <div className="prof-exercise-creator-actions-right">
+                {editingExerciseIndex != null ? (
+                  <button type="button" onClick={resetExerciseForm} className="prof-btn-cancel-edit">
+                    Cancel edit
+                  </button>
+                ) : null}
+                <button type="button" onClick={addExerciseToBuffer} className="prof-btn-attach-question">
+                  {editingExerciseIndex != null ? 'Update Question' : 'Attach Question'}
+                </button>
+              </div>
             </div>
           </div>
 
