@@ -285,9 +285,10 @@ const HOATutors = () => {
       }
       const headers = { Authorization: `Bearer ${token}` };
 
-      const [statsRes, tutorsRes] = await Promise.all([
+      const [statsRes, tutorsRes, summaryRes] = await Promise.all([
         fetch(`${API_BASE_URL}/api/admin/instructors/stats`, { headers }).catch(() => null),
-        fetch(`${API_BASE_URL}/api/admin/instructors`, { headers }).catch(() => null)
+        fetch(`${API_BASE_URL}/api/admin/instructors`, { headers }).catch(() => null),
+        fetch(`${API_BASE_URL}/api/admin/reports/payment-summary`, { headers }).catch(() => null),
       ]);
 
       if (!mounted) return;
@@ -300,12 +301,29 @@ const HOATutors = () => {
         return;
       }
 
+      let nextStats = {};
       if (statsRes?.ok) {
         const sBody = await statsRes.json();
-        setStatsData(sBody?.data || sBody);
-      } else {
-        setStatsData({}); // Empty state
+        nextStats = sBody?.data || sBody || {};
       }
+
+      // Prefer payment-summary totals when available (same source as Finance)
+      if (summaryRes?.ok) {
+        const summaryBody = await summaryRes.json();
+        const totals = summaryBody?.data?.totals || {};
+        if (totals.total_paid != null) {
+          nextStats = {
+            ...nextStats,
+            total_revenue: totals.total_paid,
+            amount_paid: totals.total_paid,
+            upload_payments: totals.total_fees ?? nextStats.upload_payments ?? 0,
+            total_payouts: 0,
+            payouts_available: false,
+          };
+        }
+      }
+
+      setStatsData(nextStats);
 
       if (tutorsRes?.ok) {
         const tBody = await tutorsRes.json();
@@ -428,21 +446,43 @@ const HOATutors = () => {
         navigate('/academia/auth/signin');
         return;
       }
-      const response = await fetch(`${API_BASE_URL}/api/admin/instructors/${tutorId}/profile`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const headers = { Authorization: `Bearer ${token}` };
+      const [response, revRes] = await Promise.all([
+        fetch(`${API_BASE_URL}/api/admin/instructors/${tutorId}/profile`, { headers }),
+        fetch(`${API_BASE_URL}/api/admin/reports/revenue-by-instructor?limit=200`, { headers }).catch(() => null),
+      ]);
       if (response.status === 401) {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         navigate('/academia/auth/signin');
         return;
       }
+
+      let profile = null;
       if (response.ok) {
         const body = await response.json();
-        setActiveTutorProfile(body?.data || body);
-      } else {
-        console.error("Failed to fetch tutor details:", response.statusText);
+        profile = body?.data || body;
       }
+
+      const listTutor = tutorsData.find((t) => t.id === tutorId);
+      let invoiceRevenue = Number(listTutor?.paid) || 0;
+      if (revRes?.ok) {
+        const revBody = await revRes.json();
+        const match = (revBody?.data?.instructors || []).find(
+          (row) => String(row.instructor_id) === String(tutorId)
+        );
+        if (match) invoiceRevenue = Number(match.total_revenue) || 0;
+      }
+
+      setActiveTutorProfile({
+        ...(profile || { id: tutorId, name: listTutor?.name, avatar: listTutor?.avatar }),
+        stats: {
+          ...(profile?.stats || {}),
+          totalRevenueOfCourses: invoiceRevenue,
+          totalStudents: profile?.stats?.totalStudents ?? listTutor?.students,
+          totalCourses: profile?.stats?.totalCourses ?? listTutor?.uploads,
+        },
+      });
     } catch (err) {
       console.error("Error fetching tutor profile details:", err);
     } finally {
@@ -684,12 +724,12 @@ const HOATutors = () => {
             <div className="sub-stat"><h4>{statsData?.syllabus_uploads || '0'}</h4><p>Syllabus Uploads</p></div>
             <div className="sub-stat"><h4>{statsData?.online_courses || '0'}</h4><p>Online Courses</p></div>
             <div className="sub-stat">
-              <h4 className="flex-center-gap8">{formatAmount(`${statsData?.upload_payments || 0} RWF`).replace(' RWF','').replace(' USD','')} <span className="stat-currency">{currency.label} <img src={currency.flag} alt="flag" className="currency-flag" /></span></h4>
-              <p>Upload Payments <span className="trend down"> <img src={hoadecrease} alt="" /> -0.0%</span></p>
+              <h4 className="flex-center-gap8">{formatAmount(Number(statsData?.upload_payments) || 0).replace(' RWF','').replace(' USD','')} <span className="stat-currency">{currency.label} <img src={currency.flag} alt="flag" className="currency-flag" /></span></h4>
+              <p>Platform Fees</p>
             </div>
             <div className="sub-stat">
-              <h4 className="flex-center-gap8">{formatAmount(`${statsData?.amount_paid || 0} RWF`).replace(' RWF','').replace(' USD','')} <span className="stat-currency">{currency.label} <img src={currency.flag} alt="flag" className="currency-flag" /></span></h4>
-              <p>Amount Paid <span className="trend up"> <img src={hoaincrease} alt="" /> +0.0%</span></p>
+              <h4 className="flex-center-gap8">{formatAmount(Number(statsData?.amount_paid) || 0).replace(' RWF','').replace(' USD','')} <span className="stat-currency">{currency.label} <img src={currency.flag} alt="flag" className="currency-flag" /></span></h4>
+              <p>Collected (invoices)</p>
             </div>
           </div>
         </div>
@@ -716,7 +756,7 @@ const HOATutors = () => {
               <div className="flex-between-center">
                 <span className="hoa-revenue-label">Total Revenue Generated</span>
                 <div className="hoa-revenue-dropdown" style={{position: 'relative'}} onClick={() => setOpenFlagDropdown(openFlagDropdown === 'rev1' ? null : 'rev1')}>
-                  {formatAmount(`${statsData?.total_revenue || 0} RWF`)} <img src={currency.flag} className="currency-icon" alt="flag" style={{cursor: 'pointer'}} /> <img src={hoadowncaret} alt="drop" style={{cursor: 'pointer'}} />
+                  {formatAmount(Number(statsData?.total_revenue) || 0)} <img src={currency.flag} className="currency-icon" alt="flag" style={{cursor: 'pointer'}} /> <img src={hoadowncaret} alt="drop" style={{cursor: 'pointer'}} />
                   {openFlagDropdown === 'rev1' && (
                     <div className="flag-dropdown-menu" style={{ minWidth: '80px', padding: '4px', top: '100%', right: 0, zIndex: 10, position: 'absolute' }}>
                       {flagOptions.map((option, idx) => (
@@ -750,18 +790,8 @@ const HOATutors = () => {
               </div>
               <div className="flex-between-center">
                 <span className="hoa-revenue-label">Total Payouts</span>
-                <div className="hoa-revenue-dropdown" style={{position: 'relative'}} onClick={() => setOpenFlagDropdown(openFlagDropdown === 'rev2' ? null : 'rev2')}>
-                  {formatAmount(`${statsData?.total_payouts || 0} RWF`)} <img src={currency.flag} className="currency-icon" alt="flag" style={{cursor: 'pointer'}} /> <img src={hoadowncaret} alt="drop" style={{cursor: 'pointer'}} />
-                  {openFlagDropdown === 'rev2' && (
-                    <div className="flag-dropdown-menu" style={{ minWidth: '80px', padding: '4px', top: '100%', right: 0, zIndex: 10, position: 'absolute' }}>
-                      {flagOptions.map((option, idx) => (
-                        <button key={idx} type="button" className={`flag-dropdown-option ${currency.label === option.label ? 'active' : ''}`} onClick={(e) => { e.stopPropagation(); setCurrency(option); setOpenFlagDropdown(null); }}>
-                          <img src={option.flag} alt="flag" className="flag-icon" />
-                          <span>{option.label}</span>
-                        </button>
-                      ))}
-                    </div>
-                  )}
+                <div className="hoa-revenue-dropdown">
+                  <span style={{ fontSize: 13, color: '#99a1b7', fontWeight: 500 }}>Not available yet</span>
                 </div>
               </div>
             </div>
@@ -1025,7 +1055,7 @@ const HOATutors = () => {
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                           <div style={{ display: 'flex', alignItems: 'center' }}>
                             <span className="profile-label">Total Paid :</span>
-                            <strong className="profile-value-flex" style={{ position: 'relative', zIndex: 9999 }}>{formatAmount(`${activeTutorProfile?.stats?.totalRevenueOfCourses || tutorsData.find(t => t.id === activeTutorId)?.paid || 0} USD`).replace(' RWF','').replace(' USD','')} <span className="stat-currency">{currency.label} <img src={currency.flag} alt="flag" className="currency-flag" /> </span>
+                            <strong className="profile-value-flex" style={{ position: 'relative', zIndex: 9999 }}>{formatAmount(Number(activeTutorProfile?.stats?.totalRevenueOfCourses ?? tutorsData.find(t => t.id === activeTutorId)?.paid) || 0).replace(' RWF','').replace(' USD','')} <span className="stat-currency">{currency.label} <img src={currency.flag} alt="flag" className="currency-flag" /> </span>
                             </strong>
                           </div>
                         </div>
@@ -1087,30 +1117,23 @@ const HOATutors = () => {
                   <div className="modal-stats-row modal-stats-row-no-border">
                     <div className="mod-stat mod-stat-br-pr">
                       <h3 className="flex-center-gap4">
-                        {activeTutorProfile?.stats?.totalRevenueOfCourses != null
-                          ? `+ ${formatAmount(`${activeTutorProfile.stats.totalRevenueOfCourses * 0.1} USD`).replace(' USD', '').replace(' RWF', '')}`
-                          : '—'}
+                        —
                         <span className="stat-currency">{currency.label}</span>
                       </h3>
-                      <p>Downloads Income</p>
+                      <p>Downloads Income <span className="hoa-reports-muted">not tracked</span></p>
                     </div>
                     <div className="mod-stat mod-stat-br-px">
                       <h3 className="flex-center-gap4">
                         {activeTutorProfile?.stats?.totalRevenueOfCourses != null
-                          ? `+ ${formatAmount(`${activeTutorProfile.stats.totalRevenueOfCourses} USD`).replace(' USD', '').replace(' RWF', '')}`
+                          ? `+ ${formatAmount(Number(activeTutorProfile.stats.totalRevenueOfCourses) || 0).replace(' USD', '').replace(' RWF', '')}`
                           : '—'}
                         <span className="stat-currency">{currency.label}</span>
                       </h3>
                       <p>Courses Income</p>
                     </div>
                     <div className="mod-stat mod-stat-br-px">
-                      <h3 className="flex-center-gap4">
-                        {activeTutorProfile?.stats?.totalSyllabuses != null
-                          ? formatAmount(`${activeTutorProfile.stats.totalSyllabuses * 5000} RWF`).replace(' RWF', '').replace(' USD', '')
-                          : '—'}
-                        <span className="stat-currency">{currency.label}</span>
-                      </h3>
-                      <p>Upload Amount</p>
+                      <h3 className="flex-center-gap4">—</h3>
+                      <p>Syllabus fees <span className="hoa-reports-muted">not tracked</span></p>
                     </div>
                     <div className="mod-stat mod-stat-pl">
                       <h3 className="font-15-mt6">{activeTutorProfile?.created_at ? formatDate(activeTutorProfile.created_at) : '—'}</h3>

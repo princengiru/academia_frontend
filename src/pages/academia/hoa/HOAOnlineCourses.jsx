@@ -875,16 +875,16 @@ const HOAOnlineCourses = () => {
                                 {/* Modal Stats Row */}
                                 <div className="oc-modal-stats-row">
                                     <div className="oc-mod-stat">
-                                        <h3>0 <span style={{ fontSize: 10, color: '#A1A5B7' }}>USD <img src={hoausflag} style={{ width: 10, borderRadius: '50%', margin: '0 2px' }} alt="" /> <img src={hoadowncaret} style={{ width: 8 }} alt="" /></span></h3>
+                                        <h3>{courseEnrollments.length || selectedCourse.student_count || selectedCourse.enrollment_count || 0}</h3>
                                         <p>Total Students</p>
                                     </div>
                                     <div className="oc-mod-stat">
-                                        <h3>0 <span style={{ fontSize: 10, color: '#A1A5B7' }}>RWF <img src={rwanda} style={{ width: 10, borderRadius: '50%', margin: '0 2px' }} alt="" /> <img src={hoadowncaret} style={{ width: 8 }} alt="" /></span></h3>
-                                        <p>Upload Amount</p>
+                                        <h3>{parseFloat(selectedCourse.price) > 0 ? formatAmount(Number(selectedCourse.price) || 0) : 'Free'}</h3>
+                                        <p>List price</p>
                                     </div>
                                     <div className="oc-mod-stat">
-                                        <h3>0 <span style={{ fontSize: 10, color: '#A1A5B7' }}>USD <img src={hoausflag} style={{ width: 10, borderRadius: '50%', margin: '0 2px' }} alt="" /> <img src={hoadowncaret} style={{ width: 8 }} alt="" /></span></h3>
-                                        <p>Courses Income</p>
+                                        <h3>—</h3>
+                                        <p>Course income <span style={{ color: '#99a1b7' }}>see Finance</span></p>
                                     </div>
                                     <div className="oc-mod-stat" style={{ borderRight: 'none' }}>
                                         <h3>{selectedCourse.created_at ? new Date(selectedCourse.created_at).toLocaleDateString() : 'N/A'} <span style={{ fontSize: 10, color: '#A1A5B7' }}>{selectedCourse.created_at ? new Date(selectedCourse.created_at).toLocaleTimeString() : ''}</span></h3>
