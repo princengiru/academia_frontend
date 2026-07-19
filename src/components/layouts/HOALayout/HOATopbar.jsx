@@ -14,6 +14,7 @@ const PAGE_MAP = {
   'learners': { category: 'Dashboard', title: 'Learners' },
   'tutors': { category: 'Dashboard', title: 'Tutors' },
   'reports': { category: 'Dashboard', title: 'Reports' },
+  'finance': { category: 'Dashboard', title: 'Finance' },
   'settings': { category: 'Dashboard', title: 'Settings' },
   'account': { category: 'Dashboard', title: 'Account' },
 
