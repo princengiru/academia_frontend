@@ -1,8 +1,10 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import LearnerLoadError from '../learner/LearnerLoadError';
-import ManagementLoading from './ManagementLoading';
 import './assignments.css';
 import hoagoto from '../../../assets/icons/hoagoto.svg';
+import hoaadd from '../../../assets/icons/hoaadd.svg';
+import { AcademiaDataTable, AcademiaStatusPill, useClientTableState } from '../shared';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
@@ -24,7 +26,6 @@ const ASSESSMENT_TYPE_FILTERS = [
   { label: 'Summative', value: 'summative' },
 ];
 
-const PAGE_SIZE_OPTIONS = [5, 10, 25];
 
 const FORMATIVE_ASSESSMENT_TYPE_OPTIONS = [
   { label: 'Quiz', value: 'quiz' },
@@ -88,23 +89,15 @@ const RichTextToolbar = () => (
 );
 
 const Assignments = () => {
+  const navigate = useNavigate();
   const preventDefault = (e) => e.preventDefault();
 
   const [assessmentRows, setAssessmentRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState('');
   
-  const [searchTerm, setSearchTerm] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
-  
-  const [pageSize, setPageSize] = useState(5);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [selectedRowIds, setSelectedRowIds] = useState(() => new Set());
-  const selectAllRef = useRef(null);
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [openRowMenuId, setOpenRowMenuId] = useState(null);
-  const filterRef = useRef(null);
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
   const toastTimerRef = useRef(null);
   const showToast = (message, type = 'success') => {
@@ -303,10 +296,7 @@ const Assignments = () => {
   // Close dropdowns on outside clicks
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (filterRef.current && !filterRef.current.contains(event.target)) {
-        setIsFilterOpen(false);
-      }
-      if (!event.target.closest('.prof-row-action-menu')) {
+      if (!event.target.closest('.adt-row-menu') && !event.target.closest('.prof-row-action-menu')) {
         setOpenRowMenuId(null);
       }
       if (!event.target.closest('.assessments-modal-dropdown')) {
@@ -410,15 +400,6 @@ const Assignments = () => {
 
   const stepOrder = ['basic', 'lesson', 'questions', 'pricing'];
 
-  // --- Debounce Search ---
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedSearch(searchTerm);
-      setCurrentPage(1);
-    }, 300);
-    return () => clearTimeout(handler);
-  }, [searchTerm]);
-
   const updateCreateField = (field, value) => {
     setCreateForm((previous) => ({ ...previous, [field]: value }));
   };
@@ -435,6 +416,44 @@ const Assignments = () => {
     ? 'After all chapters (end of week)'
     : (selectedWeekChapters.find((c) => String(c.id) === String(createForm.after_chapter_id))?.title || 'After selected chapter');
   const questionTypeLabel = QUESTION_TYPE_OPTIONS.find((option) => option.value === newQuestion.question_type)?.label || 'Select type';
+
+  const normalizedRows = useMemo(
+    () => assessmentRows.map((row, index) => normalizeAssessmentRow(row, index)),
+    [assessmentRows]
+  );
+
+  const workspaceStats = useMemo(() => {
+    const total = normalizedRows.length;
+    const formative = normalizedRows.filter((r) => r.category === 'formative').length;
+    const summative = normalizedRows.filter((r) => r.category === 'summative').length;
+    const submissions = normalizedRows.reduce((sum, r) => sum + (r.studentsAttempts || 0), 0);
+    const published = total > 0
+      ? Math.round((normalizedRows.filter((r) => r.is_published).length / total) * 100)
+      : 0;
+    return { total, formative, summative, submissions, published };
+  }, [normalizedRows]);
+
+  const table = useClientTableState({
+    rows: normalizedRows,
+    searchFn: (row, query) => (row.searchText || '').includes(String(query).toLowerCase()),
+    filterFn: () => true,
+    defaultSortKey: 'title',
+    numericKeys: ['studentsAttempts', 'totalPoints'],
+    getRowKey: (row) => row.id,
+  });
+
+  const selectedRowIds = useMemo(
+    () => new Set(table.selectedKeys.map(String)),
+    [table.selectedKeys]
+  );
+
+  const handleResetFilters = () => {
+    table.setSearchQuery('');
+    setTypeFilter('all');
+    table.setPageSize('5');
+    table.goToPage(1);
+    table.clearSelection();
+  };
 
   // --- Core API Fetches ---
   useEffect(() => {
@@ -460,8 +479,7 @@ const Assignments = () => {
 
         if (response.ok) {
           setAssessmentRows(Array.isArray(body?.data?.assessments) ? body.data.assessments : []);
-          setCurrentPage(1);
-          setSelectedRowIds(new Set());
+          table.clearSelection();
         } else {
           setAssessmentRows([]);
           setFetchError(body?.message || body?.error?.message || 'Failed to load assessments.');
@@ -735,11 +753,7 @@ const Assignments = () => {
       }
       
       setAssessmentRows((prev) => prev.filter((row) => row.id !== id));
-      setSelectedRowIds((prev) => {
-        const next = new Set(prev);
-        next.delete(String(id));
-        return next;
-      });
+      table.setSelectedKeys((prev) => prev.filter((key) => key !== String(id)));
       showToast('Assessment deleted successfully!', 'success');
     } catch (error) {
       showToast(error.message || 'Failed to delete assessment.', 'error');
@@ -823,7 +837,7 @@ const Assignments = () => {
       await Promise.all(deletePromises);
       
       setAssessmentRows((prev) => prev.filter((row) => !selectedRowIds.has(String(row.id))));
-      setSelectedRowIds(new Set());
+      table.clearSelection();
       showToast('Selected assessments deleted successfully.', 'success');
     } catch (error) {
       showToast(error.message || 'An error occurred during bulk deletion.', 'error');
@@ -1052,98 +1066,6 @@ const Assignments = () => {
     }
   };
 
-  // --- Filtering & Pagination ---
-  const normalizedRows = useMemo(
-    () => assessmentRows.map((row, index) => normalizeAssessmentRow(row, index)),
-    [assessmentRows]
-  );
-
-  const workspaceStats = useMemo(() => {
-    const total = normalizedRows.length;
-    const formative = normalizedRows.filter(r => r.category === 'formative').length;
-    const summative = normalizedRows.filter(r => r.category === 'summative').length;
-    const submissions = normalizedRows.reduce((sum, r) => sum + (r.studentsAttempts || 0), 0);
-    const published = total > 0 ? Math.round((normalizedRows.filter(r => r.is_published).length / total) * 100) : 0;
-    return { total, formative, summative, submissions, published };
-  }, [normalizedRows]);
-
-  const filteredRows = useMemo(() => {
-    const normalizedSearch = debouncedSearch.trim().toLowerCase();
-    return normalizedRows.filter((row) => {
-      const matchesSearch = !normalizedSearch || row.searchText.includes(normalizedSearch);
-      return matchesSearch;
-    });
-  }, [normalizedRows, debouncedSearch]);
-
-  const totalPages = Math.max(1, Math.ceil(filteredRows.length / pageSize));
-  const safeCurrentPage = Math.min(currentPage, totalPages);
-  const currentRows = filteredRows.slice((safeCurrentPage - 1) * pageSize, safeCurrentPage * pageSize);
-
-  useEffect(() => {
-    if (currentPage !== safeCurrentPage) setCurrentPage(safeCurrentPage);
-  }, [currentPage, safeCurrentPage]);
-
-  // --- Checkboxes ---
-  const visibleSelectedCount = currentRows.filter((row) => selectedRowIds.has(String(row.id))).length;
-  const isAllVisibleSelected = currentRows.length > 0 && visibleSelectedCount === currentRows.length;
-  const isSomeVisibleSelected = visibleSelectedCount > 0 && visibleSelectedCount < currentRows.length;
-
-  useEffect(() => {
-    if (selectAllRef.current) {
-      selectAllRef.current.indeterminate = isSomeVisibleSelected && !isAllVisibleSelected;
-    }
-  }, [isSomeVisibleSelected, isAllVisibleSelected]);
-
-  const handleSelectAll = (event) => {
-    const isChecked = event.target.checked;
-    setSelectedRowIds((previous) => {
-      const next = new Set(previous);
-      currentRows.forEach((row) => {
-        const key = String(row.id);
-        isChecked ? next.add(key) : next.delete(key);
-      });
-      return next;
-    });
-  };
-
-  const handleSelectRow = (id) => {
-    setSelectedRowIds((previous) => {
-      const next = new Set(previous);
-      const key = String(id);
-      next.has(key) ? next.delete(key) : next.add(key);
-      return next;
-    });
-  };
-
-  const handleResetFilters = () => {
-    setSearchTerm('');
-    setDebouncedSearch('');
-    setTypeFilter('all');
-    setPageSize(5);
-    setCurrentPage(1);
-    setSelectedRowIds(new Set());
-  };
-
-  const goToPage = (page) => {
-    setCurrentPage(Math.min(Math.max(page, 1), totalPages));
-  };
-
-  const visiblePageNumbers = useMemo(() => {
-    if (totalPages <= 3) return Array.from({ length: totalPages }, (_, index) => index + 1);
-    if (safeCurrentPage === 1) return [1, 2, 3];
-    if (safeCurrentPage === totalPages) return [totalPages - 2, totalPages - 1, totalPages];
-    return [safeCurrentPage - 1, safeCurrentPage, safeCurrentPage + 1];
-  }, [safeCurrentPage, totalPages]);
-
-  const typeFilterLabel = ASSESSMENT_TYPE_FILTERS.find((item) => item.value === typeFilter)?.label || 'All';
-  const startIndex = filteredRows.length === 0 ? 0 : (safeCurrentPage - 1) * pageSize + 1;
-  const endIndex = filteredRows.length === 0 ? 0 : Math.min(safeCurrentPage * pageSize, filteredRows.length);
-  const emptyStateMessage = fetchError
-    ? fetchError
-    : debouncedSearch || typeFilter !== 'all'
-      ? 'No assessments match the current filters.'
-      : 'Assessments will appear here once the backend returns instructor data.';
-
   const getStepIcon = (stepName) => {
     const currentIndex = stepOrder.indexOf(modalStep);
     const thisIndex = stepOrder.indexOf(stepName);
@@ -1203,65 +1125,6 @@ const Assignments = () => {
           />
         ) : null}
 
-        <section className="assessments-hero">
-          <div className="assessments-hero-copy">
-            <h2>Assessments</h2>
-            <p>{loading ? 'Loading from backend...' : `${filteredRows.length} assessment${filteredRows.length === 1 ? '' : 's'} loaded`}</p>
-          </div>
-
-          <div className="assessments-hero-actions">
-            <div className="assessments-search">
-              <img src="/assets/icons/magnifier.svg" alt="Search" />
-              <input
-                type="search"
-                placeholder="Search assessments..."
-                aria-label="Search Assessments"
-                value={searchTerm}
-                onChange={(event) => setSearchTerm(event.target.value)}
-              />
-            </div>
-
-            <div className="prof-filter-dropdown-wrapper" ref={filterRef}>
-              <button
-                type="button"
-                className={`prof-btn-filter ${typeFilter !== 'all' ? 'filter-active' : ''}`}
-                onClick={() => setIsFilterOpen(!isFilterOpen)}
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
-                <span>{typeFilterLabel}</span>
-              </button>
-              {isFilterOpen && (
-                <div className="prof-filter-dropdown-menu">
-                  {ASSESSMENT_TYPE_FILTERS.map((filter) => (
-                    <button
-                      key={filter.value}
-                      type="button"
-                      className={`prof-filter-option ${typeFilter === filter.value ? 'is-active' : ''}`}
-                      onClick={() => {
-                        setTypeFilter(filter.value);
-                        setIsFilterOpen(false);
-                        setCurrentPage(1);
-                      }}
-                    >
-                      {filter.label}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <button type="button" className="assessments-create-btn" onClick={openCreateModal}>
-              <img src="/assets/icons/plus.svg" alt="" aria-hidden="true" />
-              <span>Create new test</span>
-            </button>
-
-            <button type="button" className="assessments-create-btn" onClick={handleResetFilters}>
-              <span>Reset</span>
-            </button>
-          </div>
-        </section>
-
-        {/* Top Mini Stats Container */}
         <div className="prof-dashboard-stats-container" style={{ margin: '14px 0 6px 0' }}>
           <div className="prof-card prof-secondary-stats-row" style={{ display: 'flex', gap: '20px', background: '#FFFFFF', border: '1px solid #EEF1F6', borderRadius: '12px', padding: '16px 20px', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.03)' }}>
             <div className="sub-stat" style={{ flex: 1, borderRight: '1px solid #EEF1F6', paddingRight: '16px' }}>
@@ -1287,253 +1150,147 @@ const Assignments = () => {
           </div>
         </div>
 
-        {selectedRowIds.size > 0 && (
-          <div className="prof-bulk-actions-bar animate-fade-in">
-            <span className="selected-count">{selectedRowIds.size} assessment(s) selected</span>
-            <div className="bulk-actions-buttons">
-              <button type="button" className="bulk-btn bulk-btn-delete" onClick={handleBulkDelete}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '6px' }}><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                Delete Selected
+        <AcademiaDataTable
+          title="Assessments"
+          subtitle={loading ? 'Loading from backend...' : `${table.totalItems} assessment${table.totalItems === 1 ? '' : 's'} loaded`}
+          searchPlaceholder="Search assessments..."
+          searchQuery={table.searchQuery}
+          onSearchChange={table.setSearchQuery}
+          filters={ASSESSMENT_TYPE_FILTERS.map((item) => ({ id: item.value, label: item.label }))}
+          activeFilter={typeFilter}
+          onFilterChange={setTypeFilter}
+          defaultFilterLabel="Filters"
+          toolbarExtra={(
+            <>
+              <button type="button" className="adt-btn-light-purple" onClick={openCreateModal}>
+                <img src={hoaadd} alt="" /> Create new test
               </button>
-              <button type="button" className="bulk-btn bulk-btn-cancel" onClick={() => setSelectedRowIds(new Set())}>
-                Cancel
+              <button type="button" className="adt-btn-light-purple" onClick={handleResetFilters}>
+                Reset
               </button>
+            </>
+          )}
+          bulkBar={table.selectedKeys.length > 0 ? (
+            <div className="adt-bulk-bar">
+              <strong>{table.selectedKeys.length} assessment(s) selected</strong>
+              <button type="button" className="adt-btn-primary" style={{ background: '#EF4444' }} onClick={handleBulkDelete}>Delete Selected</button>
+              <button type="button" className="adt-btn-light-purple" onClick={table.clearSelection}>Cancel</button>
             </div>
-          </div>
-        )}
-
-        <div className="assessments-table-wrap">
-          <div className="table-responsive">
-            <table className="assessments-table">
-              <thead>
-                <tr>
-                  <th className="is-checkbox">
-                    <label className="prof-table-checkbox" aria-label="Select all assessments">
-                      <input type="checkbox" ref={selectAllRef} checked={isAllVisibleSelected} onChange={handleSelectAll} />
-                      <span></span>
-                    </label>
-                  </th>
-                  <th>
-                    <span>Assignment Details ({filteredRows.length})</span>
-                    <img src="/assets/icons/sorter.svg" alt="Sort" />
-                  </th>
-                  <th>
-                    <span>Assessment Category</span>
-                    <img src="/assets/icons/sorter.svg" alt="Sort" />
-                  </th>
-                  <th>
-                    <span>Course</span>
-                    <img src="/assets/icons/sorter.svg" alt="Sort" />
-                  </th>
-                  <th>
-                    <span>Status</span>
-                    <img src="/assets/icons/sorter.svg" alt="Sort" />
-                  </th>
-                  <th>
-                    <span>Students Attempts</span>
-                    <img src="/assets/icons/sorter.svg" alt="Sort" />
-                  </th>
-                  <th>
-                    <span>Actions</span>
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {loading ? (
-                  <tr>
-                    <td colSpan="7" className="prof-table-empty-cell">
-                      <ManagementLoading compact title="Loading assessments" message="Fetching instructor assessments from the backend." />
-                    </td>
-                  </tr>
-                ) : currentRows.length === 0 ? (
-                  <tr>
-                    <td colSpan="7" className="prof-table-empty-cell">
-                      <div className="prof-table-empty">
-                        <span className="prof-table-empty-badge">Professor dashboard</span>
-                        <h4>{fetchError ? 'Unable to load assessments' : 'No assessments found'}</h4>
-                        <p>{emptyStateMessage}</p>
-                      </div>
-                    </td>
-                  </tr>
-                ) : (
-                  currentRows.map((row, index) => (
-                    <tr 
-                      key={row.id}
-                      onClick={() => { setSubmissionsAssessment(row); setWorkspaceTab('overview'); }}
-                      style={{ cursor: 'pointer' }}
-                      className={selectedRowIds.has(String(row.id)) ? 'is-selected' : ''}
+          ) : null}
+          columns={[
+            {
+              key: 'title',
+              label: () => `Assignment Details (${table.totalItems})`,
+              sortable: true,
+              renderCell: (row) => (
+                <div onClick={() => { setSubmissionsAssessment(row); setWorkspaceTab('overview'); }} style={{ cursor: 'pointer' }}>
+                  <div className="adt-fw-600">{row.title}</div>
+                  <p className="adt-muted">{row.createdAt ? new Date(row.createdAt).toLocaleDateString() : 'Recently'}</p>
+                </div>
+              ),
+            },
+            {
+              key: 'category',
+              label: 'Assessment Category',
+              sortable: true,
+              renderCell: (row) => (
+                <div>
+                  <AcademiaStatusPill tone={row.category === 'formative' ? 'purple' : 'orange'}>{row.category}</AcademiaStatusPill>
+                  <p className="adt-muted">{row.assessmentType}</p>
+                </div>
+              ),
+            },
+            {
+              key: 'courseName',
+              label: 'Course',
+              sortable: true,
+              renderCell: (row) => (
+                <div>
+                  <div className="adt-fw-600">{row.courseName}</div>
+                  <p className="adt-muted">{row.totalPoints ? `${row.totalPoints} points` : '---'}</p>
+                </div>
+              ),
+            },
+            {
+              key: 'is_published',
+              label: 'Status',
+              sortable: true,
+              renderCell: (row) => (
+                <button type="button" onClick={() => handleTogglePublish(row)} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
+                  <AcademiaStatusPill tone={row.is_published ? 'green' : 'gray'}>
+                    {row.is_published ? 'Published' : 'Draft'}
+                  </AcademiaStatusPill>
+                </button>
+              ),
+            },
+            {
+              key: 'studentsAttempts',
+              label: 'Students Attempts',
+              sortable: true,
+              align: 'center',
+              renderCell: (row) => (
+                row.studentsAttempts > 0 ? (
+                  <button
+                    type="button"
+                    className="adt-fw-600"
+                    style={{ background: 'none', border: 'none', color: '#450468', cursor: 'pointer', textDecoration: 'underline' }}
+                    onClick={() => handleOpenSubmissions(row)}
+                  >
+                    {row.studentsAttempts}
+                  </button>
+                ) : row.studentsAttempts
+              ),
+            },
+            {
+              key: 'actions',
+              label: 'Actions',
+              renderCell: (row) => (
+                <div className="adt-row-actions">
+                  <div className="adt-row-menu">
+                    <button
+                      type="button"
+                      className="adt-table-link-icon"
+                      onClick={() => setOpenRowMenuId(openRowMenuId === String(row.id) ? null : String(row.id))}
+                      title="Actions"
                     >
-                      <td className="is-checkbox" onClick={(e) => e.stopPropagation()}>
-                        <label className="prof-table-checkbox" aria-label={`Select assessment ${row.id}`}>
-                          <input type="checkbox" checked={selectedRowIds.has(String(row.id))} onChange={() => handleSelectRow(row.id)} />
-                          <span></span>
-                        </label>
-                      </td>
-                      <td>
-                        <div className="assessments-details">
-                          <h4>{row.title}</h4>
-                          <p>{row.createdAt ? new Date(row.createdAt).toLocaleDateString() : 'Recently'}</p>
-                        </div>
-                      </td>
-                      <td>
-                        <div className="assessments-type">
-                          <span className={row.category === 'formative' ? 'formative-pill' : 'summative-pill'}>
-                            {row.category}
-                          </span>
-                          <p>{row.assessmentType}</p>
-                        </div>
-                      </td>
-                      <td>
-                        <div className="assessments-type">
-                          <span>{row.courseName}</span>
-                          <p>{row.totalPoints ? `${row.totalPoints} points` : '---'}</p>
-                        </div>
-                      </td>
-                      <td onClick={(e) => {
-                        e.stopPropagation();
-                        handleTogglePublish(row);
-                      }} style={{ cursor: 'pointer' }}>
-                        <span className={`status-pill ${row.is_published ? 'pill-green' : 'pill-gray'}`} title="Click to toggle status">
-                          <span className="dot"></span> {row.is_published ? 'Published' : 'Draft'}
-                        </span>
-                      </td>
-                      <td onClick={(e) => {
-                         if (row.studentsAttempts > 0) {
-                           e.stopPropagation();
-                           handleOpenSubmissions(row);
-                         }
-                       }}>
-                         {row.studentsAttempts > 0 ? (
-                           <span className="attempts-interactive-link" title="Click to view submissions">
-                             {row.studentsAttempts}
-                           </span>
-                         ) : (
-                           row.studentsAttempts
-                         )}
-                       </td>
-                       <td className="action-col" onClick={(e) => e.stopPropagation()}>
-                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                           <div className="prof-row-action-menu" style={{ position: 'relative' }}>
-                             <button
-                               type="button"
-                               className="prof-action-btn-circle"
-                               onClick={() => setOpenRowMenuId(openRowMenuId === String(row.id) ? null : String(row.id))}
-                               title="Actions"
-                             >
-                               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1.5"></circle><circle cx="12" cy="5" r="1.5"></circle><circle cx="12" cy="19" r="1.5"></circle></svg>
-                             </button>
-
-                             {openRowMenuId === String(row.id) && (
-                               <div className="prof-row-dropdown-menu">
-                                 <button
-                                   type="button"
-                                   onClick={() => {
-                                     handleOpenSubmissions(row);
-                                     setOpenRowMenuId(null);
-                                   }}
-                                 >
-                                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '8px' }}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-                                   Submissions
-                                 </button>
-                                 <button
-                                   type="button"
-                                   onClick={() => {
-                                     handleEditRow(row);
-                                     setOpenRowMenuId(null);
-                                   }}
-                                 >
-                                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '8px' }}><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg>
-                                   Edit Builder
-                                 </button>
-                                 <button
-                                   type="button"
-                                   onClick={() => {
-                                     handleEditRow(row);
-                                     setModalStep('questions');
-                                     setOpenRowMenuId(null);
-                                   }}
-                                 >
-                                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '8px' }}><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg>
-                                   Questions
-                                 </button>
-                                 <button
-                                   type="button"
-                                   onClick={() => {
-                                     handleTogglePublish(row);
-                                     setOpenRowMenuId(null);
-                                   }}
-                                 >
-                                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '8px' }}><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-                                   {row.is_published ? 'Revert to Draft' : 'Publish'}
-                                 </button>
-                                 <button
-                                   type="button"
-                                   onClick={() => {
-                                     handleDeleteRow(row.id, row.category);
-                                     setOpenRowMenuId(null);
-                                   }}
-                                   style={{ color: '#EF4444' }}
-                                 >
-                                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '8px' }}><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                                   Delete Test
-                                 </button>
-                               </div>
-                             )}
-                           </div>
-                         </div>
-                       </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          <div className="assessments-footer">
-            <div className="assessments-per-page">
-              <span>Show</span>
-              <div className="dropdown assessments-per-page-dropdown">
-                <button type="button" className="dropdown-toggle assessments-per-page-btn" data-bs-toggle="dropdown" aria-expanded="false">
-                  <span>{pageSize}</span>
-                  <img src="/assets/icons/drop.svg" alt="" />
-                </button>
-                <ul className="dropdown-menu">
-                  {PAGE_SIZE_OPTIONS.map((option) => (
-                    <li key={option}>
-                      <button
-                        type="button"
-                        className="dropdown-item"
-                        onClick={() => {
-                          setPageSize(option);
-                          setCurrentPage(1);
-                        }}
-                      >
-                        {option}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <span>per page</span>
-            </div>
-
-            <div className="assessments-pagination">
-              <span>{filteredRows.length === 0 ? '0-0 of 0' : `${startIndex}-${endIndex} of ${filteredRows.length}`}</span>
-              <button type="button" className="assessments-page-nav" aria-label="Previous" onClick={() => goToPage(safeCurrentPage - 1)}>←</button>
-              {visiblePageNumbers.map((num) => (
-                <button
-                  key={num}
-                  type="button"
-                  className={`assessments-page-num ${safeCurrentPage === num ? 'is-active' : ''}`}
-                  onClick={() => goToPage(num)}
-                >
-                  {num}
-                </button>
-              ))}
-              <button type="button" className="assessments-page-nav" aria-label="Next" onClick={() => goToPage(safeCurrentPage + 1)}>→</button>
-            </div>
-          </div>
-        </div>
+                      ⋮
+                    </button>
+                    {openRowMenuId === String(row.id) ? (
+                      <div className="adt-row-dropdown">
+                        <button type="button" onClick={() => { handleOpenSubmissions(row); setOpenRowMenuId(null); }}>Submissions</button>
+                        <button type="button" onClick={() => { handleEditRow(row); setOpenRowMenuId(null); }}>Edit Builder</button>
+                        <button type="button" onClick={() => { handleEditRow(row); setModalStep('questions'); setOpenRowMenuId(null); }}>Questions</button>
+                        <button type="button" onClick={() => { handleTogglePublish(row); setOpenRowMenuId(null); }}>{row.is_published ? 'Revert to Draft' : 'Publish'}</button>
+                        <button type="button" style={{ color: '#EF4444' }} onClick={() => { handleDeleteRow(row.id, row.category); setOpenRowMenuId(null); }}>Delete Test</button>
+                      </div>
+                    ) : null}
+                  </div>
+                </div>
+              ),
+            },
+          ]}
+          rows={table.pageRows}
+          getRowKey={(row) => row.id}
+          sortConfig={table.sortConfig}
+          onSort={table.handleSort}
+          selectable
+          selectedKeys={table.selectedKeys}
+          onToggleRow={table.toggleRowSelection}
+          onToggleAllVisible={table.toggleAllVisibleRows}
+          loading={loading}
+          emptyTitle={fetchError ? 'Unable to load assessments' : 'No assessments found'}
+          emptyMessage={fetchError || (table.searchQuery || typeFilter !== 'all' ? 'No assessments match the current filters.' : 'Create your first assessment to get started.')}
+          loadingMessage="Fetching instructor assessments…"
+          pageSize={table.pageSize}
+          pageSizeOptions={table.pageSizeOptions}
+          onPageSizeChange={table.setPageSize}
+          currentPage={table.currentPage}
+          totalPages={table.totalPages}
+          totalItems={table.totalItems}
+          rangeLabel={table.rangeLabel}
+          onGoToPage={table.goToPage}
+          visiblePageNumbers={table.visiblePageNumbers}
+        />
       </section>
 
       {/* --- ASSESSMENTS MODAL --- */}
