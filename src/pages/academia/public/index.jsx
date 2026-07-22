@@ -10,6 +10,20 @@ import 'swiper/css/effect-coverflow';
 
 import { buildCourseDetailsPath, buildSyllabusReaderPath, buildProjectPath, buildStoryPath } from './publicShare';
 
+const stripHtml = (html) => {
+  if (!html) return '';
+  return String(html)
+    .replace(/<[^>]*>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&#39;/g, "'")
+    .replace(/&quot;/g, '"')
+    .replace(/\s+/g, ' ')
+    .trim();
+};
+
 // --- Import Icons ---
 import acPlusIcon from '../../../assets/icons/ac-plus.svg';
 import bookOpenIcon from '../../../assets/icons/book-open.svg';
@@ -489,7 +503,7 @@ function AcademiaIndex() {
                     <small>{course.instructor_name || course.author || 'Instructor'}</small>
                   </div>
                   <div>
-                    <p>{course.description || course.summary || 'No description available.'}</p>
+                    <p>{stripHtml(course.description || course.summary) || 'No description available.'}</p>
                   </div>
                   <div>
                     <small>{course.starts_on || course.startsAt || 'Self-paced'}</small>
