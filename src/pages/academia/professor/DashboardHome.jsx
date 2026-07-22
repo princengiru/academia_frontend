@@ -7,6 +7,7 @@ import { BookOpen, CalendarPlus, ClipboardCheck, FileText, Wallet } from 'lucide
 import './dashboard-home.css';
 import hoagoto from '../../../assets/icons/hoagoto.svg';
 import hoadowncaret from '../../../assets/icons/hoadowncaret.svg';
+import { AcademiaDataTable, AcademiaStatusPill } from '../shared';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
@@ -67,9 +68,6 @@ const DashboardHome = () => {
   const [assessmentsError, setAssessmentsError] = useState('');
   const [assessmentsReloadKey, setAssessmentsReloadKey] = useState(0);
 
-  // --- CHECKBOX STATE ---
-  const [selectedRowIds, setSelectedRowIds] = useState(() => new Set());
-  const selectAllRef = useRef(null);
 
   // 1. Debounce the search term to prevent API spam
   useEffect(() => {
@@ -217,10 +215,38 @@ const DashboardHome = () => {
     return () => controller.abort(); // Cancel previous request if user clicks fast
   }, [statusFilter, pageSize, activePage, debouncedSearch, assessmentsReloadKey]);
 
-  // Normalize current page rows
-  const courseRows = useMemo(() => {
+  // Normalize current page rows (+ optional client sort of the loaded page)
+  const courseRowsRaw = useMemo(() => {
     return assessmentsRows.map((row, index) => normalizeCourseRow(row, index));
   }, [assessmentsRows]);
+
+  const [tableSort, setTableSort] = useState({ key: null, direction: 'asc' });
+  const handleTableSort = (key) => {
+    setTableSort((current) => ({
+      key,
+      direction: current.key === key && current.direction === 'asc' ? 'desc' : 'asc',
+    }));
+  };
+
+  const courseRows = useMemo(() => {
+    if (!tableSort.key) return courseRowsRaw;
+    const key = tableSort.key;
+    const numeric = ['students', 'views', 'revenue', 'rating'];
+    return [...courseRowsRaw].sort((a, b) => {
+      let aVal = a?.[key];
+      let bVal = b?.[key];
+      if (numeric.includes(key)) {
+        aVal = Number(aVal) || 0;
+        bVal = Number(bVal) || 0;
+      } else {
+        aVal = String(aVal ?? '').toLowerCase();
+        bVal = String(bVal ?? '').toLowerCase();
+      }
+      if (aVal < bVal) return tableSort.direction === 'asc' ? -1 : 1;
+      if (aVal > bVal) return tableSort.direction === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }, [courseRowsRaw, tableSort]);
 
   // Pagination Math
   const totalPages = Math.max(1, Math.ceil(assessmentsTotal / pageSize));
@@ -233,37 +259,6 @@ const DashboardHome = () => {
     return [activePage - 1, activePage, activePage + 1];
   }, [activePage, totalPages]);
 
-  // --- CHECKBOX LOGIC ---
-  const selectedVisibleCount = courseRows.filter((row) => selectedRowIds.has(String(row.id))).length;
-  const isAllSelected = courseRows.length > 0 && selectedVisibleCount === courseRows.length;
-  const isSomeSelected = selectedVisibleCount > 0 && selectedVisibleCount < courseRows.length;
-
-  useEffect(() => {
-    if (selectAllRef.current) {
-      selectAllRef.current.indeterminate = isSomeSelected && !isAllSelected;
-    }
-  }, [isSomeSelected, isAllSelected]);
-
-  const handleSelectAll = (e) => {
-    const isChecked = e.target.checked;
-    setSelectedRowIds((prev) => {
-      const next = new Set(prev);
-      courseRows.forEach((row) => {
-        isChecked ? next.add(String(row.id)) : next.delete(String(row.id));
-      });
-      return next;
-    });
-  };
-
-  const handleSelectRow = (rowId) => {
-    setSelectedRowIds((prev) => {
-      const next = new Set(prev);
-      const key = String(rowId);
-      next.has(key) ? next.delete(key) : next.add(key);
-      return next;
-    });
-  };
-
   // --- HANDLERS ---
   const handleQuickAction = (path) => navigate(path);
 
@@ -273,7 +268,6 @@ const DashboardHome = () => {
     setStatusFilter('all');
     setPageSize(5);
     setActivePage(1);
-    setSelectedRowIds(new Set());
   };
 
   const handleStatusChange = (val) => {
@@ -317,89 +311,10 @@ const DashboardHome = () => {
     })
   ), [upcomingEvents]);
 
-  const renderTableBody = () => {
-    if (assessmentsError && !assessmentsLoading) {
-      return (
-        <tr>
-          <td colSpan="9" className="prof-table-empty-cell">
-            <LearnerLoadError
-              title="Could not load lesson history"
-              message={assessmentsError}
-              onRetry={() => setAssessmentsReloadKey((key) => key + 1)}
-            />
-          </td>
-        </tr>
-      );
-    }
 
-    if (assessmentsLoading && courseRows.length === 0) {
-      return (
-        <tr>
-          <td colSpan="9" className="prof-table-empty-cell">
-            <ManagementLoading compact title="Loading records" message="Fetching your latest lesson history." />
-          </td>
-        </tr>
-      );
-    }
-
-    if (courseRows.length === 0) {
-      return (
-        <tr>
-          <td colSpan="9" className="prof-table-empty-cell">
-            <div className="prof-table-empty">
-              <span className="prof-table-empty-badge">Dashboard</span>
-              <h4>No records found</h4>
-              <p>{searchTerm || statusFilter !== 'all' ? 'Try adjusting your search or filters.' : 'Your history will appear here once data is available.'}</p>
-            </div>
-          </td>
-        </tr>
-      );
-    }
-
-    return courseRows.map((item, index) => (
-      <tr key={item.id} className={selectedRowIds.has(String(item.id)) ? 'is-selected' : ''}>
-        <td className="is-checkbox">
-          <label className="prof-table-checkbox">
-            <input
-              type="checkbox"
-              checked={selectedRowIds.has(String(item.id))}
-              onChange={() => handleSelectRow(item.id)}
-            />
-            <span></span>
-          </label>
-        </td>
-        <td className="prof-table-rank">#{(activePage - 1) * pageSize + index + 1}</td>
-        <td>
-          <div className="prof-table-details">
-            <strong>{item.title}</strong>
-            <span>{item.createdAt ? new Date(item.createdAt).toLocaleDateString() : 'Recently'}</span>
-          </div>
-        </td>
-        <td>
-          <div className="prof-table-type">
-            <strong>{item.type}</strong>
-            <span>{item.students} Students</span>
-          </div>
-        </td>
-        <td>
-          <div className="prof-table-students">
-            <strong>{item.students}</strong>
-            <span><img src="/assets/icons/eye.svg" alt="" /> {item.views} Views</span>
-          </div>
-        </td>
-        <td className="prof-table-score">{item.rating ?? '---'}</td>
-        <td className="prof-table-rating">{item.rating ?? '---'} <img src="/assets/icons/star.svg" alt="" /></td>
-        <td className="prof-table-profit">
-          {item.revenue > 0 ? formatAmount(item.revenue) : '—'}
-        </td>
-        <td className="prof-table-status">
-          <span className={`prof-status-pill ${item.status === 'published' ? 'prof-status-pill--ok' : 'prof-status-pill--muted'}`}>
-            <span className="dot"></span>{item.status || 'published'}
-          </span>
-        </td>
-      </tr>
-    ));
-  };
+  const rangeLabel = assessmentsTotal === 0
+    ? '0'
+    : `${(activePage - 1) * pageSize + 1}-${Math.min(activePage * pageSize, assessmentsTotal)}`;
 
   return (
       <section className="prof-page">
@@ -635,112 +550,112 @@ const DashboardHome = () => {
         </div>
         ) : null}
 
-        {/* --- DATA TABLE SECTION --- */}
-        <div className="prof-panel mt-3">
-          <div className="prof-panel-head">
-            <div>
-              <h2>Lessons History</h2>
-              <p>{assessmentsLoading ? 'Loading records...' : `${assessmentsTotal} record${assessmentsTotal === 1 ? '' : 's'} • ${statusLabel}`}</p>
-            </div>
-            <div className="prof-table-actions">
-              <div className="prof-table-search">
-                <img src="/assets/icons/search.svg" alt="" />
-                <input
-                  type="search"
-                  placeholder="Search lessons..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
+        <AcademiaDataTable
+          title="Lessons History"
+          subtitle={assessmentsLoading ? 'Loading records...' : `${assessmentsTotal} record${assessmentsTotal === 1 ? '' : 's'} • ${statusLabel}`}
+          searchPlaceholder="Search lessons..."
+          searchQuery={searchTerm}
+          onSearchChange={setSearchTerm}
+          filters={STATUS_FILTERS.map((item) => ({ id: item.value, label: item.label }))}
+          activeFilter={statusFilter}
+          onFilterChange={handleStatusChange}
+          defaultFilterLabel="Filters"
+          toolbarExtra={(
+            <button type="button" className="adt-btn-light-purple" onClick={handleResetFilters}>
+              Reset
+            </button>
+          )}
+          columns={[
+            {
+              key: 'rank',
+              label: 'Rank',
+              renderCell: (row) => {
+                const idx = courseRows.findIndex((r) => String(r.id) === String(row.id));
+                return `#${(activePage - 1) * pageSize + Math.max(idx, 0) + 1}`;
+              },
+            },
+            {
+              key: 'title',
+              label: 'Assignment Details',
+              sortable: true,
+              renderCell: (row) => (
+                <div>
+                  <div className="adt-fw-600">{row.title}</div>
+                  <p className="adt-muted">{row.createdAt ? new Date(row.createdAt).toLocaleDateString() : 'Recently'}</p>
+                </div>
+              ),
+            },
+            {
+              key: 'type',
+              label: 'Assignment Type',
+              sortable: true,
+              renderCell: (row) => (
+                <div>
+                  <div className="adt-fw-600">{row.type}</div>
+                  <p className="adt-muted">{row.students} Students</p>
+                </div>
+              ),
+            },
+            {
+              key: 'students',
+              label: 'Tot. Students',
+              sortable: true,
+              renderCell: (row) => (
+                <div>
+                  <div className="adt-fw-600">{row.students}</div>
+                  <p className="adt-muted">{row.views} Views</p>
+                </div>
+              ),
+            },
+            {
+              key: 'rating',
+              label: 'Avg. Score',
+              sortable: true,
+              renderCell: (row) => row.rating ?? '---',
+            },
+            {
+              key: 'ratingDisplay',
+              label: 'Rating',
+              renderCell: (row) => row.rating ?? '---',
+            },
+            {
+              key: 'revenue',
+              label: 'Tot. Profits',
+              sortable: true,
+              renderCell: (row) => (row.revenue > 0 ? formatAmount(row.revenue) : '—'),
+            },
+            {
+              key: 'status',
+              label: 'Status',
+              sortable: true,
+              renderCell: (row) => (
+                <AcademiaStatusPill tone={row.status === 'published' ? 'green' : 'gray'}>
+                  {row.status || 'published'}
+                </AcademiaStatusPill>
+              ),
+            },
+          ]}
+          rows={courseRows}
+          getRowKey={(row) => row.id}
+          sortConfig={tableSort}
+          onSort={handleTableSort}
+          loading={assessmentsLoading && courseRows.length === 0}
+          error={assessmentsError && !assessmentsLoading ? assessmentsError : ''}
+          onRetry={() => setAssessmentsReloadKey((key) => key + 1)}
+          emptyTitle="No records found"
+          emptyMessage={searchTerm || statusFilter !== 'all' ? 'Try adjusting your search or filters.' : 'Your history will appear here once data is available.'}
+          loadingMessage="Fetching your latest lesson history."
+          pageSize={String(pageSize)}
+          pageSizeOptions={PAGE_SIZE_OPTIONS.map(String)}
+          onPageSizeChange={(size) => handlePageSizeChange(Number(size))}
+          currentPage={activePage}
+          totalPages={totalPages}
+          totalItems={assessmentsTotal}
+          rangeLabel={rangeLabel}
+          onGoToPage={goToPage}
+          visiblePageNumbers={visiblePageNumbers}
+        />
 
-              <div className="dropdown">
-                <button type="button" className="dropdown-toggle prof-table-btn prof-table-btn--filter" data-bs-toggle="dropdown">
-                  <img src="/assets/icons/filters-icon.svg" alt="" />
-                  <span>{statusLabel}</span>
-                </button>
-                <ul className="dropdown-menu">
-                  {STATUS_FILTERS.map((filter) => (
-                    <li key={filter.value}>
-                      <button type="button" className="dropdown-item" onClick={() => handleStatusChange(filter.value)}>{filter.label}</button>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              <button type="button" className="prof-table-btn" onClick={handleResetFilters}>
-                <span><img src="/assets/icons/plus1.svg" alt="" /> Reset</span>
-              </button>
-            </div>
-          </div>
-
-          <div className="table-responsive">
-            <table className="prof-table">
-              <thead>
-                <tr>
-                  <th className="is-checkbox">
-                    <label className="prof-table-checkbox">
-                      <input type="checkbox" ref={selectAllRef} checked={isAllSelected} onChange={handleSelectAll} />
-                      <span></span>
-                    </label>
-                  </th>
-                  <th><span className="prof-table-head-text">Rank</span></th>
-                  <th><span className="prof-table-head-text">Assignment Details</span></th>
-                  <th><span className="prof-table-head-text">Assignment Type</span></th>
-                  <th><span className="prof-table-head-text">Tot. Students</span></th>
-                  <th><span className="prof-table-head-text">Avg. Score</span></th>
-                  <th><span className="prof-table-head-text">Rating</span></th>
-                  <th><span className="prof-table-head-text">Tot. Profits</span></th>
-                  <th className="prof-table-status-col"></th>
-                </tr>
-              </thead>
-              <tbody>{renderTableBody()}</tbody>
-            </table>
-          </div>
-
-          {/* TABLE FOOTER / PAGINATION */}
-          <div className="prof-table-footer">
-            <div className="prof-table-page-size">
-              <span>Show</span>
-              <div className="dropdown">
-                <button type="button" className="dropdown-toggle prof-table-page-size-btn" data-bs-toggle="dropdown">
-                  <span>{pageSize}</span> <img src="/assets/icons/drop.svg" alt="" />
-                </button>
-                <ul className="dropdown-menu">
-                  {PAGE_SIZE_OPTIONS.map((option) => (
-                    <li key={option}>
-                      <button type="button" className="dropdown-item" onClick={() => handlePageSizeChange(option)}>{option}</button>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <span>per page</span>
-            </div>
-
-            <div className="prof-table-pager">
-              <div className="prof-table-range">
-                {assessmentsTotal === 0 ? '0-0 of 0' : `${(activePage - 1) * pageSize + 1}-${Math.min(activePage * pageSize, assessmentsTotal)} of ${assessmentsTotal}`}
-              </div>
-              <button type="button" className="prof-table-nav" onClick={() => goToPage(activePage - 1)} disabled={activePage === 1}>
-                <img src="/assets/icons/left1.svg" alt="Previous" />
-              </button>
-              
-              {visiblePageNumbers.map((pageNumber) => (
-                <button
-                  key={pageNumber}
-                  type="button"
-                  className={`prof-table-page ${activePage === pageNumber ? 'is-active' : ''}`}
-                  onClick={() => goToPage(pageNumber)}
-                >
-                  {pageNumber}
-                </button>
-              ))}
-              
-              <button type="button" className="prof-table-nav" onClick={() => goToPage(activePage + 1)} disabled={activePage === totalPages}>
-                <img src="/assets/icons/right1.svg" alt="Next" />
-              </button>
-            </div>
-          </div>
-        </div>
       </section>
   );
 };
