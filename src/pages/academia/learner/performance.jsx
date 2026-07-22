@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import LearnersPageShell from './LearnersPageShell';
 import './index.css';
 import { buildReaderUrl, buildScheduleItems } from './homeDashboardUtils';
-import LearnerLoadError from './LearnerLoadError';
 import LearnerLoading from './LearnerLoading';
 
 // Icons & Images
@@ -12,12 +11,13 @@ import hoagoto from '../../../assets/icons/hoagoto.svg';
 import certt from '../../../assets/icons/certt.svg';
 import right1 from '../../../assets/icons/right1.svg';
 import calendar2 from '../../../assets/icons/calendar2.svg';
-import filtersIcon from '../../../assets/icons/filters-icon.svg';
 import fe3 from '../../../assets/icons/fe3.svg';
 import arrowsLoop from '../../../assets/icons/arrows-loop.svg';
 import resumeIcon from '../../../assets/icons/resume.svg';
 import hoadowncaret from '../../../assets/icons/hoadowncaret.svg';
 import './performance.css';
+import { buildCertificatePreviewPath } from '../certificateUtils';
+import { AcademiaDataTable, AcademiaStatusPill } from '../shared';
 
 const extractBody = (body) => body?.data?.data || body?.data || body;
 const extractList = (body) => {
@@ -58,6 +58,7 @@ function LearnersPerformance() {
   const [pageSize, setPageSize] = useState(10);
   const [timePeriod, setTimePeriod] = useState('all');
   const [status, setStatus] = useState('all');
+  const [historySortConfig, setHistorySortConfig] = useState({ key: null, direction: 'asc' });
 
   useEffect(() => {
     let cancelled = false;
@@ -264,7 +265,12 @@ function LearnersPerformance() {
 
   const zenith = useMemo(() => {
     return historyRows.map((item, idx) => {
-      const assessmentId = item.assessmentId || item.assessment_id || item.id;
+      const assessmentId = item.formative_assessment_uuid
+        || item.summative_assessment_uuid
+        || item.assessmentUuid
+        || item.assessmentId
+        || item.assessment_id
+        || item.id;
       const category = String(item.category || item.assessmentType || '').toLowerCase();
       const chapterId = category === 'summative' || item.isSummative
         ? 'assessment'
@@ -272,11 +278,13 @@ function LearnersPerformance() {
 
       return {
         id: item.id || idx,
-        courseId: item.courseId,
+        courseId: item.course_uuid || item.courseUuid || item.courseId,
         category: item.category,
         assessmentId,
         chapterId,
-        readerUrl: item.courseId ? buildReaderUrl(item.courseId, chapterId) : null,
+        readerUrl: (item.course_uuid || item.courseUuid || item.courseId)
+          ? buildReaderUrl(item.course_uuid || item.courseUuid || item.courseId, chapterId)
+          : null,
         isPassed: item.isPassed,
         course: item.courseTitle || item.assessmentTitle || 'Assessment',
         date: item.startTime || item.endTime || item.createdAt ? new Date(item.startTime || item.endTime || item.createdAt).toLocaleDateString() : '--',
@@ -294,6 +302,35 @@ function LearnersPerformance() {
       };
     });
   }, [historyRows]);
+
+  const handleHistorySort = (key) => {
+    if (!key) return;
+    setHistorySortConfig((current) => ({
+      key,
+      direction: current.key === key && current.direction === 'asc' ? 'desc' : 'asc',
+    }));
+  };
+
+  const sortedZenith = useMemo(() => {
+    if (!historySortConfig.key) return zenith;
+    const key = historySortConfig.key;
+    const coerce = (row) => {
+      const val = row?.[key];
+      if (val == null) return '';
+      if (key === 'score') {
+        const num = parseFloat(String(val).replace('%', ''));
+        return Number.isFinite(num) ? num : -1;
+      }
+      return String(val).toLowerCase();
+    };
+    return [...zenith].sort((a, b) => {
+      const aVal = coerce(a);
+      const bVal = coerce(b);
+      if (aVal < bVal) return historySortConfig.direction === 'asc' ? -1 : 1;
+      if (aVal > bVal) return historySortConfig.direction === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }, [zenith, historySortConfig]);
 
   const totalItems = historyState.pagination?.total || 0;
   const totalPages = historyState.pagination?.pages || 1;
@@ -401,7 +438,6 @@ function LearnersPerformance() {
   const hasSummaryData = Object.keys(metrics).length > 0 || recentCertificates.length > 0 || Object.keys(certificateStatsState || {}).length > 0;
   const hasChartSectionData = chartHistoryRows.length > 0;
   const hasScheduleData = scheduleItems.length > 0;
-  const hasHistoryData = zenith.length > 0;
   const hasCertificateData = Boolean(topCertificate);
   const historyFiltersActive = timePeriod !== 'all' || status !== 'all';
   const hasPerformanceData = hasSummaryData || hasChartSectionData || hasScheduleData || hasCertificateData;
@@ -414,7 +450,7 @@ function LearnersPerformance() {
   const handleDownloadTopCertificate = () => {
     const certificateNumber = topCertificate?.certificate_number || topCertificate?.certificateNumber;
     if (certificateNumber) {
-      window.open(`${API_BASE_URL}/api/certificates/${certificateNumber}/download`, '_blank', 'noopener,noreferrer');
+      navigate(buildCertificatePreviewPath(certificateNumber));
       return;
     }
     if (topCertificate?.certificate_url) {
@@ -748,16 +784,22 @@ function LearnersPerformance() {
         </section>
 
         <section className="learners-performance-history" id="learners-performance-history">
-          <div className="learners-performance-history-head">
-            <div>
-              <h2>Assessment History</h2>
-              <p>Course Attended</p>
-            </div>
-
-            <div className="learners-performance-history-tools">
+          <AcademiaDataTable
+            title="Assessment History"
+            subtitle="Course Attended"
+            filters={[
+              { id: 'all', label: 'All' },
+              { id: 'passed', label: 'Passed' },
+              { id: 'failed', label: 'Failed' },
+              { id: 'in_progress', label: 'In Progress' },
+            ]}
+            activeFilter={status}
+            onFilterChange={(value) => { setStatus(value); setPage(1); }}
+            defaultFilterLabel="Filters"
+            toolbarExtra={(
               <div className="dropdown learners-performance-history-dropdown">
-                <button type="button" className="dropdown-toggle learners-performance-history-tool learners-performance-history-tool-date" data-bs-toggle="dropdown" aria-expanded="false">
-                  <img src={calendar2} alt="Calendar" />
+                <button type="button" className="adt-btn-light-purple dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                  <img src={calendar2} alt="" />
                   <span>{timePeriod === 'all' ? 'All Time' : timePeriod === 'today' ? 'Today' : timePeriod === 'this_week' ? 'This Week' : 'This Month'}</span>
                 </button>
                 <ul className="dropdown-menu learners-performance-history-menu">
@@ -767,165 +809,98 @@ function LearnersPerformance() {
                   <li><a className={`dropdown-item ${timePeriod === 'this_month' ? 'active' : ''}`} href="/" onClick={(e) => { preventDefault(e); setTimePeriod('this_month'); setPage(1); }}>This Month</a></li>
                 </ul>
               </div>
-
-              <div className="dropdown learners-performance-history-dropdown">
-                <button type="button" className="dropdown-toggle learners-performance-history-tool learners-performance-history-tool-filter" data-bs-toggle="dropdown" aria-expanded="false">
-                  <img src={filtersIcon} alt="Filters" />
-                  <span>{status === 'all' ? 'Filters' : status === 'passed' ? 'Passed' : status === 'failed' ? 'Failed' : 'In Progress'}</span>
-                </button>
-                <ul className="dropdown-menu learners-performance-history-menu learners-performance-history-menu-filter">
-                  <li><a className={`dropdown-item ${status === 'all' ? 'active' : ''}`} href="/" onClick={(e) => { preventDefault(e); setStatus('all'); setPage(1); }}>All</a></li>
-                  <li><a className={`dropdown-item ${status === 'passed' ? 'active' : ''}`} href="/" onClick={(e) => { preventDefault(e); setStatus('passed'); setPage(1); }}>Passed</a></li>
-                  <li><a className={`dropdown-item ${status === 'failed' ? 'active' : ''}`} href="/" onClick={(e) => { preventDefault(e); setStatus('failed'); setPage(1); }}>Failed</a></li>
-                  <li><a className={`dropdown-item ${status === 'in_progress' ? 'active' : ''}`} href="/" onClick={(e) => { preventDefault(e); setStatus('in_progress'); setPage(1); }}>In Progress</a></li>
-                </ul>
-              </div>
-            </div>
-          </div>
-
-          <div className={`learners-performance-history-table-wrap ${historyLoading ? 'is-loading' : ''}`}>
-            {historyLoading ? (
-              <LearnerLoading compact title="Loading assessment history" message="Fetching your recent attempts." />
-            ) : historyError ? (
-              <LearnerLoadError
-                title="Could not load assessment history"
-                message={historyError}
-                onRetry={() => {
-                  setHistoryError('');
-                  setHistoryReloadToken((value) => value + 1);
-                }}
-              />
-            ) : !hasHistoryData ? (
-              <div className="learners-card learners-empty-state learners-empty-state--compact">
-                <h3>{historyFiltersActive ? 'No assessments match these filters' : 'No assessment history'}</h3>
-                <p>
-                  {historyFiltersActive
-                    ? 'Try a broader date range or clear your status filter.'
-                    : 'Run your first assessment to see it listed here.'}
-                </p>
-                {historyFiltersActive ? (
+            )}
+            columns={[
+              {
+                key: 'course',
+                label: 'Course / Assessment',
+                sortable: true,
+                renderCell: (row) => (
+                  <div className="learners-performance-history-course">
+                    <strong>{row.course}</strong>
+                    <span>{row.date}</span>
+                  </div>
+                ),
+              },
+              {
+                key: 'author',
+                label: 'Author',
+                sortable: true,
+                cellClassName: 'learners-performance-history-author',
+              },
+              {
+                key: 'score',
+                label: 'Score',
+                sortable: true,
+                cellClassName: 'learners-performance-history-score',
+              },
+              {
+                key: 'timeTaken',
+                label: 'Time taken',
+                sortable: true,
+                cellClassName: 'learners-performance-history-time',
+              },
+              {
+                key: 'status',
+                label: 'Status',
+                sortable: true,
+                renderCell: (row) => (
+                  <AcademiaStatusPill tone={row.statusTone === 'passed' ? 'green' : row.statusTone === 'failed' ? 'red' : 'orange'}>
+                    {row.status}
+                  </AcademiaStatusPill>
+                ),
+              },
+              {
+                key: 'action',
+                label: 'Actions',
+                renderCell: (row) => (
                   <button
-                    className="learners-btn learners-btn-primary"
                     type="button"
+                    className={`learners-performance-history-action is-${row.actionTone}`}
                     onClick={() => {
-                      setTimePeriod('all');
-                      setStatus('all');
-                      setPage(1);
+                      if (row.action === 'Download Certificate') {
+                        navigate('/academia/learner/certificates');
+                      } else if (row.readerUrl) {
+                        navigate(row.readerUrl);
+                      } else if (row.courseId) {
+                        navigate(`/academia/learner/read-contents?id=${row.courseId}`);
+                      }
                     }}
                   >
-                    Clear filters
+                    {row.actionTone === 'download' && <img src={fe3} alt="Download" />}
+                    {row.actionTone === 'retake' && <img src={arrowsLoop} alt="Retake" />}
+                    {row.actionTone === 'resume' && <img src={resumeIcon} alt="Resume" />}
+                    <span>{row.action}</span>
                   </button>
-                ) : (
-                  <button className="learners-btn learners-btn-primary" type="button" onClick={() => navigate('/academia/learner/available-test')}>
-                    Take an assessment
-                  </button>
-                )}
-              </div>
-            ) : (
-              <table className="learners-performance-history-table">
-                <thead>
-                  <tr>
-                    <th><span className="learners-performance-table-head-text">Course / Assessment</span></th>
-                    <th><span className="learners-performance-table-head-text">Author</span></th>
-                    <th><span className="learners-performance-table-head-text">Score</span></th>
-                    <th><span className="learners-performance-table-head-text">Time taken</span></th>
-                    <th><span className="learners-performance-table-head-text">Status</span></th>
-                    <th><span className="learners-performance-table-head-text">Actions</span></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {zenith.map((husk, idx) => (
-                    <tr key={husk.id}>
-                      <td>
-                        <div className="learners-performance-history-course">
-                          <strong>{husk.course}</strong>
-                          <span>{husk.date}</span>
-                        </div>
-                      </td>
-                      <td className="learners-performance-history-author">{husk.author}</td>
-                      <td className="learners-performance-history-score">{husk.score}</td>
-                      <td className="learners-performance-history-time">{husk.timeTaken}</td>
-                      <td>
-                        <span className={`learners-performance-history-status is-${husk.statusTone}`}>{husk.status}</span>
-                      </td>
-                      <td>
-                        <button 
-                          type="button" 
-                          className={`learners-performance-history-action is-${husk.actionTone}`}
-                          onClick={() => {
-                            if (husk.action === 'Download Certificate') {
-                              navigate('/academia/learner/certificates');
-                            } else if (husk.readerUrl) {
-                              navigate(husk.readerUrl);
-                            } else if (husk.courseId) {
-                              navigate(`/academia/learner/read-contents?id=${husk.courseId}`);
-                            }
-                          }}
-                        >
-                          {husk.actionTone === 'download' && <img src={fe3} alt="Download" />}
-                          {husk.actionTone === 'retake' && <img src={arrowsLoop} alt="Retake" />}
-                          {husk.actionTone === 'resume' && <img src={resumeIcon} alt="Resume" />}
-                          <span>{husk.action}</span>
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </div>
-
-          {!historyLoading && !historyError && totalItems > 0 && (
-          <div className="learners-performance-history-footer">
-            <div className="learners-performance-history-page-size">
-              <span>Show</span>
-              <div className="dropdown learners-performance-history-dropdown">
-                <button type="button" className="dropdown-toggle learners-performance-history-page-btn" data-bs-toggle="dropdown" aria-expanded="false">
-                  <span>{pageSize}</span>
-                </button>
-                <ul className="dropdown-menu learners-performance-history-menu learners-performance-history-page-menu">
-                  <li><a className={`dropdown-item ${pageSize === 10 ? 'active' : ''}`} href="/" onClick={(e) => { preventDefault(e); setPageSize(10); setPage(1); }}>10</a></li>
-                  <li><a className={`dropdown-item ${pageSize === 20 ? 'active' : ''}`} href="/" onClick={(e) => { preventDefault(e); setPageSize(20); setPage(1); }}>20</a></li>
-                  <li><a className={`dropdown-item ${pageSize === 50 ? 'active' : ''}`} href="/" onClick={(e) => { preventDefault(e); setPageSize(50); setPage(1); }}>50</a></li>
-                </ul>
-              </div>
-              <span>per page</span>
-            </div>
-
-            <div className="learners-performance-history-pagination">
-              <span>{startIndex}-{endIndex} of {totalItems}</span>
-              <button 
-                type="button" 
-                aria-label="Previous page"
-                disabled={page <= 1}
-                onClick={() => setPage(p => Math.max(1, p - 1))}
-                style={{ cursor: page <= 1 ? 'not-allowed' : 'pointer', opacity: page <= 1 ? 0.5 : 1 }}
-              >
-                &#8592;
-              </button>
-              {pageNumbers.map(num => (
-                <button 
-                  key={num}
-                  type="button" 
-                  className={page === num ? 'is-active' : ''}
-                  aria-label={`Page ${num}`}
-                  onClick={() => setPage(num)}
-                >
-                  {num}
-                </button>
-              ))}
-              <button 
-                type="button" 
-                aria-label="Next page"
-                disabled={page >= totalPages}
-                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                style={{ cursor: page >= totalPages ? 'not-allowed' : 'pointer', opacity: page >= totalPages ? 0.5 : 1 }}
-              >
-                &#8594;
-              </button>
-            </div>
-          </div>
-          )}
+                ),
+              },
+            ]}
+            rows={sortedZenith}
+            getRowKey={(row) => row.id}
+            sortConfig={historySortConfig}
+            onSort={handleHistorySort}
+            loading={historyLoading}
+            error={historyError}
+            onRetry={() => {
+              setHistoryError('');
+              setHistoryReloadToken((value) => value + 1);
+            }}
+            emptyTitle={historyFiltersActive ? 'No assessments match these filters' : 'No assessment history'}
+            emptyMessage={historyFiltersActive
+              ? 'Try a broader date range or clear your status filter.'
+              : 'Run your first assessment to see it listed here.'}
+            loadingMessage="Fetching your recent attempts."
+            showPagination={totalItems > 0}
+            pageSize={String(pageSize)}
+            pageSizeOptions={['10', '20', '50']}
+            onPageSizeChange={(value) => { setPageSize(Number(value)); setPage(1); }}
+            currentPage={page}
+            totalPages={totalPages}
+            totalItems={totalItems}
+            rangeLabel={totalItems === 0 ? '0' : `${startIndex}-${endIndex}`}
+            onGoToPage={(value) => setPage(Math.min(Math.max(1, value), totalPages))}
+            visiblePageNumbers={pageNumbers}
+          />
         </section>
       </section>
     </LearnersPageShell>
