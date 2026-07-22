@@ -35,7 +35,7 @@ import {
   watchEnrollmentPayment,
 } from './enrollmentPaymentUtils';
 import { learnerPageTitle, LEARNER_PRODUCT_NAME } from './learnerBrand';
-import { buildReaderUrl, resolveCourseProgressPercent } from './homeDashboardUtils';
+import { buildReaderUrl, resolveCourseProgressPercent, extractProgressPercentage } from './homeDashboardUtils';
 import LearnerLoadError from './LearnerLoadError';
 import jo1 from '../../../assets/icons/jo1.svg';
 import './course-part.css';
@@ -143,7 +143,7 @@ function CoursePart() {
         const body = await res.json();
         const data = extractBody(body) || {};
         setCourseProgressPercent(resolveCourseProgressPercent({
-          progressPercentage: data.progress_percentage ?? data.progressPercentage,
+          progressPercentage: extractProgressPercentage(data),
           outlineProgress: null,
         }));
       } catch {
@@ -554,7 +554,24 @@ function CoursePart() {
                   Prepared by <strong>{course?.author || 'Author'}</strong>
                 </p>
                 {isEnrolled ? (
-                  <p className="learners-course-specific-progress">{courseProgressPercent}% complete</p>
+                  <div className="learners-course-specific-progress-wrap">
+                    <div className="learners-course-specific-progress-head">
+                      <span>Your progress</span>
+                      <strong>{courseProgressPercent}%</strong>
+                    </div>
+                    <div
+                      className="learners-course-specific-progress-bar"
+                      role="progressbar"
+                      aria-valuenow={courseProgressPercent}
+                      aria-valuemin="0"
+                      aria-valuemax="100"
+                    >
+                      <div
+                        className="learners-course-specific-progress-fill"
+                        style={{ width: `${courseProgressPercent}%` }}
+                      />
+                    </div>
+                  </div>
                 ) : null}
               </>
             )}

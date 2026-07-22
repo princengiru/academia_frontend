@@ -406,6 +406,20 @@ function LearnersPerformance() {
   const historyFiltersActive = timePeriod !== 'all' || status !== 'all';
   const hasPerformanceData = hasSummaryData || hasChartSectionData || hasScheduleData || hasCertificateData;
 
+  const handlePerformanceNavigate = (husk) => {
+    if (husk.action === 'Download Certificate') {
+      navigate('/academia/learner/certificates');
+      return;
+    }
+    if (husk.readerUrl) {
+      navigate(husk.readerUrl);
+      return;
+    }
+    if (husk.courseId) {
+      navigate(buildReaderUrl(husk.courseId, husk.chapterId));
+    }
+  };
+
   const scrollToAssessmentHistory = () => {
     const section = document.getElementById('learners-performance-history');
     section?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -838,7 +852,13 @@ function LearnersPerformance() {
                     <tr key={husk.id}>
                       <td>
                         <div className="learners-performance-history-course">
-                          <strong>{husk.course}</strong>
+                          <button
+                            type="button"
+                            className="learners-performance-history-course-link"
+                            onClick={() => handlePerformanceNavigate(husk)}
+                          >
+                            <strong>{husk.course}</strong>
+                          </button>
                           <span>{husk.date}</span>
                         </div>
                       </td>
@@ -852,15 +872,7 @@ function LearnersPerformance() {
                         <button 
                           type="button" 
                           className={`learners-performance-history-action is-${husk.actionTone}`}
-                          onClick={() => {
-                            if (husk.action === 'Download Certificate') {
-                              navigate('/academia/learner/certificates');
-                            } else if (husk.readerUrl) {
-                              navigate(husk.readerUrl);
-                            } else if (husk.courseId) {
-                              navigate(`/academia/learner/read-contents?id=${husk.courseId}`);
-                            }
-                          }}
+                          onClick={() => handlePerformanceNavigate(husk)}
                         >
                           {husk.actionTone === 'download' && <img src={fe3} alt="Download" />}
                           {husk.actionTone === 'retake' && <img src={arrowsLoop} alt="Retake" />}

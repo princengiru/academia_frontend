@@ -849,7 +849,6 @@ const HOASettings = () => {
     const [paymentCardNumber, setPaymentCardNumber] = useState('');
     const [paymentCardBrand, setPaymentCardBrand] = useState('unknown');
     const [paymentExpiryMonth, setPaymentExpiryMonth] = useState('');
-    const [paymentCvv, setPaymentCvv] = useState('');
     const [expiryError, setExpiryError] = useState('');
     const [paymentPhoneNumber, setPaymentPhoneNumber] = useState('');
 
@@ -1628,28 +1627,25 @@ const HOASettings = () => {
                                             )}
                                         </div>
                                         <div className="hoas-payment-field">
-                                            <PaymentFieldLabel hint="Enter the expiration month and year, plus the CVV security code.">Expiration Date</PaymentFieldLabel>
-                                            <div className="hoas-payment-expiry-grid">
-                                                <div style={{ position: 'relative', width: '100%' }}>
-                                                    <input type="text" style={{ width: '100%' }} value={paymentExpiryMonth} onChange={e => {
-                                                        let val = e.target.value.replace(/\D/g, '');
-                                                        let err = '';
-                                                        if (val.length >= 2) {
-                                                            const m = parseInt(val.substring(0, 2), 10);
-                                                            if (m < 1 || m > 12) err = 'Invalid month';
-                                                            val = val.substring(0, 2) + '/' + val.substring(2, 4);
-                                                        }
-                                                        if (val.length === 5) {
-                                                            const y = parseInt(val.substring(3, 5), 10);
-                                                            const currentYear = new Date().getFullYear() % 100;
-                                                            if (y < currentYear && !err) err = 'Card expired';
-                                                        }
-                                                        setPaymentExpiryMonth(val);
-                                                        setExpiryError(err);
-                                                    }} placeholder="03/27" maxLength="5" />
-                                                    {expiryError && <span style={{ color: '#E32A2A', fontSize: '10.5px', position: 'absolute', left: '4px', bottom: '-16px', whiteSpace: 'nowrap' }}>{expiryError}</span>}
-                                                </div>
-                                                <input type="text" value={paymentCvv} onChange={e => setPaymentCvv(e.target.value)} placeholder="CVV" maxLength="4" />
+                                            <PaymentFieldLabel hint="Enter the expiration month and year.">Expiration Date</PaymentFieldLabel>
+                                            <div style={{ position: 'relative', width: '100%' }}>
+                                                <input type="text" style={{ width: '100%' }} value={paymentExpiryMonth} onChange={e => {
+                                                    let val = e.target.value.replace(/\D/g, '');
+                                                    let err = '';
+                                                    if (val.length >= 2) {
+                                                        const m = parseInt(val.substring(0, 2), 10);
+                                                        if (m < 1 || m > 12) err = 'Invalid month';
+                                                        val = val.substring(0, 2) + '/' + val.substring(2, 4);
+                                                    }
+                                                    if (val.length === 5) {
+                                                        const y = parseInt(val.substring(3, 5), 10);
+                                                        const currentYear = new Date().getFullYear() % 100;
+                                                        if (y < currentYear && !err) err = 'Card expired';
+                                                    }
+                                                    setPaymentExpiryMonth(val);
+                                                    setExpiryError(err);
+                                                }} placeholder="03/27" maxLength="5" />
+                                                {expiryError && <span style={{ color: '#E32A2A', fontSize: '10.5px', position: 'absolute', left: '4px', bottom: '-16px', whiteSpace: 'nowrap' }}>{expiryError}</span>}
                                             </div>
                                         </div>
                                         <div className="hoas-payment-footer-row">

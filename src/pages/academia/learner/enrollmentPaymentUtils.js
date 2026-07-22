@@ -175,7 +175,6 @@ export async function fetchSavedPaymentMethods(apiBaseUrl, token) {
     accountNumber: method.accountNumber || method.account_number || null,
     phoneNumber: method.phoneNumber || method.phone_number || null,
     cardLastFour: method.cardLastFour || method.card_last_four || null,
-    cardCvv: method.cardCvv || method.card_cvv || null,
     expiryDate: method.expiryDate || method.expiry_date || null,
     isPrimary: Boolean(method.isPrimary ?? method.is_primary),
   }));

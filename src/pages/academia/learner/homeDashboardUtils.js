@@ -366,3 +366,14 @@ export function resolveCourseProgressPercent({
   if (outlinePct != null) return outlinePct;
   return 0;
 }
+
+/** Normalize progress % from any backend response shape. */
+export function extractProgressPercentage(data) {
+  if (!data || typeof data !== 'object') return null;
+  const raw = data.percentage
+    ?? data.progress_percentage
+    ?? data.progressPercentage
+    ?? data.course_progress_percentage;
+  if (raw == null || Number.isNaN(Number(raw))) return null;
+  return Math.round(Math.min(100, Number(raw)));
+}

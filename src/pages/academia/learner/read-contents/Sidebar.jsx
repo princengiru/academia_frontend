@@ -23,14 +23,19 @@ function Sidebar({
   loadingOutline = false,
   nextAssessment = null,
   courseProgressPercent = 0,
+  isCourseCompleted = false,
 }) {
   const activeItemRef = useRef(null);
   const outlineScrollRef = useRef(null);
   const isSummativeActive = activeChapterId === 'assessment';
-  const summativeUnlocked = isSummativeUnlocked(outlineWeeksState, isSummativeComplete);
+  const summativeUnlocked = isCourseCompleted || isSummativeUnlocked(outlineWeeksState, isSummativeComplete);
+
+  const isItemUnlocked = (itemId) => (
+    isCourseCompleted || isOutlineItemUnlocked(outlineWeeksState, itemId, isSummativeComplete)
+  );
 
   const handleItemSelect = (itemId) => {
-    if (!isOutlineItemUnlocked(outlineWeeksState, itemId, isSummativeComplete)) return;
+    if (!isItemUnlocked(itemId)) return;
     handleChapterSelect(itemId);
   };
 
@@ -93,7 +98,7 @@ function Sidebar({
           </div>
 
           {nextAssessment
-            && isOutlineItemUnlocked(outlineWeeksState, nextAssessment.id, isSummativeComplete)
+            && isItemUnlocked(nextAssessment.id)
             && !isSameOutlineItemId(activeChapterId, nextAssessment.id) ? (
             <button
               type="button"
@@ -122,7 +127,7 @@ function Sidebar({
                   const hasChildren = (huskWeek.chapters?.length > 0) || (huskWeek.assessments?.length > 0);
                   const isWeekOpen = Boolean(expandedWeeks[huskWeek.id]);
                   const hasActiveLesson = weekHasActiveItem(huskWeek);
-                  const weekAccessible = isWeekAccessible(outlineWeeksState, huskWeek.id, isSummativeComplete);
+                  const weekAccessible = isCourseCompleted || isWeekAccessible(outlineWeeksState, huskWeek.id, isSummativeComplete);
 
                   return (
                     <section
@@ -165,7 +170,7 @@ function Sidebar({
                                 if (entry.kind === 'chapter') {
                                   const huskChapter = entry.data;
                                   const isActive = isSameOutlineItemId(activeChapterId, huskChapter.id);
-                                  const isUnlocked = isOutlineItemUnlocked(outlineWeeksState, huskChapter.id, isSummativeComplete);
+                                  const isUnlocked = isItemUnlocked(huskChapter.id);
                                   return (
                                     <button
                                       key={huskChapter.id}
@@ -194,7 +199,7 @@ function Sidebar({
 
                                 const huskAss = entry.data;
                                 const isActive = isSameOutlineItemId(activeChapterId, huskAss.id);
-                                const isUnlocked = isOutlineItemUnlocked(outlineWeeksState, huskAss.id, isSummativeComplete);
+                                const isUnlocked = isItemUnlocked(huskAss.id);
                                 return (
                                   <button
                                     key={huskAss.id}

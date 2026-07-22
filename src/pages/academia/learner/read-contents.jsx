@@ -4,13 +4,14 @@ import LearnersPageShell from './LearnersPageShell';
 import Sidebar from './read-contents/Sidebar';
 import LessonView from './read-contents/LessonView';
 import LessonWorkspacePanels from './read-contents/LessonWorkspacePanels';
-import { findWeekIdForOutlineItem, isSameOutlineItemId, countOutlineProgress, getNextOutlineItem, getNextAssessment, isOutlineItemUnlocked, getFirstUnlockedOutlineItem, resolveReaderChapterTarget, iterateOutlineItems } from './read-contents/sidebarUtils';
-import { getStoredChapterId, setStoredChapterId, resolveCourseProgressPercent } from './homeDashboardUtils';
+import { findWeekIdForOutlineItem, isSameOutlineItemId, countOutlineProgress, getNextOutlineItem, getNextAssessment, getOutlinePosition, isOutlineItemUnlocked, getFirstUnlockedOutlineItem, resolveReaderChapterTarget, iterateOutlineItems } from './read-contents/sidebarUtils';
+import { getStoredChapterId, setStoredChapterId, resolveCourseProgressPercent, extractProgressPercentage } from './homeDashboardUtils';
 import LearnerLoadError from './LearnerLoadError';
 import CourseCompleteCelebration, { hasSeenCourseCelebration, markCourseCelebrationSeen } from './read-contents/CourseCompleteCelebration';
 import {
   buildAccountPaymentHref,
   computeCertificateTotalHours,
+  fetchEnrollmentStatus,
   getPaymentMethodLabel,
   hasSavedPaymentMethods,
   isEnrollmentRoleAllowed,
@@ -257,6 +258,7 @@ function LearnersReadContents() {
   const [courseLoadError, setCourseLoadError] = useState('');
   const [chapterLoadError, setChapterLoadError] = useState('');
   const [showCourseCelebration, setShowCourseCelebration] = useState(false);
+  const [advanceNotice, setAdvanceNotice] = useState(null);
 
   const [loadingCourse, setLoadingCourse] = useState(false);
 
@@ -297,6 +299,10 @@ function LearnersReadContents() {
   const outlineWeeksRef = useRef(outlineWeeksState);
   const isSummativeCompleteRef = useRef(isSummativeComplete);
   const sequenceRedirectedToRef = useRef(null);
+  const handleChapterSelectRef = useRef(null);
+  const advanceTimerRef = useRef(null);
+  const courseApiIdRef = useRef(null);
+  const isCourseCompletedRef = useRef(false);
 
   useEffect(() => {
     outlineWeeksRef.current = outlineWeeksState;
@@ -719,6 +725,9 @@ function LearnersReadContents() {
   }, [assessmentTextAnswer, currentAssessmentIndex, assessmentQuestions]);
 
   // Enrollment State
+  const [resolvedCourseId, setResolvedCourseId] = useState(null);
+  const [enrollmentStatus, setEnrollmentStatus] = useState(null);
+  const [enrollmentLoading, setEnrollmentLoading] = useState(true);
   const [isEnrolled, setIsEnrolled] = useState(false);
   const [isEnrolling, setIsEnrolling] = useState(false);
   const [paymentChoices, setPaymentChoices] = useState([]);
@@ -730,6 +739,23 @@ function LearnersReadContents() {
   const initialChapterId = searchParams.get('chapterId')
     || legacyChapterId
     || (inboundId ? getStoredChapterId(inboundId) : null);
+
+  const courseApiId = useMemo(() => {
+    if (resolvedCourseId) return Number(resolvedCourseId);
+    if (inboundId && /^\d+$/.test(String(inboundId))) return Number(inboundId);
+    return null;
+  }, [resolvedCourseId, inboundId]);
+
+  const isCourseCompleted = enrollmentStatus?.status === 'completed';
+  const canAccessContent = enrollmentStatus?.status === 'active' || isCourseCompleted;
+
+  useEffect(() => {
+    courseApiIdRef.current = courseApiId;
+  }, [courseApiId]);
+
+  useEffect(() => {
+    isCourseCompletedRef.current = isCourseCompleted;
+  }, [isCourseCompleted]);
 
   useEffect(() => {
     if (!inboundId || loadingCourse) return;
@@ -790,6 +816,7 @@ function LearnersReadContents() {
 
   useEffect(() => {
     if (loadingCourse || !activeChapterId || outlineWeeksState.length === 0) return;
+    if (isCourseCompletedRef.current) return;
 
     const weeks = outlineWeeksRef.current;
     if (isOutlineItemUnlocked(weeks, activeChapterId, isSummativeCompleteRef.current)) {
@@ -824,34 +851,65 @@ function LearnersReadContents() {
   }, [loadingCourse, activeChapterId, outlineUnlockKey, inboundId, searchParams, setSearchParams, outlineWeeksState.length]);
 
   useEffect(() => {
+    let cancelled = false;
+
     const checkEnrollmentStatus = async () => {
-      const token = localStorage.getItem('token');
-      if (!token || !inboundId) {
+      if (!inboundId) {
+        setEnrollmentLoading(false);
         setIsEnrolled(false);
+        setEnrollmentStatus(null);
         return;
       }
+
+      if (loadingCourse && !courseApiId) {
+        setEnrollmentLoading(true);
+        return;
+      }
+
+      const token = localStorage.getItem('token');
+      if (!token || !courseApiId) {
+        if (!cancelled) {
+          setEnrollmentLoading(false);
+          setIsEnrolled(false);
+          setEnrollmentStatus(null);
+        }
+        return;
+      }
+
+      setEnrollmentLoading(true);
       try {
-        const res = await fetch(`${API_BASE_URL}/api/progress`, {
-          headers: { 'Authorization': `Bearer ${token}` }
+        const status = await fetchEnrollmentStatus({
+          apiBaseUrl: API_BASE_URL,
+          token,
+          courseId: courseApiId,
         });
-        if (res.ok) {
-          const body = await res.json();
-          const progressList = body?.data?.progress || body?.progress || [];
-          const enrolled = progressList.some(p => Number(p.course_id) === Number(inboundId));
-          setIsEnrolled(enrolled);
+        if (cancelled) return;
+        setEnrollmentStatus(status);
+        const hasAccess = status?.status === 'active' || status?.status === 'completed';
+        setIsEnrolled(hasAccess);
+        if (status?.status === 'completed') {
+          updateSummativeCompletion(true);
         }
       } catch (err) {
-        console.error("Failed to check enrollment status:", err);
+        console.error('Failed to check enrollment status:', err);
+        if (!cancelled) {
+          setIsEnrolled(false);
+          setEnrollmentStatus(null);
+        }
+      } finally {
+        if (!cancelled) setEnrollmentLoading(false);
       }
     };
+
     checkEnrollmentStatus();
-  }, [inboundId]);
+    return () => { cancelled = true; };
+  }, [inboundId, courseApiId, loadingCourse]);
 
   useEffect(() => {
     let cancelled = false;
 
     const loadPaymentChoices = async () => {
-      if (!courseMetaState?.title || isEnrolled) {
+      if (!courseMetaState?.title || canAccessContent) {
         setPaymentChoices([]);
         return;
       }
@@ -891,7 +949,7 @@ function LearnersReadContents() {
 
     loadPaymentChoices();
     return () => { cancelled = true; };
-  }, [courseMetaState.title, courseMetaState.isFree, courseMetaState.rawPrice, courseMetaState.price, isEnrolled]);
+  }, [courseMetaState.title, courseMetaState.isFree, courseMetaState.rawPrice, courseMetaState.price, canAccessContent]);
 
   const loadSummativeAssessment = async (courseId, loadToken) => {
     if (isStaleLoad(loadToken)) return;
@@ -1335,7 +1393,7 @@ function LearnersReadContents() {
 
   const issueCertificate = async (score) => {
     const token = localStorage.getItem('token');
-    if (!token || !inboundId) return false;
+    if (!token || !courseApiId) return false;
     try {
       const totalHours = computeCertificateTotalHours(courseMetaState);
       const payload = {
@@ -1344,7 +1402,7 @@ function LearnersReadContents() {
       };
       if (totalHours) payload.total_hours = totalHours;
 
-      const res = await fetch(`${API_BASE_URL}/api/courses/${inboundId}/certificates/issue`, {
+      const res = await fetch(`${API_BASE_URL}/api/courses/${courseApiId}/certificates/issue`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1378,6 +1436,10 @@ function LearnersReadContents() {
         const courseData = data?.data || data?.course || data || {};
 
         if (cancelled) return;
+
+        const numericCourseId = Number(courseData.id || courseData.course_id)
+          || (/^\d+$/.test(String(id)) ? Number(id) : null);
+        setResolvedCourseId(numericCourseId || null);
 
         // map course meta
         setCourseMetaState((prev) => ({
@@ -1516,12 +1578,11 @@ function LearnersReadContents() {
         }
 
         // load student progress and attempts for this course to reflect progress
-        if (courseData.id || courseData.course_id || id) {
-          const courseId = courseData.id || courseData.course_id || id;
-          fetchCourseProgress(courseId).catch(() => { });
-          fetchCourseStudentAttempts(courseId).catch(() => { });
-          fetchCourseAvgScore(courseId).catch(() => { });
-          refreshSummativeCompletionStatus(courseId).catch(() => { });
+        if (numericCourseId) {
+          fetchCourseProgress(numericCourseId).catch(() => { });
+          fetchCourseStudentAttempts(numericCourseId).catch(() => { });
+          fetchCourseAvgScore(numericCourseId).catch(() => { });
+          refreshSummativeCompletionStatus(numericCourseId).catch(() => { });
         }
       } catch (err) {
         if (!cancelled) {
@@ -1535,7 +1596,7 @@ function LearnersReadContents() {
     if (inboundId) loadCourse(inboundId);
 
     return () => { cancelled = true; };
-  }, [inboundId]);
+  }, [inboundId, initialChapterId]);
 
   // Dynamic Content Loading based on Active Chapter
   const defaultContent = {
@@ -1704,6 +1765,16 @@ function LearnersReadContents() {
     [outlineWeeksState, isSummativeComplete]
   );
 
+  const outlinePosition = useMemo(
+    () => getOutlinePosition(outlineWeeksState, activeChapterId, isSummativeComplete),
+    [outlineWeeksState, activeChapterId, isSummativeComplete]
+  );
+
+  const nextOutlineItem = useMemo(
+    () => (activeChapterId ? getNextOutlineItem(outlineWeeksState, activeChapterId, isSummativeComplete) : null),
+    [outlineWeeksState, activeChapterId, isSummativeComplete]
+  );
+
   const readerEnrollmentReturnPath = inboundId
     ? `/academia/learner/read-contents?id=${inboundId}`
     : '/academia/learner/courses';
@@ -1731,9 +1802,9 @@ function LearnersReadContents() {
         const progressList = data.progress || [];
         const completedIds = progressList.map(p => Number(p.chapter_id));
         const completedAssessments = (data.completedAssessments || []).filter((id) => id !== 'assessment');
-        const pct = data.progress_percentage ?? data.progressPercentage ?? data.course_progress_percentage;
-        if (pct != null && !Number.isNaN(Number(pct))) {
-          setCourseProgressPercentage(Number(pct));
+        const pct = extractProgressPercentage(data);
+        if (pct != null) {
+          setCourseProgressPercentage(pct);
         }
         
         setCompletedChapters((prev) => {
@@ -1803,9 +1874,38 @@ function LearnersReadContents() {
     }
   };
 
-  const markChapterCompleteOnBackend = async (chapterId) => {
+  const scheduleAdvanceToNext = useCallback((currentId, { delayMs = 1000 } = {}) => {
+    if (advanceTimerRef.current) {
+      window.clearTimeout(advanceTimerRef.current);
+      advanceTimerRef.current = null;
+    }
+
+    const weeks = outlineWeeksRef.current;
+    const nextItem = getNextOutlineItem(weeks, currentId, isSummativeCompleteRef.current);
+    if (!nextItem?.id) return null;
+
+    setAdvanceNotice({ title: nextItem.title, type: nextItem.type });
+    showToast('Lesson complete! Moving to the next item…', 'success');
+
+    advanceTimerRef.current = window.setTimeout(() => {
+      advanceTimerRef.current = null;
+      setAdvanceNotice(null);
+      handleChapterSelectRef.current?.(nextItem.id);
+    }, delayMs);
+
+    return nextItem;
+  }, [showToast]);
+
+  useEffect(() => () => {
+    if (advanceTimerRef.current) {
+      window.clearTimeout(advanceTimerRef.current);
+    }
+  }, []);
+
+  const markChapterCompleteOnBackend = async (chapterId, { advance = false } = {}) => {
     const token = localStorage.getItem('token');
-    if (!token || !inboundId || !chapterId) return;
+    const courseId = courseApiIdRef.current;
+    if (!token || !courseId || !chapterId) return;
     
     // Skip mock/local chapter IDs and track locally
     const isMockId = typeof chapterId === 'string' && (chapterId.startsWith('ch-') || chapterId.startsWith('chapter-') || isNaN(Number(chapterId)));
@@ -1838,7 +1938,11 @@ function LearnersReadContents() {
         
         return next;
       });
-      showToast('Lesson marked complete.', 'success');
+      if (advance) {
+        scheduleAdvanceToNext(chapterId);
+      } else {
+        showToast('Lesson marked complete.', 'success');
+      }
       return;
     }
 
@@ -1851,12 +1955,16 @@ function LearnersReadContents() {
         },
         body: JSON.stringify({
           chapter_id: Number(chapterId),
-          course_id: Number(inboundId)
+          course_id: Number(courseId)
         })
       });
       if (res.ok) {
-        await fetchCourseProgress(inboundId);
-        showToast('Lesson marked complete.', 'success');
+        await fetchCourseProgress(courseId);
+        if (advance) {
+          scheduleAdvanceToNext(chapterId);
+        } else {
+          showToast('Lesson marked complete.', 'success');
+        }
       } else {
         const body = await res.json().catch(() => ({}));
         showToast(body?.message || 'Could not mark lesson complete.', 'error');
@@ -1881,7 +1989,6 @@ function LearnersReadContents() {
       id: chapterId,
       weekLabel,
       chapterLabel: title,
-      progressLabel: 'Viewed : 0%',
       headline: title,
       summary: description,
       image: chapterData?.thumbnail
@@ -2012,8 +2119,8 @@ function LearnersReadContents() {
       setActiveChapterContent(mapChapterToContent(chapterId, chapterData || { title: chapterMeta?.title }, {}));
 
       let attemptsRes = [];
-      if (inboundId) {
-        const attRes = await fetch(`${API_BASE_URL}/api/courses/${inboundId}/exercise-attempts`);
+      if (courseApiId) {
+        const attRes = await fetch(`${API_BASE_URL}/api/courses/${courseApiId}/exercise-attempts`);
         if (isStaleLoad(loadToken)) return;
         if (attRes.ok) {
           const body = await attRes.json();
@@ -2038,8 +2145,10 @@ function LearnersReadContents() {
 
   const handleChapterSelect = (chapterId, { silent = false } = {}) => {
     const weeks = outlineWeeksRef.current;
+    const courseCompleted = isCourseCompletedRef.current;
     if (
       weeks.length > 0
+      && !courseCompleted
       && !isOutlineItemUnlocked(weeks, chapterId, isSummativeCompleteRef.current)
     ) {
       if (!silent) {
@@ -2084,6 +2193,8 @@ function LearnersReadContents() {
     return true;
   };
 
+  handleChapterSelectRef.current = handleChapterSelect;
+
   useEffect(() => {
     if (!activeChapterId || loadingCourse) return;
 
@@ -2092,17 +2203,22 @@ function LearnersReadContents() {
     const isSummative = activeChapterId === 'assessment';
     const isFormative = typeof activeChapterId === 'string' && activeChapterId.startsWith('formative-');
 
+    const courseCompleted = isCourseCompletedRef.current;
+    const canLoadItem = (itemId) => (
+      courseCompleted || isOutlineItemUnlocked(weeks, itemId, isSummativeCompleteRef.current)
+    );
+
     if (isSummative) {
-      if (!isOutlineItemUnlocked(weeks, 'assessment', isSummativeCompleteRef.current)) return;
+      if (!canLoadItem('assessment')) return;
       resetChapterState();
       setLoadingChapterContent(false);
       resetAssessmentState();
-      if (inboundId) loadSummativeAssessment(inboundId, loadToken).catch(() => {});
+      if (courseApiId) loadSummativeAssessment(courseApiId, loadToken).catch(() => {});
       return;
     }
 
     if (isFormative) {
-      if (!isOutlineItemUnlocked(weeks, activeChapterId, isSummativeCompleteRef.current)) return;
+      if (!canLoadItem(activeChapterId)) return;
       resetChapterState();
       setLoadingChapterContent(false);
       resetAssessmentState();
@@ -2113,9 +2229,9 @@ function LearnersReadContents() {
 
     resetAssessmentState();
     resetChapterState();
-    if (!isOutlineItemUnlocked(weeks, activeChapterId, isSummativeCompleteRef.current)) return;
+    if (!canLoadItem(activeChapterId)) return;
     loadChapterContent(activeChapterId, loadToken).catch(() => {});
-  }, [activeChapterId, inboundId, loadingCourse, contentReloadKey]);
+  }, [activeChapterId, courseApiId, loadingCourse, contentReloadKey]);
 
   // Scroll to chapter start when chapter changes
   useEffect(() => {
@@ -2203,10 +2319,10 @@ function LearnersReadContents() {
       const updatedGradedList = { ...exerciseGradedList, [question.id]: true };
       setExerciseGradedList(updatedGradedList);
 
-      // Check if all exercises are graded, and mark chapter complete
+      // Check if all exercises are graded, and mark chapter complete + advance
       const allGraded = exerciseQuestionsState.every(q => updatedGradedList[q.id]);
       if (allGraded) {
-        markChapterCompleteOnBackend(activeChapterId).catch(() => {});
+        markChapterCompleteOnBackend(activeChapterId, { advance: true }).catch(() => {});
       }
 
       // Save attempt to database
@@ -2225,8 +2341,8 @@ function LearnersReadContents() {
               score: isCorrect ? (question.points || 1) : 0
             })
           });
-          if (inboundId) {
-            fetchCourseStudentAttempts(inboundId).catch(() => {});
+          if (courseApiId) {
+            fetchCourseStudentAttempts(courseApiId).catch(() => {});
           }
         } catch (err) {
           console.error("Failed to record attempt:", err);
@@ -2388,7 +2504,7 @@ function LearnersReadContents() {
           ...(answered > 0 ? [{ value: String(answered), label: 'Pending Review' }] : []),
           { value: passed ? 'Passed' : (answered > 0 ? 'Pending' : 'Failed'), label: 'Status', tone: passed ? 'success' : (answered > 0 ? '' : 'danger') },
         ],
-        status: attemptData.status || finalStatus || 'submitted'
+        status: attemptData.status || (passed ? 'passed' : 'submitted'),
       });
 
       // Mark completed on sidebar/course reader backend
@@ -2428,10 +2544,13 @@ function LearnersReadContents() {
           });
           return next;
         });
+        if (courseApiId) {
+          fetchCourseProgress(courseApiId).catch(() => {});
+        }
       }
 
-      if (inboundId) {
-        fetchCourseAvgScore(inboundId).catch(() => {});
+      if (courseApiId) {
+        fetchCourseAvgScore(courseApiId).catch(() => {});
       }
 
       setIsAssessmentComplete(true);
@@ -2454,18 +2573,33 @@ function LearnersReadContents() {
   };
 
   const handleLessonComplete = async (chapterId) => {
-    await markChapterCompleteOnBackend(chapterId);
-    const nextItem = getNextOutlineItem(outlineWeeksState, chapterId, isSummativeComplete);
-    if (nextItem?.id) {
-      handleChapterSelect(nextItem.id);
-    }
+    await markChapterCompleteOnBackend(chapterId, { advance: true });
   };
+
+  useEffect(() => {
+    if (!isAssessmentComplete || !assessmentResult?.continueChapterId) return;
+    if (currentAssessmentDetails.type !== 'formative') return;
+
+    const continueId = assessmentResult.continueChapterId;
+    const timer = window.setTimeout(() => {
+      handleChapterSelectRef.current?.(continueId);
+      resetAssessmentState();
+      setIsAssessmentComplete(false);
+    }, 2000);
+
+    return () => window.clearTimeout(timer);
+  }, [isAssessmentComplete, assessmentResult?.continueChapterId, currentAssessmentDetails.type]);
 
   const handleEnrollFromReader = async () => {
     const token = localStorage.getItem('token');
     if (!token) {
       showToast("Please sign in to enroll in this course.", "error");
       navigate('/academia/auth/signin');
+      return;
+    }
+
+    if (!courseApiId) {
+      showToast('Course is still loading. Please try again in a moment.', 'error');
       return;
     }
 
@@ -2487,12 +2621,28 @@ function LearnersReadContents() {
       await enrollInCourse({
         apiBaseUrl: API_BASE_URL,
         token,
-        courseId: inboundId,
+        courseId: courseApiId,
         course: courseMetaState,
         selectedPaymentValue,
       });
       setIsEnrolled(true);
       showToast(`Enrollment confirmed via ${getPaymentMethodLabel(selectedPaymentValue)}.`, 'success');
+      await fetchCourseProgress(courseApiId).catch(() => {});
+      const status = await fetchEnrollmentStatus({
+        apiBaseUrl: API_BASE_URL,
+        token,
+        courseId: courseApiId,
+      }).catch(() => null);
+      if (status) setEnrollmentStatus(status);
+      const target = resolveReaderChapterTarget(
+        outlineWeeksRef.current,
+        activeChapterId || getStoredChapterId(inboundId),
+        isSummativeCompleteRef.current
+      );
+      if (target?.id) {
+        handleChapterSelectRef.current?.(target.id);
+      }
+      setContentReloadKey((k) => k + 1);
     } catch (err) {
       showToast(err.message || 'Failed to enroll in the course.', "error");
     } finally {
@@ -2513,13 +2663,20 @@ function LearnersReadContents() {
   }, [activeContent?.headline, courseMetaState.title, loadingCourse]);
 
   useEffect(() => {
-    if (!inboundId || !isSummativeComplete || !isAssessmentComplete) return;
+    if (!courseApiId || !isCourseCompleted) return;
+    if (!hasSeenCourseCelebration(courseApiId)) {
+      setShowCourseCelebration(true);
+    }
+  }, [courseApiId, isCourseCompleted]);
+
+  useEffect(() => {
+    if (!courseApiId || !isSummativeComplete || !isAssessmentComplete) return;
     if (outlineProgress.total > 0 && outlineProgress.completed >= outlineProgress.total) {
-      if (!hasSeenCourseCelebration(inboundId)) {
+      if (!hasSeenCourseCelebration(courseApiId)) {
         setShowCourseCelebration(true);
       }
     }
-  }, [inboundId, isSummativeComplete, isAssessmentComplete, outlineProgress]);
+  }, [courseApiId, isSummativeComplete, isAssessmentComplete, outlineProgress]);
 
   return (
     <LearnersPageShell>
@@ -2565,6 +2722,7 @@ function LearnersReadContents() {
             loadingOutline={loadingCourse}
             nextAssessment={nextAssessment}
             courseProgressPercent={courseProgressPercent}
+            isCourseCompleted={isCourseCompleted}
           />
 
           <main ref={mainContentRef} className="learners-read-contents-main">
@@ -2590,20 +2748,67 @@ function LearnersReadContents() {
                   </>
                 ) : (
                   <>
-                    <span style={{ fontSize: '11px', textTransform: 'uppercase', fontWeight: '700', letterSpacing: '0.05em', color: '#5B0A86', display: 'block', marginBottom: '4px' }}>
+                    <span className="learners-read-summary-eyebrow">
                       {stripHtml(activeContent.weekLabel)}
                     </span>
-                    <h2 style={{ fontSize: '18px', fontWeight: '600', color: '#071437', margin: 0 }}>
+                    <h2 className="learners-read-summary-title">
                       {stripHtml(activeContent.chapterLabel)}
                     </h2>
+                    {outlinePosition.total > 0 && outlinePosition.index > 0 ? (
+                      <p className="learners-read-summary-position">
+                        Item {outlinePosition.index} of {outlinePosition.total}
+                        {isCourseCompleted ? (
+                          <> · <strong className="learners-read-summary-completed">Course completed</strong></>
+                        ) : nextOutlineItem?.title ? (
+                          <> · Next: <strong>{stripHtml(nextOutlineItem.title)}</strong></>
+                        ) : null}
+                      </p>
+                    ) : isCourseCompleted ? (
+                      <p className="learners-read-summary-position">
+                        <strong className="learners-read-summary-completed">Course completed</strong>
+                      </p>
+                    ) : null}
                   </>
                 )}
               </div>
               <div className="learners-read-contents-summary-side">
-                <h3>Progress</h3>
-                <p>Progress : {courseProgressPercent}%</p>
+                <div className="learners-read-summary-progress">
+                  <div className="learners-read-summary-progress-head">
+                    <span>Course progress</span>
+                    <strong>{courseProgressPercent}%</strong>
+                  </div>
+                  <div
+                    className="learners-read-summary-progress-bar"
+                    role="progressbar"
+                    aria-valuenow={courseProgressPercent}
+                    aria-valuemin="0"
+                    aria-valuemax="100"
+                  >
+                    <div
+                      className="learners-read-summary-progress-fill"
+                      style={{ width: `${courseProgressPercent}%` }}
+                    />
+                  </div>
+                  <p className="learners-read-summary-progress-meta">
+                    {outlineProgress.completed} of {outlineProgress.total} items complete
+                  </p>
+                </div>
               </div>
             </section>
+
+            {advanceNotice ? (
+              <div className="learners-lesson-advance-notice" role="status" aria-live="polite">
+                <div className="learners-lesson-advance-notice-icon" aria-hidden="true">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                </div>
+                <div>
+                  <strong>Great work — lesson complete!</strong>
+                  <p>Opening next: {stripHtml(advanceNotice.title)}</p>
+                </div>
+              </div>
+            ) : null}
 
             <article className="learners-read-article">
               {!inboundId ? (
@@ -2656,7 +2861,8 @@ function LearnersReadContents() {
                   ) : (
                   <LessonView
                     activeContent={activeContent}
-                    isEnrolled={isEnrolled}
+                    isEnrolled={canAccessContent}
+                    enrollmentLoading={enrollmentLoading || (loadingCourse && !courseApiId)}
                     isEnrolling={isEnrolling}
                     handleEnrollFromReader={handleEnrollFromReader}
                     navigate={navigate}
@@ -2671,11 +2877,11 @@ function LearnersReadContents() {
                     requiresPaymentSetup={requiresPaymentSetup}
                     accountHref={buildAccountPaymentHref(readerEnrollmentReturnPath)}
                   >
-                    {isEnrolled && !isAssessmentView ? (
+                    {canAccessContent && !isAssessmentView ? (
                       <LessonWorkspacePanels
                         key={activeChapterId}
                         activeContent={activeContent}
-                        courseId={inboundId}
+                        courseId={courseApiId}
                         pdfUrl={pdfUrl}
                         pdfAttachments={pdfAttachments}
                         activePdfIndex={activePdfIndex}
@@ -2708,12 +2914,12 @@ function LearnersReadContents() {
                     key={activeChapterId}
                     isAssessmentView={isAssessmentView}
                     currentAssessmentDetails={currentAssessmentDetails}
-                    courseId={inboundId}
+                    courseId={courseApiId}
                     courseMeta={courseMetaState}
                     showCourseCelebration={showCourseCelebration}
                     courseTitle={courseMetaState.title}
                     onDismissCourseCelebration={() => {
-                      markCourseCelebrationSeen(inboundId);
+                      markCourseCelebrationSeen(courseApiId);
                       setShowCourseCelebration(false);
                     }}
                     maxAttempts={maxAttempts}

@@ -191,6 +191,11 @@ function LessonWorkspacePanels({
   const hasText = textPages.length > 0;
   const showReadingPane = hasPdf || hasText || !hasVideo;
 
+  const exerciseTotal = exerciseQuestionsState.length;
+  const exerciseDone = exerciseQuestionsState.filter((q) => exerciseGradedList[q.id]).length;
+  const exercisePercent = exerciseTotal > 0 ? Math.round((exerciseDone / exerciseTotal) * 100) : 0;
+  const allExercisesGraded = exerciseTotal > 0 && exerciseDone === exerciseTotal;
+
   return (
     <div className="learners-lesson-workspace-panels">
       <section className="learners-read-article-bottom-section learners-lesson-content-section">
@@ -436,7 +441,26 @@ function LessonWorkspacePanels({
           <div className="learners-read-exercise-badge" aria-hidden="true">
             <img src={leTec} alt="" />
           </div>
-          <h3>Practice exercise</h3>
+          <div>
+            <h3>Practice exercise</h3>
+            {exerciseTotal > 0 ? (
+              <div className="learners-exercise-progress-wrap">
+                <div className="learners-exercise-progress-head">
+                  <span>Exercise progress</span>
+                  <strong>{exerciseDone} / {exerciseTotal} ({exercisePercent}%)</strong>
+                </div>
+                <div
+                  className="learners-exercise-progress-bar"
+                  role="progressbar"
+                  aria-valuenow={exercisePercent}
+                  aria-valuemin="0"
+                  aria-valuemax="100"
+                >
+                  <div className="learners-exercise-progress-fill" style={{ width: `${exercisePercent}%` }} />
+                </div>
+              </div>
+            ) : null}
+          </div>
         </div>
 
         <div className="learners-read-assessment-tracker learners-read-exercise-tracker">
@@ -477,7 +501,7 @@ function LessonWorkspacePanels({
           )}
         </div>
 
-        {exerciseQuestionsState.length > 0 && exerciseQuestionsState.every((q) => exerciseGradedList[q.id]) && (
+        {allExercisesGraded && (
           <div className="learners-exercises-completed-banner">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
@@ -485,7 +509,7 @@ function LessonWorkspacePanels({
             </svg>
             <div>
               <h4>Exercises completed</h4>
-              <p>Great work — you finished all practice questions for this chapter.</p>
+              <p>Great work — moving you to the next lesson shortly.</p>
             </div>
           </div>
         )}

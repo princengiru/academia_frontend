@@ -484,7 +484,6 @@ const getPaymentFormSnapshot = (gateway, fields) => JSON.stringify(
       paymentCardName: fields.paymentCardName || '',
       paymentCardNumber: fields.paymentCardNumber || '',
       paymentExpiryMonth: fields.paymentExpiryMonth || '',
-      paymentCvv: fields.paymentCvv || '',
       savePaymentMethod: Boolean(fields.savePaymentMethod),
     }
     : {
@@ -1091,9 +1090,7 @@ const LearnerAccount = () => {
   const [paymentCardNumber, setPaymentCardNumber] = useState('');
   const [paymentCardBrand, setPaymentCardBrand] = useState('unknown');
   const [paymentExpiryMonth, setPaymentExpiryMonth] = useState('');
-  const [paymentCvv, setPaymentCvv] = useState('');
   const [cardNumberIsMasked, setCardNumberIsMasked] = useState(false);
-  const [cvvIsMasked, setCvvIsMasked] = useState(false);
   const [phoneNumberIsMasked, setPhoneNumberIsMasked] = useState(false);
   const [expiryError, setExpiryError] = useState('');
   const [paymentPhoneNumber, setPaymentPhoneNumber] = useState('');
@@ -1197,7 +1194,6 @@ const LearnerAccount = () => {
     accountNumber: m.accountNumber || m.account_number || null,
     phoneNumber: m.phoneNumber || m.phone_number || null,
     cardLastFour: m.cardLastFour || m.card_last_four || null,
-    cardCvv: m.cardCvv || m.card_cvv || null,
     expiryDate: m.expiryDate || m.expiry_date || null,
     isPrimary: Boolean(m.isPrimary ?? m.is_primary),
     isActive: Boolean(m.isActive ?? m.is_active),
@@ -1340,7 +1336,6 @@ const LearnerAccount = () => {
       paymentCardName,
       paymentCardNumber,
       paymentExpiryMonth,
-      paymentCvv,
       savePaymentMethod,
       paymentSimName,
       paymentPhoneNumber,
@@ -1352,7 +1347,6 @@ const LearnerAccount = () => {
     paymentCardName,
     paymentCardNumber,
     paymentExpiryMonth,
-    paymentCvv,
     savePaymentMethod,
     paymentSimName,
     paymentPhoneNumber,
@@ -2214,15 +2208,12 @@ const LearnerAccount = () => {
         setPaymentCardName('');
         setPaymentCardNumber('');
         setPaymentExpiryMonth('');
-        setPaymentCvv('');
         setPaymentCardBrand('unknown');
         setCardNumberIsMasked(false);
-        setCvvIsMasked(false);
         snapshot = getPaymentFormSnapshot('card', {
           paymentCardName: '',
           paymentCardNumber: '',
           paymentExpiryMonth: '',
-          paymentCvv: '',
           savePaymentMethod: false,
         });
       } else {
@@ -2241,16 +2232,13 @@ const LearnerAccount = () => {
         paymentCardName: method.accountHolderName || '',
         paymentCardNumber: method.accountNumber || '',
         paymentExpiryMonth: method.expiryDate || '',
-        paymentCvv: method.cardCvv || '',
         savePaymentMethod: Boolean(method.isPrimary),
       };
       setPaymentCardName(fields.paymentCardName);
       setPaymentCardNumber(fields.paymentCardNumber);
       setPaymentExpiryMonth(fields.paymentExpiryMonth);
-      setPaymentCvv(fields.paymentCvv);
       setPaymentCardBrand(method.paymentProvider && method.paymentProvider !== 'unknown' ? method.paymentProvider : 'unknown');
       setCardNumberIsMasked(isMaskedValue(method.accountNumber));
-      setCvvIsMasked(isMaskedValue(method.cardCvv));
       setSavePaymentMethod(fields.savePaymentMethod);
       snapshot = getPaymentFormSnapshot('card', fields);
     } else {
@@ -2286,11 +2274,9 @@ const LearnerAccount = () => {
       if (selectedGateway === 'card') {
         if (!paymentCardName.trim()) throw new Error('Enter the name on your card.');
         const digits = cardNumberIsMasked ? '' : extractPaymentDigits(paymentCardNumber);
-        const cvvDigits = cvvIsMasked ? '' : extractPaymentDigits(paymentCvv);
 
         if (!existingMethod && digits.length < 13) throw new Error('Enter a valid card number.');
         if (!paymentExpiryMonth || paymentExpiryMonth.length < 4) throw new Error('Enter the card expiry date.');
-        if (!existingMethod && cvvDigits.length < 3) throw new Error('Enter the card security code.');
 
         const payload = {
           accountHolderName: paymentCardName.trim(),
@@ -2302,10 +2288,6 @@ const LearnerAccount = () => {
         if (!cardNumberIsMasked && digits.length >= 13) {
           payload.accountNumber = digits;
           payload.cardLastFour = digits.slice(-4);
-        }
-
-        if (!cvvIsMasked && cvvDigits.length >= 3) {
-          payload.cardCvv = cvvDigits;
         }
 
         if (existingMethod) {
@@ -2381,7 +2363,7 @@ const LearnerAccount = () => {
     } finally {
       setPaymentMethodsSaving(false);
     }
-  }, [apiFetch, applyPaymentMethodToForm, cardNumberIsMasked, cvvIsMasked, handleSave, navigate, normalizePaymentMethods, paymentCardBrand, paymentCardName, paymentCardNumber, paymentCvv, paymentExpiryMonth, paymentPhoneNumber, paymentSimName, phoneNumberIsMasked, pushFeedback, refreshPaymentMethods, savePaymentMethod, savedPaymentMethods, searchParams, selectedGateway]);
+  }, [apiFetch, applyPaymentMethodToForm, cardNumberIsMasked, handleSave, navigate, normalizePaymentMethods, paymentCardBrand, paymentCardName, paymentCardNumber, paymentExpiryMonth, paymentPhoneNumber, paymentSimName, phoneNumberIsMasked, pushFeedback, refreshPaymentMethods, savePaymentMethod, savedPaymentMethods, searchParams, selectedGateway]);
 
   const handleDeletePaymentMethod = useCallback(async (id) => {
     try {
@@ -3490,38 +3472,25 @@ const LearnerAccount = () => {
                       </div>
                     </div>
                     <div className="hoas-payment-field">
-                      <PaymentFieldLabel hint="Enter the expiration month and year, plus the CVV security code.">Expiration Date</PaymentFieldLabel>
-                      <div className="hoas-payment-expiry-grid">
-                        <div style={{ position: 'relative', width: '100%' }}>
-                          <input type="text" style={{ width: '100%' }} value={paymentExpiryMonth} onChange={e => {
-                            let val = e.target.value.replace(/\D/g, '');
-                            let err = '';
-                            if (val.length >= 2) {
-                              const m = parseInt(val.substring(0, 2), 10);
-                              if (m < 1 || m > 12) err = 'Invalid month';
-                              val = val.substring(0, 2) + '/' + val.substring(2, 4);
-                            }
-                            if (val.length === 5) {
-                              const y = parseInt(val.substring(3, 5), 10);
-                              const currentYear = new Date().getFullYear() % 100;
-                              if (y < currentYear && !err) err = 'Card expired';
-                            }
-                            setPaymentExpiryMonth(val);
-                            setExpiryError(err);
-                          }} placeholder="03/27" maxLength="5" />
-                          {expiryError && <span style={{ color: '#E32A2A', fontSize: '10.5px', position: 'absolute', left: '4px', bottom: '-16px', whiteSpace: 'nowrap' }}>{expiryError}</span>}
-                        </div>
-                        <input
-                          type="text"
-                          inputMode="numeric"
-                          value={paymentCvv}
-                          onChange={(e) => {
-                            setCvvIsMasked(false);
-                            setPaymentCvv(e.target.value.replace(/\D/g, '').slice(0, 4));
-                          }}
-                          placeholder={activePaymentMethod ? '***' : 'CVV'}
-                          maxLength="4"
-                        />
+                      <PaymentFieldLabel hint="Enter the expiration month and year.">Expiration Date</PaymentFieldLabel>
+                      <div style={{ position: 'relative', width: '100%' }}>
+                        <input type="text" style={{ width: '100%' }} value={paymentExpiryMonth} onChange={e => {
+                          let val = e.target.value.replace(/\D/g, '');
+                          let err = '';
+                          if (val.length >= 2) {
+                            const m = parseInt(val.substring(0, 2), 10);
+                            if (m < 1 || m > 12) err = 'Invalid month';
+                            val = val.substring(0, 2) + '/' + val.substring(2, 4);
+                          }
+                          if (val.length === 5) {
+                            const y = parseInt(val.substring(3, 5), 10);
+                            const currentYear = new Date().getFullYear() % 100;
+                            if (y < currentYear && !err) err = 'Card expired';
+                          }
+                          setPaymentExpiryMonth(val);
+                          setExpiryError(err);
+                        }} placeholder="03/27" maxLength="5" />
+                        {expiryError && <span style={{ color: '#E32A2A', fontSize: '10.5px', position: 'absolute', left: '4px', bottom: '-16px', whiteSpace: 'nowrap' }}>{expiryError}</span>}
                       </div>
                     </div>
                     <div className="hoas-payment-footer-row">

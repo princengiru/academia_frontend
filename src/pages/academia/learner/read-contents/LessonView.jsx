@@ -4,6 +4,7 @@ import EnrollmentPaymentPicker from '../EnrollmentPaymentPicker';
 const LessonView = ({
   activeContent,
   isEnrolled,
+  enrollmentLoading = false,
   isEnrolling,
   handleEnrollFromReader,
   navigate,
@@ -19,6 +20,21 @@ const LessonView = ({
   accountHref,
   children,
 }) => {
+  if (isAssessmentView) return null;
+
+  if (enrollmentLoading) {
+    return (
+      <div className="learners-read-lesson-view">
+        <div className="learners-read-skeleton" aria-busy="true" aria-live="polite">
+          <span className="visually-hidden">Checking enrollment…</span>
+          <div className="lrn-skel lrn-skel-title" style={{ width: '55%' }} />
+          <div className="lrn-skel" style={{ width: '100%', height: 180, borderRadius: 12, marginTop: 18 }} />
+          <div className="lrn-skel lrn-skel-text" style={{ width: '100%', marginTop: 18 }} />
+        </div>
+      </div>
+    );
+  }
+
   if (!isEnrolled) {
     return (
       <div className="learners-read-lesson-view">
@@ -74,8 +90,6 @@ const LessonView = ({
       </div>
     );
   }
-
-  if (isAssessmentView) return null;
 
   return (
     <div className="learners-read-lesson-view">

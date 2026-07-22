@@ -210,3 +210,17 @@ export function getNextAssessment(weeks, isSummativeComplete = false) {
 
   return null;
 }
+
+/** Current position in the course outline (1-based index). */
+export function getOutlinePosition(weeks, currentId, isSummativeComplete = false) {
+  const items = iterateOutlineItems(weeks, isSummativeComplete);
+  const index = items.findIndex((item) => isSameOutlineItemId(item.id, currentId));
+  if (index === -1) {
+    return { index: 0, total: items.length, current: null };
+  }
+  return {
+    index: index + 1,
+    total: items.length,
+    current: items[index],
+  };
+}

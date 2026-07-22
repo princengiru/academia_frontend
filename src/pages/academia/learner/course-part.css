@@ -114,6 +114,47 @@
   color: #5B0A86 !important;
 }
 
+.learners-course-specific-progress-wrap {
+  margin-top: 12px;
+  max-width: 280px;
+}
+
+.learners-course-specific-progress-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
+  font-family: Inter, sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #78829D;
+}
+
+.learners-course-specific-progress-head strong {
+  font-size: 15px;
+  font-weight: 700;
+  color: #5B0A86;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.learners-course-specific-progress-bar {
+  height: 8px;
+  border-radius: 999px;
+  background: #E8D9F3;
+  overflow: hidden;
+}
+
+.learners-course-specific-progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #5B0A86 0%, #7B1FA2 100%);
+  transition: width 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
 .learners-course-specific-grid {
   display: grid;
   grid-template-columns: 1fr 300px;

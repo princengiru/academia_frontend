@@ -121,7 +121,6 @@ function EnrollmentPaymentModal({
   const [cardNumberMasked, setCardNumberMasked] = useState(false);
   const [expiry, setExpiry] = useState('');
   const [cvv, setCvv] = useState('');
-  const [cvvMasked, setCvvMasked] = useState(false);
 
   const [couponOpen, setCouponOpen] = useState(false);
   const [coupon, setCoupon] = useState('');
@@ -196,13 +195,12 @@ function EnrollmentPaymentModal({
         setCardNumber(display);
         setCardBrand(detectCardBrand(display));
         setExpiry(matchedMethod.expiryDate || '');
-        setCvv(matchedMethod.cardCvv || '');
+        setCvv('');
         setCardNumberMasked(Boolean(display));
-        setCvvMasked(Boolean(matchedMethod.cardCvv));
       } else {
         setCardName(''); setCardNumber(''); setCardBrand('unknown');
         setExpiry(''); setCvv('');
-        setCardNumberMasked(false); setCvvMasked(false);
+        setCardNumberMasked(false);
       }
     } else if (matchedMethod) {
       // Show the saved number as the 10-digit local form (handles both
@@ -224,7 +222,7 @@ function EnrollmentPaymentModal({
       const expected = cardBrand === 'amex' ? 15 : 16;
       return d.length === expected && luhnValid(d);
     })();
-  const cvvValid = (cvvMasked && cvv.trim().length > 0) || /^\d{3,4}$/.test(cvv);
+  const cvvValid = /^\d{3,4}$/.test(cvv);
   const expiryValid = isValidExpiry(expiry);
 
   const formValid = gateway === 'card'
@@ -244,7 +242,7 @@ function EnrollmentPaymentModal({
   const cardError = !cardNumberMasked && digitsOnly(cardNumber).length > 0 && !cardNumberValid
     ? 'Enter a valid card number.' : '';
   const expiryError = expiry.length > 0 && !expiryValid ? 'Invalid or expired date.' : '';
-  const cvvError = !cvvMasked && cvv.length > 0 && !/^\d{3,4}$/.test(cvv) ? 'CVV must be 3–4 digits.' : '';
+  const cvvError = cvv.length > 0 && !/^\d{3,4}$/.test(cvv) ? 'CVV must be 3–4 digits.' : '';
 
   const resetCoupon = () => {
     setCouponState('idle');
@@ -433,7 +431,6 @@ function EnrollmentPaymentModal({
                       className={cvvError ? 'is-invalid' : ''}
                       value={cvv}
                       onChange={(e) => {
-                        setCvvMasked(false);
                         setCvv(digitsOnly(e.target.value).slice(0, 4));
                       }}
                       placeholder="3344"
