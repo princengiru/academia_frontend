@@ -49,6 +49,8 @@ function CoursePart() {
   const [searchParams, setSearchParams] = useSearchParams();
   const legacyStateId = location.state?.courseId;
   const inboundId = searchParams.get('id') || legacyStateId;
+  // Keep the public UUID in reader URLs (same as this page), not the internal numeric id.
+  const coursePublicRef = inboundId || null;
 
   const [loading, setLoading] = useState(true);
   const [course, setCourse] = useState(null);
@@ -246,7 +248,7 @@ function CoursePart() {
         });
         setIsEnrolled(true);
         showToast('Enrollment confirmed.', 'success');
-        navigate(buildReaderUrl(course.id));
+        navigate(buildReaderUrl(coursePublicRef || course.id));
       } catch (err) {
         showToast(err.message || 'Failed to enroll in the course.', 'danger');
       } finally {
@@ -336,7 +338,7 @@ function CoursePart() {
         setIsEnrolled(true);
         setPaymentModalOpen(false);
         showToast(`Payment successful via ${getPaymentMethodLabel(gatewayToPaymentValue(gateway))}.`, 'success');
-        navigate(buildReaderUrl(course.id));
+        navigate(buildReaderUrl(coursePublicRef || course.id));
       }
     } catch (err) {
       if (err?.code === 'PAYMENT_TIMEOUT' && err?.invoiceUuid) {
@@ -354,7 +356,7 @@ function CoursePart() {
                 `Payment successful via ${getPaymentMethodLabel(gatewayToPaymentValue(gateway))}.`,
                 'success'
               );
-              navigate(buildReaderUrl(course.id));
+              navigate(buildReaderUrl(coursePublicRef || course.id));
               return;
             }
             if (status.status === 'failed') {
@@ -397,6 +399,7 @@ function CoursePart() {
 
         setCourse({
           id: courseData.id,
+          uuid: courseData.course_uuid || courseData.uuid || null,
           title: courseData.title,
           author: courseData.instructor_name || courseData.author,
           authorImage: defaultProfile,
@@ -743,7 +746,7 @@ function CoursePart() {
                                   </div>
                                   <div className="oc-bd-content" style={{ display: 'flex', alignItems: 'center', gap: 16, paddingBottom: cIdx !== week.chapters.length - 1 ? 24 : 0, cursor: isEnrolled ? 'pointer' : 'default' }} onClick={() => {
                                     if (isEnrolled) {
-                                      navigate(`/academia/learner/read-contents?id=${course?.id}&chapterId=${encodeURIComponent(chap.id)}`);
+                                      navigate(buildReaderUrl(coursePublicRef, chap.chapter_uuid || chap.uuid || chap.id));
                                     }
                                   }}>
                                     {chap.thumbnail ? (
@@ -812,7 +815,7 @@ function CoursePart() {
 
               {isEnrolled ? (
                 <>
-                  <button type="button" className="learners-course-specific-cta" onClick={() => navigate(buildReaderUrl(course.id))}>
+                  <button type="button" className="learners-course-specific-cta" onClick={() => navigate(buildReaderUrl(coursePublicRef))}>
                     <span>Continue learning</span>
                     <img src={hoagoto} alt="Go" />
                   </button>
