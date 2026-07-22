@@ -12,6 +12,7 @@ import './projects.css';
 import { PublicEmptyState, PublicLoadError } from './PublicPageState';
 import { PublicNewsletterNotice, usePublicNewsletter } from './usePublicNewsletter.jsx';
 import { usePublicPageTitle } from './usePublicPageTitle.jsx';
+import { buildProjectPath } from './publicShare';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
@@ -171,9 +172,10 @@ function AcademiaProjects() {
     || searchParams.get('sort'),
   );
 
-  const openProject = (id) => {
-    if (!id) return;
-    navigate(`/academia/read-project?id=${id}`);
+  const openProject = (projectOrId) => {
+    const path = buildProjectPath(projectOrId);
+    if (path === '/academia/projects') return;
+    navigate(path);
   };
 
   const resolveImage = (project) => {
@@ -316,11 +318,11 @@ function AcademiaProjects() {
               className="journal"
               role="button"
               tabIndex={0}
-              onClick={() => openProject(project.id)}
+              onClick={() => openProject(project)}
               onKeyDown={(event) => {
                 if (event.key === 'Enter' || event.key === ' ') {
                   event.preventDefault();
-                  openProject(project.id);
+                  openProject(project);
                 }
               }}
             >

@@ -22,7 +22,7 @@ import acSend from '../../../assets/icons/ac-send.svg';
 import './course-details.css';
 import { PublicLoadError, PublicLoading } from './PublicPageState';
 import { PublicNewsletterNotice, usePublicNewsletter } from './usePublicNewsletter.jsx';
-import { sharePublicPage } from './publicShare';
+import { sharePublicPage, buildCourseDetailsPath, buildAuthorPath } from './publicShare';
 import { usePublicPageTitle } from './usePublicPageTitle.jsx';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
@@ -47,9 +47,10 @@ const cleanDescriptionHtml = (html) => {
 };
 
 function AcademiaCourseDetails() {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
-  const courseId = searchParams.get('id');
+  const inboundId = searchParams.get('id');
+  const coursePublicRef = inboundId || null;
 
   const [loading, setLoading] = useState(true);
   const [course, setCourse] = useState(null);
@@ -64,6 +65,9 @@ function AcademiaCourseDetails() {
   const { email: newsletterEmail, setEmail: setNewsletterEmail, notice: newsletterNotice, handleSubmit: handleNewsletterSubmit } = usePublicNewsletter();
 
   usePublicPageTitle(course?.title || 'Course details');
+
+  const resolvedCourseId = course?.id || null;
+  const readerId = coursePublicRef || course?.uuid || course?.id || null;
 
   const resolveAssetUrl = (value) => {
     if (!value) return acOn;
@@ -87,8 +91,9 @@ function AcademiaCourseDetails() {
   };
 
   const handleAuthor = () => {
-    if (course?.authorId) {
-      navigate(`/academia/author?authorId=${course.authorId}`);
+    const authorRef = course?.authorUuid || course?.authorId;
+    if (authorRef) {
+      navigate(buildAuthorPath(authorRef));
       return;
     }
     navigate('/academia/courses');
@@ -110,7 +115,8 @@ function AcademiaCourseDetails() {
   useEffect(() => {
     const checkEnrollmentStatus = async () => {
       const token = localStorage.getItem('token');
-      if (!token || !courseId) return;
+      const courseKey = resolvedCourseId || inboundId;
+      if (!token || !courseKey) return;
       try {
         const res = await fetch(`${API_BASE_URL}/api/progress`, {
           headers: { 'Authorization': `Bearer ${token}` }
@@ -118,7 +124,11 @@ function AcademiaCourseDetails() {
         if (res.ok) {
           const body = await res.json();
           const progressList = body?.data?.progress || body?.progress || [];
-          const enrolled = progressList.some(p => Number(p.course_id) === Number(courseId));
+          const enrolled = progressList.some((p) => {
+            const progressCourseId = p.course_id ?? p.courseId;
+            if (resolvedCourseId != null && Number(progressCourseId) === Number(resolvedCourseId)) return true;
+            return String(progressCourseId) === String(courseKey);
+          });
           setIsEnrolled(enrolled);
         }
       } catch (err) {
@@ -126,16 +136,16 @@ function AcademiaCourseDetails() {
       }
     };
     checkEnrollmentStatus();
-  }, [courseId]);
+  }, [inboundId, resolvedCourseId]);
 
   // Handle Enrollment
   const handleEnrollment = async (e) => {
     if (e) e.preventDefault();
-    if (!courseId) return;
+    if (!readerId) return;
 
     const token = localStorage.getItem('token');
     if (!token) {
-      sessionStorage.setItem('redirectAfterLogin', `/academia/course-details?id=${courseId}&enroll=true`);
+      sessionStorage.setItem('redirectAfterLogin', `${buildCourseDetailsPath(readerId)}&enroll=true`);
       navigate('/academia/auth/signin');
       return;
     }
@@ -148,9 +158,10 @@ function AcademiaCourseDetails() {
       return;
     }
 
+    const enrollKey = resolvedCourseId || readerId;
     setIsEnrolling(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/courses/${courseId}/enroll`, {
+      const res = await fetch(`${API_BASE_URL}/api/courses/${enrollKey}/enroll`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -167,7 +178,7 @@ function AcademiaCourseDetails() {
       setIsEnrolled(true);
       showToast("Successfully enrolled!", "success");
       setTimeout(() => {
-        navigate(`/academia/learner/read-contents?id=${courseId}`, { state: { courseId: courseId } });
+        navigate(`/academia/learner/read-contents?id=${encodeURIComponent(String(readerId))}`, { state: { courseId: readerId } });
       }, 1000);
     } catch (err) {
       showToast(err.message || 'Failed to enroll in the course.', 'danger');
@@ -207,12 +218,12 @@ function AcademiaCourseDetails() {
             setIsEnrolled(true);
             showToast("Successfully enrolled!", "success");
             setTimeout(() => {
-              navigate(`/academia/learner/read-contents?id=${course.id}`, { replace: true });
+              navigate(`/academia/learner/read-contents?id=${encodeURIComponent(String(readerId || course.uuid || course.id))}`, { replace: true });
             }, 1000);
           } else {
             if (data.message && data.message.toLowerCase().includes('already enrolled')) {
               setIsEnrolled(true);
-              navigate(`/academia/learner/read-contents?id=${course.id}`, { replace: true });
+              navigate(`/academia/learner/read-contents?id=${encodeURIComponent(String(readerId || course.uuid || course.id))}`, { replace: true });
             } else {
               showToast(data.message || 'Auto enrollment failed.', 'danger');
             }
@@ -225,7 +236,7 @@ function AcademiaCourseDetails() {
       }
     };
     checkAutoEnroll();
-  }, [course, isEnrolled, isEnrolling, searchParams, navigate]);
+  }, [course, isEnrolled, isEnrolling, searchParams, navigate, readerId]);
 
   // Load Course Details
   useEffect(() => {
@@ -244,11 +255,22 @@ function AcademiaCourseDetails() {
 
         if (cancelled) return;
 
+        const publicRef = courseData.course_uuid || courseData.uuid || null;
+        const numericId = courseData.id || null;
+
+        if (publicRef && String(searchParams.get('id') || '') === String(numericId)) {
+          const next = new URLSearchParams(searchParams);
+          next.set('id', String(publicRef));
+          setSearchParams(next, { replace: true });
+        }
+
         setCourse({
-          id: courseData.id,
+          id: numericId,
+          uuid: publicRef,
           title: courseData.title,
           author: courseData.instructor_name || courseData.author,
           authorId: courseData.instructor_id || courseData.user_id || courseData.created_by || null,
+          authorUuid: courseData.instructor_uuid || courseData.user_uuid || null,
           authorImage: courseData.instructor_avatar ? resolveAssetUrl(courseData.instructor_avatar) : defaultProfile,
           authorRole: 'Instructor',
           publishedOn: courseData.created_at,
@@ -283,8 +305,8 @@ function AcademiaCourseDetails() {
       }
     };
 
-    if (courseId) {
-      loadCourse(courseId);
+    if (inboundId) {
+      loadCourse(inboundId);
     } else {
       setError("No course selected.");
       setLoading(false);
@@ -293,7 +315,7 @@ function AcademiaCourseDetails() {
     return () => {
       cancelled = true;
     };
-  }, [courseId, retryKey]);
+  }, [inboundId, retryKey]);
 
   // Fallback week grouping if weeks are empty but chapters exist
   useEffect(() => {
@@ -509,13 +531,13 @@ function AcademiaCourseDetails() {
             <section className="instructor-bio-card">
               <div
                 className="instructor-card-inner"
-                role={course.authorId ? 'button' : undefined}
-                tabIndex={course.authorId ? 0 : undefined}
-                onClick={course.authorId ? handleAuthor : undefined}
-                onKeyDown={course.authorId ? (event) => {
+                role={(course.authorUuid || course.authorId) ? 'button' : undefined}
+                tabIndex={(course.authorUuid || course.authorId) ? 0 : undefined}
+                onClick={(course.authorUuid || course.authorId) ? handleAuthor : undefined}
+                onKeyDown={(course.authorUuid || course.authorId) ? (event) => {
                   if (event.key === 'Enter' || event.key === ' ') handleAuthor();
                 } : undefined}
-                style={course.authorId ? { cursor: 'pointer' } : undefined}
+                style={(course.authorUuid || course.authorId) ? { cursor: 'pointer' } : undefined}
               >
                 <div className="instructor-avatar-wrap">
                   <img src={course.authorImage} alt={course.author} onError={(e) => { e.target.src = defaultProfile; }} />
@@ -580,7 +602,7 @@ function AcademiaCourseDetails() {
                     <button
                       type="button"
                       className="enroll-cta-btn go-course"
-                      onClick={() => navigate(`/academia/learner/read-contents?id=${course.id}`, { state: { courseId: course.id } })}
+                      onClick={() => navigate(`/academia/learner/read-contents?id=${encodeURIComponent(String(readerId))}`, { state: { courseId: readerId } })}
                     >
                       <span>Go to Course Workspace</span>
                       <img src={arrowUpRight} alt="" />

@@ -4,7 +4,7 @@ import LearnersPageShell from './LearnersPageShell';
 import Sidebar from './read-contents/Sidebar';
 import LessonView from './read-contents/LessonView';
 import LessonWorkspacePanels from './read-contents/LessonWorkspacePanels';
-import { findWeekIdForOutlineItem, isSameOutlineItemId, countOutlineProgress, getNextOutlineItem, getNextAssessment, getOutlinePosition, isOutlineItemUnlocked, getFirstUnlockedOutlineItem, resolveReaderChapterTarget, iterateOutlineItems } from './read-contents/sidebarUtils';
+import { findWeekIdForOutlineItem, isSameOutlineItemId, countOutlineProgress, getNextOutlineItem, getNextAssessment, getOutlinePosition, isOutlineItemUnlocked, getResumeOutlineItem, resolveReaderChapterTarget, iterateOutlineItems } from './read-contents/sidebarUtils';
 import { getStoredChapterId, setStoredChapterId, resolveCourseProgressPercent, extractProgressPercentage } from './homeDashboardUtils';
 import LearnerLoadError from './LearnerLoadError';
 import CourseCompleteCelebration, { hasSeenCourseCelebration, markCourseCelebrationSeen } from './read-contents/CourseCompleteCelebration';
@@ -50,6 +50,8 @@ import acFi from '../../../assets/icons/ac-fi.svg';
 import './read-contents.css';
 
 const apexCourseMeta = {
+  id: null,
+  uuid: null,
   title: '',
   author: '',
   authorImage: defaultProfile,
@@ -261,6 +263,8 @@ function LearnersReadContents() {
   const [advanceNotice, setAdvanceNotice] = useState(null);
 
   const [loadingCourse, setLoadingCourse] = useState(false);
+  // Numeric primary key once the course loads (URL may carry the public UUID).
+  const [resolvedCourseId, setResolvedCourseId] = useState(null);
 
   // Exercise State
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
@@ -297,6 +301,7 @@ function LearnersReadContents() {
   const submitRef = useRef(null);
   const contentLoadTokenRef = useRef(0);
   const outlineWeeksRef = useRef(outlineWeeksState);
+  const completedChaptersRef = useRef(completedChapters);
   const isSummativeCompleteRef = useRef(isSummativeComplete);
   const sequenceRedirectedToRef = useRef(null);
   const handleChapterSelectRef = useRef(null);
@@ -307,6 +312,10 @@ function LearnersReadContents() {
   useEffect(() => {
     outlineWeeksRef.current = outlineWeeksState;
   }, [outlineWeeksState]);
+
+  useEffect(() => {
+    completedChaptersRef.current = completedChapters;
+  }, [completedChapters]);
 
   useEffect(() => {
     isSummativeCompleteRef.current = isSummativeComplete;
@@ -465,18 +474,18 @@ function LearnersReadContents() {
   };
 
   const refreshSummativeCompletionStatus = async (courseId) => {
-    if (!courseId) return;
+    if (!courseId) return false;
     const token = localStorage.getItem('token');
     try {
       const res = await fetch(`${API_BASE_URL}/api/courses/${courseId}/summative-assessment`);
       if (!res.ok) {
         updateSummativeCompletion(false);
-        return;
+        return false;
       }
       const data = extractBody(await res.json());
       if (!data?.id) {
         updateSummativeCompletion(false);
-        return;
+        return false;
       }
 
       let historyList = [];
@@ -493,18 +502,18 @@ function LearnersReadContents() {
       const res2 = await fetch(`${API_BASE_URL}/api/summative-assessments/${data.id}`);
       if (!res2.ok) {
         updateSummativeCompletion(false);
-        return;
+        return false;
       }
       const fullAssessment = extractBody(await res2.json());
       if (!fullAssessment) {
         updateSummativeCompletion(false);
-        return;
+        return false;
       }
 
       const isPublished = fullAssessment.is_published ?? fullAssessment.isPublished ?? true;
       if (!isPublished) {
         updateSummativeCompletion(false);
-        return;
+        return false;
       }
 
       const limitVal = fullAssessment.attempt_limit || fullAssessment.attemptLimit || 1;
@@ -517,14 +526,13 @@ function LearnersReadContents() {
         return pct >= passingScore;
       });
 
-      if (passedAttempt || (limitVal && completedAttempts.length >= limitVal)) {
-        updateSummativeCompletion(true);
-      } else {
-        updateSummativeCompletion(false);
-      }
+      const done = Boolean(passedAttempt || (limitVal && completedAttempts.length >= limitVal));
+      updateSummativeCompletion(done);
+      return done;
     } catch (err) {
       console.error('Failed to refresh summative completion status:', err);
       updateSummativeCompletion(false);
+      return false;
     }
   };
 
@@ -824,11 +832,20 @@ function LearnersReadContents() {
       return;
     }
 
-    const allowed = getFirstUnlockedOutlineItem(weeks, isSummativeCompleteRef.current);
+    const allowed = getResumeOutlineItem(weeks, isSummativeCompleteRef.current);
     if (!allowed || isSameOutlineItemId(allowed.id, activeChapterId)) return;
 
     const allowedId = String(allowed.id);
     if (sequenceRedirectedToRef.current === allowedId) return;
+
+    const explicitChapterId = searchParams.get('chapterId');
+    const blockedExplicit = explicitChapterId
+      && !isOutlineItemUnlocked(weeks, explicitChapterId, isSummativeCompleteRef.current)
+      && (
+        isSameOutlineItemId(explicitChapterId, activeChapterId)
+        || Boolean(findWeekIdForOutlineItem(weeks, explicitChapterId))
+        || explicitChapterId === 'assessment'
+      );
 
     sequenceRedirectedToRef.current = allowedId;
     setActiveChapterId(allowed.id);
@@ -847,8 +864,15 @@ function LearnersReadContents() {
       setSearchParams(next, { replace: true });
     }
 
-    showToast('Complete earlier lessons to unlock this section.', 'error');
-  }, [loadingCourse, activeChapterId, outlineUnlockKey, inboundId, searchParams, setSearchParams, outlineWeeksState.length]);
+    if (blockedExplicit) {
+      showToast(
+        explicitChapterId === 'assessment'
+          ? 'Complete all lessons before the final assessment.'
+          : 'Complete earlier lessons to unlock this section.',
+        'error'
+      );
+    }
+  }, [loadingCourse, activeChapterId, outlineUnlockKey, inboundId, searchParams, setSearchParams, outlineWeeksState.length, showToast]);
 
   useEffect(() => {
     let cancelled = false;
@@ -1428,6 +1452,7 @@ function LearnersReadContents() {
       if (!id) return;
       setLoadingCourse(true);
       setCourseLoadError('');
+      setResolvedCourseId(null);
       try {
         const res = await fetch(`${API_BASE_URL}/api/courses/${id}`);
         const body = await res.json();
@@ -1437,13 +1462,24 @@ function LearnersReadContents() {
 
         if (cancelled) return;
 
-        const numericCourseId = Number(courseData.id || courseData.course_id)
-          || (/^\d+$/.test(String(id)) ? Number(id) : null);
-        setResolvedCourseId(numericCourseId || null);
+        const numericId = courseData.id || courseData.course_id
+          || (/^\d+$/.test(String(id)) ? Number(id) : null)
+          || null;
+        if (numericId != null) setResolvedCourseId(numericId);
+
+        // Prefer keeping the public UUID in the address bar when the API returns one.
+        const publicRef = courseData.course_uuid || courseData.uuid || null;
+        if (publicRef && String(searchParams.get('id') || '') === String(numericId)) {
+          const next = new URLSearchParams(searchParams);
+          next.set('id', String(publicRef));
+          setSearchParams(next, { replace: true });
+        }
 
         // map course meta
         setCourseMetaState((prev) => ({
           ...prev,
+          id: numericId || prev.id,
+          uuid: publicRef || prev.uuid,
           title: courseData.title || prev.title,
           author: courseData.instructor_name || courseData.author || prev.author,
           authorImage: prev.authorImage,
@@ -1473,8 +1509,10 @@ function LearnersReadContents() {
         const chapters = Array.isArray(courseData.chapters) ? courseData.chapters : [];
         const apiWeeks = Array.isArray(courseData.weeks) ? courseData.weeks : [];
 
+        let builtWeeks = [];
+
         if (apiWeeks.length > 0) {
-          const weeksWithAssessments = await Promise.all(
+          builtWeeks = await Promise.all(
             apiWeeks.map(async (w, idx) => {
               let weekAssessments = [];
               try {
@@ -1494,13 +1532,16 @@ function LearnersReadContents() {
                 completed: false,
                 expanded: idx === 0,
                 chapters: Array.isArray(w.chapters) ? w.chapters.map((c, ci) => ({
-                  id: c.id || `ch-${idx}-${ci}`,
+                  id: c.chapter_uuid || c.uuid || c.id || `ch-${idx}-${ci}`,
+                  numericId: c.id,
+                  chapter_uuid: c.chapter_uuid || c.uuid || null,
                   title: c.title || c.name || `Chapter ${ci + 1}`,
                   completed: false
                 })) : [],
                 assessments: weekAssessments.map((a, ai) => ({
-                  id: `formative-${a.id}`,
+                  id: `formative-${a.formative_assessment_uuid || a.uuid || a.id}`,
                   assessmentId: a.id,
+                  assessmentUuid: a.formative_assessment_uuid || a.uuid || null,
                   title: a.title || `Quiz ${ai + 1}`,
                   completed: false,
                   after_chapter_id: a.after_chapter_id ?? null,
@@ -1508,32 +1549,7 @@ function LearnersReadContents() {
               };
             })
           );
-
-          setOutlineWeeksState(weeksWithAssessments);
-
-          const { id: activeChId, weekId: targetWeekId } = resolveReaderChapterTarget(
-            weeksWithAssessments,
-            initialChapterId,
-            false
-          );
-
-          if (activeChId) {
-            setActiveChapterId(activeChId);
-          }
-          if (targetWeekId) {
-            setExpandedWeeks((prev) => ({ ...prev, [targetWeekId]: true }));
-          }
-
-          // outcomes
-          if (courseData.objectives) {
-            let list = [];
-            if (typeof courseData.objectives === 'string') list = courseData.objectives.split('\n');
-            else if (Array.isArray(courseData.objectives)) list = courseData.objectives;
-            setOutcomesState(list.map(stripHtml).filter(Boolean));
-          }
-
         } else if (chapters.length) {
-          // Fallback when weeks list is empty: group chapters by week_number or just week-1
           const groupedWeeksMap = {};
           chapters.forEach((c, i) => {
             const wNum = c.week_number || 1;
@@ -1547,42 +1563,80 @@ function LearnersReadContents() {
               };
             }
             groupedWeeksMap[wNum].chapters.push({
-              id: c.id || `ch-${i}`,
+              id: c.chapter_uuid || c.uuid || c.id || `ch-${i}`,
+              numericId: c.id,
+              chapter_uuid: c.chapter_uuid || c.uuid || null,
               title: c.title || c.name || `Chapter ${i + 1}`,
               completed: false
             });
           });
-          const mappedWeeks = Object.values(groupedWeeksMap).sort((a, b) => a.title.localeCompare(b.title));
-          setOutlineWeeksState(mappedWeeks);
-
-          const { id: activeChId, weekId: targetWeekId } = resolveReaderChapterTarget(
-            mappedWeeks,
-            initialChapterId,
-            false
-          );
-
-          if (activeChId) {
-            setActiveChapterId(activeChId);
-          }
-          if (targetWeekId) {
-            setExpandedWeeks((prev) => ({ ...prev, [targetWeekId]: true }));
-          }
-
-          // outcomes
-          if (courseData.objectives) {
-            let list = [];
-            if (typeof courseData.objectives === 'string') list = courseData.objectives.split('\n');
-            else if (Array.isArray(courseData.objectives)) list = courseData.objectives;
-            setOutcomesState(list.map(stripHtml).filter(Boolean));
-          }
+          builtWeeks = Object.values(groupedWeeksMap).sort((a, b) => a.title.localeCompare(b.title));
         }
 
-        // load student progress and attempts for this course to reflect progress
-        if (numericCourseId) {
-          fetchCourseProgress(numericCourseId).catch(() => { });
-          fetchCourseStudentAttempts(numericCourseId).catch(() => { });
-          fetchCourseAvgScore(numericCourseId).catch(() => { });
-          refreshSummativeCompletionStatus(numericCourseId).catch(() => { });
+        const courseId = courseData.id || courseData.course_id || id;
+        let summativeDone = false;
+        if (courseId) {
+          const progressResult = await fetchCourseProgress(courseId, builtWeeks).catch(() => null);
+          if (Array.isArray(progressResult?.weeks) && progressResult.weeks.length) {
+            builtWeeks = progressResult.weeks;
+          }
+          await Promise.all([
+            fetchCourseStudentAttempts(courseId).catch(() => {}),
+            fetchCourseAvgScore(courseId).catch(() => {}),
+          ]);
+          summativeDone = Boolean(await refreshSummativeCompletionStatus(courseId).catch(() => false));
+        }
+
+        if (cancelled) return;
+
+        setOutlineWeeksState(builtWeeks);
+
+        const explicitChapterId = searchParams.get('chapterId') || legacyChapterId || null;
+        const requestedChapterId = explicitChapterId
+          || (inboundId ? getStoredChapterId(inboundId) : null)
+          || initialChapterId;
+
+        const {
+          id: activeChId,
+          weekId: targetWeekId,
+          blockedRequest,
+          blockedId,
+        } = resolveReaderChapterTarget(
+          builtWeeks,
+          requestedChapterId,
+          summativeDone || isSummativeCompleteRef.current
+        );
+
+        // Deep-links from Assessments (and similar) should explain why a locked
+        // quiz was not opened. Silent resume is only for Continue learning / stored ids.
+        if (explicitChapterId && blockedRequest) {
+          showToast(
+            (blockedId === 'assessment' || explicitChapterId === 'assessment')
+              ? 'Complete all lessons before the final assessment.'
+              : 'Complete earlier lessons to unlock this section.',
+            'error'
+          );
+        }
+
+        if (activeChId) {
+          setActiveChapterId(activeChId);
+          if (inboundId) {
+            setStoredChapterId(inboundId, activeChId);
+            const next = new URLSearchParams(searchParams);
+            next.set('id', String(inboundId));
+            next.set('chapterId', String(activeChId));
+            setSearchParams(next, { replace: true });
+          }
+        }
+        if (targetWeekId) {
+          setExpandedWeeks((prev) => ({ ...prev, [targetWeekId]: true }));
+        }
+
+        if (courseData.objectives) {
+          let list = [];
+          if (typeof courseData.objectives === 'string') list = courseData.objectives.split('\n');
+          else if (Array.isArray(courseData.objectives)) list = courseData.objectives;
+          setOutcomesState(list.map(stripHtml).filter(Boolean));
         }
       } catch (err) {
         if (!cancelled) {
@@ -1786,12 +1840,45 @@ function LearnersReadContents() {
     && !hasSavedPaymentMethods(savedPaymentMethods)
   );
 
+  const applyCompletionMarksToWeeks = (weeks, mergedIds = []) => {
+    if (!Array.isArray(weeks)) return [];
+    return weeks.map((w) => {
+      const updatedChapters = (w.chapters || []).map((ch) => ({
+        ...ch,
+        completed: mergedIds.includes(ch.id)
+          || mergedIds.includes(Number(ch.id))
+          || mergedIds.includes(Number(ch.numericId))
+          || mergedIds.includes(String(ch.numericId || '')),
+      }));
+      const updatedAssessments = (w.assessments || []).map((ass) => ({
+        ...ass,
+        completed: mergedIds.includes(ass.id)
+          || mergedIds.includes(String(ass.id))
+          || mergedIds.includes(`formative-${ass.assessmentId}`)
+          || (ass.assessmentUuid ? mergedIds.includes(`formative-${ass.assessmentUuid}`) : false)
+          || mergedIds.includes(ass.assessmentId)
+          || mergedIds.includes(Number(ass.assessmentId)),
+      }));
+      const weekCompleted = updatedChapters.length > 0
+        && updatedChapters.every((ch) => ch.completed)
+        && (updatedAssessments.length === 0 || updatedAssessments.every((ass) => ass.completed));
+      return {
+        ...w,
+        completed: weekCompleted,
+        chapters: updatedChapters,
+        assessments: updatedAssessments,
+      };
+    });
+  };
+
   const toggleWeek = (weekId) => {
     setExpandedWeeks((prev) => ({ ...prev, [weekId]: !prev[weekId] }));
   };
-  const fetchCourseProgress = async (courseId) => {
+  const fetchCourseProgress = async (courseId, baseWeeks = null) => {
     const token = localStorage.getItem('token');
-    if (!token || !courseId) return;
+    if (!token || !courseId) {
+      return { merged: [], weeks: baseWeeks };
+    }
     try {
       const res = await fetch(`${API_BASE_URL}/api/progress/${courseId}`, {
         headers: { 'Authorization': `Bearer ${token}` }
@@ -1806,43 +1893,26 @@ function LearnersReadContents() {
         if (pct != null) {
           setCourseProgressPercentage(pct);
         }
-        
-        setCompletedChapters((prev) => {
-          const localMocks = prev.filter(id =>
-            typeof id === 'string' &&
-            id !== 'assessment' &&
-            !completedAssessments.includes(id)
-          );
-          const merged = [...completedIds, ...completedAssessments, ...localMocks];
-          
-          // Update outline weeks state with completed status!
-          setOutlineWeeksState((prevWeeks) => {
-            return prevWeeks.map((w) => {
-              const updatedChapters = w.chapters.map((ch) => ({
-                ...ch,
-                completed: merged.includes(ch.id) || merged.includes(Number(ch.id))
-              }));
-              const updatedAssessments = w.assessments ? w.assessments.map((ass) => ({
-                ...ass,
-                completed: merged.includes(ass.id) || merged.includes(String(ass.id))
-              })) : [];
-              const weekCompleted = updatedChapters.length > 0 && updatedChapters.every(ch => ch.completed) &&
-                (updatedAssessments.length === 0 || updatedAssessments.every(ass => ass.completed));
-              return {
-                ...w,
-                completed: weekCompleted,
-                chapters: updatedChapters,
-                assessments: updatedAssessments
-              };
-            });
-          });
-          
-          return merged;
-        });
+
+        const prevCompleted = Array.isArray(completedChaptersRef.current) ? completedChaptersRef.current : [];
+        const localMocks = prevCompleted.filter((id) =>
+          typeof id === 'string'
+          && id !== 'assessment'
+          && !completedAssessments.includes(id)
+        );
+        const merged = [...completedIds, ...completedAssessments, ...localMocks];
+        completedChaptersRef.current = merged;
+        setCompletedChapters(merged);
+
+        const sourceWeeks = Array.isArray(baseWeeks) ? baseWeeks : outlineWeeksRef.current;
+        const markedWeeks = applyCompletionMarksToWeeks(sourceWeeks, merged);
+        setOutlineWeeksState(markedWeeks);
+        return { merged, weeks: markedWeeks };
       }
     } catch (err) {
       console.error("Failed to fetch course progress:", err);
     }
+    return { merged: [], weeks: baseWeeks };
   };
 
   const fetchCourseAvgScore = async (courseId) => {
@@ -1907,9 +1977,11 @@ function LearnersReadContents() {
     const courseId = courseApiIdRef.current;
     if (!token || !courseId || !chapterId) return;
     
-    // Skip mock/local chapter IDs and track locally
-    const isMockId = typeof chapterId === 'string' && (chapterId.startsWith('ch-') || chapterId.startsWith('chapter-') || isNaN(Number(chapterId)));
-    if (isMockId) {
+    // Skip formative/assessment/mock chapter IDs and track locally.
+    // Public chapter UUIDs are real chapters and must hit the progress API.
+    const isFormativeOrAssessment = typeof chapterId === 'string'
+      && (chapterId === 'assessment' || chapterId.startsWith('formative-') || chapterId.startsWith('ch-') || chapterId.startsWith('chapter-'));
+    if (isFormativeOrAssessment) {
       setCompletedChapters((prev) => {
         if (prev.includes(chapterId)) return prev;
         const next = [...prev, chapterId];
@@ -1919,7 +1991,7 @@ function LearnersReadContents() {
           return prevWeeks.map((w) => {
             const updatedChapters = w.chapters.map((ch) => ({
               ...ch,
-              completed: next.includes(ch.id) || next.includes(Number(ch.id))
+              completed: next.includes(ch.id) || next.includes(Number(ch.id)) || next.includes(String(ch.numericId || ''))
             }));
             const updatedAssessments = w.assessments ? w.assessments.map((ass) => ({
               ...ass,
@@ -1946,6 +2018,18 @@ function LearnersReadContents() {
       return;
     }
 
+    let numericChapterId = Number(chapterId);
+    if (!Number.isFinite(numericChapterId)) {
+      const chapterMeta = outlineWeeksState
+        .flatMap((w) => w.chapters || [])
+        .find((c) => String(c.id) === String(chapterId) || String(c.chapter_uuid || '') === String(chapterId));
+      numericChapterId = Number(chapterMeta?.numericId ?? chapterMeta?.id);
+    }
+    if (!Number.isFinite(numericChapterId)) {
+      showToast('Could not mark lesson complete.', 'error');
+      return;
+    }
+
     try {
       const res = await fetch(`${API_BASE_URL}/api/progress`, {
         method: 'POST',
@@ -1954,7 +2038,7 @@ function LearnersReadContents() {
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-          chapter_id: Number(chapterId),
+          chapter_id: numericChapterId,
           course_id: Number(courseId)
         })
       });
@@ -2007,7 +2091,7 @@ function LearnersReadContents() {
   const fetchChapterExercises = async (chapterId, loadToken, attemptsList = studentAttempts) => {
     if (!chapterId || isStaleLoad(loadToken)) return;
     try {
-      const isMockId = typeof chapterId === 'string' && (chapterId.startsWith('ch-') || chapterId.startsWith('chapter-') || isNaN(Number(chapterId)));
+      const isMockId = typeof chapterId === 'string' && (chapterId.startsWith('ch-') || chapterId.startsWith('chapter-'));
       let list = [];
       if (!isMockId) {
         const res = await fetch(`${API_BASE_URL}/api/chapters/${chapterId}/exercises`);
@@ -2094,7 +2178,7 @@ function LearnersReadContents() {
     setChapterLoadError('');
     setActiveChapterContent(null);
     try {
-      const isMockId = typeof chapterId === 'string' && (chapterId.startsWith('ch-') || chapterId.startsWith('chapter-') || isNaN(Number(chapterId)));
+      const isMockId = typeof chapterId === 'string' && (chapterId.startsWith('ch-') || chapterId.startsWith('chapter-'));
       let chapterData = null;
       if (!isMockId) {
         const res = await fetch(`${API_BASE_URL}/api/chapters/${chapterId}`);

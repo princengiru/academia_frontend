@@ -23,6 +23,7 @@ import acSee from '../../../assets/icons/ac-see.svg';
 import fileIcon from '../../../assets/icons/file.svg';
 import './view-project.css';
 import { useLearnerToast } from './useLearnerToast';
+import { buildLearnerProjectPath, getProjectPublicRef } from '../public/publicShare';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
@@ -171,7 +172,7 @@ function LearnersViewProject() {
     };
   }, []);
 
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [likesCount, setLikesCount] = useState(0);
   const [savesCount, setSavesCount] = useState(0);
   const [commentsCount, setCommentsCount] = useState(0);
@@ -239,6 +240,13 @@ function LearnersViewProject() {
         setLikesCount(proj?.likes_count || 0);
         setSavesCount(proj?.saves_count || 0);
         setCommentsCount(proj?.comments_count || 0);
+
+        const publicRef = getProjectPublicRef(proj);
+        if (publicRef && String(projectId) === String(proj?.id)) {
+          const next = new URLSearchParams(searchParams);
+          next.set('id', String(publicRef));
+          setSearchParams(next, { replace: true });
+        }
 
         // 2. Fetch comments
         const commentsRes = await fetch(`${API_BASE_URL}/api/projects/${projectId}/comments`);
@@ -378,7 +386,8 @@ function LearnersViewProject() {
 
   const handleShareProject = async () => {
     if (!projectId) return;
-    const url = `${window.location.origin}/academia/learner/view-project?id=${projectId}`;
+    const shareRef = getProjectPublicRef(project) || projectId;
+    const url = `${window.location.origin}${buildLearnerProjectPath(shareRef)}`;
     const title = project?.title || 'Project';
 
     try {

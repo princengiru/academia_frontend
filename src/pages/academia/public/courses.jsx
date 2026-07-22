@@ -14,6 +14,7 @@ import acLock from '../../../assets/icons/ac-lock.svg';
 import './courses.css';
 import { PublicLoadError, PublicLoading } from './PublicPageState';
 import { usePublicPageTitle } from './usePublicPageTitle.jsx';
+import { buildCourseDetailsPath } from './publicShare';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
@@ -27,6 +28,20 @@ const extractCourseList = (body) => {
 };
 
 const extractPagination = (body) => body?.data?.pagination || body?.pagination || null;
+
+const stripHtml = (html) => {
+  if (!html) return '';
+  return String(html)
+    .replace(/<[^>]*>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&#39;/g, "'")
+    .replace(/&quot;/g, '"')
+    .replace(/\s+/g, ' ')
+    .trim();
+};
 
 function AcademiaCourses() {
   usePublicPageTitle('Courses');
@@ -78,11 +93,12 @@ function AcademiaCourses() {
 
   const mapCourse = (course) => ({
     id: course.id,
+    uuid: course.course_uuid || course.uuid || null,
     title: course.title || 'Untitled course',
     author: course.instructor_name || course.author || 'Academia',
     image: course.thumbnail ? resolveAssetUrl(course.thumbnail) : acOn,
     priceLabel: (course.price || course.price === 0) ? (Number(course.price) > 0 ? `$${course.price}` : 'Free') : (course.is_free ? 'Free' : 'Free'),
-    description: course.description || '',
+    description: stripHtml(course.description || ''),
     startsOn: course.starts_on || course.published_at || '',
     chapterCount: Number(course.chapter_count || 0),
     category: course.category?.name || course.category || 'Courses',
@@ -413,9 +429,9 @@ function AcademiaCourses() {
                 <div className="courses-catalog-cards">
                   {sortedCourses.map((c) => (
                     <div
-                      key={c.id}
+                      key={c.uuid || c.id}
                       className="public-course-card"
-                      onClick={() => navigate(`/academia/course-details?id=${c.id}`)}
+                      onClick={() => navigate(buildCourseDetailsPath(c))}
                     >
                       <div className="card-thumb-wrap">
                         <img src={c.image} alt={c.title} />
@@ -436,7 +452,7 @@ function AcademiaCourses() {
                             className="enroll-arrow-btn"
                             onClick={(e) => {
                               e.stopPropagation();
-                              navigate(`/academia/course-details?id=${c.id}`);
+                              navigate(buildCourseDetailsPath(c));
                             }}
                           >
                             <img src={acEn} alt="Enroll" />
@@ -516,9 +532,9 @@ function AcademiaCourses() {
               <div className="syllabus-list">
                 {syllabusCourses.slice(0, 5).map((item) => (
                   <div
-                    key={item.id}
+                    key={item.uuid || item.id}
                     className="syllabus-item-row"
-                    onClick={() => navigate(`/academia/course-details?id=${item.id}`)}
+                    onClick={() => navigate(buildCourseDetailsPath(item))}
                   >
                     <div className="item-icon-circle">
                       <img src={acPlus} alt="" />

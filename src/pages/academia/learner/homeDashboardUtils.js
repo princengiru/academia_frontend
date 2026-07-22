@@ -38,14 +38,27 @@ function resolveAssessmentChapterId(item) {
   const rawType = String(item?.assessmentType || item?.type || item?.category || '').toLowerCase();
   if (rawType === 'summative' || item?.isSummative) return 'assessment';
 
-  const assessmentId = item?.assessmentId || item?.assessment_id || item?.id;
-  if (!assessmentId) return null;
-  if (String(assessmentId).startsWith('formative-')) return String(assessmentId);
-  return `formative-${assessmentId}`;
+  const assessmentRef = item?.formative_assessment_uuid
+    || item?.assessmentUuid
+    || item?.uuid
+    || item?.assessmentId
+    || item?.assessment_id
+    || item?.id;
+  if (!assessmentRef) return null;
+  if (String(assessmentRef).startsWith('formative-')) return String(assessmentRef);
+  return `formative-${assessmentRef}`;
 }
 
 function withScheduleNavigation(base, source) {
-  const courseId = source?.courseId || source?.course_id || source?.course?.id || (base.kind === 'course' ? source?.id : null);
+  const courseId = source?.course_uuid
+    || source?.uuid
+    || source?.courseUuid
+    || source?.course?.course_uuid
+    || source?.course?.uuid
+    || source?.courseId
+    || source?.course_id
+    || source?.course?.id
+    || (base.kind === 'course' ? source?.id : null);
   const chapterId = source?.chapterId
     || source?.chapter_id
     || (base.kind === 'assessment' ? resolveAssessmentChapterId(source) : resolveCourseChapterId(source));
@@ -287,10 +300,16 @@ export function extractCourseList(body) {
 }
 
 export function buildReaderUrl(courseId, chapterId) {
+  // courseId should preferably be the public course_uuid (same as course-part URLs).
   if (!courseId) return '/academia/learner/courses';
   const params = new URLSearchParams({ id: String(courseId) });
   if (chapterId) params.set('chapterId', String(chapterId));
   return `/academia/learner/read-contents?${params.toString()}`;
+}
+
+export function getCoursePublicRef(course) {
+  if (!course) return null;
+  return course.course_uuid || course.uuid || course.id || null;
 }
 
 export function buildContinueLearningTarget(enrolledCourses) {
@@ -307,11 +326,13 @@ export function buildContinueLearningTarget(enrolledCourses) {
     });
 
   const course = inProgress[0] || enrolledCourses[0];
-  if (!course?.id) return null;
+  const publicRef = getCoursePublicRef(course);
+  if (!publicRef) return null;
 
   const chapterId = course.last_chapter_id
     || course.current_chapter_id
     || course.next_chapter_id
+    || getStoredChapterId(publicRef)
     || getStoredChapterId(course.id)
     || null;
 
@@ -322,14 +343,14 @@ export function buildContinueLearningTarget(enrolledCourses) {
     || (progress > 0 ? 'Continue where you left off' : 'Start the first lesson');
 
   return {
-    courseId: course.id,
+    courseId: publicRef,
     courseTitle: course.title || 'Your course',
     chapterId: chapterId ? String(chapterId) : null,
     chapterLabel,
     progress,
     thumbnail: course.thumbnail,
     instructorName: course.instructor_name || 'Academia',
-    readerUrl: buildReaderUrl(course.id, chapterId),
+    readerUrl: buildReaderUrl(publicRef, chapterId),
   };
 }
 

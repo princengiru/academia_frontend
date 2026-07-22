@@ -50,6 +50,9 @@ export function LearnerToastProvider({ children }) {
           role="status"
           aria-live="polite"
         >
+          <div className="learner-toast-icon" aria-hidden="true">
+            {toast.type === 'success' ? '✓' : toast.type === 'warning' ? '!' : '✗'}
+          </div>
           <p className="learner-toast-message">{toast.message}</p>
           <button
             type="button"

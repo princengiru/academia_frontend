@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import LearnerLoadError from '../learner/LearnerLoadError';
 import ManagementLoading from './ManagementLoading';
 import { useCurrency, flagOptions } from '../../../hooks/useCurrency';
+import { AcademiaDataTable, useClientTableState } from '../shared';
 import './management.css';
 import '../hoa/hoa-online-courses.css';
 import '../hoa/hoa-syllabus.css';
@@ -130,6 +131,18 @@ const Management = () => {
   const [courseEnrollments, setCourseEnrollments] = useState([]);
   const [loadingEnrollments, setLoadingEnrollments] = useState(false);
   const [enrollmentsError, setEnrollmentsError] = useState('');
+
+  // --- Enrolled Students mini-table (shared AcademiaDataTable) ---
+  const enrollmentsTable = useClientTableState({
+    rows: courseEnrollments,
+    searchFn: (row, query) => {
+      const q = String(query).toLowerCase();
+      return String(row.student_name || '').toLowerCase().includes(q)
+        || String(row.student_email || '').toLowerCase().includes(q);
+    },
+    defaultSortKey: 'student_name',
+    getRowKey: (row) => row.id,
+  });
   const [courseQuestions, setCourseQuestions] = useState([]);
   const [loadingQuestions, setLoadingQuestions] = useState(false);
   const [questionsError, setQuestionsError] = useState('');
@@ -313,6 +326,8 @@ const Management = () => {
     setEnrollmentsError('');
     setQuestionsError('');
     setRepliesError({});
+    enrollmentsTable.setSearchQuery('');
+    enrollmentsTable.goToPage(1);
 
     // Fetch enrolled students
     fetchCourseEnrollments(course.id);
@@ -1207,55 +1222,68 @@ const Management = () => {
                               <span className="oc-bc-link">Online Courses</span> / <span>Enrolled Students</span> /
                             </div>
 
-                            {loadingEnrollments ? (
-                              <ManagementLoading compact title="Loading enrollments" message="Fetching enrolled students." />
-                            ) : enrollmentsError ? (
-                              <LearnerLoadError
-                                title="Could not load enrollments"
-                                message={enrollmentsError}
-                                onRetry={() => selectedCourse?.id && fetchCourseEnrollments(selectedCourse.id)}
-                              />
-                            ) : courseEnrollments.length === 0 ? (
-                              <div style={{ textAlign: 'center', padding: '40px', background: '#F8FAFC', borderRadius: '8px', border: '1px dashed #CBD5E1', marginTop: '16px' }}>
-                                <p style={{ color: '#64748B', fontSize: '13px', margin: 0 }}>No student enrollments for this program.</p>
-                              </div>
-                            ) : (
-                              <div style={{ overflowX: 'auto', marginTop: '16px' }}>
-                                <table className="oc-students-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
-                                  <thead>
-                                    <tr style={{ borderBottom: '1px solid #EEF1F6', textAlign: 'left' }}>
-                                      <th style={{ padding: '12px 8px', fontSize: '11px', fontWeight: '600', color: '#8A92A6', textTransform: 'uppercase' }}>STUDENT</th>
-                                      <th style={{ padding: '12px 8px', fontSize: '11px', fontWeight: '600', color: '#8A92A6', textTransform: 'uppercase' }}>EMAIL</th>
-                                      <th style={{ padding: '12px 8px', fontSize: '11px', fontWeight: '600', color: '#8A92A6', textTransform: 'uppercase' }}>ENROLLED DATE</th>
-                                    </tr>
-                                  </thead>
-                                  <tbody>
-                                    {courseEnrollments.map((student) => {
-                                      const avatarSrc = student.avatar
-                                        ? (student.avatar.startsWith('http') ? student.avatar : `${API_BASE_URL}${student.avatar}`)
-                                        : '/assets/imgs/default-profile.png';
-                                      return (
-                                        <tr key={student.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
-                                          <td style={{ padding: '16px 8px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                            <img 
-                                              src={avatarSrc} 
-                                              alt={student.student_name} 
-                                              style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover' }} 
-                                              onError={(e) => { e.target.src = '/assets/imgs/default-profile.png'; }}
-                                            />
-                                            <span style={{ fontSize: '13px', fontWeight: '600', color: '#071437' }}>{student.student_name || student.student_email || 'Anonymous Student'}</span>
-                                          </td>
-                                          <td style={{ padding: '16px 8px', fontSize: '13px', color: '#4B5675' }}>{student.student_email}</td>
-                                          <td style={{ padding: '16px 8px', fontSize: '13px', color: '#4B5675' }}>
-                                            {student.created_at ? new Date(student.created_at).toLocaleDateString() : 'N/A'}
-                                          </td>
-                                        </tr>
-                                      );
-                                    })}
-                                  </tbody>
-                                </table>
-                              </div>
-                            )}
+                            <AcademiaDataTable
+                              className="adt-compact"
+                              title="Students"
+                              subtitle={`${enrollmentsTable.totalItems} enrolled student${enrollmentsTable.totalItems === 1 ? '' : 's'}`}
+                              searchPlaceholder="Search students..."
+                              searchQuery={enrollmentsTable.searchQuery}
+                              onSearchChange={enrollmentsTable.setSearchQuery}
+                              columns={[
+                                {
+                                  key: 'student_name',
+                                  label: 'Student',
+                                  sortable: true,
+                                  renderCell: (student) => {
+                                    const avatarSrc = student.avatar
+                                      ? (student.avatar.startsWith('http') ? student.avatar : `${API_BASE_URL}${student.avatar}`)
+                                      : '/assets/imgs/default-profile.png';
+                                    return (
+                                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                        <img
+                                          src={avatarSrc}
+                                          alt={student.student_name}
+                                          style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover' }}
+                                          onError={(e) => { e.target.src = '/assets/imgs/default-profile.png'; }}
+                                        />
+                                        <span className="adt-fw-600">{student.student_name || student.student_email || 'Anonymous Student'}</span>
+                                      </div>
+                                    );
+                                  },
+                                },
+                                {
+                                  key: 'student_email',
+                                  label: 'Email',
+                                  sortable: true,
+                                  renderCell: (student) => student.student_email || '—',
+                                },
+                                {
+                                  key: 'created_at',
+                                  label: 'Enrolled Date',
+                                  sortable: true,
+                                  renderCell: (student) => (student.created_at ? new Date(student.created_at).toLocaleDateString() : 'N/A'),
+                                },
+                              ]}
+                              rows={enrollmentsTable.pageRows}
+                              getRowKey={(row) => row.id}
+                              sortConfig={enrollmentsTable.sortConfig}
+                              onSort={enrollmentsTable.handleSort}
+                              loading={loadingEnrollments}
+                              error={enrollmentsError}
+                              onRetry={() => selectedCourse?.id && fetchCourseEnrollments(selectedCourse.id)}
+                              emptyTitle="No student enrollments"
+                              emptyMessage={enrollmentsTable.searchQuery ? 'Try adjusting your search.' : 'No student enrollments for this program.'}
+                              loadingMessage="Fetching enrolled students…"
+                              pageSize={enrollmentsTable.pageSize}
+                              pageSizeOptions={enrollmentsTable.pageSizeOptions}
+                              onPageSizeChange={enrollmentsTable.setPageSize}
+                              currentPage={enrollmentsTable.currentPage}
+                              totalPages={enrollmentsTable.totalPages}
+                              totalItems={enrollmentsTable.totalItems}
+                              rangeLabel={enrollmentsTable.rangeLabel}
+                              onGoToPage={enrollmentsTable.goToPage}
+                              visiblePageNumbers={enrollmentsTable.visiblePageNumbers}
+                            />
                           </div>
                         )}
 

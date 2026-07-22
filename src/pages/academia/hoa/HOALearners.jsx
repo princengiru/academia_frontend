@@ -1,23 +1,19 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import HOALayout from '../../../components/layouts/HOALayout/HOALayout';
 import { useCurrency, flagOptions } from '../../../hooks/useCurrency';
 import './hoa-learners.css';
-import { HOALoadError, HOALoading, HOATableEmptyRow } from './HOAPageState';
+import { openCertificatePreview } from '../certificateUtils';
+import { AcademiaDataTable, AcademiaStatusPill, useClientTableState } from '../shared';
 
 // --- Icons & Images ---
 import hoausflag from '../../../assets/icons/hoausflag.svg';
 import hoadowncaret from '../../../assets/icons/hoadowncaret.svg';
 import hoaincrease from '../../../assets/icons/hoaincrease.svg';
 import hoadecrease from '../../../assets/icons/hoadecrease.svg';
-import hoafilter from '../../../assets/icons/hoafilter.svg';
 import hoaadd from '../../../assets/icons/hoaadd.svg';
-import hoasearch from '../../../assets/icons/hoasearch.svg';
-import hoanext from '../../../assets/icons/hoanext.svg';
-import hoaprev from '../../../assets/icons/hoaprev.svg';
 import hoarefresh from '../../../assets/icons/hoarefresh.svg';
 import hoagoto from '../../../assets/icons/hoagoto.svg';
-import hoaupdowncaret from '../../../assets/icons/hoaupdowncaret.svg';
 import rwanda from '../../../assets/icons/rwanda.svg';
 import hoaopenview from '../../../assets/icons/hoaopenview.svg';
 import hoagoback from '../../../assets/icons/hoagoback.svg';
@@ -61,24 +57,22 @@ const HOALearners = () => {
   const [fetchError, setFetchError] = useState('');
   const [retryKey, setRetryKey] = useState(0);
 
-  // --- UI/Filter State ---
-  const [selectedRows, setSelectedRows] = useState([]);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [activeFilter, setActiveFilter] = useState('All Learners');
-  const [sortConfig, setSortConfig] = useState({ key: 'name', direction: 'asc' });
-  
-  // --- Pagination ---
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState('5');
-  const pageSizeOptions = ['5', '10', '25']; 
-  
   // --- Dropdowns & Refs ---
-  const [isPageSizeOpen, setIsPageSizeOpen] = useState(false);
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [openFlagDropdown, setOpenFlagDropdown] = useState(null);
-  const pageSizeRef = useRef(null);
-  const filterRef = useRef(null);
   const flagRef = useRef(null);
+
+  const filterOptions = ['All Learners', 'Active', 'Inactive', 'Suspended'];
+
+  // --- Shared client-side search/filter/sort/pagination pipeline (replaces local table state) ---
+  const table = useClientTableState({
+    rows: learnersData,
+    searchFn: (row, query) => String(row.name || '').toLowerCase().includes(String(query).toLowerCase()),
+    filterFn: (row, filter) => filter === 'All Learners' || row.status === filter,
+    defaultFilter: 'All Learners',
+    defaultSortKey: 'name',
+    numericKeys: ['score', 'attempts', 'downloads', 'certs', 'paid'],
+    getRowKey: (row) => row.id,
+  });
 
   // --- Modal & Detailed View State ---
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -117,7 +111,7 @@ const HOALearners = () => {
   const applyDeleteOptimistic = (ids) => {
     const idSet = new Set(ids.map(String));
     setLearnersData((prev) => prev.filter((learner) => !idSet.has(String(learner.id))));
-    setSelectedRows((prev) => prev.filter((id) => !idSet.has(String(id))));
+    table.setSelectedKeys((prev) => prev.filter((id) => !idSet.has(String(id))));
     if (activeLearnerId && idSet.has(String(activeLearnerId))) {
       setIsModalOpen(false);
       setActiveLearnerId(null);
@@ -126,13 +120,9 @@ const HOALearners = () => {
     }
   };
 
-  const filterOptions = ['All Learners', 'Active', 'Inactive', 'Suspended'];
-
   // --- Click Outside Handlers ---
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (pageSizeRef.current && !pageSizeRef.current.contains(event.target)) setIsPageSizeOpen(false);
-      if (filterRef.current && !filterRef.current.contains(event.target)) setIsFilterOpen(false);
       if (flagRef.current && !flagRef.current.contains(event.target)) setOpenFlagDropdown(null);
       
       // Close custom action menus when clicking outside
@@ -232,69 +222,7 @@ const HOALearners = () => {
     return () => { mounted = false; };
   }, [retryKey]);
 
-  // --- Memoized Sorting & Filtering (Main Table) ---
-  const processedData = useMemo(() => {
-    let filtered = learnersData || [];
-    
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase();
-      filtered = filtered.filter(item => (item.name || '').toLowerCase().includes(q));
-    }
-
-    if (activeFilter !== 'All Learners') {
-      filtered = filtered.filter(item => item.status === activeFilter);
-    }
-
-    if (!sortConfig.key) return filtered;
-
-    return [...filtered].sort((a, b) => {
-      let aVal = a[sortConfig.key];
-      let bVal = b[sortConfig.key];
-      
-      // Convert to number for comparison if applicable
-      if (['score', 'attempts', 'downloads', 'certs', 'paid'].includes(sortConfig.key)) {
-        aVal = Number(String(aVal).replace(/[^0-9.-]+/g, '')) || 0;
-        bVal = Number(String(bVal).replace(/[^0-9.-]+/g, '')) || 0;
-      }
-
-      if (aVal < bVal) return sortConfig.direction === 'asc' ? -1 : 1;
-      if (aVal > bVal) return sortConfig.direction === 'asc' ? 1 : -1;
-      return 0;
-    });
-  }, [learnersData, sortConfig, searchQuery, activeFilter]);
-
-  // --- Pagination ---
-  const totalItems = processedData.length;
-  const limit = parseInt(pageSize) || 5;
-  const totalPages = Math.max(1, Math.ceil(totalItems / limit));
-  
-  const paginatedData = useMemo(() => {
-    const start = (currentPage - 1) * limit;
-    return processedData.slice(start, start + limit);
-  }, [processedData, currentPage, limit]);
-
-  useEffect(() => {
-    setCurrentPage(1);
-    setSelectedRows([]);
-  }, [searchQuery, activeFilter, pageSize]);
-
   // --- Handlers ---
-  const toggleRowSelection = (rowId) => {
-    setSelectedRows((current) => current.includes(rowId) ? current.filter(id => id !== rowId) : [...current, rowId]);
-  };
-  
-  const toggleAllVisibleRows = () => {
-    if (selectedRows.length === paginatedData.length && paginatedData.length > 0) {
-      setSelectedRows([]);
-    } else {
-      setSelectedRows(paginatedData.map(req => req.id));
-    }
-  };
-
-  const handleSort = (key) => {
-    setSortConfig(current => ({ key, direction: current.key === key && current.direction === 'asc' ? 'desc' : 'asc' }));
-  };
-
   const handleModalSort = (key) => {
     setModalSortConfig(current => ({ key, direction: current.key === key && current.direction === 'asc' ? 'desc' : 'asc' }));
   };
@@ -401,23 +329,23 @@ const HOALearners = () => {
   };
 
   const handleBulkStatusChange = (action) => {
-    if (selectedRows.length === 0) return;
+    if (table.selectedKeys.length === 0) return;
     setConfirmAction({
       kind: `bulk-${action}`,
-      ids: [...selectedRows],
+      ids: [...table.selectedKeys],
       title: action === 'suspend' ? 'Suspend selected learners?' : 'Activate selected learners?',
-      message: `${selectedRows.length} learner${selectedRows.length === 1 ? '' : 's'} will be ${action === 'suspend' ? 'suspended' : 'activated'}.`,
+      message: `${table.selectedKeys.length} learner${table.selectedKeys.length === 1 ? '' : 's'} will be ${action === 'suspend' ? 'suspended' : 'activated'}.`,
       confirmLabel: action === 'suspend' ? 'Suspend all' : 'Activate all',
     });
   };
 
   const handleBulkDelete = () => {
-    if (selectedRows.length === 0) return;
+    if (table.selectedKeys.length === 0) return;
     setConfirmAction({
       kind: 'bulk-delete',
-      ids: [...selectedRows],
+      ids: [...table.selectedKeys],
       title: 'Delete selected learners?',
-      message: `${selectedRows.length} learner${selectedRows.length === 1 ? '' : 's'} will be removed from admin listings. This cannot be undone from HOA.`,
+      message: `${table.selectedKeys.length} learner${table.selectedKeys.length === 1 ? '' : 's'} will be removed from admin listings. This cannot be undone from HOA.`,
       confirmLabel: 'Delete all',
       destructive: true,
     });
@@ -434,7 +362,7 @@ const HOALearners = () => {
     }
 
     const snapshot = learnersData;
-    const selectedSnapshot = selectedRows;
+    const selectedSnapshot = table.selectedKeys;
     setConfirmLoading(true);
 
     try {
@@ -462,7 +390,7 @@ const HOALearners = () => {
       } else if (kind === 'bulk-suspend' || kind === 'bulk-activate') {
         const action = kind === 'bulk-suspend' ? 'suspend' : 'activate';
         applyStatusOptimistic(ids, action);
-        setSelectedRows([]);
+        table.clearSelection();
         const res = await fetch(`${API_BASE_URL}/api/admin/learners/bulk-${action}`, {
           method: 'POST',
           headers: {
@@ -508,35 +436,12 @@ const HOALearners = () => {
       setConfirmAction(null);
     } catch (err) {
       setLearnersData(snapshot);
-      setSelectedRows(selectedSnapshot);
+      table.setSelectedKeys(selectedSnapshot);
       showToast(err.message || 'Action failed', 'error');
       fetchLearnersData(true);
     } finally {
       setConfirmLoading(false);
     }
-  };
-
-  const goToPage = (pageNumber) => {
-    if (pageNumber >= 1 && pageNumber <= totalPages) {
-      setCurrentPage(pageNumber);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-  };
-
-  const getPageNumbers = () => {
-    const pages = [];
-    const maxVisiblePages = 3;
-    let startPage = Math.max(1, currentPage - 1);
-    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
-
-    if (endPage - startPage < maxVisiblePages - 1) {
-      startPage = Math.max(1, endPage - maxVisiblePages + 1);
-    }
-
-    for (let i = startPage; i <= endPage; i++) {
-      pages.push(i);
-    }
-    return pages;
   };
 
   // --- Sorting Utility for Modal Data ---
@@ -722,252 +627,189 @@ const HOALearners = () => {
           </div>
         </div>
 
-        {/* Bulk Actions Bar */}
-        {selectedRows.length > 0 ? (
-          <div className="hoa-bulk-actions-bar" style={{ display: 'flex', alignItems: 'center', gap: '12px', background: '#F3E8FF', padding: '12px 20px', borderRadius: '8px', border: '1px solid #E9D5FF', marginBottom: '20px' }}>
-            <span style={{ fontSize: '13px', fontWeight: 600, color: '#450468' }}>{selectedRows.length} learners selected</span>
-            <button className="hoa-btn-primary" onClick={() => handleBulkStatusChange('suspend')} style={{ background: '#D97706', height: '36px', border: 'none', padding: '0 16px', borderRadius: '4px', color: '#fff', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>Suspend</button>
-            <button className="hoa-btn-primary" onClick={() => handleBulkStatusChange('activate')} style={{ background: '#10B981', height: '36px', border: 'none', padding: '0 16px', borderRadius: '4px', color: '#fff', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>Activate</button>
-            <button className="hoa-btn-primary" onClick={handleBulkDelete} style={{ background: '#EF4444', height: '36px', border: 'none', padding: '0 16px', borderRadius: '4px', color: '#fff', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>Delete</button>
-            <button className="hoa-btn-light-purple" onClick={() => setSelectedRows([])} style={{ height: '36px', border: 'none', padding: '0 16px', borderRadius: '6px', color: '#450468', fontSize: '12px', fontWeight: 600, cursor: 'pointer', background: 'rgba(69, 4, 104, 0.07)' }}>Cancel</button>
-          </div>
-        ) : null}
-
-        {/* List Header */}
-        <div className="hoa-approvals-header">
-          <div>
-            <h2>Learners</h2>
-            <p>Online Course & Past Papers</p>
-          </div>
-          <div className="approvals-actions">
-            <div className="search-box">
-              <img src={hoasearch} alt="Search" />
-              <input 
-                type="text" 
-                placeholder="Search Learners..." 
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-
-            <div className="hoa-filter-dropdown-wrapper" ref={filterRef}>
-              <button 
-                type="button" 
-                className={`hoa-btn-light-purple hoa-filter-trigger ${activeFilter !== 'All Learners' ? 'active-filter' : ''}`} 
-                onClick={() => setIsFilterOpen(!isFilterOpen)}
-                style={{ 
-                  background: activeFilter !== 'All Learners' ? '#450468' : '#F3E8FF',
-                  color: activeFilter !== 'All Learners' ? '#fff' : '#450468'
-                }}
-              >
-                <img src={hoafilter} alt="" style={{ filter: activeFilter !== 'All Learners' ? 'brightness(0) invert(1)' : 'none' }} /> 
-                {activeFilter === 'All Learners' ? 'Filters' : activeFilter}
-              </button>
-              {isFilterOpen && (
-                <div className="hoa-filter-dropdown">
-                  {filterOptions.map((option) => (
-                    <button 
-                      key={option} 
-                      type="button" 
-                      className={`hoa-filter-option ${activeFilter === option ? 'active' : ''}`}
-                      onClick={() => { setActiveFilter(option); setIsFilterOpen(false); }}
-                    >
-                      {option}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-            <button className="hoa-btn-light-purple">
+        {/* Learners List (Shared AcademiaDataTable) */}
+        <AcademiaDataTable
+          title="Learners"
+          subtitle="Online Course & Past Papers"
+          searchPlaceholder="Search Learners..."
+          searchQuery={table.searchQuery}
+          onSearchChange={table.setSearchQuery}
+          filters={filterOptions.map((option) => ({ id: option, label: option }))}
+          activeFilter={table.activeFilter}
+          onFilterChange={table.setActiveFilter}
+          defaultFilterLabel="Filters"
+          toolbarExtra={(
+            <button type="button" className="adt-btn-light-purple">
               <img src={hoaadd} alt="Add" /> Create new test
             </button>
-          </div>
-        </div>
-
-        {/* Learners List Layout */}
-        {isLoading && learnersData.length === 0 ? (
-          <HOALoading message="Loading learners…" />
-        ) : fetchError ? (
-          <HOALoadError
-            title="Could not load learners"
-            message={fetchError}
-            onRetry={() => setRetryKey((key) => key + 1)}
-          />
-        ) : (
-        <>
-        <div className="hoa-list-container">
-          <table className="hoa-list-table learners-table">
-            <thead>
-              <tr>
-                <th style={{ width: '50px' }}>
-                  <button type="button" className="th-content minus-btn-container minus-select-button" onClick={toggleAllVisibleRows}>
-                    <div className="minus-icon" style={{ margin: '0 auto' }}>-</div>
-                  </button>
-                </th>
-                <th><div className="th-content" onClick={() => handleSort('name')}>Student Details ({processedData.length}) <span className={`sort-icon ${sortConfig.key === 'name' ? 'active ' + sortConfig.direction : ''}`}><img src={hoaupdowncaret} alt="" /></span></div></th>
-                <th className="text-center"><div className="th-content justify-center" onClick={() => handleSort('score')}>Avg. Score <span className={`sort-icon ${sortConfig.key === 'score' ? 'active ' + sortConfig.direction : ''}`}><img src={hoaupdowncaret} alt="" /></span></div></th>
-                <th className="text-center"><div className="th-content justify-center" onClick={() => handleSort('attempts')}>Attempts <span className={`sort-icon ${sortConfig.key === 'attempts' ? 'active ' + sortConfig.direction : ''}`}><img src={hoaupdowncaret} alt="" /></span></div></th>
-                <th className="text-center"><div className="th-content justify-center" onClick={() => handleSort('downloads')}>Downloads <span className={`sort-icon ${sortConfig.key === 'downloads' ? 'active ' + sortConfig.direction : ''}`}><img src={hoaupdowncaret} alt="" /></span></div></th>
-                <th className="text-center"><div className="th-content justify-center" onClick={() => handleSort('certs')}>Certificates <span className={`sort-icon ${sortConfig.key === 'certs' ? 'active ' + sortConfig.direction : ''}`}><img src={hoaupdowncaret} alt="" /></span></div></th>
-                <th className="text-center" style={{ position: 'relative' }}>
-                  <div className="th-content justify-center" onClick={() => handleSort('paid')}>
-                    Tot. Paid ({currency.label}) <span className={`sort-icon ${sortConfig.key === 'paid' ? 'active ' + sortConfig.direction : ''}`}><img src={hoaupdowncaret} alt="" /></span>
+          )}
+          bulkBar={table.selectedKeys.length > 0 ? (
+            <div className="hoa-bulk-actions-bar" style={{ display: 'flex', alignItems: 'center', gap: '12px', background: '#F3E8FF', padding: '12px 20px', borderRadius: '8px', border: '1px solid #E9D5FF', marginBottom: '20px' }}>
+              <span style={{ fontSize: '13px', fontWeight: 600, color: '#450468' }}>{table.selectedKeys.length} learners selected</span>
+              <button className="hoa-btn-primary" onClick={() => handleBulkStatusChange('suspend')} style={{ background: '#D97706', height: '36px', border: 'none', padding: '0 16px', borderRadius: '4px', color: '#fff', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>Suspend</button>
+              <button className="hoa-btn-primary" onClick={() => handleBulkStatusChange('activate')} style={{ background: '#10B981', height: '36px', border: 'none', padding: '0 16px', borderRadius: '4px', color: '#fff', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>Activate</button>
+              <button className="hoa-btn-primary" onClick={handleBulkDelete} style={{ background: '#EF4444', height: '36px', border: 'none', padding: '0 16px', borderRadius: '4px', color: '#fff', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>Delete</button>
+              <button className="hoa-btn-light-purple" onClick={table.clearSelection} style={{ height: '36px', border: 'none', padding: '0 16px', borderRadius: '6px', color: '#450468', fontSize: '12px', fontWeight: 600, cursor: 'pointer', background: 'rgba(69, 4, 104, 0.07)' }}>Cancel</button>
+            </div>
+          ) : null}
+          columns={[
+            {
+              key: 'name',
+              label: () => `Student Details (${table.totalItems})`,
+              sortable: true,
+              renderCell: (req) => (
+                <div className="list-user-col">
+                  <div className="user-meta">
+                    <h5>{req.name}</h5>
+                    <p className="location-with-flag">
+                      <img src={req.flag} alt="flag" className="tiny-flag" /> {req.location}
+                    </p>
                   </div>
-                </th>
-                <th className="status-col"><div className="th-content" onClick={() => handleSort('status')}>Status <span className={`sort-icon ${sortConfig.key === 'status' ? 'active ' + sortConfig.direction : ''}`}><img src={hoaupdowncaret} alt="" /></span></div></th>
-                <th className="action-col"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {paginatedData.map((req) => (
-                <tr key={req.id} className={selectedRows.includes(req.id) ? 'selected-row' : ''}>
-                  <td>
-                    <input
-                      type="checkbox"
-                      className="hoa-checkbox"
-                      checked={selectedRows.includes(req.id)}
-                      onChange={() => toggleRowSelection(req.id)}
-                    />
-                  </td>
-                  <td>
-                    <div className="list-user-col">
-                      <div className="user-meta">
-                        <h5>{req.name}</h5>
-                        <p className="location-with-flag">
-                          <img src={req.flag} alt="flag" className="tiny-flag" /> {req.location}
-                        </p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="fw-600 text-center">{req.score}</td>
-                  <td className="fw-500 text-center">{req.attempts}</td>
-                  <td className="fw-500 text-center">{req.downloads}</td>
-                  <td className="fw-500 text-center">{req.certs}</td>
-                  <td className="fw-600 text-center">{formatAmount(req.paid)}</td>
-                  <td className="status-col">
-                    <span className={`status-pill pill-${req.statusColor}`}>
-                      <span className="dot"></span> {req.status}
-                    </span>
-                  </td>
-                  <td className="action-col" style={{ position: 'relative' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <a href="#view" className="table-link-icon" onClick={(e) => { preventDefault(e); openModal(req.id); }} title="View Details">
-                        <img src={hoaopenview} alt="Open" />
-                      </a>
-                      
-                      {/* Action dots menu */}
-                      <div className="hoa-row-action-menu" style={{ position: 'relative', display: 'inline-flex' }}>
-                        <button 
-                          className="table-link-icon" 
+                </div>
+              ),
+            },
+            {
+              key: 'score',
+              label: 'Avg. Score',
+              sortable: true,
+              align: 'center',
+              cellClassName: 'fw-600',
+              renderCell: (req) => req.score,
+            },
+            {
+              key: 'attempts',
+              label: 'Attempts',
+              sortable: true,
+              align: 'center',
+              cellClassName: 'fw-500',
+              renderCell: (req) => req.attempts,
+            },
+            {
+              key: 'downloads',
+              label: 'Downloads',
+              sortable: true,
+              align: 'center',
+              cellClassName: 'fw-500',
+              renderCell: (req) => req.downloads,
+            },
+            {
+              key: 'certs',
+              label: 'Certificates',
+              sortable: true,
+              align: 'center',
+              cellClassName: 'fw-500',
+              renderCell: (req) => req.certs,
+            },
+            {
+              key: 'paid',
+              label: () => `Tot. Paid (${currency.label})`,
+              sortable: true,
+              align: 'center',
+              cellClassName: 'fw-600',
+              renderCell: (req) => formatAmount(req.paid),
+            },
+            {
+              key: 'status',
+              label: 'Status',
+              sortable: true,
+              headerClassName: 'status-col',
+              cellClassName: 'status-col',
+              renderCell: (req) => (
+                <AcademiaStatusPill tone={req.statusColor}>{req.status}</AcademiaStatusPill>
+              ),
+            },
+            {
+              key: 'actions',
+              label: '',
+              headerClassName: 'action-col',
+              cellClassName: 'action-col',
+              cellStyle: { position: 'relative' },
+              renderCell: (req) => (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <a href="#view" className="table-link-icon" onClick={(e) => { preventDefault(e); openModal(req.id); }} title="View Details">
+                    <img src={hoaopenview} alt="Open" />
+                  </a>
+
+                  {/* Action dots menu */}
+                  <div className="hoa-row-action-menu" style={{ position: 'relative', display: 'inline-flex' }}>
+                    <button
+                      className="table-link-icon"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setOpenRowMenuId(openRowMenuId === req.id ? null : req.id);
+                      }}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+                    >
+                      <img src={hoaverticaldots} alt="More" style={{ width: '12px', opacity: 0.7 }} />
+                    </button>
+
+                    {openRowMenuId === req.id && (
+                      <div className="hoa-row-dropdown-menu" style={{ position: 'absolute', right: 0, top: '100%', background: '#fff', border: '1px solid #EEF1F6', borderRadius: '6px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', zIndex: 100, minWidth: '120px', padding: '4px' }}>
+                        {req.status === 'Suspended' ? (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleSingleStatusChange(req.id, 'activate');
+                              setOpenRowMenuId(null);
+                            }}
+                            style={{ width: '100%', border: 'none', background: 'transparent', textAlign: 'left', padding: '8px 10px', fontSize: '12px', color: '#10B981', cursor: 'pointer', fontWeight: 500 }}
+                          >
+                            Activate
+                          </button>
+                        ) : (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleSingleStatusChange(req.id, 'suspend');
+                              setOpenRowMenuId(null);
+                            }}
+                            style={{ width: '100%', border: 'none', background: 'transparent', textAlign: 'left', padding: '8px 10px', fontSize: '12px', color: '#D97706', cursor: 'pointer', fontWeight: 500 }}
+                          >
+                            Suspend
+                          </button>
+                        )}
+                        <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            setOpenRowMenuId(openRowMenuId === req.id ? null : req.id);
+                            handleSingleDelete(req.id);
+                            setOpenRowMenuId(null);
                           }}
-                          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+                          style={{ width: '100%', border: 'none', background: 'transparent', textAlign: 'left', padding: '8px 10px', fontSize: '12px', color: '#EF4444', cursor: 'pointer', fontWeight: 500 }}
                         >
-                          <img src={hoaverticaldots} alt="More" style={{ width: '12px', opacity: 0.7 }} />
+                          Delete
                         </button>
-                        
-                        {openRowMenuId === req.id && (
-                          <div className="hoa-row-dropdown-menu" style={{ position: 'absolute', right: 0, top: '100%', background: '#fff', border: '1px solid #EEF1F6', borderRadius: '6px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', zIndex: 100, minWidth: '120px', padding: '4px' }}>
-                            {req.status === 'Suspended' ? (
-                              <button 
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleSingleStatusChange(req.id, 'activate');
-                                  setOpenRowMenuId(null);
-                                }}
-                                style={{ width: '100%', border: 'none', background: 'transparent', textAlign: 'left', padding: '8px 10px', fontSize: '12px', color: '#10B981', cursor: 'pointer', fontWeight: 500 }}
-                              >
-                                Activate
-                              </button>
-                            ) : (
-                              <button 
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleSingleStatusChange(req.id, 'suspend');
-                                  setOpenRowMenuId(null);
-                                }}
-                                style={{ width: '100%', border: 'none', background: 'transparent', textAlign: 'left', padding: '8px 10px', fontSize: '12px', color: '#D97706', cursor: 'pointer', fontWeight: 500 }}
-                              >
-                                Suspend
-                              </button>
-                            )}
-                            <button 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleSingleDelete(req.id);
-                                setOpenRowMenuId(null);
-                              }}
-                              style={{ width: '100%', border: 'none', background: 'transparent', textAlign: 'left', padding: '8px 10px', fontSize: '12px', color: '#EF4444', cursor: 'pointer', fontWeight: 500 }}
-                            >
-                              Delete
-                            </button>
-                          </div>
-                        )}
                       </div>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-              {paginatedData.length === 0 && !isLoading && (
-                <HOATableEmptyRow
-                  colSpan={9}
-                  title="No learners found"
-                  message={searchQuery || activeFilter !== 'All Learners' ? 'Try adjusting your search or filters.' : 'Learner accounts will appear here once students register.'}
-                />
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Pagination */}
-        <div className="hoa-pagination-container list-pagination">
-          <div className="pagination-left">
-            Show
-            <div className="page-size-dropdown" ref={pageSizeRef}>
-              <button type="button" className="page-size-button" onClick={() => setIsPageSizeOpen(!isPageSizeOpen)}>
-                {pageSize} <img src={hoadowncaret} alt="" />
-              </button>
-              {isPageSizeOpen && (
-                <div className="page-size-menu">
-                  {pageSizeOptions.map((option) => (
-                    <button key={option} type="button" className="page-size-option" onClick={() => { setPageSize(option); setIsPageSizeOpen(false); }}>
-                      {option}
-                    </button>
-                  ))}
+                    )}
+                  </div>
                 </div>
-              )}
-            </div>
-            per page
-          </div>
-          <div className="hoa-pagination">
-            <span className="page-range">
-              {totalItems === 0 ? '0' : `${(currentPage - 1) * limit + 1}-${Math.min(currentPage * limit, totalItems)}`} of {totalItems}
-            </span>
-            <button className="page-nav" onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1}>
-              <img src={hoaprev} alt="Prev" style={{ opacity: currentPage === 1 ? 0.5 : 1 }} />
-            </button>
-            
-            {getPageNumbers().map(num => (
-              <button 
-                key={num} 
-                className={`page-num ${currentPage === num ? 'active' : ''}`}
-                onClick={() => goToPage(num)}
-              >
-                {num}
-              </button>
-            ))}
-
-            {totalPages > 3 && currentPage < totalPages - 1 && <span className="page-dots">...</span>}
-
-            <button className="page-nav" onClick={() => goToPage(currentPage + 1)} disabled={currentPage === totalPages || totalPages === 0}>
-              <img src={hoanext} alt="Next" style={{ opacity: currentPage === totalPages || totalPages === 0 ? 0.5 : 1 }} />
-            </button>
-          </div>
-        </div>
-        </>
-        )}
+              ),
+            },
+          ]}
+          rows={table.pageRows}
+          getRowKey={(row) => row.id}
+          tableClassName="learners-table"
+          sortConfig={table.sortConfig}
+          onSort={table.handleSort}
+          selectable
+          selectedKeys={table.selectedKeys}
+          onToggleRow={table.toggleRowSelection}
+          onToggleAllVisible={table.toggleAllVisibleRows}
+          loading={isLoading}
+          error={fetchError}
+          onRetry={() => setRetryKey((key) => key + 1)}
+          emptyTitle="No learners found"
+          emptyMessage={table.searchQuery || table.activeFilter !== 'All Learners' ? 'Try adjusting your search or filters.' : 'Learner accounts will appear here once students register.'}
+          loadingMessage="Loading learners…"
+          pageSize={table.pageSize}
+          pageSizeOptions={table.pageSizeOptions}
+          onPageSizeChange={table.setPageSize}
+          currentPage={table.currentPage}
+          totalPages={table.totalPages}
+          totalItems={table.totalItems}
+          rangeLabel={table.rangeLabel}
+          onGoToPage={table.goToPage}
+          visiblePageNumbers={table.visiblePageNumbers}
+        />
 
         {/* --- Learner Preview Modal --- */}
         <div className={`hoa-modal-overlay ${isModalOpen ? 'open' : ''}`} onClick={closeModal}>
@@ -1261,7 +1103,13 @@ const HOALearners = () => {
                               <p>Issued: {new Date(cert.issued_at).toLocaleDateString()}</p>
                             </div>
                           </div>
-                          <button className="download-btn" onClick={() => window.open(`${API_BASE_URL}/api/certificates/${cert.certificate_number}/download`)}>
+                          <button
+                            className="download-btn"
+                            onClick={() => {
+                              const number = cert.certificate_number || cert.certificateNumber;
+                              if (number) openCertificatePreview(number, { newTab: true });
+                            }}
+                          >
                             <img src={hoadownload} alt="Download" />
                           </button>
                         </div>

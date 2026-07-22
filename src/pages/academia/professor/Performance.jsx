@@ -6,10 +6,18 @@ import hoagoto from '../../../assets/icons/hoagoto.svg';
 import certt from '../../../assets/icons/certt.svg';
 import right1 from '../../../assets/icons/right1.svg';
 import calendar2 from '../../../assets/icons/calendar2.svg';
-import filtersIcon from '../../../assets/icons/filters-icon.svg';
 import hoadowncaret from '../../../assets/icons/hoadowncaret.svg';
+import { AcademiaDataTable, AcademiaStatusPill } from '../shared';
+import { professorNetFromInvoice } from '../shared/courseFinance';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
+const PAYMENT_STATUS_FILTERS = [
+  { id: 'all', label: 'All Statuses' },
+  { id: 'paid', label: 'Paid' },
+  { id: 'pending', label: 'Pending' },
+  { id: 'failed', label: 'Failed' },
+];
 
 const padSeries = (value, length = 12) => {
   const source = Array.isArray(value) ? value : [];
@@ -29,11 +37,14 @@ const averageBucket = (values, start, end) => {
 const normalizePaymentRow = (row, index) => {
   const gross = row?.amount_paid ?? row?.gross_paid ?? row?.amount ?? row?.grossPaid;
   const fee = row?.fees_per_amount ?? row?.fee ?? row?.platform_fee ?? row?.service_fee;
-  const net = row?.net_paid ?? row?.net_amount ?? (
-    gross != null && fee != null && Number.isFinite(Number(gross)) && Number.isFinite(Number(fee))
-      ? Number(gross) - Number(fee)
-      : row?.netPaid
-  );
+  const vat = row?.vat;
+  const net = row?.net_paid ?? row?.net_amount ?? professorNetFromInvoice({
+    total: gross,
+    amount_paid: gross,
+    vat,
+    service_fee: fee,
+    fees_per_amount: fee,
+  });
   const status = row?.payment_status || row?.status || 'Pending';
   const dateRaw = row?.payment_date || row?.paid_at || row?.created_at || row?.date;
 
@@ -48,7 +59,11 @@ const normalizePaymentRow = (row, index) => {
     fee: fee != null && fee !== '' ? Number(fee).toFixed(2) : '---',
     netPaid: net != null && net !== '' ? Number(net).toFixed(2) : '---',
     status,
-    statusTone: String(status).toLowerCase() === 'paid' || String(status).toLowerCase() === 'completed' ? 'passed' : 'progress',
+    statusTone: String(status).toLowerCase() === 'paid' || String(status).toLowerCase() === 'completed'
+      ? 'paid'
+      : String(status).toLowerCase() === 'failed'
+        ? 'failed'
+        : 'pending',
   };
 };
 
@@ -106,11 +121,10 @@ const Performance = () => {
   const [paymentsReloadKey, setPaymentsReloadKey] = useState(0);
   const [totalPayments, setTotalPayments] = useState(0);
   const [paymentPeriod, setPaymentPeriod] = useState('All Time');
-  const [paymentStatusFilter, setPaymentStatusFilter] = useState('All Statuses');
+  const [paymentStatusFilter, setPaymentStatusFilter] = useState('all');
   const [pageSize, setPageSize] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
-  const [selectedRowIds, setSelectedRowIds] = useState(() => new Set());
-  const selectAllRef = useRef(null);
+  const [paymentsSortConfig, setPaymentsSortConfig] = useState({ key: null, direction: 'asc' });
   const [areaChartPeriod, setAreaChartPeriod] = useState('Monthly');
   const [activeAreaIndex, setActiveAreaIndex] = useState(new Date().getMonth());
   const areaWrapRef = useRef(null);
@@ -223,8 +237,8 @@ const Performance = () => {
         offset: String(offset),
         period: paymentPeriod.toLowerCase().replace(' ', '_'),
       });
-      if (paymentStatusFilter !== 'All Statuses') {
-        q.set('status', paymentStatusFilter.toLowerCase().replace(' ', '_'));
+      if (paymentStatusFilter !== 'all') {
+        q.set('status', paymentStatusFilter);
       }
 
       const res = await fetch(`${API_BASE_URL}/api/instructor/payment-history?${q.toString()}`, {
@@ -237,7 +251,6 @@ const Performance = () => {
         const rawPayments = Array.isArray(body?.data?.payments) ? body.data.payments : (Array.isArray(body?.data) ? body.data : []);
         setPayments(rawPayments.map(normalizePaymentRow));
         setTotalPayments(body?.data?.pagination?.total || rawPayments.length);
-        setSelectedRowIds(new Set());
       } else {
         setPayments([]);
         setTotalPayments(0);
@@ -416,32 +429,35 @@ const Performance = () => {
   // --- Payment Table Logic ---
   const totalPages = Math.max(1, Math.ceil(totalPayments / pageSize));
 
-  // Determine checkbox states
-  const isAllVisibleSelected = payments.length > 0 && payments.every(row => selectedRowIds.has(row.id));
-  const isSomeVisibleSelected = payments.some(row => selectedRowIds.has(row.id));
-
-  useEffect(() => {
-    if (selectAllRef.current) {
-      selectAllRef.current.indeterminate = isSomeVisibleSelected && !isAllVisibleSelected;
-    }
-  }, [isSomeVisibleSelected, isAllVisibleSelected]);
-
-  const handleSelectAll = (e) => {
-    const isChecked = e.target.checked;
-    setSelectedRowIds(prev => {
-      const next = new Set(prev);
-      payments.forEach(row => isChecked ? next.add(row.id) : next.delete(row.id));
-      return next;
-    });
+  const handlePaymentsSort = (key) => {
+    if (!key) return;
+    setPaymentsSortConfig((current) => ({
+      key,
+      direction: current.key === key && current.direction === 'asc' ? 'desc' : 'asc',
+    }));
   };
 
-  const handleSelectRow = (id) => {
-    setSelectedRowIds(prev => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
+  const sortedPayments = useMemo(() => {
+    if (!paymentsSortConfig.key) return payments;
+    const key = paymentsSortConfig.key;
+    const numericKeys = ['grossPaid', 'fee', 'netPaid'];
+    const coerce = (row) => {
+      const val = row?.[key];
+      if (val == null) return numericKeys.includes(key) ? -Infinity : '';
+      if (numericKeys.includes(key)) {
+        const num = parseFloat(String(val).replace(/[^0-9.-]+/g, ''));
+        return Number.isFinite(num) ? num : -Infinity;
+      }
+      return String(val).toLowerCase();
+    };
+    return [...payments].sort((a, b) => {
+      const aVal = coerce(a);
+      const bVal = coerce(b);
+      if (aVal < bVal) return paymentsSortConfig.direction === 'asc' ? -1 : 1;
+      if (aVal > bVal) return paymentsSortConfig.direction === 'asc' ? 1 : -1;
+      return 0;
     });
-  };
+  }, [payments, paymentsSortConfig]);
 
   return (
       <section className="learners-performance-page">
@@ -757,23 +773,24 @@ const Performance = () => {
 
         {/* --- Payment History Table --- */}
         <section className="learners-performance-history">
-          <div className="learners-performance-history-head">
-            <div>
-              <h2>Payment History</h2>
-              <p>Earned money from syllabus & Courses</p>
-            </div>
-
-            <div className="learners-performance-history-tools">
+          <AcademiaDataTable
+            title="Payment History"
+            subtitle={`Earned money from syllabus & Courses · Total ${analytics?.totalRevenue || 0} USD`}
+            filters={PAYMENT_STATUS_FILTERS}
+            activeFilter={paymentStatusFilter}
+            onFilterChange={(value) => { setPaymentStatusFilter(value); setCurrentPage(1); }}
+            defaultFilterLabel="Filters"
+            toolbarExtra={(
               <div className="dropdown learners-performance-history-dropdown">
-                <button type="button" className="dropdown-toggle learners-performance-history-tool learners-performance-history-tool-date" data-bs-toggle="dropdown" aria-expanded="false">
+                <button type="button" className="adt-btn-light-purple dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
                   <img src={calendar2} alt="" />
                   <span>{paymentPeriod}</span>
                 </button>
                 <ul className="dropdown-menu learners-performance-history-menu">
                   {['All Time', 'Today', 'This Week', 'This Month'].map(period => (
                     <li key={period}>
-                      <button 
-                        className={`dropdown-item ${paymentPeriod === period ? 'active' : ''}`} 
+                      <button
+                        className={`dropdown-item ${paymentPeriod === period ? 'active' : ''}`}
                         onClick={() => { setPaymentPeriod(period); setCurrentPage(1); }}
                       >
                         {period}
@@ -782,155 +799,85 @@ const Performance = () => {
                   ))}
                 </ul>
               </div>
-
-              <div className="dropdown learners-performance-history-dropdown">
-                <button type="button" className="dropdown-toggle learners-performance-history-tool learners-performance-history-tool-filter" data-bs-toggle="dropdown" aria-expanded="false">
-                  <img src={filtersIcon} alt="" />
-                  <span>{paymentStatusFilter === 'All Statuses' ? 'Filters' : paymentStatusFilter}</span>
-                </button>
-                <ul className="dropdown-menu learners-performance-history-menu learners-performance-history-menu-filter">
-                  {['All Statuses', 'Passed', 'Failed', 'Pending'].map(status => (
-                    <li key={status}>
-                      <button 
-                        className={`dropdown-item ${paymentStatusFilter === status ? 'active' : ''}`} 
-                        onClick={() => { setPaymentStatusFilter(status); setCurrentPage(1); }}
-                      >
-                        {status}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          </div>
-
-          {paymentsError ? (
-            <LearnerLoadError
-              title="Payment history unavailable"
-              message={paymentsError}
-              onRetry={paymentsError.includes('sign in') ? undefined : () => setPaymentsReloadKey((key) => key + 1)}
-            />
-          ) : null}
-
-          <div className="learners-performance-history-table-wrap">
-            <table className="learners-performance-history-table">
-              <thead>
-                <tr>
-                  <th className="is-checkbox">
-                    <label className="learners-performance-checkbox" aria-label="Select all rows">
-                      <input type="checkbox" ref={selectAllRef} checked={isAllVisibleSelected} onChange={handleSelectAll} />
-                      <span></span>
-                    </label>
-                  </th>
-                  <th><span className="learners-performance-table-head-text">Course Details</span></th>
-                  <th><span className="learners-performance-table-head-text">Payment Reason</span></th>
-                  <th><span className="learners-performance-table-head-text">Payee name</span></th>
-                  <th><span className="learners-performance-table-head-text">Amount Paid</span></th>
-                  <th><span className="learners-performance-table-head-text">Fees per amount</span></th>
-                  <th><span className="learners-performance-table-head-text">Net Paid</span></th>
-                  <th><span className="learners-performance-table-head-text">Status</span></th>
-                </tr>
-              </thead>
-              <tbody>
-                {paymentsLoading ? (
-                  <tr>
-                    <td colSpan="8">
-                      <ManagementLoading compact title="Loading payments" message="Fetching your payment records." />
-                    </td>
-                  </tr>
-                ) : payments.length === 0 ? (
-                  <tr>
-                    <td colSpan="8">
-                      <div className="learners-card learners-empty-state learners-empty-state--compact" style={{ border: 'none', boxShadow: 'none', padding: '3rem' }}>
-                        <h3>No payment records found</h3>
-                        <p>There are no payment records matching your selected filters.</p>
-                      </div>
-                    </td>
-                  </tr>
-                ) : (
-                  payments.map((historyItem) => (
-                    <tr key={historyItem.id}>
-                      <td className="is-checkbox">
-                        <label className="learners-performance-checkbox">
-                          <input type="checkbox" checked={selectedRowIds.has(historyItem.id)} onChange={() => handleSelectRow(historyItem.id)} />
-                          <span></span>
-                        </label>
-                      </td>
-                      <td>
-                        <div className="learners-performance-history-course">
-                          <strong>{historyItem.course}</strong>
-                          <span>{historyItem.date}</span>
-                        </div>
-                      </td>
-                      <td className="learners-performance-history-author">{historyItem.reason}</td>
-                      <td className="learners-performance-history-author">
-                        <div className="learners-performance-history-course">
-                          <strong>{historyItem.payee}</strong>
-                          <span>{historyItem.country}</span>
-                        </div>
-                      </td>
-                      <td className="learners-performance-history-score">{historyItem.grossPaid}</td>
-                      <td className="learners-performance-history-time">{historyItem.fee}</td>
-                      <td className="learners-performance-history-score">{historyItem.netPaid}</td>
-                      <td>
-                        <span className={`learners-performance-history-status is-${historyItem.statusTone}`}>{historyItem.status}</span>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          <div className="learners-performance-history-footer">
-            <div className="learners-performance-history-page-size">
-              <span>Show</span>
-              <div className="dropdown learners-performance-history-dropdown">
-                <button type="button" className="dropdown-toggle learners-performance-history-page-btn" data-bs-toggle="dropdown" aria-expanded="false">
-                  <span>{pageSize}</span>
-                </button>
-                <ul className="dropdown-menu learners-performance-history-menu learners-performance-history-page-menu">
-                  {[10, 20, 50].map(size => (
-                    <li key={size}>
-                      <button className={`dropdown-item ${pageSize === size ? 'active' : ''}`} onClick={() => { setPageSize(size); setCurrentPage(1); }}>
-                        {size}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <span>per page</span>
-            </div>
-
-            <div className="learners-performance-history-summary">
-              <span>Total Payments</span>
-              <strong>{analytics?.totalRevenue || 0} USD</strong>
-            </div>
-
-            <div className="learners-performance-history-pagination">
-              <span>{payments.length === 0 ? '0-0 of 0' : `${(currentPage - 1) * pageSize + 1}-${Math.min(currentPage * pageSize, totalPayments)} of ${totalPayments}`}</span>
-              <button type="button" disabled={currentPage === 1} onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}>&#8592;</button>
-              {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
-                // Sliding window
-                let start = Math.max(1, currentPage - 2);
-                if (start + 4 > totalPages) start = Math.max(1, totalPages - 4);
-                const num = start + i;
-                if (num > totalPages) return null;
-                
-                return (
-                  <button 
-                    key={num} 
-                    type="button" 
-                    className={currentPage === num ? 'is-active' : ''} 
-                    onClick={() => setCurrentPage(num)}
-                  >
-                    {num}
-                  </button>
-                );
-              })}
-              <button type="button" disabled={currentPage >= totalPages} onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}>&#8594;</button>
-            </div>
-          </div>
+            )}
+            columns={[
+              {
+                key: 'course',
+                label: 'Course Details',
+                sortable: true,
+                renderCell: (row) => (
+                  <div className="learners-performance-history-course">
+                    <strong>{row.course}</strong>
+                    <span>{row.date}</span>
+                  </div>
+                ),
+              },
+              {
+                key: 'reason',
+                label: 'Payment Reason',
+                sortable: true,
+                cellClassName: 'learners-performance-history-author',
+              },
+              {
+                key: 'payee',
+                label: 'Payee name',
+                sortable: true,
+                renderCell: (row) => (
+                  <div className="learners-performance-history-course">
+                    <strong>{row.payee}</strong>
+                    <span>{row.country}</span>
+                  </div>
+                ),
+              },
+              {
+                key: 'grossPaid',
+                label: 'Amount Paid',
+                sortable: true,
+                cellClassName: 'learners-performance-history-score',
+              },
+              {
+                key: 'fee',
+                label: 'Fees per amount',
+                sortable: true,
+                cellClassName: 'learners-performance-history-time',
+              },
+              {
+                key: 'netPaid',
+                label: 'Net Paid',
+                sortable: true,
+                cellClassName: 'learners-performance-history-score',
+              },
+              {
+                key: 'status',
+                label: 'Status',
+                sortable: true,
+                renderCell: (row) => (
+                  <AcademiaStatusPill tone={row.statusTone === 'paid' ? 'green' : row.statusTone === 'failed' ? 'red' : 'orange'}>
+                    {row.status}
+                  </AcademiaStatusPill>
+                ),
+              },
+            ]}
+            rows={sortedPayments}
+            getRowKey={(row) => row.id}
+            sortConfig={paymentsSortConfig}
+            onSort={handlePaymentsSort}
+            loading={paymentsLoading}
+            error={paymentsError}
+            onRetry={paymentsError.includes('sign in') ? undefined : () => setPaymentsReloadKey((key) => key + 1)}
+            emptyTitle="No payment records found"
+            emptyMessage="There are no payment records matching your selected filters."
+            loadingMessage="Fetching your payment records."
+            showPagination={totalPayments > 0}
+            pageSize={String(pageSize)}
+            pageSizeOptions={['10', '20', '50']}
+            onPageSizeChange={(value) => { setPageSize(Number(value)); setCurrentPage(1); }}
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={totalPayments}
+            rangeLabel={payments.length === 0 ? '0' : `${(currentPage - 1) * pageSize + 1}-${Math.min(currentPage * pageSize, totalPayments)}`}
+            onGoToPage={(value) => setCurrentPage(Math.min(Math.max(1, value), totalPages))}
+          />
         </section>
 
       </section>

@@ -26,6 +26,7 @@ import './author.css';
 import { PublicLoadError, PublicLoading } from './PublicPageState';
 import { PublicNewsletterNotice, usePublicNewsletter } from './usePublicNewsletter.jsx';
 import { usePublicPageTitle } from './usePublicPageTitle.jsx';
+import { buildProjectPath, getUserPublicRef } from './publicShare';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
@@ -42,6 +43,8 @@ const normalizeProject = (project) => {
   return {
     ...project,
     id: project.id || project._id || project.project_id,
+    user_id: project.user_id || project.author_id || project.userId || null,
+    user_uuid: project.user_uuid || null,
     title: project.title || project.name || 'Project',
     abstract: project.abstract || project.description || '',
     thumbnail_url: project.thumbnail_url || project.thumbnail || project.image || null,
@@ -68,7 +71,7 @@ const formatMemberSince = (createdAt) => {
 
 function AcademiaAuthor() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const moreFromSwiperRef = useRef(null);
   
   // --- State Management ---
@@ -160,8 +163,9 @@ function AcademiaAuthor() {
 
         const primaryProject = fetchedProjects[0] || null;
         if (primaryProject) {
-          setAuthorProfile({
+          const authorProfileData = {
             id: primaryProject.user_id || requestedAuthorId,
+            user_uuid: primaryProject.user_uuid || null,
             name: primaryProject.user_name || 'Author',
             role: primaryProject.user_role || 'Contributor',
             avatar: primaryProject.user_avatar || null,
@@ -170,10 +174,21 @@ function AcademiaAuthor() {
             memberSince: formatMemberSince(primaryProject.created_at),
             availability: primaryProject.availability || '',
             experience: primaryProject.experience || '',
-          });
+          };
+          setAuthorProfile(authorProfileData);
+
+          const publicAuthorRef = getUserPublicRef(authorProfileData);
+          if (publicAuthorRef && String(requestedAuthorId) === String(authorProfileData.id)) {
+            const next = new URLSearchParams(searchParams);
+            next.set('authorId', String(publicAuthorRef));
+            next.delete('userId');
+            next.delete('id');
+            setSearchParams(next, { replace: true });
+          }
         } else {
           setAuthorProfile({
             id: requestedAuthorId,
+            user_uuid: null,
             name: 'Author',
             role: 'Contributor',
             avatar: null,
@@ -257,9 +272,10 @@ function AcademiaAuthor() {
   }, { views: 0, likes: 0, feedbacks: 0 });
 
   // --- Action Handlers ---
-  const handleOpenProject = (projectId) => {
-    if (!projectId) return;
-    navigate(`/academia/read-project?id=${projectId}`);
+  const handleOpenProject = (projectOrId) => {
+    const path = buildProjectPath(projectOrId);
+    if (path === '/academia/projects') return;
+    navigate(path);
   };
 
   const handleToggleFollow = async () => {
@@ -299,8 +315,8 @@ function AcademiaAuthor() {
   };
 
   const handleGetInTouch = () => {
-    if (primaryProject?.id) {
-      navigate(`/academia/read-project?id=${primaryProject.id}`);
+    if (primaryProject) {
+      navigate(buildProjectPath(primaryProject));
       return;
     }
     navigate('/academia/projects');
@@ -400,7 +416,7 @@ function AcademiaAuthor() {
                 <p>
                   {authorBio}
                   {primaryProject?.id && (
-                    <a href={`/academia/read-project?id=${primaryProject.id}`} style={{ marginLeft: '8px' }}>Read more</a>
+                    <a href={buildProjectPath(primaryProject)} style={{ marginLeft: '8px' }}>Read more</a>
                   )}
                 </p>
               ) : (
@@ -452,7 +468,7 @@ function AcademiaAuthor() {
               </div>
             ) : authorProjects.length > 0 ? (
               authorProjects.map((project) => (
-                <div key={project.id} className="journal" onClick={() => handleOpenProject(project.id)} style={{ cursor: 'pointer' }}>
+                <div key={project.id} className="journal" onClick={() => handleOpenProject(project)} style={{ cursor: 'pointer' }}>
                   <div className="journal-img">
                     <img src={resolveAuthorImage(project.thumbnail_url, journalImage)} alt={project.title} />
                   </div>
@@ -527,7 +543,7 @@ function AcademiaAuthor() {
             ) : authorProjects.length > 0 ? (
               authorProjects.map((project) => (
                 <div key={project.id} className="swiper-slide">
-                  <div className="journal" onClick={() => handleOpenProject(project.id)} style={{ cursor: 'pointer' }}>
+                  <div className="journal" onClick={() => handleOpenProject(project)} style={{ cursor: 'pointer' }}>
                     <div className="journal-img">
                       <img src={resolveAuthorImage(project.thumbnail_url, journalImage)} alt={project.title} />
                     </div>

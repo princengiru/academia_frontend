@@ -1374,40 +1374,50 @@
   }
 }
 
+/* Legacy class — aligned with HOA / learner-toast card look */
 .toast-notification {
   position: fixed;
-  bottom: 24px;
+  top: 24px;
   right: 24px;
   z-index: 9999;
   padding: 14px 20px;
   border-radius: 8px;
-  font-family: 'Inter', sans-serif;
+  font-family: Inter, Poppins, sans-serif;
   font-size: 13px;
   font-weight: 500;
-  color: #ffffff;
-  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.15);
-  animation: toastFadeIn 0.3s ease-out;
+  color: #071437;
+  background: #ffffff;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.12);
+  border-left: 4px solid #10b981;
+  animation: toastFadeIn 0.22s cubic-bezier(0, 0, 0.2, 1);
   display: flex;
   align-items: center;
-  gap: 10px;
-  max-width: 350px;
+  gap: 12px;
+  max-width: 380px;
 }
 
 .toast-notification.is-success {
-  background-color: #10B981;
+  border-left-color: #10b981;
+  background: #ffffff;
+  color: #071437;
 }
 
 .toast-notification.is-warning {
-  background-color: #F59E0B;
+  border-left-color: #f59e0b;
+  background: #ffffff;
+  color: #071437;
 }
 
-.toast-notification.is-danger {
-  background-color: #EF4444;
+.toast-notification.is-danger,
+.toast-notification.is-error {
+  border-left-color: #ef4444;
+  background: #ffffff;
+  color: #071437;
 }
 
 @keyframes toastFadeIn {
   from {
-    transform: translateY(20px);
+    transform: translateY(-16px);
     opacity: 0;
   }
 

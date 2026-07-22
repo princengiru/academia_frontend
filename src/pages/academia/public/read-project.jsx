@@ -23,6 +23,7 @@ import learnersProfileImage from '../../../assets/imgs/default-profile.png';
 import journalImage from '../../../assets/imgs/journal.jpg';
 import './read-project.css';
 import { usePublicPageTitle } from './usePublicPageTitle.jsx';
+import { buildAuthorPath, buildProjectPath, getProjectPublicRef, getUserPublicRef } from './publicShare';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 const ICON_SIZE = 20;
@@ -107,7 +108,7 @@ const normalizeProjectComment = (comment) => {
 
 function AcademiaReadProject() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const projectIdParam = searchParams.get('id');
   const feedbackSectionRef = useRef(null);
   const moreFromSwiperRef = useRef(null);
@@ -275,6 +276,14 @@ function AcademiaReadProject() {
         }
 
         setProjectData(resolvedProject);
+
+        const publicRef = getProjectPublicRef(resolvedProject);
+        if (publicRef && String(projectIdParam) === String(resolvedProject.id)) {
+          const next = new URLSearchParams(searchParams);
+          next.set('id', String(publicRef));
+          setSearchParams(next, { replace: true });
+        }
+
         const authorId = resolvedProject.user_id;
         setRelatedProjects(
           allProjects
@@ -377,9 +386,12 @@ function AcademiaReadProject() {
     navigate('/academia/projects');
   };
   const handleAuthor = () => {
-    const authorId = projectData?.user_id || projectData?.author_id || projectData?.userId;
-    if (authorId) {
-      navigate(`/academia/author?authorId=${authorId}`);
+    const authorRef = getUserPublicRef({
+      user_uuid: projectData?.user_uuid,
+      id: projectData?.user_id || projectData?.author_id || projectData?.userId,
+    });
+    if (authorRef) {
+      navigate(buildAuthorPath(authorRef));
       return;
     }
     navigate('/academia/projects');
@@ -900,10 +912,10 @@ function AcademiaReadProject() {
               <div key={item.id} className="swiper-slide">
                 <div
                   className="journal"
-                  onClick={() => navigate(`/academia/read-project?id=${item.id}`)}
+                  onClick={() => navigate(buildProjectPath(item))}
                   onKeyDown={(event) => {
                     if (event.key === 'Enter' || event.key === ' ') {
-                      navigate(`/academia/read-project?id=${item.id}`);
+                      navigate(buildProjectPath(item));
                     }
                   }}
                   role="button"

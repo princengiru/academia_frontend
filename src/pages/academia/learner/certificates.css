@@ -330,7 +330,7 @@
 .learners-certificates-page .learners-certificates-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 18px 12px;
+  gap: 16px;
 }
 
 .learners-certificates-page .learners-certificates-empty-state {
@@ -375,179 +375,128 @@
 .learners-certificates-page .learners-certificate-card {
   background: #FFFFFF;
   border: 1px solid #E6EAF1;
-  border-radius: 12px;
+  border-radius: 14px;
   overflow: hidden;
-  box-shadow: 0 16px 36px -30px rgba(15, 23, 42, 0.3);
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 12px 28px -24px rgba(15, 23, 42, 0.35);
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
 }
 
-.learners-certificates-page .learners-certificate-card-banner {
-  margin: 12px 12px 0;
-  min-height: 180px;
-  padding: 24px 28px 18px;
-  border-radius: 16px;
-  position: relative;
-  overflow: hidden;
-  background: linear-gradient(180deg, #03154A 0%, #031041 100%);
+.learners-certificates-page .learners-certificate-card:hover {
+  border-color: #D7C6E2;
+  box-shadow: 0 18px 34px -22px rgba(82, 10, 128, 0.28);
+  transform: translateY(-1px);
 }
 
-.learners-certificates-page .learners-certificate-card-banner::before {
-  content: "";
-  position: absolute;
-  inset: 0;
+.learners-certificates-page .learners-certificate-card-top {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: start;
+  padding: 18px 18px 16px;
   background:
-    radial-gradient(circle at 15% 105%, rgba(215, 116, 255, 0.22) 0 18%, transparent 18.5%),
-    radial-gradient(circle at 100% 12%, rgba(92, 17, 146, 0.95) 0 19%, transparent 19.5%),
-    repeating-radial-gradient(circle at 10% 0, transparent 0 22px, rgba(0, 152, 255, 0.32) 22px 25px, transparent 25px 46px);
-  background-size: auto, auto, 330px 220px;
-  background-position: 0 0, 100% 0, 60px -18px;
-  background-repeat: no-repeat, no-repeat, repeat-x;
-  opacity: 1;
+    linear-gradient(135deg, rgba(82, 10, 128, 0.08) 0%, rgba(82, 10, 128, 0.02) 42%, transparent 70%),
+    linear-gradient(180deg, #FAF7FC 0%, #FFFFFF 100%);
+  border-bottom: 1px solid #F0EAF5;
 }
 
-.learners-certificates-page .learners-certificate-card-banner::after {
-  content: "";
-  position: absolute;
-  left: -2%;
-  right: -1%;
-  bottom: -34px;
-  height: 92px;
-  border-top: 6px solid #D68EFF;
-  border-radius: 72px 72px 0 0;
-  background: linear-gradient(90deg, #4B0A6E 0%, #4E086E 28%, #7100A6 72%, #7900B2 100%);
-  box-shadow: inset 0 16px 28px rgba(255, 255, 255, 0.06);
-}
-
-.learners-certificates-page .learners-certificate-card-banner-copy::before {
-  content: "";
-  position: absolute;
-  left: -12px;
-  top: 4px;
-  width: 44px;
-  height: 72px;
-  background:
-    linear-gradient(90deg, rgba(171, 182, 227, 0.22) 0 4px, transparent 4px 10px, rgba(171, 182, 227, 0.22) 10px 14px, transparent 14px 100%),
-    linear-gradient(45deg, transparent 0 13px, rgba(171, 182, 227, 0.22) 13px 17px, transparent 17px 22px),
-    linear-gradient(135deg, transparent 0 13px, rgba(171, 182, 227, 0.22) 13px 17px, transparent 17px 22px);
-  background-size: 44px 72px, 22px 22px, 22px 22px;
-  background-position: 0 0, 18px 0, 18px 26px;
-  background-repeat: no-repeat, no-repeat, no-repeat;
-  opacity: 1;
-}
-
-.learners-certificates-page .learners-certificate-card-badge-pill {
-  position: absolute;
-  right: 30px;
-  top: 0px;
-  z-index: 1;
-  width: 50px;
-  height: 60px;
+.learners-certificates-page .learners-certificate-card-seal {
+  width: 46px;
+  height: 56px;
+  flex: 0 0 auto;
   background-image: url("../../assets/icons/cerr.svg");
   background-position: center;
   background-repeat: no-repeat;
-  background-size: auto 60px;
+  background-size: contain;
   color: #FFFFFF;
-  font-family: Inter;
+  font-family: Inter, sans-serif;
   font-weight: 800;
-  font-style: Extra Bold;
   font-size: 8px;
-  line-height: 20px;
-  letter-spacing: 0%;
+  line-height: 1;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  position: relative;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
 }
 
-.learners-certificates-page .learners-certificate-card-badge-pill span {
+.learners-certificates-page .learners-certificate-card-seal span {
   position: absolute;
-  bottom: 20%;
+  bottom: 18%;
 }
 
-.learners-certificates-page .learners-certificate-card-banner-copy {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding-left: 20px;
-  padding-top: 2px;
+.learners-certificates-page .learners-certificate-card-top-copy {
+  min-width: 0;
 }
 
-.learners-certificates-page .learners-certificate-card-banner-copy span {
-  font-family: Inter;
-  font-weight: 400;
-  font-style: Regular;
-  font-size: 13px;
-  line-height: 16px;
-  letter-spacing: 0px;
-  color: rgba(255, 255, 255, 0.84);
+.learners-certificates-page .learners-certificate-card-kicker {
+  display: block;
+  margin: 0 0 6px;
+  font-family: Inter, sans-serif;
+  font-weight: 600;
+  font-size: 11px;
+  line-height: 14px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #7A4A9A;
 }
 
-.learners-certificates-page .learners-certificate-card-banner-copy h3 {
-  margin: 0;
-  font-family: Inter;
-  font-weight: 700;
-  font-style: Bold;
-  font-size: 20px;
-  line-height: 26px;
-  letter-spacing: 0px;
-  color: #FFFFFF;
-}
-
-.learners-certificates-page .learners-certificate-card-body {
-  padding: 14px 20px 18px;
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-}
-
-.learners-certificates-page .learners-certificate-card-title-block {
-  text-align: center;
-}
-
-.learners-certificates-page .learners-certificate-card-title-block h4 {
+.learners-certificates-page .learners-certificate-card-top-copy h3 {
   margin: 0;
   font-family: Inter, sans-serif;
-  font-weight: 500;
-  font-size: 16px;
+  font-weight: 600;
+  font-size: 17px;
   line-height: 22px;
   color: #071437;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
-.learners-certificates-page .learners-certificate-card-title-block p {
+.learners-certificates-page .learners-certificate-card-top-copy p {
   margin: 6px 0 0;
   font-family: Inter, sans-serif;
   font-weight: 400;
-  font-size: 13px;
-  line-height: 18px;
-  color: #8A94A6;
+  font-size: 12px;
+  line-height: 16px;
+  color: #6A7287;
+}
+
+.learners-certificates-page .learners-certificate-card-body {
+  padding: 16px 18px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  flex: 1;
 }
 
 .learners-certificates-page .learners-certificate-pending-note {
-  margin-top: 8px !important;
-  color: #5B0A86 !important;
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #FBF5FF;
+  border: 1px solid #EBDDF4;
+  font-family: Inter, sans-serif;
+  font-weight: 400;
+  font-size: 12px;
+  line-height: 17px;
+  color: #5B0A86;
 }
 
 .learners-certificates-page .learners-certificate-card-stats {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 0;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
 }
 
 .learners-certificates-page .learners-certificate-card-stats div {
-  text-align: center;
-  position: relative;
-  padding: 2px 8px;
-}
-
-.learners-certificates-page .learners-certificate-card-stats div:not(:last-child)::after {
-  content: "";
-  position: absolute;
-  right: 0;
-  top: 2px;
-  bottom: 2px;
-  width: 1px;
-  background: #EAEFF5;
+  text-align: left;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #F7F8FB;
+  border: 1px solid #EEF1F6;
 }
 
 .learners-certificates-page .learners-certificate-card-stats strong {
@@ -555,13 +504,13 @@
   font-family: Inter, sans-serif;
   font-weight: 600;
   font-size: 14px;
-  line-height: 20px;
+  line-height: 18px;
   color: #071437;
 }
 
 .learners-certificates-page .learners-certificate-card-stats span {
   display: block;
-  margin-top: 3px;
+  margin-top: 2px;
   font-family: Inter, sans-serif;
   font-weight: 400;
   font-size: 11px;
@@ -571,21 +520,24 @@
 
 .learners-certificates-page .learners-certificate-status {
   width: fit-content;
-  margin: 0 auto;
-  padding: 4px 9px;
-  border-radius: 4px;
+  margin: 0;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-family: Inter, sans-serif;
+  font-weight: 600;
   font-size: 11px;
   line-height: 14px;
+  white-space: nowrap;
 }
 
 .learners-certificates-page .learners-certificate-status.is-progress {
   background: #FFF4D6;
-  color: #D59600;
+  color: #B57A00;
 }
 
 .learners-certificates-page .learners-certificate-status.is-passed {
   background: #E8F9EF;
-  color: #21A366;
+  color: #178A52;
 }
 
 .learners-certificates-page .learners-certificate-status.is-failed {
@@ -596,28 +548,50 @@
 .learners-certificates-page .learners-certificate-card-actions {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
+  gap: 8px;
+  margin-top: auto;
 }
 
 .learners-certificates-page .learners-certificate-card-actions button {
-  height: 40px;
-  border: 1px solid #EEF2F7;
+  height: 38px;
+  border: 1px solid #E7ECF3;
   background: #FFFFFF;
-  border-radius: 4px;
+  border-radius: 8px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
   font-family: Inter, sans-serif;
   font-weight: 500;
-  font-size: 13px;
-  line-height: 18px;
+  font-size: 12px;
+  line-height: 16px;
   color: #5A1688;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.learners-certificates-page .learners-certificate-card-actions button:hover:not(:disabled) {
+  background: #F8F1FC;
+  border-color: #DCCAE8;
+}
+
+.learners-certificates-page .learners-certificate-card-actions button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 .learners-certificates-page .learners-certificate-card-actions button.is-primary {
-  background: #F3EAF8;
-  border-color: #F3EAF8;
+  background: #520A80;
+  border-color: #520A80;
+  color: #FFFFFF;
+}
+
+.learners-certificates-page .learners-certificate-card-actions button.is-primary:hover:not(:disabled) {
+  background: #450468;
+  border-color: #450468;
+}
+
+.learners-certificates-page .learners-certificate-card-actions button.is-primary img {
+  filter: brightness(0) invert(1);
 }
 
 .learners-certificates-page .learners-certificate-card-actions img {
@@ -712,25 +686,20 @@
 
   .learners-certificates-page .learners-certificate-card-stats,
   .learners-certificates-page .learners-certificate-card-actions {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
-  .learners-certificates-page .learners-certificate-card-banner {
-    min-height: 126px;
-    padding: 18px 18px 14px;
+  .learners-certificates-page .learners-certificate-card-top {
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 12px;
   }
 
-  .learners-certificates-page .learners-certificate-card-banner-copy {
-    padding-left: 30px;
+  .learners-certificates-page .learners-certificate-status {
+    grid-column: 2;
   }
 
-  .learners-certificates-page .learners-certificate-card-banner-copy span {
-    font-size: 13px;
-    line-height: 18px;
-  }
-
-  .learners-certificates-page .learners-certificate-card-banner-copy h3 {
-    font-size: 18px;
-    line-height: 24px;
+  .learners-certificates-page .learners-certificate-card-top-copy h3 {
+    font-size: 16px;
+    line-height: 21px;
   }
 }

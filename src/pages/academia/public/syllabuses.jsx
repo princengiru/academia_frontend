@@ -17,6 +17,7 @@ import storyImage from '../../../assets/imgs/ac-str.jpg';
 
 import './syllabuses.css';
 import { usePublicPageTitle } from './usePublicPageTitle.jsx';
+import { buildSyllabusPartPath, buildStoryPath } from './publicShare';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
@@ -285,7 +286,7 @@ function AcademiaSyllabuses() {
     navigate('/academia/syllabuses');
   };
 
-  const handleStoryClick = (storyId) => navigate(`/academia/read-story?id=${storyId || ''}`);
+  const handleStoryClick = (storyOrId) => navigate(buildStoryPath(storyOrId));
   const handleViewMore = () => navigate('/academia/watch');
 
   return (
@@ -527,7 +528,7 @@ function AcademiaSyllabuses() {
                   <div 
                     key={topic.id} 
                     className="syll-topic-card" 
-                    onClick={() => navigate(`/academia/syllabus-part?topicId=${topic.id}`)}
+                    onClick={() => navigate(buildSyllabusPartPath(topic))}
                     style={{ 
                       border: '1px solid #E2E8F0',
                       borderRadius: '6px',
@@ -554,7 +555,7 @@ function AcademiaSyllabuses() {
                       className="syll-btn-view" 
                       onClick={(e) => {
                         e.stopPropagation();
-                        navigate(`/academia/syllabus-part?topicId=${topic.id}`);
+                        navigate(buildSyllabusPartPath(topic));
                       }}
                       style={{
                         background: '#FCFCFC',
@@ -641,7 +642,7 @@ function AcademiaSyllabuses() {
               ) : storiesData && storiesData.length > 0 ? (
                 storiesData.map((story) => (
                   <div key={story.id} className="swiper-slide">
-                    <div className="ss-item" onClick={() => handleStoryClick(story.id)} style={{ cursor: 'pointer' }}>
+                    <div className="ss-item" onClick={() => handleStoryClick(story)} style={{ cursor: 'pointer' }}>
                       <div className="ss-item-img">
                         <img src={resolveImage(story.thumbnail, storyImage)} alt={story.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                       </div>

@@ -12,10 +12,11 @@ import './syllabus-part.css';
 import { PublicLoadError, PublicLoading } from './PublicPageState';
 import { PublicNewsletterNotice, usePublicNewsletter } from './usePublicNewsletter.jsx';
 import { usePublicPageTitle } from './usePublicPageTitle.jsx';
+import { buildSyllabusPartPath, buildSyllabusReaderPath } from './publicShare';
 
 function AcademiaSyllabusPart() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
@@ -79,6 +80,8 @@ function AcademiaSyllabusPart() {
             subcat.topics.forEach((topic) => {
               list.push({
                 id: topic.id,
+                topic_uuid: topic.topic_uuid || topic.uuid || null,
+                uuid: topic.topic_uuid || topic.uuid || null,
                 name: topic.name,
                 description: topic.description || 'Gain advanced knowledge and explore key principles in this academic topic subject.',
                 papers: Array.isArray(topic.papers) ? topic.papers : [],
@@ -98,10 +101,25 @@ function AcademiaSyllabusPart() {
   // --- Find Active Topic ---
   const activeTopic = useMemo(() => {
     if (!topicId) return null;
-    return allTopics.find((t) => String(t.id) === String(topicId)) || null;
+    return allTopics.find((t) => (
+      String(t.id) === String(topicId)
+      || String(t.topic_uuid || '') === String(topicId)
+      || String(t.uuid || '') === String(topicId)
+    )) || null;
   }, [allTopics, topicId]);
 
   usePublicPageTitle(activeTopic?.name || 'Syllabus topic');
+
+  useEffect(() => {
+    if (!activeTopic) return;
+    const publicRef = activeTopic.topic_uuid || activeTopic.uuid;
+    if (!publicRef) return;
+    if (String(topicId) === String(publicRef)) return;
+    if (String(topicId) !== String(activeTopic.id)) return;
+    const next = new URLSearchParams(searchParams);
+    next.set('topicId', String(publicRef));
+    setSearchParams(next, { replace: true });
+  }, [activeTopic, topicId, searchParams, setSearchParams]);
 
   // --- Derive Syllabus Outlines (Papers) ---
   const syllabusOutlines = useMemo(() => {
@@ -112,10 +130,13 @@ function AcademiaSyllabusPart() {
   const courseParts = useMemo(() => {
     return syllabusOutlines.map((outline, index) => ({
       id: outline.id || index,
+      syllabus_outline_uuid: outline.syllabus_outline_uuid || outline.uuid || null,
+      uuid: outline.syllabus_outline_uuid || outline.uuid || null,
       title: outline.title || `Outline Paper ${index + 1}`,
       description: outline.abstract || outline.description || 'Detailed syllabus outline and course papers describing the curriculum structure.',
       file_url: outline.file_url || '',
       syllabus_id: outline.syllabus_id,
+      syllabus_uuid: outline.syllabus_uuid || null,
     }));
   }, [syllabusOutlines]);
 
@@ -144,13 +165,18 @@ function AcademiaSyllabusPart() {
   })();
 
   // --- View/Download Handlers ---
-  const handleViewPaper = (outlineId, syllabusId) => {
-    const categoryTopicId = topicId ? `&categoryTopicId=${topicId}` : '';
-    navigate(`/academia/read-contents?syllabusId=${syllabusId}&topicId=${outlineId}${categoryTopicId}`);
+  const handleViewPaper = (outlineId, paper) => {
+    navigate(buildSyllabusReaderPath({
+      syllabus: typeof paper === 'object' ? paper : { syllabus_id: paper },
+      outline: typeof paper === 'object' ? paper : { id: outlineId },
+      topicId: outlineId,
+      categoryTopic: activeTopic || undefined,
+      categoryTopicId: topicId || undefined,
+    }));
   };
 
   const handleRelatedTopic = (id) => {
-    navigate(`/academia/syllabus-part?topicId=${id}`);
+    navigate(buildSyllabusPartPath(id));
   };
 
   const handleBackToCourses = () => {
@@ -326,7 +352,7 @@ function AcademiaSyllabusPart() {
                     <div style={{ display: 'flex', gap: '10px' }}>
                       <button
                         type="button"
-                        onClick={() => handleViewPaper(part.id, part.syllabus_id)}
+                        onClick={() => handleViewPaper(part.id, part)}
                         style={{
                           display: 'flex',
                           alignItems: 'center',
@@ -346,7 +372,7 @@ function AcademiaSyllabusPart() {
                       </button>
                       <button
                         type="button"
-                        onClick={() => handleViewPaper(part.id, part.syllabus_id)}
+                        onClick={() => handleViewPaper(part.id, part)}
                         style={{
                           display: 'flex',
                           alignItems: 'center',

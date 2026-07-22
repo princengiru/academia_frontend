@@ -50,7 +50,8 @@ function LearnersAvailableTest() {
 
   const mapTest = (item, idx) => ({
     id: item.id || idx,
-    courseId: item.courseId,
+    uuid: item.formative_assessment_uuid || item.summative_assessment_uuid || item.uuid || null,
+    courseId: item.course_uuid || item.courseUuid || item.courseId,
     courseName: item.courseName || '',
     type: item.type,
     title: item.title || 'Untitled Test',
@@ -66,15 +67,17 @@ function LearnersAvailableTest() {
 
   const openTest = (test) => {
     if (!test?.courseId) return;
-    const chapterId = test.type === 'summative' ? 'assessment' : `formative-${test.id}`;
+    const chapterId = test.type === 'summative'
+      ? 'assessment'
+      : `formative-${test.uuid || test.id}`;
     navigate(
-      `/academia/learner/read-contents?id=${test.courseId}&chapterId=${encodeURIComponent(chapterId)}`
+      `/academia/learner/read-contents?id=${encodeURIComponent(String(test.courseId))}&chapterId=${encodeURIComponent(chapterId)}`
     );
   };
 
   const openCourse = (courseId) => {
     if (!courseId) return;
-    navigate(`/academia/learner/course-part?id=${courseId}`);
+    navigate(`/academia/learner/course-part?id=${encodeURIComponent(String(courseId))}`);
   };
 
   useEffect(() => {

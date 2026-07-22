@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import HOALayout from '../../../components/layouts/HOALayout/HOALayout';
 import { HOALoadError, HOALoading, HOAEmptyState } from './HOAPageState';
+import { openCertificatePreview } from '../certificateUtils';
 import './hoa-certificates.css';
 
 // Reusing standard project icons
@@ -10,7 +11,6 @@ import rwanda from '../../../assets/icons/rwanda.svg';
 import hoadowncaret from '../../../assets/icons/hoadowncaret.svg';
 import hoasearch from '../../../assets/icons/hoasearch.svg';
 import hoawhiteadd from '../../../assets/icons/hoawhiteadd.svg';
-import certificateimage from '../../../assets/imgs/certificateimage.jpeg';
 import hoarank from '../../../assets/icons/hoarank.png';
 import hoadownloadall from '../../../assets/icons/hoadownloadall.svg';
 import hoafilter2 from '../../../assets/icons/hoafilter2.svg';
@@ -139,11 +139,12 @@ const HOACertificates = () => {
     const [approvingId, setApprovingId] = useState(null);
 
     const handleDownloadCertificate = (cert) => {
-        if (!cert?.certificate_number) {
+        const number = cert?.certificate_number || cert?.certificateNumber;
+        if (!number) {
             showToast('Download is not available until this certificate has a certificate number.', 'error');
             return;
         }
-        window.open(`${API_BASE_URL}/api/certificates/${cert.certificate_number}/download`, '_blank', 'noopener,noreferrer');
+        openCertificatePreview(number, { newTab: true });
     };
 
     const handleApprove = async (certId) => {
@@ -378,66 +379,51 @@ const HOACertificates = () => {
                             : '—';
                         const dateStr = cert.issue_date ? formatCertDate(new Date(cert.issue_date)) : 'N/A';
                         
+                        const isApproved = cert.is_verified === 1;
+                        const hours = cert.total_hours || 10;
+
                         return (
-                            <div key={cert.id} className="hoace-card">
-                                
-                                {/* Certificate Graphic Representation */}
-                                <div className="hoace-cert-graphic" style={{ backgroundImage: `url(${certificateimage})` }}>
-                                    <div className="hoace-cert-ribbon-wrapper">
-                                        <img src={hoarank} alt="" className="hoace-ribbon-img" onError={(e) => e.target.style.display = 'none'} />
+                            <div key={cert.id} className={`hoace-card${isApproved ? ' is-approved' : ' is-pending'}`}>
+                                <div className="hoace-card-top">
+                                    <div className="hoace-card-seal" aria-hidden="true">
+                                        <img src={hoarank} alt="" className="hoace-ribbon-img" onError={(e) => { e.target.style.display = 'none'; }} />
                                         <span className="hoace-ribbon-number">{scoreStr}</span>
                                     </div>
-                                    <div className="hoace-cert-content">
-                                        <p>Proudly presented to</p>
-                                        <h4>Dear, {cert.student_name || 'Learner'}</h4>
+                                    <div className="hoace-card-top-copy">
+                                        <span className="hoace-card-kicker">{isApproved ? 'Approved certificate' : 'Pending claim'}</span>
+                                        <h3 className="hoace-course-title">{cert.course_name || cert.course_title}</h3>
+                                        <p className="hoace-card-learner">{cert.student_name || 'Learner'}</p>
                                     </div>
                                 </div>
 
-                                {/* Card Details */}
                                 <div className="hoace-card-body">
-                                    <div className="hoace-card-row">
-                                        <span className="hoace-text-meta"><strong>{cert.total_hours || 10}</strong> Hours study</span>
-                                        {cert.is_verified === 1 ? (
-                                            <button 
+                                    <div className="hoace-card-meta">
+                                        <span><strong>{hours}</strong>h study</span>
+                                        <span>Claimed {dateStr}</span>
+                                        <span className={`hoace-status-pill${isApproved ? ' is-approved' : ' is-pending'}`}>
+                                            {isApproved ? 'Approved' : 'Pending'}
+                                        </span>
+                                    </div>
+
+                                    <div className="hoace-card-actions">
+                                        {isApproved ? (
+                                            <button
+                                                type="button"
                                                 className="hoace-download-btn"
                                                 onClick={() => handleDownloadCertificate(cert)}
                                             >
                                                 <img src={hoadownloadall} alt="" /> Download
                                             </button>
                                         ) : (
-                                            <span style={{ fontSize: '11px', color: '#99A1B7', fontWeight: '500' }}>Pending Approval</span>
-                                        )}
-                                    </div>
-                                    <div className="hoace-card-row hoace-mt-12" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <h3 className="hoace-course-title" style={{ margin: 0, fontSize: '14px', color: '#071437', fontWeight: '600' }}>
-                                            {cert.course_name || cert.course_title}
-                                        </h3>
-                                        {cert.is_verified === 1 ? (
-                                            <span className="hoace-status-passed" style={{ backgroundColor: '#D1FAE5', color: '#065F46', padding: '4px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: '600' }}>
-                                                Approved
-                                            </span>
-                                        ) : (
-                                            <button 
+                                            <button
+                                                type="button"
+                                                className="hoace-approve-btn"
                                                 onClick={() => handleApprove(cert.id)}
                                                 disabled={approvingId === cert.id}
-                                                style={{
-                                                    backgroundColor: '#10B981',
-                                                    color: '#FFFFFF',
-                                                    border: 'none',
-                                                    borderRadius: '4px',
-                                                    padding: '6px 12px',
-                                                    fontSize: '11px',
-                                                    fontWeight: '600',
-                                                    cursor: approvingId === cert.id ? 'wait' : 'pointer',
-                                                    opacity: approvingId === cert.id ? 0.7 : 1
-                                                }}
                                             >
                                                 {approvingId === cert.id ? 'Approving…' : 'Approve Claim'}
                                             </button>
                                         )}
-                                    </div>
-                                    <div className="hoace-card-row hoace-mt-8">
-                                        <span className="hoace-text-date">Claimed On <strong>{dateStr}</strong></span>
                                     </div>
                                 </div>
                             </div>

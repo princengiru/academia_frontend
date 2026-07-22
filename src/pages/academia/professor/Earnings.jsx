@@ -3,24 +3,15 @@ import { Link, useNavigate } from 'react-router-dom';
 import LearnerLoadError from '../learner/LearnerLoadError';
 import ManagementLoading from './ManagementLoading';
 import { professorPageTitle } from './professorBrand';
-import filtersIcon from '../../../assets/icons/filters-icon.svg';
-import hoasearch from '../../../assets/icons/hoasearch.svg';
 import './earnings.css';
+import { AcademiaDataTable, AcademiaStatusPill, useClientTableState } from '../shared';
+import { professorNetFromInvoice } from '../shared/courseFinance';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 const COURSE_SHOW_OPTIONS = [
   { value: 'sales', label: 'With sales only' },
   { value: 'all', label: 'All courses' },
-];
-
-const COURSE_SORT_OPTIONS = [
-  { value: 'total_revenue:desc', label: 'Collected · high → low' },
-  { value: 'total_revenue:asc', label: 'Collected · low → high' },
-  { value: 'total_fees:desc', label: 'Fees · high → low' },
-  { value: 'completed_payments:desc', label: 'Enrollments · high → low' },
-  { value: 'title:asc', label: 'Title · A → Z' },
-  { value: 'title:desc', label: 'Title · Z → A' },
 ];
 
 const STATUS_OPTIONS = [
@@ -39,7 +30,16 @@ const money = (value) => {
 const normalizePaymentRow = (row, index) => {
   const gross = Number(row?.amount_paid ?? row?.total ?? 0);
   const fee = Number(row?.fees_per_amount ?? row?.service_fee ?? 0);
-  const net = Number.isFinite(gross) && Number.isFinite(fee) ? gross - fee : Number(row?.net_paid);
+  const vat = Number(row?.vat);
+  const net = Number.isFinite(vat)
+    ? Number(row?.net_paid ?? (gross - fee - vat))
+    : professorNetFromInvoice({
+      total: gross,
+      amount_paid: gross,
+      vat: row?.vat,
+      service_fee: fee,
+      fees_per_amount: fee,
+    });
   const status = row?.payment_status || row?.status || 'pending';
   const dateRaw = row?.payment_date || row?.paid_at || row?.created_at;
 
@@ -65,8 +65,6 @@ const Earnings = () => {
   const [financial, setFinancial] = useState(null);
   const [courseRows, setCourseRows] = useState([]);
   const [courseSummary, setCourseSummary] = useState(null);
-  const [courseSearch, setCourseSearch] = useState('');
-  const [courseSort, setCourseSort] = useState({ key: 'total_revenue', direction: 'desc' });
   const [courseSalesOnly, setCourseSalesOnly] = useState(true);
 
   const [paymentsLoading, setPaymentsLoading] = useState(true);
@@ -201,8 +199,10 @@ const Earnings = () => {
       courseSummary?.total_revenue ?? financial?.total_amount_paid ?? paymentSummary?.total_amount ?? 0
     );
     const fees = Number(courseSummary?.total_fees ?? 0);
+    const vat = Number(courseSummary?.total_vat ?? 0);
     const net = Number(
-      courseSummary?.net_revenue ?? (Number.isFinite(gross) && Number.isFinite(fees) ? gross - fees : 0)
+      courseSummary?.net_revenue
+        ?? professorNetFromInvoice({ total: gross, service_fee: fees, vat })
     );
     const txFromCourses = courseRows.reduce(
       (sum, row) => sum + Number(row.completed_payments ?? row.total_transactions ?? 0),
@@ -216,62 +216,42 @@ const Earnings = () => {
         paymentsTotal ??
         0
     );
-    return { gross, fees, net, tx };
+    return { gross, fees, vat, net, tx };
   }, [courseSummary, courseRows, financial, paymentSummary, paymentsTotal]);
 
-  const filteredCourses = useMemo(() => {
-    let rows = [...courseRows];
-    if (courseSalesOnly) {
-      rows = rows.filter(
-        (row) => Number(row.total_revenue || 0) > 0 || Number(row.completed_payments || 0) > 0
-      );
-    }
-    if (courseSearch.trim()) {
-      const q = courseSearch.trim().toLowerCase();
-      rows = rows.filter((row) => String(row.title || '').toLowerCase().includes(q));
-    }
-    const { key, direction } = courseSort;
-    rows.sort((a, b) => {
-      let aVal = a[key];
-      let bVal = b[key];
-      if (key === 'title') {
-        aVal = String(aVal || '').toLowerCase();
-        bVal = String(bVal || '').toLowerCase();
-        if (aVal < bVal) return direction === 'asc' ? -1 : 1;
-        if (aVal > bVal) return direction === 'asc' ? 1 : -1;
-        return 0;
-      }
-      aVal = Number(aVal) || 0;
-      bVal = Number(bVal) || 0;
-      return direction === 'asc' ? aVal - bVal : bVal - aVal;
-    });
-    return rows;
-  }, [courseRows, courseSearch, courseSort, courseSalesOnly]);
+  const courseTable = useClientTableState({
+    rows: courseRows,
+    searchFn: (row, query) => String(row.title || '').toLowerCase().includes(String(query).toLowerCase()),
+    filterFn: (row, filter) => {
+      if (filter === 'all') return true;
+      return Number(row.total_revenue || 0) > 0 || Number(row.completed_payments || 0) > 0;
+    },
+    defaultFilter: courseSalesOnly ? 'sales' : 'all',
+    defaultSortKey: 'total_revenue',
+    defaultSortDirection: 'desc',
+    numericKeys: ['completed_payments', 'total_students', 'price', 'total_revenue', 'total_fees', 'net_revenue'],
+    getRowKey: (row) => row.id,
+    pageSizeOptions: ['5', '10', '25'],
+  });
 
-  const toggleCourseSort = (key) => {
-    setCourseSort((prev) => ({
-      key,
-      direction: prev.key === key && prev.direction === 'desc' ? 'asc' : 'desc',
-    }));
+  // Keep local flag in sync when filter changes from table UI
+  const handleCourseFilterChange = (id) => {
+    courseTable.setActiveFilter(id);
+    setCourseSalesOnly(id === 'sales');
   };
 
-  const sortMark = (key) => {
-    if (courseSort.key !== key) return '';
-    return courseSort.direction === 'asc' ? ' ↑' : ' ↓';
-  };
 
-  const courseThClass = (key, extra = '') =>
-    ['prof-earnings-th-btn', courseSort.key === key ? 'is-active' : '', extra].filter(Boolean).join(' ');
+  const paymentTotalPages = Math.max(1, Math.ceil(paymentsTotal / pageSize));
+  const paymentRangeLabel = paymentsTotal === 0
+    ? '0'
+    : `${(page - 1) * pageSize + 1}-${Math.min(page * pageSize, paymentsTotal)}`;
+  const paymentVisiblePages = (() => {
+    if (paymentTotalPages <= 3) return Array.from({ length: paymentTotalPages }, (_, i) => i + 1);
+    if (page === 1) return [1, 2, 3];
+    if (page === paymentTotalPages) return [paymentTotalPages - 2, paymentTotalPages - 1, paymentTotalPages];
+    return [page - 1, page, page + 1];
+  })();
 
-  const totalPages = Math.max(1, Math.ceil(paymentsTotal / pageSize));
-  const courseShowValue = courseSalesOnly ? 'sales' : 'all';
-  const courseShowLabel =
-    COURSE_SHOW_OPTIONS.find((opt) => opt.value === courseShowValue)?.label || 'Show';
-  const courseSortValue = `${courseSort.key}:${courseSort.direction}`;
-  const courseSortLabel =
-    COURSE_SORT_OPTIONS.find((opt) => opt.value === courseSortValue)?.label || 'Sort';
-  const statusLabel =
-    STATUS_OPTIONS.find((opt) => opt.value === statusFilter)?.label || 'Filters';
 
   return (
     <section className="prof-earnings-page">
@@ -308,323 +288,171 @@ const Earnings = () => {
             <div className="prof-earnings-stat">
               <span>Collected from learners</span>
               <strong>{money(totals.gross)}</strong>
-              <em>Invoice total (price + fee + VAT)</em>
+              <em>VAT-inclusive course price (what they paid)</em>
+            </div>
+            <div className="prof-earnings-stat">
+              <span>VAT (18%)</span>
+              <strong>{money(totals.vat)}</strong>
+              <em>Included in the price (× 18/118)</em>
             </div>
             <div className="prof-earnings-stat">
               <span>Platform fees (20%)</span>
               <strong>{money(totals.fees)}</strong>
-              <em>Taken from course price only</em>
+              <em>20% of net after VAT</em>
             </div>
             <div className="prof-earnings-stat">
-              <span>After platform fee</span>
+              <span>Your share (80%)</span>
               <strong>{money(totals.net)}</strong>
-              <em>Collected − fee (not a payout)</em>
-            </div>
-            <div className="prof-earnings-stat">
-              <span>Paid enrollments</span>
-              <strong>{totals.tx}</strong>
-              <em>Paid invoices on your courses</em>
+              <em>80% of net after VAT (not a payout yet)</em>
             </div>
           </div>
 
           <p className="prof-earnings-legend" role="note">
-            Example: course price <strong>200</strong> → fee <strong>40</strong> (20%) → VAT <strong>43.20</strong> (18% of 240)
-            → learner pays <strong>283.20</strong>. “After fee” for that sale = 283.20 − 40 = <strong>243.20</strong>.
+            Example: course <strong>200</strong> (learner pays 200) → VAT <strong>30.51</strong> (18/118)
+            → net <strong>169.49</strong> → fee <strong>33.90</strong> (20%) → professor <strong>135.59</strong> (80%).
           </p>
 
-          <section className="prof-earnings-panel">
-            <div className="prof-earnings-panel-head">
-              <div>
-                <h2>By course</h2>
-                <p className="prof-earnings-panel-sub">
-                  Paid invoice totals per course. Collected is what learners paid; fee is 20% of list prices.
-                </p>
-              </div>
-              <button type="button" className="prof-earnings-link" onClick={() => navigate('/academia/professor/management')}>
+          <div className="prof-earnings-counts" style={{ marginBottom: 12 }}>
+            <span className="adt-muted">{totals.tx} paid enrollment{totals.tx === 1 ? '' : 's'}</span>
+          </div>
+
+          <AcademiaDataTable
+            title="By course"
+            subtitle="Paid invoice totals per course. List price is what learners paid; fee is 20% of net after VAT."
+            searchPlaceholder="Search courses…"
+            searchQuery={courseTable.searchQuery}
+            onSearchChange={courseTable.setSearchQuery}
+            filters={COURSE_SHOW_OPTIONS.map((opt) => ({ id: opt.value, label: opt.label }))}
+            activeFilter={courseTable.activeFilter}
+            onFilterChange={handleCourseFilterChange}
+            defaultFilterLabel="Show"
+            toolbarExtra={(
+              <button type="button" className="adt-btn-light-purple" onClick={() => navigate('/academia/professor/management')}>
                 Manage courses
               </button>
-            </div>
-
-            <div className="prof-earnings-toolbar">
-              <div className="prof-earnings-search">
-                <img src={hoasearch} alt="" />
-                <input
-                  type="search"
-                  value={courseSearch}
-                  placeholder="Search courses…"
-                  onChange={(e) => setCourseSearch(e.target.value)}
-                />
-              </div>
-
-              <div className="prof-earnings-tools">
-                <div className="dropdown">
-                  <button
-                    type="button"
-                    className="dropdown-toggle prof-earnings-dd-btn"
-                    data-bs-toggle="dropdown"
-                    aria-expanded="false"
-                  >
-                    <img src={filtersIcon} alt="" />
-                    <span>{courseShowLabel}</span>
-                  </button>
-                  <ul className="dropdown-menu prof-earnings-dd-menu">
-                    {COURSE_SHOW_OPTIONS.map((opt) => (
-                      <li key={opt.value}>
-                        <button
-                          type="button"
-                          className={`dropdown-item ${courseShowValue === opt.value ? 'active' : ''}`}
-                          onClick={() => setCourseSalesOnly(opt.value === 'sales')}
-                        >
-                          {opt.label}
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                <div className="dropdown">
-                  <button
-                    type="button"
-                    className="dropdown-toggle prof-earnings-dd-btn"
-                    data-bs-toggle="dropdown"
-                    aria-expanded="false"
-                  >
-                    <img src={filtersIcon} alt="" />
-                    <span>{courseSortLabel}</span>
-                  </button>
-                  <ul className="dropdown-menu prof-earnings-dd-menu">
-                    {COURSE_SORT_OPTIONS.map((opt) => (
-                      <li key={opt.value}>
-                        <button
-                          type="button"
-                          className={`dropdown-item ${courseSortValue === opt.value ? 'active' : ''}`}
-                          onClick={() => {
-                            const [key, direction] = opt.value.split(':');
-                            setCourseSort({ key, direction });
-                          }}
-                        >
-                          {opt.label}
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-            </div>
-
-            {filteredCourses.length === 0 ? (
-              <p className="prof-earnings-empty">
-                {courseRows.length === 0
-                  ? 'No course sales yet. Paid enrollments will show here.'
-                  : 'No courses match these filters.'}
-              </p>
-            ) : (
-              <div className="prof-earnings-table-wrap">
-                <table className="prof-earnings-table">
-                  <thead>
-                    <tr>
-                      <th>
-                        <button type="button" className={courseThClass('title')} onClick={() => toggleCourseSort('title')}>
-                          Course{sortMark('title')}
-                        </button>
-                      </th>
-                      <th className="is-num">
-                        <button type="button" className={courseThClass('completed_payments')} onClick={() => toggleCourseSort('completed_payments')}>
-                          Enrollments{sortMark('completed_payments')}
-                        </button>
-                      </th>
-                      <th className="is-num">
-                        <button type="button" className={courseThClass('total_students')} onClick={() => toggleCourseSort('total_students')}>
-                          Students{sortMark('total_students')}
-                        </button>
-                      </th>
-                      <th className="is-num">
-                        <button type="button" className={courseThClass('price')} onClick={() => toggleCourseSort('price')}>
-                          List price{sortMark('price')}
-                        </button>
-                      </th>
-                      <th className="is-num">
-                        <button type="button" className={courseThClass('total_revenue')} onClick={() => toggleCourseSort('total_revenue')}>
-                          Collected{sortMark('total_revenue')}
-                        </button>
-                      </th>
-                      <th className="is-num">
-                        <button type="button" className={courseThClass('total_fees')} onClick={() => toggleCourseSort('total_fees')}>
-                          Fee{sortMark('total_fees')}
-                        </button>
-                      </th>
-                      <th className="is-num">
-                        <button type="button" className={courseThClass('net_revenue')} onClick={() => toggleCourseSort('net_revenue')}>
-                          After fee{sortMark('net_revenue')}
-                        </button>
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredCourses.map((course) => (
-                      <tr key={course.id}>
-                        <td className="is-primary">
-                          {course.title || 'Untitled course'}
-                          {course.type ? <span className="prof-earnings-muted">{course.type}</span> : null}
-                        </td>
-                        <td className="is-num">{course.completed_payments ?? course.total_transactions ?? 0}</td>
-                        <td className="is-num">{course.total_students ?? 0}</td>
-                        <td className="is-num">{money(course.price)}</td>
-                        <td className="is-num">{money(course.total_revenue)}</td>
-                        <td className="is-num">{money(course.total_fees)}</td>
-                        <td className="is-num">{money(course.net_revenue)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
             )}
-          </section>
+            columns={[
+              {
+                key: 'title',
+                label: 'Course',
+                sortable: true,
+                renderCell: (course) => (
+                  <div>
+                    <div className="adt-fw-600">{course.title || 'Untitled course'}</div>
+                    {course.type ? <p className="adt-muted">{course.type}</p> : null}
+                  </div>
+                ),
+              },
+              {
+                key: 'completed_payments',
+                label: 'Enrollments',
+                sortable: true,
+                align: 'right',
+                renderCell: (course) => course.completed_payments ?? course.total_transactions ?? 0,
+              },
+              {
+                key: 'total_students',
+                label: 'Students',
+                sortable: true,
+                align: 'right',
+                renderCell: (course) => course.total_students ?? 0,
+              },
+              {
+                key: 'price',
+                label: 'List price',
+                sortable: true,
+                align: 'right',
+                renderCell: (course) => money(course.price),
+              },
+              {
+                key: 'total_revenue',
+                label: 'Collected',
+                sortable: true,
+                align: 'right',
+                renderCell: (course) => money(course.total_revenue),
+              },
+              {
+                key: 'total_fees',
+                label: 'Fee',
+                sortable: true,
+                align: 'right',
+                renderCell: (course) => money(course.total_fees),
+              },
+              {
+                key: 'net_revenue',
+                label: 'Your share',
+                sortable: true,
+                align: 'right',
+                renderCell: (course) => money(course.net_revenue),
+              },
+            ]}
+            rows={courseTable.pageRows}
+            getRowKey={(row) => row.id}
+            sortConfig={courseTable.sortConfig}
+            onSort={courseTable.handleSort}
+            loading={summaryLoading && courseRows.length === 0}
+            emptyTitle="No course sales yet"
+            emptyMessage={courseRows.length === 0 ? 'Paid enrollments will show here.' : 'No courses match these filters.'}
+            pageSize={courseTable.pageSize}
+            pageSizeOptions={courseTable.pageSizeOptions}
+            onPageSizeChange={courseTable.setPageSize}
+            currentPage={courseTable.currentPage}
+            totalPages={courseTable.totalPages}
+            totalItems={courseTable.totalItems}
+            rangeLabel={courseTable.rangeLabel}
+            onGoToPage={courseTable.goToPage}
+            visiblePageNumbers={courseTable.visiblePageNumbers}
+          />
         </>
       )}
 
-      <section className="prof-earnings-panel">
-        <div className="prof-earnings-panel-head">
-          <div>
-            <h2>Payment history</h2>
-            <p className="prof-earnings-panel-sub">
-              One row per invoice. Gross is the learner total; net is gross minus platform fee.
-            </p>
-          </div>
-        </div>
-
-        <div className="prof-earnings-toolbar prof-earnings-toolbar--end">
-          <div className="prof-earnings-tools">
-            <div className="dropdown">
-              <button
-                type="button"
-                className={`dropdown-toggle prof-earnings-dd-btn prof-earnings-dd-btn--filter ${statusFilter !== 'all' ? 'is-active' : ''}`}
-                data-bs-toggle="dropdown"
-                aria-expanded="false"
-              >
-                <img src={filtersIcon} alt="" />
-                <span>{statusFilter === 'all' ? 'Filters' : statusLabel}</span>
-              </button>
-              <ul className="dropdown-menu dropdown-menu-end prof-earnings-dd-menu">
-                {STATUS_OPTIONS.map((opt) => (
-                  <li key={opt.value}>
-                    <button
-                      type="button"
-                      className={`dropdown-item ${statusFilter === opt.value ? 'active' : ''}`}
-                      onClick={() => {
-                        setStatusFilter(opt.value);
-                        setPage(1);
-                      }}
-                    >
-                      {opt.label}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        </div>
-
-        {paymentsError ? (
-          <LearnerLoadError
-            title="Could not load payment history"
-            message={paymentsError}
-            onRetry={paymentsError.includes('sign in') ? undefined : () => setReloadKey((k) => k + 1)}
-          />
-        ) : paymentsLoading ? (
-          <ManagementLoading compact title="Loading payments…" />
-        ) : payments.length === 0 ? (
-          <p className="prof-earnings-empty">No payments match this filter.</p>
-        ) : (
-          <>
-            <div className="prof-earnings-table-wrap">
-              <table className="prof-earnings-table">
-                <thead>
-                  <tr>
-                    <th>Date</th>
-                    <th>Student</th>
-                    <th>Course</th>
-                    <th>Method</th>
-                    <th className="is-num">Gross</th>
-                    <th className="is-num">Fee</th>
-                    <th className="is-num">Net</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {payments.map((row) => (
-                    <tr key={row.id}>
-                      <td>{row.date}</td>
-                      <td className="is-primary">{row.student}</td>
-                      <td>{row.course}</td>
-                      <td>{row.method}</td>
-                      <td className="is-num">{row.gross}</td>
-                      <td className="is-num">{row.fee}</td>
-                      <td className="is-num">{row.net}</td>
-                      <td>
-                        <span className={`prof-earnings-status is-${row.statusTone}`}>{row.status}</span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            <div className="prof-earnings-footer">
-              <div className="prof-earnings-page-size">
-                <span>Show</span>
-                <div className="dropdown">
-                  <button
-                    type="button"
-                    className="dropdown-toggle prof-earnings-page-btn"
-                    data-bs-toggle="dropdown"
-                    aria-expanded="false"
-                  >
-                    <span>{pageSize}</span>
-                  </button>
-                  <ul className="dropdown-menu prof-earnings-dd-menu">
-                    {[10, 20, 50].map((size) => (
-                      <li key={size}>
-                        <button
-                          type="button"
-                          className={`dropdown-item ${pageSize === size ? 'active' : ''}`}
-                          onClick={() => {
-                            setPageSize(size);
-                            setPage(1);
-                          }}
-                        >
-                          {size}
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                <span>per page</span>
-              </div>
-              <div className="prof-earnings-pagination">
-                <span>
-                  {paymentsTotal === 0
-                    ? '0–0 of 0'
-                    : `${(page - 1) * pageSize + 1}–${Math.min(page * pageSize, paymentsTotal)} of ${paymentsTotal}`}
-                </span>
-                <button type="button" disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>
-                  ←
-                </button>
-                <button
-                  type="button"
-                  disabled={page >= totalPages}
-                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                >
-                  →
-                </button>
-              </div>
-            </div>
-          </>
-        )}
-      </section>
+      <AcademiaDataTable
+        title="Payment history"
+        subtitle="One row per invoice. Gross is what the learner paid; net is your 80% share after VAT and platform fee."
+        filters={STATUS_OPTIONS.map((opt) => ({ id: opt.value, label: opt.label }))}
+        activeFilter={statusFilter}
+        onFilterChange={(id) => { setStatusFilter(id); setPage(1); }}
+        defaultFilterLabel="Filters"
+        columns={[
+          { key: 'date', label: 'Date', sortable: true, renderCell: (row) => row.date },
+          { key: 'student', label: 'Student', sortable: true, renderCell: (row) => <span className="adt-fw-600">{row.student}</span> },
+          { key: 'course', label: 'Course', sortable: true },
+          { key: 'method', label: 'Method' },
+          { key: 'gross', label: 'Gross', align: 'right' },
+          { key: 'fee', label: 'Fee', align: 'right' },
+          { key: 'net', label: 'Net', align: 'right' },
+          {
+            key: 'status',
+            label: 'Status',
+            sortable: true,
+            renderCell: (row) => (
+              <AcademiaStatusPill tone={row.statusTone === 'paid' ? 'green' : row.statusTone === 'failed' ? 'red' : 'orange'}>
+                {row.status}
+              </AcademiaStatusPill>
+            ),
+          },
+        ]}
+        rows={payments}
+        getRowKey={(row) => row.id}
+        loading={paymentsLoading && payments.length === 0}
+        error={paymentsError}
+        onRetry={paymentsError.includes('sign in') ? undefined : () => setReloadKey((k) => k + 1)}
+        emptyTitle="No payments found"
+        emptyMessage="No payments match this filter."
+        pageSize={String(pageSize)}
+        pageSizeOptions={['10', '20', '50']}
+        onPageSizeChange={(size) => { setPageSize(Number(size)); setPage(1); }}
+        currentPage={page}
+        totalPages={paymentTotalPages}
+        totalItems={paymentsTotal}
+        rangeLabel={paymentRangeLabel}
+        onGoToPage={(p) => setPage(Math.min(Math.max(p, 1), paymentTotalPages))}
+        visiblePageNumbers={paymentVisiblePages}
+      />
 
       <p className="prof-earnings-note">
-        Amounts come from paid invoices for your courses (gross includes learner total charged; fees are platform service fees).
+        Amounts come from paid invoices for your courses. Course price is VAT-inclusive (what the learner paid);
+        platform fee is 20% of the net after VAT; your share is 80% of that net.
         Manage mobile money or bank details under{' '}
         <Link to="/academia/professor/account">Account → payment methods</Link>.
       </p>
