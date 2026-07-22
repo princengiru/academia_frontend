@@ -17,6 +17,7 @@ import journalImage from '../../../assets/imgs/journal.jpg';
 import './watch.css';
 import { PublicNewsletterNotice, usePublicNewsletter } from './usePublicNewsletter.jsx';
 import { usePublicPageTitle } from './usePublicPageTitle.jsx';
+import { buildStoryPath } from './publicShare';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
@@ -122,7 +123,7 @@ function AcademiaWatch() {
                 {featuredStory?.description || featuredStory?.excerpt || 'Read learning updates and stories published by the Academia community. Counts above reflect what is currently published on this page.'}
               </p>
               {featuredStory ? (
-                <button type="button" onClick={() => navigate(`/academia/read-story?id=${featuredStory.id}`)}>
+                <button type="button" onClick={() => navigate(buildStoryPath(featuredStory))}>
                   Read featured story
                 </button>
               ) : null}
@@ -176,7 +177,7 @@ function AcademiaWatch() {
             <div
               key={story.id}
               className="ss-item"
-              onClick={() => navigate(`/academia/read-story?id=${story.id}`)}
+              onClick={() => navigate(buildStoryPath(story))}
               style={{ cursor: 'pointer' }}
             >
               <div className="ss-item-img">

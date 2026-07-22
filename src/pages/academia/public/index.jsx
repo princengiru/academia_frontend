@@ -8,6 +8,8 @@ import 'swiper/css/navigation';
 import 'swiper/css/pagination';
 import 'swiper/css/effect-coverflow';
 
+import { buildCourseDetailsPath, buildSyllabusReaderPath, buildProjectPath, buildStoryPath } from './publicShare';
+
 // --- Import Icons ---
 import acPlusIcon from '../../../assets/icons/ac-plus.svg';
 import bookOpenIcon from '../../../assets/icons/book-open.svg';
@@ -315,7 +317,7 @@ function AcademiaIndex() {
               <div key={project.id || project._id} className="swiper-slide">
                 <div
                   className="js-item"
-                  onClick={() => navigate(`/academia/read-project?id=${project.id || project._id}`)}
+                  onClick={() => navigate(buildProjectPath(project))}
                   style={{ cursor: 'pointer' }}
                 >
                   <div className="js-item-img">
@@ -413,7 +415,7 @@ function AcademiaIndex() {
                       </div>
                     </div>
                     <div className="psc-card-f">
-                      <button type="button" onClick={() => navigate(`/academia/read-contents?syllabusId=${syllabus.id}`)}>
+                      <button type="button" onClick={() => navigate(buildSyllabusReaderPath({ syllabus }))}>
                         View Syllabus
                       </button>
                     </div>
@@ -474,7 +476,7 @@ function AcademiaIndex() {
 
           {!dataLoading && popularData && popularData.length > 0 && (
             popularData.slice(0, 4).map((course, i) => (
-              <div key={course.id || course._id || i} className="osc-item" onClick={() => navigate(`/academia/course-details?id=${course.id}`)} style={{ cursor: 'pointer' }}>
+              <div key={course.course_uuid || course.uuid || course.id || course._id || i} className="osc-item" onClick={() => navigate(buildCourseDetailsPath(course))} style={{ cursor: 'pointer' }}>
                 <div className="osc-item-img">
                   <img src={course.thumbnail ? resolveStoryImage(course.thumbnail) : acOnImg} alt={course.title} />
                 </div>
@@ -491,7 +493,7 @@ function AcademiaIndex() {
                   </div>
                   <div>
                     <small>{course.starts_on || course.startsAt || 'Self-paced'}</small>
-                    <button type="button" onClick={(e) => { e.stopPropagation(); navigate(`/academia/course-details?id=${course.id}`); }}>
+                    <button type="button" onClick={(e) => { e.stopPropagation(); navigate(buildCourseDetailsPath(course)); }}>
                       <img src={acEnIcon} alt="Enroll" />
                     </button>
                   </div>
@@ -526,7 +528,7 @@ function AcademiaIndex() {
 
           {!dataLoading && freeData && freeData.length > 0 && (
             freeData.map((course, i) => (
-              <div key={course.id || course._id || i} className="fsc-item" onClick={() => navigate(`/academia/course-details?id=${course.id}`)} style={{ cursor: 'pointer' }}>
+              <div key={course.course_uuid || course.uuid || course.id || course._id || i} className="fsc-item" onClick={() => navigate(buildCourseDetailsPath(course))} style={{ cursor: 'pointer' }}>
                 <div className="fsc-item-img">
                   <img src={course.thumbnail ? resolveStoryImage(course.thumbnail) : acOnImg} alt="Free Course" />
                 </div>
@@ -621,7 +623,7 @@ function AcademiaIndex() {
               {!dataLoading && storiesData && storiesData.length > 0 && (
                 storiesData.map((story, i) => (
                   <div key={story.id || story._id || i} className="swiper-slide">
-                    <div className="ss-item" onClick={() => navigate(`/academia/read-story?id=${story.id || story._id}`)} style={{ cursor: 'pointer' }}>
+                    <div className="ss-item" onClick={() => navigate(buildStoryPath(story))} style={{ cursor: 'pointer' }}>
                       <div className="ss-item-img">
                         <img src={resolveStoryImage(story.thumbnail_url || story.thumbnail) || jrImg} alt={story.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                       </div>

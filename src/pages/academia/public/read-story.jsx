@@ -29,7 +29,7 @@ import './read-story.css';
 import { PublicLoadError, PublicLoading } from './PublicPageState';
 import { PublicNewsletterNotice, usePublicNewsletter } from './usePublicNewsletter.jsx';
 import { usePublicPageTitle } from './usePublicPageTitle.jsx';
-import { sharePublicPage } from './publicShare';
+import { sharePublicPage, buildAuthorPath, buildStoryPath, getStoryPublicRef, getUserPublicRef } from './publicShare';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
@@ -116,7 +116,7 @@ const normalizeComment = (comment) => {
 
 function AcademiaReadStory() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const storyId = searchParams.get('id');
 
   const swiperRef = useRef(null);
@@ -191,6 +191,13 @@ function AcademiaReadStory() {
 
         setStoryData(activeStory);
 
+        const publicRef = getStoryPublicRef(activeStory);
+        if (publicRef && String(storyId) === String(activeStory.id)) {
+          const next = new URLSearchParams(searchParams);
+          next.set('id', String(publicRef));
+          setSearchParams(next, { replace: true });
+        }
+
         setRelatedStories(
           publishedStories
             .map((story) => normalizeStory(story))
@@ -245,9 +252,12 @@ function AcademiaReadStory() {
 
   // Submit a new comment
   const handleAuthor = () => {
-    const authorId = storyData?.author_id;
-    if (authorId) {
-      navigate(`/academia/author?authorId=${authorId}`);
+    const authorRef = getUserPublicRef({
+      user_uuid: storyData?.uploaded_by_uuid || storyData?.author_uuid || storyData?.user_uuid,
+      id: storyData?.author_id,
+    });
+    if (authorRef) {
+      navigate(buildAuthorPath(authorRef));
       return;
     }
     navigate('/academia/watch');
@@ -348,8 +358,8 @@ function AcademiaReadStory() {
     navigate('/academia/watch');
   };
 
-  const handleRelatedStoryClick = (id) => {
-    navigate(`/academia/read-story?id=${id}`);
+  const handleRelatedStoryClick = (storyOrId) => {
+    navigate(buildStoryPath(storyOrId));
   };
 
   // --- Derived Variables ---
@@ -562,7 +572,7 @@ function AcademiaReadStory() {
               </div>
               <div className="mcnd-r-b">
                 {relatedStories.length > 0 ? relatedStories.slice(0, 3).map((item) => (
-                  <div key={item.id} className="related-item" onClick={() => handleRelatedStoryClick(item.id)} style={{ cursor: 'pointer' }}>
+                  <div key={item.id} className="related-item" onClick={() => handleRelatedStoryClick(item)} style={{ cursor: 'pointer' }}>
                     <div className="related-item-img">
                       {resolveStoryImage(item.thumbnail) ? <img src={resolveStoryImage(item.thumbnail)} alt={item.title} /> : null}
                     </div>
@@ -616,7 +626,7 @@ function AcademiaReadStory() {
             <div className="swiper-wrapper">
               {relatedStories.length > 0 ? relatedStories.slice(0, 8).map((item) => (
                 <div key={item.id} className="swiper-slide">
-                  <div className="ss-item" onClick={() => handleRelatedStoryClick(item.id)} style={{ cursor: 'pointer' }}>
+                  <div className="ss-item" onClick={() => handleRelatedStoryClick(item)} style={{ cursor: 'pointer' }}>
                     <div className="ss-item-img">
                       {resolveStoryImage(item.thumbnail) ? <img src={resolveStoryImage(item.thumbnail)} alt={item.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : null}
                     </div>

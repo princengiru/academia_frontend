@@ -10,6 +10,7 @@ import './read-contents.css';
 import { PublicLoadError, PublicLoading } from './PublicPageState';
 import { PublicNewsletterNotice, usePublicNewsletter } from './usePublicNewsletter.jsx';
 import { usePublicPageTitle } from './usePublicPageTitle.jsx';
+import { buildSyllabusPartPath, getSyllabusPublicRef, getOutlinePublicRef, getTopicPublicRef } from './publicShare';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
@@ -64,9 +65,9 @@ const isYoutubeUrl = (url) => {
 
 function AcademiaReadContents() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  const courseId = searchParams.get('courseId');
+  const courseId = searchParams.get('courseId') || searchParams.get('id');
   const syllabusId = searchParams.get('syllabusId');
   const topicId = searchParams.get('topicId');
   const categoryTopicId = searchParams.get('categoryTopicId');
@@ -148,6 +149,7 @@ function AcademiaReadContents() {
           if (!resolvedCourse && syllabus && mounted) {
             setSyllabusData({
               id: syllabus.id || null,
+              uuid: syllabus.syllabus_uuid || null,
               title: syllabus.title || 'Syllabus',
               category: syllabus.category?.name || 'Academia',
               level: syllabus.education_level || 'Syllabus',
@@ -156,8 +158,42 @@ function AcademiaReadContents() {
             });
           }
 
+          const publicRef = getSyllabusPublicRef(syllabus);
           const outlines = sylBody?.data?.outlines || sylBody?.outlines || [];
-          fetchedContent = outlines.find((o) => String(o.id) === String(topicId)) || null;
+          fetchedContent = outlines.find((o) => (
+            String(o.id) === String(topicId)
+            || String(o.syllabus_outline_uuid || '') === String(topicId)
+            || String(o.uuid || '') === String(topicId)
+          )) || null;
+
+          if (fetchedContent && mounted) {
+            const next = new URLSearchParams(searchParams);
+            let changed = false;
+
+            if (
+              publicRef
+              && syllabus?.id != null
+              && String(next.get('syllabusId') || '') === String(syllabus.id)
+              && String(publicRef) !== String(syllabus.id)
+            ) {
+              next.set('syllabusId', String(publicRef));
+              changed = true;
+            }
+
+            const outlineRef = getOutlinePublicRef(fetchedContent);
+            if (
+              outlineRef
+              && fetchedContent.id != null
+              && String(next.get('topicId') || '') === String(fetchedContent.id)
+              && String(outlineRef) !== String(fetchedContent.id)
+            ) {
+              next.set('topicId', String(outlineRef));
+              changed = true;
+            }
+
+            if (changed) setSearchParams(next, { replace: true });
+          }
+
           if (!fetchedContent) {
             setSyllabusData(null);
             setActiveContent(null);
@@ -212,7 +248,7 @@ function AcademiaReadContents() {
     }
     const backTopicId = categoryTopicId || activeContent?.topic_id;
     if (backTopicId) {
-      navigate(`/academia/syllabus-part?topicId=${backTopicId}`);
+      navigate(buildSyllabusPartPath(backTopicId));
       return;
     }
     navigate('/academia/syllabuses');
@@ -455,7 +491,7 @@ function AcademiaReadContents() {
               <ul className="rc-related-list">
                 {relatedTopics.map((topic) => (
                   <li key={topic.id}>
-                    <button type="button" className="rc-related-link" onClick={() => navigate(`/academia/syllabus-part?topicId=${topic.id}`)}>
+                    <button type="button" className="rc-related-link" onClick={() => navigate(buildSyllabusPartPath(topic))}>
                       <span className="rc-related-name">{topic.name}</span>
                       <span className="rc-related-meta">{topic.papers ? topic.papers.length : 0} outlines</span>
                     </button>
