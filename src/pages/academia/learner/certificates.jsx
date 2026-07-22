@@ -17,8 +17,11 @@ import acLe2 from '../../../assets/icons/ac-le2.svg';
 import acRi from '../../../assets/icons/ac-ri.svg';
 import './certificates.css';
 import { useLearnerToast } from './useLearnerToast';
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+import {
+  API_BASE_URL,
+  buildCertificatePreviewPath,
+  normalizeCertificate,
+} from '../certificateUtils';
 
 function normalizeAssetUrl(value) {
   if (!value) return '';
@@ -72,51 +75,6 @@ function isInRange(issueDate, selectedRange) {
   }
 
   return true;
-}
-
-function normalizeCertificate(raw) {
-  if (!raw || typeof raw !== 'object') return null;
-
-  const finalScoreRaw = raw.finalScore ?? raw.final_score ?? raw.score ?? null;
-  const finalScore = finalScoreRaw === null || finalScoreRaw === undefined || finalScoreRaw === ''
-    ? null
-    : Number(finalScoreRaw);
-
-  const isVerified = Boolean(
-    raw.isVerified === true ||
-    raw.is_verified === 1 ||
-    raw.is_verified === true ||
-    raw.verified === true
-  );
-
-  const certificateNumber = raw.certificateNumber || raw.certificate_number || raw.number || '';
-  const issueDate = raw.issueDate || raw.issue_date || raw.createdAt || raw.created_at || null;
-  const totalHours = Number(raw.total_hours ?? raw.totalHours ?? raw.timeSpent?.hours ?? 0);
-  const timeDisplay = raw.timeSpent?.display
-    || (totalHours > 0 ? `${Math.round(totalHours)}h` : '—');
-
-  // Issued certificates are earned passes. Never treat them as failed/retake.
-  // Display status is HOA verification, not assessment pass/fail.
-  const displayStatus = isVerified ? 'approved' : 'pending';
-
-  return {
-    ...raw,
-    id: raw.id,
-    courseId: raw.courseId ?? raw.course_id ?? raw.course?.id ?? null,
-    courseTitle: raw.courseTitle || raw.course_title || raw.courseName || raw.course_name || raw.course?.title || 'Certificate',
-    finalScore: Number.isFinite(finalScore) ? finalScore : null,
-    totalQuestions: raw.totalQuestions ?? raw.total_questions ?? 0,
-    total_hours: totalHours,
-    timeSpent: { display: timeDisplay, hours: totalHours },
-    issueDate,
-    certificateNumber,
-    isVerified,
-    displayStatus,
-    student: raw.student || {
-      name: raw.student_name || raw.studentName || '',
-      email: raw.student_email || raw.studentEmail || '',
-    },
-  };
 }
 
 function LearnersCertificates() {
@@ -300,16 +258,12 @@ function LearnersCertificates() {
       showToast('This certificate is pending approval from HOA. You will be able to download it once approved.', 'error');
       return;
     }
-    window.open(`${API_BASE_URL}/api/certificates/${certificate.certificateNumber}/download`, '_blank', 'noopener,noreferrer');
+    navigate(buildCertificatePreviewPath(certificate.certificateNumber));
   };
 
   const handleViewCertificate = (certificate) => {
     if (!certificate?.certificateNumber) return;
-    if (!certificate.isVerified) {
-      showToast("This certificate is pending approval from HOA.", "error");
-      return;
-    }
-    window.open(`${API_BASE_URL}/api/certificates/${certificate.certificateNumber}/download`, '_blank', 'noopener,noreferrer');
+    navigate(buildCertificatePreviewPath(certificate.certificateNumber));
   };
 
   const handleShareCertificate = async (certificate) => {
@@ -448,7 +402,7 @@ function LearnersCertificates() {
             <section className="learners-certificates-grid">
               {visibleCertificates.map((certificate, idx) => {
                 const isApproved = certificate.isVerified;
-                const primaryAction = isApproved ? 'Download' : 'Pending approval';
+                const primaryAction = isApproved ? 'Open' : 'Pending approval';
                 const primaryIcon = isApproved ? downloadIcon : null;
                 const title = certificate.courseTitle || 'Certificate';
                 const issueDate = certificate.issueDate ? `Completed on ${formatDate(certificate.issueDate)}` : 'Date unavailable';
@@ -464,23 +418,21 @@ function LearnersCertificates() {
                   : 'Your certificate is being reviewed. You will be able to download it once approved.';
 
                 return (
-                  <article key={certificate.id || idx} className="learners-certificate-card">
-                    <div className="learners-certificate-card-banner">
-                      <div className="learners-certificate-card-badge-pill">
+                  <article key={certificate.id || idx} className={`learners-certificate-card${isApproved ? ' is-approved' : ' is-pending'}`}>
+                    <div className="learners-certificate-card-top">
+                      <div className="learners-certificate-card-seal" aria-hidden="true">
                         <span>{score}</span>
                       </div>
-                      <div className="learners-certificate-card-banner-copy">
-                        <span>Proudly presented to</span>
-                        <h3>{apexProfile.name}</h3>
+                      <div className="learners-certificate-card-top-copy">
+                        <span className="learners-certificate-card-kicker">Certificate of completion</span>
+                        <h3>{title}</h3>
+                        <p>{issueDate}</p>
                       </div>
+                      <p className={`learners-certificate-status ${statusClass}`}>{statusLabel}</p>
                     </div>
 
                     <div className="learners-certificate-card-body">
-                      <div className="learners-certificate-card-title-block">
-                        <h4>{title}</h4>
-                        <p>{issueDate}</p>
-                        {pendingNote ? <p className="learners-certificate-pending-note">{pendingNote}</p> : null}
-                      </div>
+                      {pendingNote ? <p className="learners-certificate-pending-note">{pendingNote}</p> : null}
 
                       <div className="learners-certificate-card-stats">
                         <div>
@@ -489,31 +441,25 @@ function LearnersCertificates() {
                         </div>
                         <div>
                           <strong>{formatNumber(questions)}</strong>
-                          <span>Questions</span>
+                          <span>{Number(questions) === 1 ? 'Question' : 'Questions'}</span>
                         </div>
                         <div>
                           <strong>{timeSpent}</strong>
                           <span>Time</span>
                         </div>
-                        <div>
-                          <p className={`learners-certificate-status ${statusClass}`}>
-                            {statusLabel}
-                          </p>
-                          <span>Status</span>
-                        </div>
                       </div>
 
                       <div className="learners-certificate-card-actions">
                         <button type="button" className="is-primary" onClick={() => handleViewCertificate(certificate)}>
-                          <img src={acEye} alt="View" />
+                          <img src={acEye} alt="" />
                           <span>View</span>
                         </button>
                         <button type="button" onClick={() => handlePrimaryAction(certificate)} disabled={!isApproved}>
-                          {primaryIcon ? <img src={primaryIcon} alt={primaryAction} /> : null}
+                          {primaryIcon ? <img src={primaryIcon} alt="" /> : null}
                           <span>{primaryAction}</span>
                         </button>
                         <button type="button" onClick={() => handleShareCertificate(certificate)}>
-                          <img src={acShare} alt="Share" />
+                          <img src={acShare} alt="" />
                           <span>Share</span>
                         </button>
                       </div>

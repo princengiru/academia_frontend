@@ -14,7 +14,7 @@ import './certificates.css';
 import { PublicEmptyState, PublicLoadError, PublicLoading } from './PublicPageState';
 import { PublicNewsletterNotice, usePublicNewsletter } from './usePublicNewsletter.jsx';
 import { usePublicPageTitle } from './usePublicPageTitle.jsx';
-import { sharePublicPage } from './publicShare';
+import { sharePublicPage, buildCourseDetailsPath } from './publicShare';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
@@ -60,6 +60,7 @@ function AcademiaCertificates() {
         setCertificateCourses(
           extractCourseList(body).map((item, idx) => ({
             id: item.id || idx,
+            uuid: item.course_uuid || item.uuid || null,
             title: item.title || item.name || 'Course',
             instructor: item.instructor_name || 'Academia instructor',
             thumbnail: item.thumbnail_url || item.thumbnail || certificateImage,
@@ -120,9 +121,10 @@ function AcademiaCertificates() {
 
   const handleShareCourse = async (event, course) => {
     event.stopPropagation();
+    const path = buildCourseDetailsPath(course);
     await sharePublicPage({
       title: course.title,
-      url: `${window.location.origin}/academia/course-details?id=${course.id}`,
+      url: `${window.location.origin}${path}`,
     });
   };
 
@@ -236,13 +238,13 @@ function AcademiaCertificates() {
           ) : (
             certificateCourses.map((course) => (
               <div
-                key={course.id}
+                key={course.uuid || course.id}
                 className="reward certificate-card"
                 style={{ cursor: 'pointer' }}
-                onClick={() => navigate(`/academia/course-details?id=${course.id}`)}
+                onClick={() => navigate(buildCourseDetailsPath(course))}
                 onKeyDown={(event) => {
                   if (event.key === 'Enter' || event.key === ' ') {
-                    navigate(`/academia/course-details?id=${course.id}`);
+                    navigate(buildCourseDetailsPath(course));
                   }
                 }}
                 role="button"

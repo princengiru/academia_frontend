@@ -10,11 +10,15 @@ import AcademiaLearnerRoutes from './learner';
 import AcademiaProfessorRoutes from './professor';
 import AcademiaHOARoutes from './hoa';
 import AcademiaNotFound from '../../pages/academia/public/NotFoundPage';
+import CertificatePrintPreview from '../../pages/academia/CertificatePrintPreview';
 
 function AcademiaRoutes() {
   return (
     <>
       <Route path="/" element={<Navigate to="/academia/index" replace />} />
+
+      {/* Design sandbox — certificate PDF print preview (no role layout) */}
+      <Route path="academia/certificate-preview" element={<CertificatePrintPreview />} />
 
       {/* Public pages — use AcademiaLayout (header + footer) */}
       <Route path="academia" element={<AcademiaLayout />}>
