@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import LearnersPageShell from './LearnersPageShell';
 import LearnerLoadError from './LearnerLoadError';
 import LearnerLoading from './LearnerLoading';
+import { buildLearnerProjectPath } from '../public/publicShare';
 
 // Icons & Images
 import defaultProfile from '../../../assets/imgs/default-profile.png';
@@ -312,8 +313,9 @@ function LearnersProjects() {
   };
 
   const handleViewProject = (project) => {
-    if (!project?.id) return;
-    navigate(`/academia/learner/view-project?id=${project.id}`);
+    const path = buildLearnerProjectPath(project);
+    if (path === '/academia/learner/projects') return;
+    navigate(path);
   };
 
   const handleCollaboratorKeyDown = (event) => {

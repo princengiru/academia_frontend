@@ -8,6 +8,7 @@ import acEye from '../../../assets/icons/ac-eye.svg';
 import acSav from '../../../assets/icons/ac-sav.svg';
 import acOnImg from '../../../assets/imgs/ac-on.jpg';
 import { fetchSavedProjects, normalizeAssetUrl } from './savedLibraryUtils';
+import { buildLearnerProjectPath } from '../public/publicShare';
 import './projects.css';
 import './saved-library.css';
 
@@ -50,8 +51,9 @@ function LearnersSavedLibrary() {
   };
 
   const handleOpenProject = (project) => {
-    if (!project?.id) return;
-    navigate(`/academia/learner/view-project?id=${project.id}`);
+    const path = buildLearnerProjectPath(project);
+    if (path === '/academia/learner/projects') return;
+    navigate(path);
   };
 
   return (

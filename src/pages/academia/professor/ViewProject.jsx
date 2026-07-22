@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import LearnerLoadError from '../learner/LearnerLoadError';
 import ManagementLoading from './ManagementLoading';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { buildProfessorProjectPath, getProjectPublicRef } from '../public/publicShare';
 import './view-project.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
@@ -142,6 +143,11 @@ const ViewProject = () => {
         setSavesCount(proj?.saves_count || 0);
         setCommentsCount(proj?.comments_count || 0);
 
+        const publicRef = getProjectPublicRef(proj);
+        if (publicRef && String(queryParams.get('id') || '') === String(proj?.id)) {
+          navigate(buildProfessorProjectPath(proj), { replace: true, state: location.state });
+        }
+
         const commentsRes = await fetch(`${API_BASE_URL}/api/projects/${projectId}/comments`);
         if (commentsRes.ok) {
           const commentsData = await commentsRes.json();
@@ -261,7 +267,8 @@ const ViewProject = () => {
 
   const handleShareProject = async () => {
     if (!projectId) return;
-    const url = `${window.location.origin}/academia/professor/view-project?id=${projectId}`;
+    const shareRef = getProjectPublicRef(project) || projectId;
+    const url = `${window.location.origin}${buildProfessorProjectPath(shareRef)}`;
     const title = project?.title || 'Project';
 
     try {

@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import LearnerLoadError from '../learner/LearnerLoadError';
 import ManagementLoading from './ManagementLoading';
 import { buildProjectProfileDraftFromUser } from '../learner/learnerProfileShared';
+import { buildProfessorProjectPath } from '../public/publicShare';
 import './projects.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
@@ -521,7 +522,7 @@ const Projects = () => {
                 visibleProjects.map((card) => (
                   <article key={card.id} className="learners-project-card">
                     <div className="learners-project-card-image">
-                      <Link to={`/academia/professor/view-project?id=${card.id}`} className="learners-project-card-link">
+                      <Link to={buildProfessorProjectPath(card)} className="learners-project-card-link">
                         <img 
                           src={normalizeAssetUrl(card.thumbnail_url || (Array.isArray(card.images) && card.images[0])) || '/assets/imgs/d1.jpg'} 
                           alt={card.title} 
@@ -562,7 +563,7 @@ const Projects = () => {
 
                       <div className="learners-project-card-info-body">
                         <p>
-                          <Link to={`/academia/professor/view-project?id=${card.id}`} className="learners-project-card-title-link">
+                          <Link to={buildProfessorProjectPath(card)} className="learners-project-card-title-link">
                             {card.title}
                           </Link>
                         </p>
