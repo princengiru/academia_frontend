@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import HOALayout from '../../../components/layouts/HOALayout/HOALayout';
 import { useCurrency } from '../../../hooks/useCurrency';
 import { HOALoadError, HOALoading, HOAEmptyState } from './HOAPageState';
+import { professorNetFromInvoice } from '../shared/courseFinance';
 import hoafilter2 from '../../../assets/icons/hoafilter2.svg';
 import hoasearch from '../../../assets/icons/hoasearch.svg';
 import './hoa-finance.css';
@@ -57,6 +58,7 @@ const normalizePaymentRow = (row, index) => {
     gross,
     fee,
     vat,
+    professorNet: professorNetFromInvoice({ total: gross, service_fee: fee, vat }),
     status,
     statusTone: statusTone(status),
   };
@@ -370,9 +372,9 @@ const HOAFinance = () => {
           <>
             <div className="hoa-finance-stats">
               <div className="hoa-finance-stat">
-                <span>Course prices (subtotal)</span>
-                <strong>{formatMoney(totals?.total_gross)}</strong>
-                <em>Sum of list prices on paid invoices</em>
+                <span>Course prices (collected)</span>
+                <strong>{formatMoney(totals?.total_gross ?? totals?.total_paid)}</strong>
+                <em>VAT-inclusive list prices (what learners paid)</em>
               </div>
               <div className="hoa-finance-stat">
                 <span>Platform fees (20%)</span>
@@ -381,7 +383,7 @@ const HOAFinance = () => {
                     ? '—'
                     : formatMoney(totals?.total_fees)}
                 </strong>
-                <em>20% of course prices</em>
+                <em>20% of net after VAT</em>
               </div>
               <div className="hoa-finance-stat">
                 <span>VAT (18%)</span>
@@ -390,12 +392,16 @@ const HOAFinance = () => {
                     ? '—'
                     : formatMoney(totals?.total_vat)}
                 </strong>
-                <em>18% of (price + fee)</em>
+                <em>Included in price (× 18/118)</em>
               </div>
               <div className="hoa-finance-stat">
-                <span>Total collected</span>
-                <strong>{formatMoney(totals?.total_paid)}</strong>
-                <em>What learners paid in total</em>
+                <span>Tutor share (80%)</span>
+                <strong>{formatMoney(totals?.net_after_fees ?? (
+                  (Number(totals?.total_paid) || 0)
+                  - (Number(totals?.total_fees) || 0)
+                  - (Number(totals?.total_vat) || 0)
+                ))}</strong>
+                <em>80% of net after VAT</em>
               </div>
             </div>
 
@@ -405,8 +411,8 @@ const HOAFinance = () => {
               </p>
             ) : (
               <p className="hoa-finance-legend" role="note">
-                Example: course price <strong>200</strong> → fee <strong>40</strong> → VAT <strong>43.20</strong>
-                → learner pays <strong>283.20</strong>. Tutor rows sum those paid invoices by course instructor.
+                Example: course <strong>200</strong> (learner pays 200) → VAT <strong>30.51</strong> (18/118)
+                → net <strong>169.49</strong> → fee <strong>33.90</strong> (20%) → tutor <strong>135.59</strong> (80%).
               </p>
             )}
 
@@ -527,7 +533,7 @@ const HOAFinance = () => {
                         </th>
                         <th className="is-num">
                           <button type="button" className={tutorThClass('net_after_fees')} onClick={() => toggleTutorSort('net_after_fees')}>
-                            After fee{tutorSortMark('net_after_fees')}
+                            Tutor share{tutorSortMark('net_after_fees')}
                           </button>
                         </th>
                       </tr>
@@ -721,8 +727,9 @@ const HOAFinance = () => {
         </section>
 
         <p className="hoa-finance-note">
-          Amounts come from the invoices table (subtotal, service fee, VAT, total). There is no wallet or
-          payout ledger yet — do not treat “net after fees” as money owed to tutors until payouts ship.
+          Amounts come from paid invoices. Course price is VAT-inclusive (what the learner paid); VAT is
+          extracted (× 18/118); platform fee is 20% of the net after VAT; tutor share is 80% of that net.
+          There is no wallet or payout ledger yet — do not treat tutor share as money owed until payouts ship.
         </p>
       </div>
     </HOALayout>
