@@ -30,7 +30,8 @@ function Sidebar({
   const summativeUnlocked = isSummativeUnlocked(outlineWeeksState, isSummativeComplete);
 
   const handleItemSelect = (itemId) => {
-    if (!isOutlineItemUnlocked(outlineWeeksState, itemId, isSummativeComplete)) return;
+    // Always route through handleChapterSelect so locked clicks show the unlock toast,
+    // while unlocked clicks open the lesson as usual.
     handleChapterSelect(itemId);
   };
 
@@ -173,7 +174,6 @@ function Sidebar({
                                       type="button"
                                       className={`learners-read-chapter ${isActive ? 'is-active' : ''} ${isUnlocked ? '' : 'is-locked'}`}
                                       onClick={() => handleItemSelect(huskChapter.id)}
-                                      disabled={!isUnlocked}
                                       aria-current={isActive ? 'page' : undefined}
                                       aria-disabled={!isUnlocked}
                                       title={!isUnlocked ? 'Complete earlier lessons to unlock' : stripHtml(huskChapter.title)}
@@ -202,7 +202,6 @@ function Sidebar({
                                     type="button"
                                     className={`learners-read-chapter learners-read-assessment-item ${isActive ? 'is-active' : ''} ${isUnlocked ? '' : 'is-locked'}`}
                                     onClick={() => handleItemSelect(huskAss.id)}
-                                    disabled={!isUnlocked}
                                     aria-current={isActive ? 'page' : undefined}
                                     aria-disabled={!isUnlocked}
                                     title={!isUnlocked ? 'Complete earlier lessons to unlock' : stripHtml(huskAss.title)}
@@ -244,7 +243,6 @@ function Sidebar({
                     type="button"
                     className="learners-read-week-toggle learners-read-week-toggle-link"
                     onClick={() => handleItemSelect('assessment')}
-                    disabled={!summativeUnlocked}
                     aria-current={isSummativeActive ? 'page' : undefined}
                     aria-disabled={!summativeUnlocked}
                     title={!summativeUnlocked ? 'Complete all lessons before the final assessment' : undefined}
