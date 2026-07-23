@@ -733,7 +733,6 @@ function LearnersReadContents() {
   }, [assessmentTextAnswer, currentAssessmentIndex, assessmentQuestions]);
 
   // Enrollment State
-  const [resolvedCourseId, setResolvedCourseId] = useState(null);
   const [enrollmentStatus, setEnrollmentStatus] = useState(null);
   const [enrollmentLoading, setEnrollmentLoading] = useState(true);
   const [isEnrolled, setIsEnrolled] = useState(false);
