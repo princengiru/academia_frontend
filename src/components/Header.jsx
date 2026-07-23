@@ -329,39 +329,42 @@ function Header() {
                     onError={(e) => { e.target.src = accountIcon; }}
                   />
                 </button>
-                <ul className="dropdown-menu shadow header-language-menu dropdown-menu-end header-account-menu" style={{ right: 0, left: 'auto', minWidth: '180px' }}>
-                  <li className="dropdown-header text-start" style={{ padding: '8px 16px', borderBottom: '1px solid #F1F1F4', marginBottom: '4px' }}>
-                    <div style={{ fontWeight: '600', color: '#071437', fontSize: '13px' }}>{user.name || 'User'}</div>
-                    <div style={{ color: '#7E8299', fontSize: '11px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.email}</div>
+                <ul className="dropdown-menu shadow header-language-menu dropdown-menu-end header-account-menu" style={{ right: 0, left: 'auto', minWidth: '200px', padding: '10px 0', border: '1px solid #F1F1F4', backgroundColor: '#FFF' }}>
+                  <li className="dropdown-header text-start" style={{ padding: '0 16px 10px 16px', borderBottom: '1px solid #F1F1F4', marginBottom: '8px' }}>
+                    <div style={{ fontWeight: '600', color: '#000', fontSize: '14px' }}>{user.name || 'User'}</div>
+                    <div style={{ color: '#7E8299', fontSize: '12px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: '2px' }}>{user.email}</div>
                   </li>
                   <li>
                     <button 
                        type="button" 
-                       className="dropdown-item d-flex align-items-center gap-2" 
+                       className="dropdown-item d-flex align-items-center justify-content-start gap-3" 
                        onClick={() => {
-                         navigate('/projects');
+                         const role = (user.role || '').toLowerCase().trim();
+                         if (role === 'instructor') navigate('/professor');
+                         else if (role === 'student') navigate('/learner/');
+                         else if (role === 'admin') navigate('/hoa');
+                         else navigate('/index');
                        }}
-                       style={{ fontSize: '13px', color: '#4B5675' }}
+                       style={{ fontSize: '13px', color: '#000', padding: '10px 16px', fontWeight: '500' }}
                      >
-                       <User size={14} style={{ color: '#8B5CF6' }} />
-                       <span>Profile</span>
+                       <User size={16} color="#000" />
+                       <span>DASHBOARD</span>
                      </button>
                    </li>
-                  <li><hr className="dropdown-divider" /></li>
                   <li>
                     <button 
                       type="button" 
-                      className="dropdown-item d-flex align-items-center gap-2 text-danger" 
+                      className="dropdown-item d-flex align-items-center justify-content-start gap-3" 
                       onClick={() => {
                         localStorage.removeItem('token');
                         localStorage.removeItem('user');
                         setUser(null);
                         navigate('/auth/signin');
                       }}
-                      style={{ fontSize: '13px' }}
+                      style={{ fontSize: '13px', color: '#000', padding: '10px 16px', fontWeight: '500' }}
                     >
-                      <LogOut size={14} />
-                      <span>Logout</span>
+                      <LogOut size={16} color="#000" />
+                      <span>LOGOUT</span>
                     </button>
                   </li>
                 </ul>
@@ -371,7 +374,10 @@ function Header() {
                 type="button"
                 className="second-part-h-link user-h" 
                 onClick={() => {
-                  sessionStorage.setItem('redirectAfterLogin', window.location.pathname + window.location.search);
+                  const currentPath = window.location.pathname + window.location.search;
+                  if (currentPath !== '/' && currentPath !== '/index') {
+                    sessionStorage.setItem('redirectAfterLogin', currentPath);
+                  }
                   navigate('/auth/signin');
                 }}
                 style={{ background: 'transparent', border: 'none', padding: 0, cursor: 'pointer' }}
@@ -526,7 +532,10 @@ function Header() {
               <button 
                 type="button" 
                 onClick={() => {
-                  sessionStorage.setItem('redirectAfterLogin', window.location.pathname + window.location.search);
+                  const currentPath = window.location.pathname + window.location.search;
+                  if (currentPath !== '/' && currentPath !== '/index') {
+                    sessionStorage.setItem('redirectAfterLogin', currentPath);
+                  }
                   navigate('/auth/signin');
                 }}
               >
