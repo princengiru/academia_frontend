@@ -2,15 +2,14 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePublicPageTitle } from '../public/usePublicPageTitle.jsx';
 
-// Assets (Update paths to match your React project structure)
 import bgVisual from '../../../assets/imgs/bg.png';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const RESET_EMAIL_KEY = 'passwordResetEmail';
 
 function AcademiaForgotPassword() {
   usePublicPageTitle('Forgot password');
   const navigate = useNavigate();
-  // Using rare variable names for state logic
   const [apexEmail, setApexEmail] = useState('');
   const [titanLoading, setTitanLoading] = useState(false);
   const [vortexError, setVortexError] = useState('');
@@ -22,18 +21,21 @@ function AcademiaForgotPassword() {
     setStellarSuccess('');
     setTitanLoading(true);
 
+    const email = apexEmail.trim().toLowerCase();
+    if (!email) {
+      setVortexError('Please enter your email address.');
+      setTitanLoading(false);
+      return;
+    }
+
     try {
       const response = await fetch(`${API_BASE_URL}/api/auth/request-password-reset`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: apexEmail,
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
       });
 
-      const data = await response.json();
+      const data = await response.json().catch(() => ({}));
 
       if (!response.ok) {
         setVortexError(data.error?.message || data.message || 'Request failed');
@@ -41,16 +43,18 @@ function AcademiaForgotPassword() {
         return;
       }
 
-      setStellarSuccess('Password reset link sent to your email. Please check your inbox.');
-      localStorage.setItem('user', JSON.stringify({ email: apexEmail }));
-      setApexEmail('');
+      localStorage.setItem(RESET_EMAIL_KEY, email);
+      setStellarSuccess('Password reset link sent. Check your inbox (and spam).');
       setTimeout(() => {
-        navigate('/auth/check-email-single', { replace: true });
-      }, 900);
-      setTitanLoading(false);
+        navigate('/auth/check-email-single', {
+          replace: true,
+          state: { email, purpose: 'password-reset' },
+        });
+      }, 700);
     } catch (error) {
       console.error('Forgot password error:', error);
       setVortexError(error.message || 'An error occurred');
+    } finally {
       setTitanLoading(false);
     }
   };
@@ -235,8 +239,8 @@ function AcademiaForgotPassword() {
       <main className="forgot-password-wrapper">
         <section className="left-col">
           <form className="signin-card" onSubmit={handleSubmit}>
-            <h1 className="signin-title">Your Email</h1>
-            <p className="signin-subtitle">Enter your email to reset password</p>
+            <h1 className="signin-title">Forgot password</h1>
+            <p className="signin-subtitle">Enter your email and we will send a reset link</p>
 
             {vortexError && (
               <div style={{
@@ -271,21 +275,22 @@ function AcademiaForgotPassword() {
             <div className="field-group">
               <label htmlFor="email">Email</label>
               <div className="input-wrap">
-                <input 
-                  id="email" 
-                  name="email" 
-                  type="email" 
-                  placeholder="email@email.com" 
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  placeholder="email@email.com"
                   value={apexEmail}
                   onChange={(e) => setApexEmail(e.target.value)}
                   disabled={titanLoading}
-                  required 
+                  autoComplete="email"
+                  required
                 />
               </div>
             </div>
 
-            <button 
-              className="submit-btn" 
+            <button
+              className="submit-btn"
               type="submit"
               disabled={titanLoading}
               style={{

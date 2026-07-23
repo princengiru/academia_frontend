@@ -38,6 +38,11 @@ function AcademiaResetPassword() {
       return;
     }
 
+    if (nexusPassword.length < 6) {
+      setVortexError('Password must be at least 6 characters.');
+      return;
+    }
+
     if (nexusPassword !== zenithConfirm) {
       setVortexError('Passwords do not match.');
       return;
@@ -57,21 +62,22 @@ function AcademiaResetPassword() {
         }),
       });
 
-      const data = await response.json();
+      const data = await response.json().catch(() => ({}));
 
       if (!response.ok) {
         setVortexError(data.error?.message || data.message || 'Password reset failed');
-        setTitanLoading(false);
         return;
       }
 
+      localStorage.removeItem('passwordResetEmail');
       setStellarSuccess('Password reset successful! Redirecting...');
       setTimeout(() => {
         navigate('/auth/password-changed', { replace: true });
-      }, 1200);
+      }, 1000);
     } catch (error) {
       console.error('Reset password error:', error);
       setVortexError(error.message || 'An error occurred');
+    } finally {
       setTitanLoading(false);
     }
   };
@@ -328,6 +334,25 @@ function AcademiaResetPassword() {
               </div>
             )}
 
+            {!token && !stellarSuccess && (
+              <div style={{
+                marginTop: '12px',
+                padding: '12px',
+                backgroundColor: '#fff8e6',
+                border: '1px solid #f5d78e',
+                borderRadius: '6px',
+                color: '#8a6d1d',
+                fontSize: '13px',
+                fontFamily: 'Inter',
+              }}>
+                This page needs a valid reset link from your email.
+                {' '}
+                <a href="/auth/forgot-password" style={{ color: '#450468', fontWeight: 500 }}>
+                  Request a new link
+                </a>
+              </div>
+            )}
+
             <form id="resetForm" onSubmit={handleSubmit}>
               <div className="field-group">
                 <label htmlFor="newPassword">New Password</label>
@@ -339,7 +364,8 @@ function AcademiaResetPassword() {
                     placeholder="Enter Password" 
                     value={nexusPassword}
                     onChange={(e) => setNexusPassword(e.target.value)}
-                    disabled={titanLoading}
+                    disabled={titanLoading || !token}
+                    minLength={6}
                     required 
                   />
                   <button 
@@ -347,7 +373,7 @@ function AcademiaResetPassword() {
                     className="input-eye" 
                     onClick={() => setSlateShowPwd(!slateShowPwd)}
                     aria-label={slateShowPwd ? "Hide new password" : "Show new password"}
-                    disabled={titanLoading}
+                    disabled={titanLoading || !token}
                   >
                     <img src={eyeIcon} alt="Toggle password visibility" />
                   </button>
@@ -364,7 +390,8 @@ function AcademiaResetPassword() {
                     placeholder="Re-enter a new Password" 
                     value={zenithConfirm}
                     onChange={(e) => setZenithConfirm(e.target.value)}
-                    disabled={titanLoading}
+                    disabled={titanLoading || !token}
+                    minLength={6}
                     required 
                   />
                   <button 
@@ -372,7 +399,7 @@ function AcademiaResetPassword() {
                     className="input-eye" 
                     onClick={() => setEchoShowConfirm(!echoShowConfirm)}
                     aria-label={echoShowConfirm ? "Hide confirm password" : "Show confirm password"}
-                    disabled={titanLoading}
+                    disabled={titanLoading || !token}
                   >
                     <img src={eyeIcon} alt="Toggle password visibility" />
                   </button>
@@ -382,10 +409,10 @@ function AcademiaResetPassword() {
               <button 
                 className="submit-btn" 
                 type="submit"
-                disabled={titanLoading}
+                disabled={titanLoading || !token}
                 style={{
-                  opacity: titanLoading ? 0.7 : 1,
-                  cursor: titanLoading ? 'not-allowed' : 'pointer',
+                  opacity: (titanLoading || !token) ? 0.7 : 1,
+                  cursor: (titanLoading || !token) ? 'not-allowed' : 'pointer',
                 }}
               >
                 {titanLoading ? 'Resetting...' : 'Submit'}

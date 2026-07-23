@@ -1,31 +1,67 @@
 import React, { useState, useEffect } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { usePublicPageTitle } from '../public/usePublicPageTitle.jsx';
 
-// Assets (Update paths to match your React project structure)
 import remmIcon from '../../../assets/icons/remm.svg';
 import bgVisual from '../../../assets/imgs/bg.png';
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const RESET_EMAIL_KEY = 'passwordResetEmail';
+
 function AcademiaCheckEmailSingle() {
   usePublicPageTitle('Check your email');
-  // Using rare variable names for state logic
+  const location = useLocation();
   const [apexEmail, setApexEmail] = useState('');
   const [nexusResent, setNexusResent] = useState(false);
   const [titanLoading, setTitanLoading] = useState(false);
   const [vortexError, setVortexError] = useState('');
 
   useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      const user = JSON.parse(storedUser);
-      setApexEmail(user.email || '');
+    const fromState = location.state?.email;
+    const stored = localStorage.getItem(RESET_EMAIL_KEY);
+    let fromUser = '';
+    try {
+      const user = JSON.parse(localStorage.getItem('user') || 'null');
+      fromUser = user?.email || '';
+    } catch {
+      fromUser = '';
     }
-  }, []);
+    setApexEmail((fromState || stored || fromUser || '').trim());
+  }, [location.state]);
 
-  const handleResend = (e) => {
+  const handleResend = async (e) => {
     e.preventDefault();
     setVortexError('');
-    setNexusResent(true);
-    setTimeout(() => setNexusResent(false), 5000);
+    setNexusResent(false);
+
+    const email = apexEmail.trim().toLowerCase();
+    if (!email) {
+      setVortexError('No email address found. Go back and enter your email again.');
+      return;
+    }
+
+    setTitanLoading(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/auth/request-password-reset`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        setVortexError(data.error?.message || data.message || 'Failed to resend reset email.');
+        return;
+      }
+
+      localStorage.setItem(RESET_EMAIL_KEY, email);
+      setNexusResent(true);
+      setTimeout(() => setNexusResent(false), 8000);
+    } catch (error) {
+      setVortexError(error.message || 'An error occurred while resending.');
+    } finally {
+      setTitanLoading(false);
+    }
   };
 
   return (
@@ -153,6 +189,12 @@ function AcademiaCheckEmailSingle() {
           text-decoration: underline;
         }
 
+        .resend-row button:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+          text-decoration: none;
+        }
+
         .right-col {
           height: 100vh;
           background: #f5f7fb;
@@ -216,18 +258,18 @@ function AcademiaCheckEmailSingle() {
       <main className="check-email-wrapper">
         <section className="left-col">
           <div className="signin-card">
-            <img 
-              className="status-illustration" 
-              src={remmIcon} 
-              alt="Check email illustration" 
+            <img
+              className="status-illustration"
+              src={remmIcon}
+              alt="Check email illustration"
             />
 
             <h2 className="status-lead">Check your email</h2>
 
             <p className="status-text">
-              Please click the link sent to your email
-              <span className="address">{apexEmail}</span>
-              to verify your account. Thank you.
+              We sent a password reset link to
+              <span className="address">{apexEmail || 'your email'}</span>
+              . Open it to choose a new password. The link expires in 1 hour.
             </p>
 
             {vortexError && (
@@ -256,24 +298,24 @@ function AcademiaCheckEmailSingle() {
                 fontSize: '13px',
                 fontFamily: 'Inter',
               }}>
-                Verification email resent successfully!
+                Reset email resent successfully. Check your inbox.
               </div>
             )}
 
-            <a className="submit-btn" href="/">
-              Back to Home
-            </a>
+            <Link className="submit-btn" to="/auth/signin">
+              Back to Sign in
+            </Link>
 
             <p className="resend-row">
               {nexusResent ? (
                 <span style={{ color: 'var(--primary)', fontWeight: 500 }}>
-                  Verification email sent!
+                  Reset email sent!
                 </span>
               ) : (
                 <>
                   Didn’t receive an email?
-                  <button type="button" onClick={handleResend}>
-                    Resend
+                  <button type="button" onClick={handleResend} disabled={titanLoading}>
+                    {titanLoading ? 'Sending…' : 'Resend'}
                   </button>
                 </>
               )}
