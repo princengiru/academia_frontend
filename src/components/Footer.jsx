@@ -10,7 +10,7 @@ import follow7Icon from '../assets/icons/follow7.svg';
 import mtnPayIcon from '../assets/icons/MTN-pay.svg';
 import airPayIcon from '../assets/icons/AIR-pay.svg';
 import visaPayIcon from '../assets/icons/VISA-pay.svg';
-import masterPayIcon from '../assets/icons/MASTER-pay.svg';
+import masterPayIcon from '../assets/icons/MASTER-PAY.svg'; 
 import eeIcon from '../assets/icons/ee.svg';
 import './Footer.css';
 
