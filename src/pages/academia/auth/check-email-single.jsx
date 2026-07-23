@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { usePublicPageTitle } from '../public/usePublicPageTitle.jsx';
+import { getApiBaseUrl } from '../../../config/api';
 
 import remmIcon from '../../../assets/icons/remm.svg';
 import bgVisual from '../../../assets/imgs/bg.png';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 const RESET_EMAIL_KEY = 'passwordResetEmail';
 
 function AcademiaCheckEmailSingle() {
@@ -41,11 +41,14 @@ function AcademiaCheckEmailSingle() {
     }
 
     setTitanLoading(true);
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => controller.abort(), 25000);
     try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/request-password-reset`, {
+      const response = await fetch(`${getApiBaseUrl()}/api/auth/request-password-reset`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
+        signal: controller.signal,
       });
       const data = await response.json().catch(() => ({}));
 
@@ -58,8 +61,13 @@ function AcademiaCheckEmailSingle() {
       setNexusResent(true);
       setTimeout(() => setNexusResent(false), 8000);
     } catch (error) {
-      setVortexError(error.message || 'An error occurred while resending.');
+      if (error?.name === 'AbortError') {
+        setVortexError('Request timed out. Please try again.');
+      } else {
+        setVortexError(error.message || 'An error occurred while resending.');
+      }
     } finally {
+      window.clearTimeout(timeoutId);
       setTitanLoading(false);
     }
   };

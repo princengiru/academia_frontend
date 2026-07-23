@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { usePublicPageTitle } from '../public/usePublicPageTitle.jsx';
+import { getApiBaseUrl } from '../../../config/api';
 
 // Assets (Update paths to match your React project structure)
 import eyeIcon from '../../../assets/icons/eye.svg';
 import bgVisual from '../../../assets/imgs/bg.png';
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 function AcademiaResetPassword() {
   usePublicPageTitle('Reset password');
@@ -49,9 +48,11 @@ function AcademiaResetPassword() {
     }
 
     setTitanLoading(true);
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => controller.abort(), 25000);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/reset-password`, {
+      const response = await fetch(`${getApiBaseUrl()}/api/auth/reset-password`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -60,6 +61,7 @@ function AcademiaResetPassword() {
           token,
           newPassword: nexusPassword,
         }),
+        signal: controller.signal,
       });
 
       const data = await response.json().catch(() => ({}));
@@ -76,8 +78,13 @@ function AcademiaResetPassword() {
       }, 1000);
     } catch (error) {
       console.error('Reset password error:', error);
-      setVortexError(error.message || 'An error occurred');
+      if (error?.name === 'AbortError') {
+        setVortexError('Request timed out. Please try again.');
+      } else {
+        setVortexError(error.message || 'An error occurred');
+      }
     } finally {
+      window.clearTimeout(timeoutId);
       setTitanLoading(false);
     }
   };
