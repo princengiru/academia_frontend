@@ -803,7 +803,7 @@ const HOAOnlineCourses = () => {
                                 {selectedCourse?.id && (
                                     <button
                                         type="button"
-                                        onClick={() => window.open(`/academia/course-details?id=${selectedCourse.id}`, '_blank', 'noopener,noreferrer')}
+                                        onClick={() => window.open(`/course-details?id=${selectedCourse.id}`, '_blank', 'noopener,noreferrer')}
                                         style={{
                                             padding: '8px 16px',
                                             borderRadius: '8px',

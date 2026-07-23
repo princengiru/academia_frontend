@@ -52,7 +52,7 @@ function LearnersSavedLibrary() {
 
   const handleOpenProject = (project) => {
     const path = buildLearnerProjectPath(project);
-    if (path === '/academia/learner/projects') return;
+    if (path === '/learner/projects') return;
     navigate(path);
   };
 
@@ -63,7 +63,7 @@ function LearnersSavedLibrary() {
           <div className="learners-home-title-top">
             <h1>Saved Library</h1>
             <div className="learners-home-title-actions">
-              <a className="learners-btn learners-btn-primary" href="/academia/index" target="_blank" rel="noopener noreferrer">
+              <a className="learners-btn learners-btn-primary" href="/index" target="_blank" rel="noopener noreferrer">
                 <span>Go to website</span>
                 <img src={hoagoto} alt="Go" />
               </a>
@@ -89,7 +89,7 @@ function LearnersSavedLibrary() {
             <h3>No saved items yet</h3>
             <p>Save projects from journals or project pages to find them here.</p>
             <div className="learners-projects-empty-actions">
-              <button type="button" className="learners-projects-primary-btn" onClick={() => navigate('/academia/projects')}>
+              <button type="button" className="learners-projects-primary-btn" onClick={() => navigate('/projects')}>
                 Browse journals
               </button>
             </div>

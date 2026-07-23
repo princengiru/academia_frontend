@@ -39,14 +39,14 @@ function CourseCompleteCelebration({ courseId, courseTitle, onDismiss }) {
         <button
           type="button"
           className="learners-btn learners-btn-primary"
-          onClick={() => navigate('/academia/learner/certificates')}
+          onClick={() => navigate('/learner/certificates')}
         >
           View certificates
         </button>
         <button
           type="button"
           className="learners-btn learners-btn-secondary"
-          onClick={() => navigate('/academia/learner/projects')}
+          onClick={() => navigate('/learner/projects')}
         >
           Upload a project
         </button>

@@ -467,7 +467,7 @@ const Performance = () => {
           <div className="learners-home-title-top">
             <h1>Analytics & Payments</h1>
             <div className="learners-home-title-actions">
-              <a className="learners-btn learners-btn-primary" href="/academia/index" target="_blank" rel="noopener noreferrer">
+              <a className="learners-btn learners-btn-primary" href="/index" target="_blank" rel="noopener noreferrer">
                 <span>Go to website</span>
                 <img src={hoagoto} alt="Go" />
               </a>
@@ -719,7 +719,7 @@ const Performance = () => {
                     </div>
                   )}
 
-                  <a href="/academia/professor/management-lessons-ranks" className="learners-performance-download-link">
+                  <a href="/professor/management-lessons-ranks" className="learners-performance-download-link">
                     <span>See more of your courses rank</span>
                     <img src={right1} alt="" />
                   </a>
@@ -734,7 +734,7 @@ const Performance = () => {
                 <h2>Weekly Schedule</h2>
                 <p>Milestone to achieve</p>
               </div>
-              <a href="/academia/professor/management-schedule">See All</a>
+              <a href="/professor/management-schedule">See All</a>
             </div>
 
             <div className="learners-performance-schedule-list">

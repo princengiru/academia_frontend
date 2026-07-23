@@ -91,7 +91,7 @@ function AcademiaSignUp() {
         localStorage.setItem('user', JSON.stringify({ email: data?.data?.email || email }));
         localStorage.setItem('verifyEndpoint', '/api/auth/verify-registration-otp');
         setTimeout(() => {
-          navigate('/academia/auth/verify', { replace: true });
+          navigate('/auth/verify', { replace: true });
         }, 1500); // 1.5 second delay to show the message
         return;
       }
@@ -110,11 +110,11 @@ function AcademiaSignUp() {
           sessionStorage.removeItem('redirectAfterLogin');
           navigate(redirectAfterLogin, { replace: true });
         } else if (role === 'student') {
-          navigate('/academia/learner/settings', { replace: true });
+          navigate('/learner/settings', { replace: true });
         } else {
           // If they are an instructor (is_active: 0), you might want to route them 
           // to a specific "Pending Approval" page rather than the index, depending on your flow.
-          navigate('/academia/index', { replace: true });
+          navigate('/index', { replace: true });
         }
       }, 500);
 
@@ -413,7 +413,7 @@ function AcademiaSignUp() {
           <form className="signin-card" onSubmit={handleSubmit}>
             <h1 className="signin-title">Create an Account</h1>
             <p className="signin-subtitle">
-              Already have an account? <a href="/academia/auth/signin">Sign in</a>
+              Already have an account? <a href="/auth/signin">Sign in</a>
             </p>
 
             {error && (
@@ -571,7 +571,7 @@ function AcademiaSignUp() {
               />
               <span>
                 I accept the{' '}
-                <Link to="/academia/terms" target="_blank" rel="noreferrer">
+                <Link to="/terms" target="_blank" rel="noreferrer">
                   Terms &amp; Conditions
                 </Link>
               </span>

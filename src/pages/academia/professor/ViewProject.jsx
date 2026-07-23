@@ -106,7 +106,7 @@ const ViewProject = () => {
   const projectId = useMemo(() => queryParams.get('id') || projectFromState?.id, [queryParams, projectFromState]);
 
   const openUploadFlow = () => {
-    navigate('/academia/professor/projects', { state: { openUpload: true } });
+    navigate('/professor/projects', { state: { openUpload: true } });
   };
 
   const refreshComments = async () => {
@@ -386,7 +386,7 @@ const ViewProject = () => {
             <span>Upload new project</span>
             <img src="/assets/icons/exit-down.svg" alt="" />
           </button>
-          <button type="button" className="learners-projects-secondary-btn" onClick={() => navigate('/academia/professor/settings')}>
+          <button type="button" className="learners-projects-secondary-btn" onClick={() => navigate('/professor/settings')}>
             View profile
           </button>
         </div>
@@ -398,7 +398,7 @@ const ViewProject = () => {
             <div className="learners-view-project-empty-state learners-view-project-empty-state--full">
               <h3>No project selected</h3>
               <p>Select a project from the Projects page to view it here.</p>
-              <button type="button" className="learners-projects-primary-btn" onClick={() => navigate('/academia/professor/projects')}>
+              <button type="button" className="learners-projects-primary-btn" onClick={() => navigate('/professor/projects')}>
                 Back to Projects
               </button>
             </div>
@@ -411,7 +411,7 @@ const ViewProject = () => {
           ) : (
             <>
               <div className="learners-view-project-head">
-                <Link to="/academia/professor/projects" className="learners-view-project-back">
+                <Link to="/professor/projects" className="learners-view-project-back">
                   <img src="/assets/icons/ac-le.svg" alt="" />
                   <span>Back to Projects</span>
                 </Link>

@@ -42,7 +42,7 @@ function Header() {
     event.preventDefault();
     const query = headerSearchQuery.trim();
     if (!query) return;
-    navigate(`/academia/courses?search=${encodeURIComponent(query)}`);
+    navigate(`/courses?search=${encodeURIComponent(query)}`);
     setHeaderSearchOpen(false);
     setHeaderSearchQuery('');
   };
@@ -161,11 +161,11 @@ function Header() {
 
   const handleItemClick = (group, item) => {
     if (item === 'Browse all Courses') {
-      navigate('/academia/courses?filter=All');
+      navigate('/courses?filter=All');
       return;
     }
     const filterVal = group.filter || 'All';
-    navigate(`/academia/courses?filter=${filterVal}&category=${encodeURIComponent(item)}`);
+    navigate(`/courses?filter=${filterVal}&category=${encodeURIComponent(item)}`);
   };
 
   return (
@@ -184,7 +184,7 @@ function Header() {
             <a href="#">News</a>
             <a href="#">Magazine</a>
             <a href="#">Job Portal</a>
-            <NavLink to="/academia/index">Academia</NavLink>
+            <NavLink to="/index">Academia</NavLink>
           </div>
 
           <div className="first-part-h-r" aria-label="Social links">
@@ -214,13 +214,13 @@ function Header() {
 
         <div className="second-part-h active">
           <div className="second-part-h-logo">
-            <NavLink to="/academia/index">
+            <NavLink to="/index">
               <img className="site-logo" src={logoIcon} alt="Gonaraza Academia" />
             </NavLink>
           </div>
 
           <nav className="second-part-h-menus">
-            <NavLink to="/academia/index">Home</NavLink>
+            <NavLink to="/index">Home</NavLink>
 
             <div className="dropdown courses-dropdown">
               <button id="coursesToggle" className="dropdown-toggle courses-toggle" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
@@ -264,10 +264,10 @@ function Header() {
               </div>
             </div>
 
-            <NavLink to="/academia/projects">Projects</NavLink>
-            <NavLink to="/academia/syllabuses">Syllabuses</NavLink>
-            <NavLink to="/academia/watch">Community Feed</NavLink>
-            <NavLink to="/academia/certificates">Certificates</NavLink>
+            <NavLink to="/projects">Projects</NavLink>
+            <NavLink to="/syllabuses">Syllabuses</NavLink>
+            <NavLink to="/watch">Community Feed</NavLink>
+            <NavLink to="/certificates">Certificates</NavLink>
           </nav>
 
           <div className="second-part-h-links" aria-label="Header actions">
@@ -339,7 +339,7 @@ function Header() {
                        type="button" 
                        className="dropdown-item d-flex align-items-center gap-2" 
                        onClick={() => {
-                         navigate('/academia/projects');
+                         navigate('/projects');
                        }}
                        style={{ fontSize: '13px', color: '#4B5675' }}
                      >
@@ -356,7 +356,7 @@ function Header() {
                         localStorage.removeItem('token');
                         localStorage.removeItem('user');
                         setUser(null);
-                        navigate('/academia/auth/signin');
+                        navigate('/auth/signin');
                       }}
                       style={{ fontSize: '13px' }}
                     >
@@ -372,7 +372,7 @@ function Header() {
                 className="second-part-h-link user-h" 
                 onClick={() => {
                   sessionStorage.setItem('redirectAfterLogin', window.location.pathname + window.location.search);
-                  navigate('/academia/auth/signin');
+                  navigate('/auth/signin');
                 }}
                 style={{ background: 'transparent', border: 'none', padding: 0, cursor: 'pointer' }}
                 aria-label="Sign in"
@@ -514,7 +514,7 @@ function Header() {
                     localStorage.removeItem('token');
                     localStorage.removeItem('user');
                     setUser(null);
-                    navigate('/academia/auth/signin');
+                    navigate('/auth/signin');
                   }}
                   style={{ background: 'transparent', border: 'none', color: '#EF4444', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '4px' }}
                 >
@@ -527,7 +527,7 @@ function Header() {
                 type="button" 
                 onClick={() => {
                   sessionStorage.setItem('redirectAfterLogin', window.location.pathname + window.location.search);
-                  navigate('/academia/auth/signin');
+                  navigate('/auth/signin');
                 }}
               >
                 <img src={opIcon} alt="" />
@@ -543,10 +543,10 @@ function Header() {
                   onClick={(e) => {
                     e.preventDefault();
                     const role = (user.role || '').toLowerCase().trim();
-                    if (role === 'instructor') navigate('/academia/professor');
-                    else if (role === 'student') navigate('/academia/learner/');
-                    else if (role === 'admin') navigate('/academia/hoa');
-                    else navigate('/academia/index');
+                    if (role === 'instructor') navigate('/professor');
+                    else if (role === 'student') navigate('/learner/');
+                    else if (role === 'admin') navigate('/hoa');
+                    else navigate('/index');
                   }}
                   style={{ fontWeight: '600', color: '#450468', display: 'block', padding: '10px 0' }}
                 >

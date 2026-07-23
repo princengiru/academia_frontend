@@ -3,17 +3,17 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { HOA_BRAND_SHORT, HOA_PRODUCT_TAGLINE } from '../../../pages/academia/hoa/hoaBrand';
 
 const UPLOAD_NAV_ITEMS = [
-  { label: 'Syllabus', to: '/academia/hoa/syllabus', page: 'syllabus' },
-  { label: 'Online Courses', to: '/academia/hoa/online-courses', page: 'online-courses' },
-  { label: 'Projects', to: '/academia/hoa/projects', page: 'projects' },
-  { label: 'Certificates', to: '/academia/hoa/certificates', page: 'certificates' },
+  { label: 'Syllabus', to: '/hoa/syllabus', page: 'syllabus' },
+  { label: 'Online Courses', to: '/hoa/online-courses', page: 'online-courses' },
+  { label: 'Projects', to: '/hoa/projects', page: 'projects' },
+  { label: 'Certificates', to: '/hoa/certificates', page: 'certificates' },
 ];
 
 const PLANNING_NAV_ITEMS = [
-  { label: 'Events & Planning', to: '/academia/hoa/events-planning', page: 'events-planning' },
-  { label: 'E-Travel', to: '/academia/hoa/e-travel', page: 'e-travel' },
-  { label: 'Terms & Conditions', to: '/academia/hoa/terms-conditions', page: 'terms-conditions' },
-  { label: 'Community', to: '/academia/hoa/community', page: 'community' },
+  { label: 'Events & Planning', to: '/hoa/events-planning', page: 'events-planning' },
+  { label: 'E-Travel', to: '/hoa/e-travel', page: 'e-travel' },
+  { label: 'Terms & Conditions', to: '/hoa/terms-conditions', page: 'terms-conditions' },
+  { label: 'Community', to: '/hoa/community', page: 'community' },
 ];
 
 const HOASidebar = ({ currentPage, isOpen = false, onClose, onLogout }) => {
@@ -39,7 +39,7 @@ const HOASidebar = ({ currentPage, isOpen = false, onClose, onLogout }) => {
     } else {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
-      navigate('/academia/auth/signin');
+      navigate('/auth/signin');
     }
   };
 
@@ -66,27 +66,27 @@ const HOASidebar = ({ currentPage, isOpen = false, onClose, onLogout }) => {
       <div className="sidebar-bottom-section">
         <div className="first-links">
           <div className="sidebar-body">
-            <NavLink to="/academia/hoa" className={getDashboardIconClassName} onClick={onClose}>
+            <NavLink to="/hoa" className={getDashboardIconClassName} onClick={onClose}>
               <button type="button" aria-label="Dashboard">
                 <img src="/assets/icons/home-2.svg" alt="Dashboard" />
               </button>
             </NavLink>
-            <NavLink to="/academia/hoa/assignments" className={getManagementIconClassName} onClick={onClose}>
+            <NavLink to="/hoa/assignments" className={getManagementIconClassName} onClick={onClose}>
               <button type="button" aria-label="Management">
                 <img src="/assets/icons/bill2.svg" alt="Management" />
               </button>
             </NavLink>
-            <NavLink to="/academia/hoa/syllabus" className={getUploadIconClassName} onClick={onClose}>
+            <NavLink to="/hoa/syllabus" className={getUploadIconClassName} onClick={onClose}>
               <button type="button" aria-label="Uploads">
                 <img src="/assets/icons/agent2.svg" alt="Uploads" />
               </button>
             </NavLink>
-            <NavLink to="/academia/hoa/events-planning" className={getPlanningIconClassName} onClick={onClose}>
+            <NavLink to="/hoa/events-planning" className={getPlanningIconClassName} onClick={onClose}>
               <button type="button" aria-label="Plannings">
                 <img src="/assets/icons/mouse-square.svg" alt="Plannings" />
               </button>
             </NavLink>
-            <NavLink to="/academia/hoa/account" className={getAccountIconClassName} onClick={onClose}>
+            <NavLink to="/hoa/account" className={getAccountIconClassName} onClick={onClose}>
               <button type="button" aria-label="Account">
                 <img src="/assets/icons/ss1.svg" alt="Account" />
               </button>
@@ -94,7 +94,7 @@ const HOASidebar = ({ currentPage, isOpen = false, onClose, onLogout }) => {
           </div>
 
           <div className="sidebar-footer">
-            <NavLink to="/academia/help" aria-label="Help & FAQs" onClick={onClose}>
+            <NavLink to="/help" aria-label="Help & FAQs" onClick={onClose}>
               <button type="button" aria-label="Help & FAQs">
                 <img src="/assets/icons/tsidebar7-1.svg" alt="" />
               </button>
@@ -120,19 +120,19 @@ const HOASidebar = ({ currentPage, isOpen = false, onClose, onLogout }) => {
             {dashboardPages.includes(currentPage) && (
               <div className="links-list">
                 <h6>DASHBOARD</h6>
-                <NavLink to="/academia/hoa" end className={getSidebarLinkClassName} onClick={onClose}>
+                <NavLink to="/hoa" end className={getSidebarLinkClassName} onClick={onClose}>
                   <span>Home</span>
                 </NavLink>
-                <NavLink to="/academia/hoa/learners" className={getSidebarLinkClassName} onClick={onClose}>
+                <NavLink to="/hoa/learners" className={getSidebarLinkClassName} onClick={onClose}>
                   <span>Learners</span>
                 </NavLink>
-                <NavLink to="/academia/hoa/tutors" className={getSidebarLinkClassName} onClick={onClose}>
+                <NavLink to="/hoa/tutors" className={getSidebarLinkClassName} onClick={onClose}>
                   <span>Tutors</span>
                 </NavLink>
-                <NavLink to="/academia/hoa/reports" className={getSidebarLinkClassName} onClick={onClose}>
+                <NavLink to="/hoa/reports" className={getSidebarLinkClassName} onClick={onClose}>
                   <span>Reports</span>
                 </NavLink>
-                <NavLink to="/academia/hoa/finance" className={getSidebarLinkClassName} onClick={onClose}>
+                <NavLink to="/hoa/finance" className={getSidebarLinkClassName} onClick={onClose}>
                   <span>Finance</span>
                 </NavLink>
               </div>
@@ -141,16 +141,16 @@ const HOASidebar = ({ currentPage, isOpen = false, onClose, onLogout }) => {
             {managementPages.includes(currentPage) && (
               <div className="links-list">
                 <h6>MANAGEMENT</h6>
-                <NavLink to="/academia/hoa/assignments" className={getSidebarLinkClassName} onClick={onClose}>
+                <NavLink to="/hoa/assignments" className={getSidebarLinkClassName} onClick={onClose}>
                   <span>Assignments</span>
                 </NavLink>
-                <NavLink to="/academia/hoa/passed-courses" className={getSidebarLinkClassName} onClick={onClose}>
+                <NavLink to="/hoa/passed-courses" className={getSidebarLinkClassName} onClick={onClose}>
                   <span>Passed Courses</span>
                 </NavLink>
-                <NavLink to="/academia/hoa/retaken-courses" className={getSidebarLinkClassName} onClick={onClose}>
+                <NavLink to="/hoa/retaken-courses" className={getSidebarLinkClassName} onClick={onClose}>
                   <span>Retaken Courses</span>
                 </NavLink>
-                <NavLink to="/academia/hoa/failed-courses" className={getSidebarLinkClassName} onClick={onClose}>
+                <NavLink to="/hoa/failed-courses" className={getSidebarLinkClassName} onClick={onClose}>
                   <span>Failed Courses</span>
                 </NavLink>
               </div>

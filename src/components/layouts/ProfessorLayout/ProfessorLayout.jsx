@@ -51,7 +51,7 @@ const ProfessorLayout = () => {
     }
 
     setShowLogoutModal(false);
-    navigate('/academia/auth/signin');
+    navigate('/auth/signin');
   };
 
   const truncateName = (name, max = 18) => {
@@ -145,7 +145,7 @@ const ProfessorLayout = () => {
 
         if (response.status === 403) {
           localStorage.clear();
-          navigate('/academia/auth/signin', {
+          navigate('/auth/signin', {
             replace: true,
             state: { error: 'This account has been deactivated. Please contact support.' }
           });
@@ -231,7 +231,7 @@ const ProfessorLayout = () => {
   }, []);
 
   if (!token) {
-    return <Navigate to="/academia/auth/signin" replace />;
+    return <Navigate to="/auth/signin" replace />;
   }
 
   if (isSuspended) {
@@ -251,7 +251,7 @@ const ProfessorLayout = () => {
               style={{ background: '#EF4444', color: '#fff', width: '100%', padding: '10px' }} 
               onClick={() => {
                 localStorage.clear();
-                navigate('/academia/auth/signin');
+                navigate('/auth/signin');
               }}
             >
               Return to Sign In

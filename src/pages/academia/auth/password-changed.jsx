@@ -186,7 +186,7 @@ function AcademiaPasswordChanged() {
               Your account's security is our priority.
             </p>
 
-            <a className="submit-btn" href="/academia/auth/signin">
+            <a className="submit-btn" href="/auth/signin">
               Sign in
             </a>
           </div>

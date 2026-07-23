@@ -481,7 +481,7 @@ const Projects = () => {
               <span>Upload new project</span>
               <img src="/assets/icons/exit-down.svg" alt="" />
             </button>
-            <button type="button" className="learners-projects-secondary-btn" onClick={() => navigate('/academia/professor/settings')}>
+            <button type="button" className="learners-projects-secondary-btn" onClick={() => navigate('/professor/settings')}>
               View profile
             </button>
           </div>
@@ -606,7 +606,7 @@ const Projects = () => {
             <div className="learners-projects-side-card learners-projects-side-card-profile">
               <div className="learners-projects-side-card-head">
                 <span className="learners-projects-availability">{profile.availability}</span>
-                <button type="button" className="learners-projects-edit-btn" onClick={() => navigate('/academia/professor/settings')}>
+                <button type="button" className="learners-projects-edit-btn" onClick={() => navigate('/professor/settings')}>
                   <img src="/assets/icons/b-pencil.svg" alt="" />
                   <span>Edit</span>
                 </button>
@@ -623,7 +623,7 @@ const Projects = () => {
                 <span>{formatCount(projects.length)} project{projects.length === 1 ? '' : 's'}</span>
               </div>
 
-              <button type="button" className="learners-projects-email-btn" onClick={() => navigate('/academia/professor/account')}>
+              <button type="button" className="learners-projects-email-btn" onClick={() => navigate('/professor/account')}>
                 <span>View account</span>
                 <img src="/assets/icons/le-em.svg" alt="" />
               </button>
@@ -632,7 +632,7 @@ const Projects = () => {
             <div className="learners-projects-side-card">
               <div className="learners-projects-side-card-head">
                 <h3>About</h3>
-                <button type="button" className="learners-projects-icon-edit" onClick={() => navigate('/academia/professor/settings')}>
+                <button type="button" className="learners-projects-icon-edit" onClick={() => navigate('/professor/settings')}>
                   <img src="/assets/icons/b-pencil.svg" alt="" />
                 </button>
               </div>
@@ -661,7 +661,7 @@ const Projects = () => {
               <div className="learners-projects-side-card">
                 <div className="learners-projects-side-card-head">
                   <h3>Tools &amp; Skills</h3>
-                  <button type="button" className="learners-projects-icon-edit" onClick={() => navigate('/academia/professor/settings')}>
+                  <button type="button" className="learners-projects-icon-edit" onClick={() => navigate('/professor/settings')}>
                     <img src="/assets/icons/b-pencil.svg" alt="" />
                   </button>
                 </div>

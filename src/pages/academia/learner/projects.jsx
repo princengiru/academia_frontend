@@ -314,7 +314,7 @@ function LearnersProjects() {
 
   const handleViewProject = (project) => {
     const path = buildLearnerProjectPath(project);
-    if (path === '/academia/learner/projects') return;
+    if (path === '/learner/projects') return;
     navigate(path);
   };
 
@@ -510,7 +510,7 @@ function LearnersProjects() {
               <span>Upload new project</span>
               <img src={exitDown} alt="Upload" />
             </button>
-            <button type="button" className="learners-projects-secondary-btn" onClick={() => navigate('/academia/learner/account')}>
+            <button type="button" className="learners-projects-secondary-btn" onClick={() => navigate('/learner/account')}>
               View Profile
             </button>
           </div>
@@ -611,7 +611,7 @@ function LearnersProjects() {
                   <button type="button" className="learners-projects-primary-btn" onClick={openUploadModal}>
                     Upload new project
                   </button>
-                  <button type="button" className="learners-projects-secondary-btn" onClick={() => navigate('/academia/learner/courses')}>
+                  <button type="button" className="learners-projects-secondary-btn" onClick={() => navigate('/learner/courses')}>
                     Browse courses
                   </button>
                 </div>
@@ -630,7 +630,7 @@ function LearnersProjects() {
             <div className="learners-projects-side-card learners-projects-side-card-profile">
               <div className="learners-projects-side-card-head">
                 <span className="learners-projects-availability">{approvedProjects ? `${approvedProjects} approved` : 'Available now'}</span>
-                <button type="button" className="learners-projects-edit-btn" onClick={() => navigate('/academia/learner/settings')}>
+                <button type="button" className="learners-projects-edit-btn" onClick={() => navigate('/learner/settings')}>
                   <img src={bPencil} alt="Edit" />
                   <span>Edit</span>
                 </button>
@@ -642,7 +642,7 @@ function LearnersProjects() {
                 <div><img src={leLo} alt="Location" /><span>{projectLabel(totalImages, 'file', 'files')} attached</span></div>
               </div>
 
-              <button type="button" className="learners-projects-email-btn" onClick={() => navigate('/academia/learner/account')}>
+              <button type="button" className="learners-projects-email-btn" onClick={() => navigate('/learner/account')}>
                 <span>View account</span>
                 <img src={leEm} alt="Email" />
               </button>
@@ -651,7 +651,7 @@ function LearnersProjects() {
             <div className="learners-projects-side-card">
               <div className="learners-projects-side-card-head">
                 <h3>About</h3>
-                <button type="button" className="learners-projects-icon-edit" onClick={() => navigate('/academia/learner/settings')}>
+                <button type="button" className="learners-projects-icon-edit" onClick={() => navigate('/learner/settings')}>
                   <img src={bPencil} alt="Edit" />
                 </button>
               </div>
@@ -688,7 +688,7 @@ function LearnersProjects() {
             <div className="learners-projects-side-card">
               <div className="learners-projects-side-card-head">
                 <h3>Tools &amp; Skills</h3>
-                <button type="button" className="learners-projects-icon-edit" onClick={() => navigate('/academia/learner/settings')}>
+                <button type="button" className="learners-projects-icon-edit" onClick={() => navigate('/learner/settings')}>
                   <img src={bPencil} alt="Edit" />
                 </button>
               </div>

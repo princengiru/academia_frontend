@@ -67,7 +67,7 @@ function AcademiaResetPassword() {
 
       setStellarSuccess('Password reset successful! Redirecting...');
       setTimeout(() => {
-        navigate('/academia/auth/password-changed', { replace: true });
+        navigate('/auth/password-changed', { replace: true });
       }, 1200);
     } catch (error) {
       console.error('Reset password error:', error);

@@ -145,7 +145,7 @@ const Review = ({ courseId, setActiveStep, pushFeedback }) => {
       });
       if (!res.ok) throw new Error('Failed to submit course for publishing.');
 
-      navigate('/academia/professor', {
+      navigate('/professor', {
         state: {
           toastMessage: 'Course submitted for HOA approval.',
           toastTone: 'success',

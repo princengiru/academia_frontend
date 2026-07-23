@@ -223,7 +223,7 @@ function CoursePart() {
     if (!token) {
       showToast("Please sign in to join this course.", "warning");
       setTimeout(() => {
-        navigate('/academia/auth/signin');
+        navigate('/auth/signin');
       }, 1500);
       return;
     }
@@ -520,7 +520,7 @@ function CoursePart() {
 
           <div className="learners-home-title-actions">
             <SavedLibraryButton />
-            <a className="learners-btn learners-btn-primary" href="/academia/index" target="_blank" rel="noopener noreferrer">
+            <a className="learners-btn learners-btn-primary" href="/index" target="_blank" rel="noopener noreferrer">
               <span>Go to website</span>
               <img src={hoagoto} alt="Go" />
             </a>
@@ -529,7 +529,7 @@ function CoursePart() {
       </section>
 
       <div className="filters-grid-b-h">
-        <button type="button" onClick={() => navigate('/academia/learner/courses')}>
+        <button type="button" onClick={() => navigate('/learner/courses')}>
           <img src={acLe} alt="back" />
         </button>
         <div>
@@ -674,7 +674,7 @@ function CoursePart() {
                 <h3>Select a course</h3>
                 <p>Open a course from the catalog to view its details, syllabus, and enrollment options.</p>
                 <div>
-                  <button type="button" className="learners-btn learners-btn-primary" onClick={() => navigate('/academia/learner/courses')}>
+                  <button type="button" className="learners-btn learners-btn-primary" onClick={() => navigate('/learner/courses')}>
                     Browse courses
                   </button>
                 </div>
@@ -809,7 +809,7 @@ function CoursePart() {
                 <h3>No content published</h3>
                 <p className="visually-hidden">No course breakdown or outcomes available for this course.</p>
                 <div>
-                  <button type="button" className="learners-btn learners-btn-primary" onClick={() => navigate('/academia/learner/courses')}>
+                  <button type="button" className="learners-btn learners-btn-primary" onClick={() => navigate('/learner/courses')}>
                     Browse courses
                   </button>
                 </div>

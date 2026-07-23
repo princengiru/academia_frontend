@@ -9,10 +9,10 @@ const Topbar = ({ profileLoading, profileSummary, onOpenSidebar, isSidebarOpen =
     event.preventDefault();
     const query = searchQuery.trim();
     if (!query) {
-      navigate('/academia/professor/assignments');
+      navigate('/professor/assignments');
       return;
     }
-    navigate(`/academia/professor/assignments?search=${encodeURIComponent(query)}`);
+    navigate(`/professor/assignments?search=${encodeURIComponent(query)}`);
   };
 
   return (
@@ -43,11 +43,11 @@ const Topbar = ({ profileLoading, profileSummary, onOpenSidebar, isSidebarOpen =
       <div className="prof-topbar-right">
         <div
           className="prof-user"
-          onClick={() => navigate('/academia/professor/account')}
+          onClick={() => navigate('/professor/account')}
           style={{ cursor: 'pointer' }}
           role="button"
           tabIndex={0}
-          onKeyDown={(e) => { if (e.key === 'Enter') navigate('/academia/professor/account'); }}
+          onKeyDown={(e) => { if (e.key === 'Enter') navigate('/professor/account'); }}
           aria-label="Go to account settings"
         >
           <div className="prof-user-avatar">

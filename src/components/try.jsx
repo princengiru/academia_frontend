@@ -95,13 +95,13 @@ function Header() {
 
       <div className="second-part-h active">
         <div className="second-part-h-logo">
-          <NavLink to="/gonaraza/academia/index">
+          <NavLink to="/gonaraza/index">
             <img className="site-logo" src={logoIcon} alt="Gonaraza Academia" />
           </NavLink>
         </div>
 
         <nav className="second-part-h-menus">
-          <NavLink to="/gonaraza/academia/index">Home</NavLink>
+          <NavLink to="/gonaraza/index">Home</NavLink>
 
           <div className="dropdown courses-dropdown">
             <button id="coursesToggle" className="dropdown-toggle courses-toggle" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
@@ -134,9 +134,9 @@ function Header() {
             </div>
           </div>
 
-          <a href="/gonaraza/academia/projects">Projects</a>
+          <a href="/gonaraza/projects">Projects</a>
           <a href="#">Community Feed</a>
-          <a href="/gonaraza/academia/rewards">Rewards</a>
+          <a href="/gonaraza/rewards">Rewards</a>
         </nav>
 
         <div className="second-part-h-links" aria-label="Header actions">

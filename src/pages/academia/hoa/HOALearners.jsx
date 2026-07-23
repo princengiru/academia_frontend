@@ -142,7 +142,7 @@ const HOALearners = () => {
       
       // If no token exists, boot them immediately
       if (!token) {
-        navigate('/academia/auth/signin');
+        navigate('/auth/signin');
         return;
       }
 
@@ -160,7 +160,7 @@ const HOALearners = () => {
         console.warn("Unauthorized access. Token may be expired.");
         localStorage.removeItem('token');
         localStorage.removeItem('user');
-        navigate('/academia/auth/signin');
+        navigate('/auth/signin');
         return;
       }
 
@@ -357,7 +357,7 @@ const HOALearners = () => {
     const { kind, ids, courseId, courseTitle } = confirmAction;
     const token = localStorage.getItem('token');
     if (!token) {
-      navigate('/academia/auth/signin');
+      navigate('/auth/signin');
       return;
     }
 
@@ -550,7 +550,7 @@ const HOALearners = () => {
               <img src={hoarefresh} alt="Sync" className={`sync-icon ${isLoading ? 'spinning' : ''}`} /> 
               {isLoading ? 'Updating...' : 'Data updated every 5min'} <span className="dot" style={{ background: isLoading ? '#F59E0B' : '#10B981' }}></span>
             </span>
-            <button className="hoa-btn-primary" onClick={() => window.open('/academia/index', '_blank')}>
+            <button className="hoa-btn-primary" onClick={() => window.open('/index', '_blank')}>
               Go to website <img src={hoagoto} alt="" />
             </button>
           </div>

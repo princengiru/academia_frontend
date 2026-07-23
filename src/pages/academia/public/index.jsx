@@ -260,11 +260,11 @@ function AcademiaIndex() {
             </div>
             <div className="hero-sec-inner-r">
               <div className="hero-sec-inner-r-t">
-                <button type="button" onClick={() => navigate('/academia/projects')}>
+                <button type="button" onClick={() => navigate('/projects')}>
                   <img src={acPlusIcon} alt="Plus Icon" />
                   <span>Post your project</span>
                 </button>
-                <button type="button" onClick={() => navigate('/academia/syllabuses')}>
+                <button type="button" onClick={() => navigate('/syllabuses')}>
                   <img src={bookOpenIcon} alt="Book Icon" />
                   <span>View Syllabuses</span>
                 </button>
@@ -359,7 +359,7 @@ function AcademiaIndex() {
                 <div className="js-item js-empty" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '200px', background: '#F8FAFC', borderRadius: '12px' }}>
                   <h4 style={{ fontWeight: 600 }}>No public projects yet</h4>
                   <p style={{ color: '#64748B', marginBottom: '16px' }}>Published projects will appear here.</p>
-                  <button type="button" onClick={() => navigate('/academia/projects')} style={{ background: '#450468', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: '8px' }}>
+                  <button type="button" onClick={() => navigate('/projects')} style={{ background: '#450468', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: '8px' }}>
                     Browse projects
                   </button>
                 </div>
@@ -452,7 +452,7 @@ function AcademiaIndex() {
                     ) : null}
                   </div>
                   <div className="psc-last-card-btn">
-                    <button type="button" onClick={() => navigate('/academia/syllabuses')}>Explore Syllabuses</button>
+                    <button type="button" onClick={() => navigate('/syllabuses')}>Explore Syllabuses</button>
                   </div>
                 </div>
               )}
@@ -461,7 +461,7 @@ function AcademiaIndex() {
                 <div className="swiper-slide psc-card psc-empty" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '250px' }}>
                   <div className="empty-title">No syllabuses yet</div>
                   <div className="empty-desc" style={{ marginBottom: '16px', color: '#64748B' }}>We couldn't find syllabuses right now.</div>
-                  <button type="button" className="empty-cta btn btn-primary" onClick={() => navigate('/academia/syllabuses')} style={{ background: '#450468', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: '8px' }}>
+                  <button type="button" className="empty-cta btn btn-primary" onClick={() => navigate('/syllabuses')} style={{ background: '#450468', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: '8px' }}>
                     Browse all syllabuses
                   </button>
                 </div>
@@ -517,7 +517,7 @@ function AcademiaIndex() {
           )}
         </div>
         <div className="sec-CTA">
-          <button type="button" onClick={() => navigate('/academia/courses?filter=All')}>
+          <button type="button" onClick={() => navigate('/courses?filter=All')}>
             <span>View More</span>
             <img src={acNextIcon} alt="Next" />
           </button>
@@ -559,7 +559,7 @@ function AcademiaIndex() {
               <div className="fsc-item-text">
                 <h6 style={{ fontWeight: 600 }}>No free courses</h6>
                 <p style={{ color: '#64748B', marginBottom: '16px' }}>There are no free courses to show at the moment.</p>
-                <button type="button" className="btn btn-primary" onClick={() => navigate('/academia/learner/courses?filter=All')} style={{ background: '#450468', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: '8px' }}>
+                <button type="button" className="btn btn-primary" onClick={() => navigate('/learner/courses?filter=All')} style={{ background: '#450468', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: '8px' }}>
                   Explore all courses
                 </button>
               </div>
@@ -567,7 +567,7 @@ function AcademiaIndex() {
           )}
         </div>
         <div className="sec-CTA">
-          <button type="button" onClick={() => navigate('/academia/learner/courses?filter=Free')}>
+          <button type="button" onClick={() => navigate('/learner/courses?filter=Free')}>
             <span>View More</span>
             <img src={acNextIcon} alt="Next" />
           </button>
@@ -591,7 +591,7 @@ function AcademiaIndex() {
               <h4>Browse public projects, syllabuses, and community stories published on Gonaraza Academia.</h4>
             </div>
             <div>
-              <button type="button" onClick={() => navigate('/academia/projects')}>
+              <button type="button" onClick={() => navigate('/projects')}>
                 <span>Explore More</span>
                 <img src={acNnexIcon} alt="View" />
               </button>
@@ -675,7 +675,7 @@ function AcademiaIndex() {
                     <div className="js-item-text" style={{ textAlign: 'center' }}>
                       <h4 style={{ fontWeight: 600 }}>No community stories</h4>
                       <p style={{ color: '#64748B', marginBottom: '16px' }}>There are no community stories published yet.</p>
-                      <button type="button" className="empty-cta btn btn-primary" onClick={() => navigate('/academia/watch')} style={{ background: '#450468', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: '8px' }}>
+                      <button type="button" className="empty-cta btn btn-primary" onClick={() => navigate('/watch')} style={{ background: '#450468', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: '8px' }}>
                         Explore stories
                       </button>
                     </div>
@@ -688,7 +688,7 @@ function AcademiaIndex() {
           </div>
         </div>
         <div className="sec-CTA">
-          <button type="button" onClick={() => navigate('/academia/watch')}>
+          <button type="button" onClick={() => navigate('/watch')}>
             <span>View More</span>
             <img src={acNextIcon} alt="Next" />
           </button>

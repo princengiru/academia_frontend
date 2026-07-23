@@ -71,13 +71,13 @@ function LearnersAvailableTest() {
       ? 'assessment'
       : `formative-${test.uuid || test.id}`;
     navigate(
-      `/academia/learner/read-contents?id=${encodeURIComponent(String(test.courseId))}&chapterId=${encodeURIComponent(chapterId)}`
+      `/learner/read-contents?id=${encodeURIComponent(String(test.courseId))}&chapterId=${encodeURIComponent(chapterId)}`
     );
   };
 
   const openCourse = (courseId) => {
     if (!courseId) return;
-    navigate(`/academia/learner/course-part?id=${encodeURIComponent(String(courseId))}`);
+    navigate(`/learner/course-part?id=${encodeURIComponent(String(courseId))}`);
   };
 
   useEffect(() => {
@@ -222,7 +222,7 @@ function LearnersAvailableTest() {
             <div className="learners-home-title-actions">
               <SavedLibraryButton />
 
-              <a className="learners-btn learners-btn-primary" href="/academia/index" target="_blank" rel="noopener noreferrer">
+              <a className="learners-btn learners-btn-primary" href="/index" target="_blank" rel="noopener noreferrer">
                 <span>Go to website</span>
                 <img src={hoagoto} alt="Go" />
               </a>
@@ -255,7 +255,7 @@ function LearnersAvailableTest() {
                 <div className="learners-card learners-empty-state learners-empty-state--compact">
                   <h3>No tests available</h3>
                   <p>Enroll in a course with quizzes or summative assessments to see tests here.</p>
-                  <button type="button" className="learners-btn learners-btn-primary" onClick={() => navigate('/academia/learner/courses')}>
+                  <button type="button" className="learners-btn learners-btn-primary" onClick={() => navigate('/learner/courses')}>
                     Browse courses
                   </button>
                 </div>
@@ -330,7 +330,7 @@ function LearnersAvailableTest() {
                 <h2>Syllabus</h2>
                 <p>{loading ? 'Loading courses...' : syllabusCountLabel}</p>
               </div>
-              <button type="button" className="learners-available-test-see-all" onClick={() => navigate('/academia/learner/courses')}>
+              <button type="button" className="learners-available-test-see-all" onClick={() => navigate('/learner/courses')}>
                 See All
               </button>
             </div>
@@ -368,7 +368,7 @@ function LearnersAvailableTest() {
                 <div className="learners-card learners-empty-state learners-empty-state--compact">
                   <h3>No courses found</h3>
                   <p>Browse the course catalog to find syllabi and enroll.</p>
-                  <button type="button" className="learners-btn learners-btn-primary" onClick={() => navigate('/academia/learner/courses')}>
+                  <button type="button" className="learners-btn learners-btn-primary" onClick={() => navigate('/learner/courses')}>
                     Browse courses
                   </button>
                 </div>

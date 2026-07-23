@@ -222,7 +222,7 @@ function AcademiaCertificates() {
                 title="Could not load certificates"
                 message={fetchError}
                 onRetry={() => setRetryKey((key) => key + 1)}
-                backTo="/academia/index"
+                backTo="/index"
                 backLabel="Back to home"
               />
             </div>
@@ -232,7 +232,7 @@ function AcademiaCertificates() {
                 title="No certificate courses yet"
                 message="Published courses with summative assessments will appear here once they are available."
                 actionLabel="Browse courses"
-                actionTo="/academia/courses"
+                actionTo="/courses"
               />
             </div>
           ) : (
@@ -307,14 +307,14 @@ function AcademiaCertificates() {
                 <button
                   type="button"
                   onClick={() => {
-                    sessionStorage.setItem('redirectAfterLogin', '/academia/learner/certificates');
-                    navigate('/academia/auth/signin');
+                    sessionStorage.setItem('redirectAfterLogin', '/learner/certificates');
+                    navigate('/auth/signin');
                   }}
                 >
                   <img src={acNonIcon} alt="" />
                   <span>My certificates</span>
                 </button>
-                <button type="button" onClick={() => navigate('/academia/courses')}>
+                <button type="button" onClick={() => navigate('/courses')}>
                   <img src={acNonIcon} alt="" />
                   <span>Browse courses</span>
                 </button>

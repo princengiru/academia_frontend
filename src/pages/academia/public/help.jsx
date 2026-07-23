@@ -8,7 +8,7 @@ function HelpPage() {
     >
       <h2>Getting started</h2>
       <ul>
-        <li>Browse courses at <a href="/academia/courses">/academia/courses</a></li>
+        <li>Browse courses at <a href="/courses">/courses</a></li>
         <li>Create a free account to enroll, save projects, and track progress</li>
         <li>Instructors can publish from the professor workspace after approval</li>
       </ul>

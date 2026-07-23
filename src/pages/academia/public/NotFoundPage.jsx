@@ -11,10 +11,10 @@ function NotFoundPage() {
         <h1>Page not found</h1>
         <p>The page you requested does not exist or may have moved.</p>
         <div className="public-not-found-actions">
-          <Link className="is-primary" to="/academia/index">
+          <Link className="is-primary" to="/index">
             Go to Academia home
           </Link>
-          <Link className="is-secondary" to="/academia/courses">
+          <Link className="is-secondary" to="/courses">
             Browse courses
           </Link>
         </div>

@@ -127,15 +127,15 @@ const ManagementLessonsRanks = () => {
           <div className="learners-home-title-top">
             <h1>Management</h1>
             <div className="learners-home-title-actions">
-              <a className="learners-btn learners-btn-secondary" href="/academia/professor/management-schedule" onClick={(e) => { e.preventDefault(); navigate('/academia/professor/management-schedule'); }}>
+              <a className="learners-btn learners-btn-secondary" href="/professor/management-schedule" onClick={(e) => { e.preventDefault(); navigate('/professor/management-schedule'); }}>
                 <img src="/assets/icons/plus1.svg" alt="" />
                 <span>Add Event</span>
               </a>
-              <a className="learners-btn learners-btn-secondary" href="#" onClick={(e) => { preventDefault(e); navigate('/academia/professor/performance'); }}>
+              <a className="learners-btn learners-btn-secondary" href="#" onClick={(e) => { preventDefault(e); navigate('/professor/performance'); }}>
                 <img src="/assets/icons/van.svg" alt="" />
                 <span>View Analytics</span>
               </a>
-              <a className="learners-btn learners-btn-primary" href="/academia/index" target="_blank" rel="noopener noreferrer">
+              <a className="learners-btn learners-btn-primary" href="/index" target="_blank" rel="noopener noreferrer">
                 <span>Go to website</span>
                 <img src={hoagoto} alt="Go" />
               </a>
@@ -148,7 +148,7 @@ const ManagementLessonsRanks = () => {
           {managementTabs.map((tab) => (
             <Link 
               key={tab.id}
-              to={`/academia/professor/${tab.id}`} 
+              to={`/professor/${tab.id}`} 
               className={`prof-management-tab ${activeTab === tab.id ? 'is-active' : ''}`}
             >
               {tab.label}
@@ -225,7 +225,7 @@ const ManagementLessonsRanks = () => {
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
-              <button type="button" className="assessments-create-btn" onClick={() => navigate('/academia/professor/prepare-course')}>
+              <button type="button" className="assessments-create-btn" onClick={() => navigate('/professor/prepare-course')}>
                 <img src="/assets/icons/plus.svg" alt="" aria-hidden="true" />
                 <span>Create new course</span>
               </button>
@@ -276,7 +276,7 @@ const ManagementLessonsRanks = () => {
                 <p>{hasEverLoadedData ? 'Try adjusting your filters or search terms.' : "You haven't published any lessons yet. Create a course or syllabus to see it here."}</p>
                 {!hasEverLoadedData && (
                   <div className="prof-management-empty-state-actions">
-                    <Link to="/academia/professor/prepare-course" className="learners-btn learners-btn-primary">Create course</Link>
+                    <Link to="/professor/prepare-course" className="learners-btn learners-btn-primary">Create course</Link>
                   </div>
                 )}
               </div>
@@ -300,7 +300,7 @@ const ManagementLessonsRanks = () => {
                   <button
                     type="button"
                     className="prof-lesson-rank-open"
-                    onClick={() => navigate('/academia/professor/management')}
+                    onClick={() => navigate('/professor/management')}
                     aria-label="Open course in management"
                   >
                     <img src="/assets/icons/ac-en.svg" alt="" />

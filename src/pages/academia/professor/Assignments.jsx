@@ -1105,11 +1105,11 @@ const Assignments = () => {
           <div className="learners-home-title-top">
             <h1>Assessments</h1>
             <div className="learners-home-title-actions">
-              <a className="learners-btn learners-btn-secondary" href="/academia/professor/performance" onClick={(e) => { e.preventDefault(); navigate('/academia/professor/performance'); }}>
+              <a className="learners-btn learners-btn-secondary" href="/professor/performance" onClick={(e) => { e.preventDefault(); navigate('/professor/performance'); }}>
                 <img src="/assets/icons/van.svg" alt="" />
                 <span>View Analytics</span>
               </a>
-              <a className="learners-btn learners-btn-primary" href="/academia/index" target="_blank" rel="noopener noreferrer">
+              <a className="learners-btn learners-btn-primary" href="/index" target="_blank" rel="noopener noreferrer">
                 <span>Go to website</span>
                 <img src={hoagoto} alt="Go" />
               </a>

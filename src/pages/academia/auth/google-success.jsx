@@ -21,13 +21,13 @@ function AcademiaGoogleSuccess() {
         google_server_error: 'A server error occurred. Please try again.',
       };
       setError(messages[errorParam] || 'An unexpected error occurred.');
-      setTimeout(() => navigate('/academia/auth/signin', { replace: true }), 3000);
+      setTimeout(() => navigate('/auth/signin', { replace: true }), 3000);
       return;
     }
 
     if (!token || !userRaw) {
       setError('Invalid authentication response.');
-      setTimeout(() => navigate('/academia/auth/signin', { replace: true }), 2000);
+      setTimeout(() => navigate('/auth/signin', { replace: true }), 2000);
       return;
     }
 
@@ -44,17 +44,17 @@ function AcademiaGoogleSuccess() {
           sessionStorage.removeItem('redirectAfterLogin');
           navigate(redirectAfterLogin, { replace: true });
         } else if (role === 'instructor') {
-          navigate('/academia/professor', { replace: true });
+          navigate('/professor', { replace: true });
         } else if (role === 'admin') {
           navigate('/admin/dashboard', { replace: true });
         } else {
-          navigate('/academia/learner/', { replace: true });
+          navigate('/learner/', { replace: true });
         }
       }, 800);
     } catch (e) {
       console.error('Google success parse error:', e);
       setError('Authentication data was corrupted.');
-      setTimeout(() => navigate('/academia/auth/signin', { replace: true }), 2000);
+      setTimeout(() => navigate('/auth/signin', { replace: true }), 2000);
     }
   }, [navigate]);
 

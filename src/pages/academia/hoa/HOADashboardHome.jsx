@@ -37,12 +37,12 @@ import defaultAvatar from '../../../assets/imgs/default-profile.png';
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 const getApprovalReviewPath = (req) => {
-  if (!req?.id) return '/academia/hoa';
+  if (!req?.id) return '/hoa';
   const id = encodeURIComponent(req.id);
-  if (req.type === 'syllabus') return `/academia/hoa/syllabus?mode=pending&id=${id}`;
-  if (req.type === 'course') return `/academia/hoa/online-courses?mode=pending&id=${id}`;
-  if (req.type === 'project') return `/academia/hoa/projects?mode=pending&id=${id}`;
-  return '/academia/hoa';
+  if (req.type === 'syllabus') return `/hoa/syllabus?mode=pending&id=${id}`;
+  if (req.type === 'course') return `/hoa/online-courses?mode=pending&id=${id}`;
+  if (req.type === 'project') return `/hoa/projects?mode=pending&id=${id}`;
+  return '/hoa';
 };
 
 const HOADashboardHome = () => {
@@ -429,7 +429,7 @@ const HOADashboardHome = () => {
               {isLoading ? 'Updating...' : 'Data updated every 5min'} 
               <span className="dot" style={{ background: isLoading ? '#F59E0B' : '#10B981' }}></span>
             </span>
-            <button className="hoa-btn-primary" onClick={() => window.open('/academia/index', '_blank')}>
+            <button className="hoa-btn-primary" onClick={() => window.open('/index', '_blank')}>
               Go to website <img src={hoagoto} alt="" />
             </button>
           </div>
@@ -471,7 +471,7 @@ const HOADashboardHome = () => {
             <div className="hoa-card hoa-stat-main">
               <div className="stat-top">
                 <span><img src={hoaprojects} alt="Projects" /> Projects</span>
-                <Link to="/academia/hoa/projects">Manage Projects</Link>
+                <Link to="/hoa/projects">Manage Projects</Link>
               </div>
               <div className="stat-body">
                 <div>
@@ -484,7 +484,7 @@ const HOADashboardHome = () => {
             <div className="hoa-card hoa-stat-main">
               <div className="stat-top">
                 <span><img src={hoacertificates} alt="Certificates" /> Certificates</span>
-                <Link to="/academia/hoa/certificates">Manage Certificates</Link>
+                <Link to="/hoa/certificates">Manage Certificates</Link>
               </div>
               <div className="stat-body">
                 <div>
@@ -530,7 +530,7 @@ const HOADashboardHome = () => {
           <div className="hoa-revenue-section">
             <div className="section-header">
               <span className="section-title">GROSS REVENUE</span>
-              <Link to="/academia/hoa/finance" className="manage-link">Manage funds <img src={hoaviewall} style={{width: '5.2px', height: '9.2px'}} alt="" /></Link>
+              <Link to="/hoa/finance" className="manage-link">Manage funds <img src={hoaviewall} style={{width: '5.2px', height: '9.2px'}} alt="" /></Link>
             </div>
             
             <div className="revenue-amount-box outline-box" style={{width: '300px', borderRadius: '8px'}}>
@@ -563,7 +563,7 @@ const HOADashboardHome = () => {
           <div className="hoa-card hoa-split-stat">
             <div className="section-header">
               <span className="section-title">LEARNER'S STATS</span>
-              <Link to="/academia/hoa/learners" className="manage-link">See Details <img src={hoaviewall} style={{width: '5.2px', height: '9.2px'}} alt="" /></Link>
+              <Link to="/hoa/learners" className="manage-link">See Details <img src={hoaviewall} style={{width: '5.2px', height: '9.2px'}} alt="" /></Link>
             </div>
             <div className="revenue-amount-box outline-box">
               <div className="icon-circle">
@@ -586,7 +586,7 @@ const HOADashboardHome = () => {
           <div className="hoa-card hoa-split-stat">
             <div className="section-header">
               <span className="section-title">TUTOR'S STATS</span>
-              <Link to="/academia/hoa/finance" className="manage-link">Finance <img src={hoaviewall} style={{width: '5.2px', height: '9.2px'}} alt="" /></Link>
+              <Link to="/hoa/finance" className="manage-link">Finance <img src={hoaviewall} style={{width: '5.2px', height: '9.2px'}} alt="" /></Link>
             </div>
             <div className="revenue-amount-box outline-box">
               <div className="icon-circle">
@@ -806,7 +806,7 @@ const HOADashboardHome = () => {
                           </button>
                           {openActionRowId === req.id && (
                             <div className="action-dropdown" role="menu">
-                              <button type="button" className="action-dropdown-item" onClick={() => window.open(`/academia/syllabus-part?courseId=${req.id}`, '_blank')}>View Details</button>
+                              <button type="button" className="action-dropdown-item" onClick={() => window.open(`/syllabus-part?courseId=${req.id}`, '_blank')}>View Details</button>
                               <button type="button" className="action-dropdown-item" style={{color: '#10B981'}} onClick={() => handleApprovalAction(req, 'approve')}>Approve</button>
                               <button type="button" className="action-dropdown-item" style={{color: '#EF4444'}} onClick={() => handleApprovalAction(req, 'reject')}>Reject</button>
                             </div>

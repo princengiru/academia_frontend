@@ -79,7 +79,7 @@ const LessonView = ({
                 <button
                   type="button"
                   className="learners-btn learners-btn-secondary"
-                  onClick={() => navigate(`/academia/learner/course-part?id=${inboundId}`)}
+                  onClick={() => navigate(`/learner/course-part?id=${inboundId}`)}
                 >
                   <span>Back to Details</span>
                 </button>

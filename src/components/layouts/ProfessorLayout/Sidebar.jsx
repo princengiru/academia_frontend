@@ -27,10 +27,10 @@ const Sidebar = ({
     const query = searchQuery.trim();
     onClose?.();
     if (!query) {
-      navigate('/academia/professor/assignments');
+      navigate('/professor/assignments');
       return;
     }
-    navigate(`/academia/professor/assignments?search=${encodeURIComponent(query)}`);
+    navigate(`/professor/assignments?search=${encodeURIComponent(query)}`);
   };
 
   return (
@@ -65,34 +65,34 @@ const Sidebar = ({
           <img src="/assets/icons/magnifier.svg" alt="" />
         </form>
 
-        <NavLink to="/academia/professor" end className={linkClassName} onClick={onClose}>
+        <NavLink to="/professor" end className={linkClassName} onClick={onClose}>
           <img src="/assets/icons/home-2.svg" alt="Home" />
           <span>Home</span>
         </NavLink>
 
-        <NavLink to="/academia/professor/assignments" className={linkClassName} onClick={onClose}>
+        <NavLink to="/professor/assignments" className={linkClassName} onClick={onClose}>
           <img src="/assets/icons/lea3.svg" alt="Assessments" />
           <span>Assessments</span>
         </NavLink>
 
-        <NavLink to="/academia/professor/projects" className={linkClassName} onClick={onClose}>
+        <NavLink to="/professor/projects" className={linkClassName} onClick={onClose}>
           <img src="/assets/icons/pi1.svg" alt="My Projects" />
           <span>My Projects</span>
           <span className="prof-sidebar-badge">{projectsCount >= 9 ? '9+' : projectsCount}</span>
         </NavLink>
 
-        <NavLink to="/academia/professor/performance" className={linkClassName} onClick={onClose}>
+        <NavLink to="/professor/performance" className={linkClassName} onClick={onClose}>
           <img src="/assets/icons/pi2.svg" alt="Performance" />
           <span>Performance</span>
         </NavLink>
 
-        <NavLink to="/academia/professor/earnings" className={linkClassName} onClick={onClose}>
+        <NavLink to="/professor/earnings" className={linkClassName} onClick={onClose}>
           <img src="/assets/icons/hoadollar.svg" alt="Earnings" />
           <span>Earnings</span>
         </NavLink>
 
         <NavLink
-          to="/academia/professor/management"
+          to="/professor/management"
           className={managementActive ? 'active-menu' : ''}
           onClick={onClose}
         >
@@ -100,7 +100,7 @@ const Sidebar = ({
           <span>Management</span>
         </NavLink>
 
-        <NavLink to="/academia/professor/settings" className={linkClassName} onClick={onClose}>
+        <NavLink to="/professor/settings" className={linkClassName} onClick={onClose}>
           <img src="/assets/icons/setting-2.svg" alt="Settings" />
           <span>Settings</span>
         </NavLink>
@@ -133,7 +133,7 @@ const Sidebar = ({
           className="prof-sidebar-profile-left"
           onClick={() => {
             onClose?.();
-            navigate('/academia/professor/account');
+            navigate('/professor/account');
           }}
           style={{ cursor: 'pointer' }}
           role="button"
@@ -141,7 +141,7 @@ const Sidebar = ({
           onKeyDown={(e) => {
             if (e.key === 'Enter') {
               onClose?.();
-              navigate('/academia/professor/account');
+              navigate('/professor/account');
             }
           }}
           aria-label="Go to account settings"

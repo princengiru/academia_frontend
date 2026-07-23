@@ -38,13 +38,13 @@ function AcademiaSignIn() {
           sessionStorage.removeItem('redirectAfterLogin');
           navigate(redirectAfterLogin, { replace: true });
         } else if (userRole === 'instructor') {
-          navigate('/academia/professor', { replace: true });
+          navigate('/professor', { replace: true });
         } else if (userRole === 'student') {
-          navigate('/academia/learner/', { replace: true });
+          navigate('/learner/', { replace: true });
         } else if (userRole === 'admin') {
-          navigate('/academia/hoa', { replace: true });
+          navigate('/hoa', { replace: true });
         } else {
-          navigate('/academia/index', { replace: true });
+          navigate('/index', { replace: true });
         }
       } catch (e) {
         // Handle parse error silently
@@ -84,7 +84,7 @@ function AcademiaSignIn() {
         localStorage.setItem('user', JSON.stringify({ email: data?.data?.email || email }));
         localStorage.setItem('verifyEndpoint', data?.data?.verifyEndpoint || '/api/auth/verify-login-otp');
         setTimeout(() => {
-          navigate('/academia/auth/verify', { replace: true });
+          navigate('/auth/verify', { replace: true });
         }, 300);
         return;
       }
@@ -106,14 +106,14 @@ function AcademiaSignIn() {
           sessionStorage.removeItem('redirectAfterLogin');
           navigate(redirectAfterLogin, { replace: true });
         } else if (userRole === 'instructor') {
-          navigate('/academia/professor', { replace: true });
+          navigate('/professor', { replace: true });
         } else if (userRole === 'student') {
-          navigate('/academia/learner/', { replace: true });
+          navigate('/learner/', { replace: true });
         } else if (userRole === 'admin') {
-          navigate('/academia/hoa', { replace: true });
+          navigate('/hoa', { replace: true });
         } else {
           // Fallback if role is undefined or not standard
-          navigate('/academia/index', { replace: true });
+          navigate('/index', { replace: true });
         }
       }, 500);
 
@@ -421,7 +421,7 @@ function AcademiaSignIn() {
           <form className="signin-card" onSubmit={handleSubmit}>
             <h1 className="signin-title">Sign in</h1>
             <p className="signin-subtitle">
-              Need an account? <a href="/academia/auth/signup">Sign up</a>
+              Need an account? <a href="/auth/signup">Sign up</a>
             </p>
 
             {returnPath ? (
@@ -494,7 +494,7 @@ function AcademiaSignIn() {
             <div className="field-group">
               <div className="field-label-row">
                 <label htmlFor="signinPassword">Password</label>
-                <a href="/academia/auth/forgot-password">Forgot Password?</a>
+                <a href="/auth/forgot-password">Forgot Password?</a>
               </div>
               <div className="input-wrap password">
                 <input 

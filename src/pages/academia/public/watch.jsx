@@ -138,7 +138,7 @@ function AcademiaWatch() {
                 </div>
               </div>
               <div className="watch-cta-r">
-                <button type="button" onClick={() => navigate('/academia/courses')}>
+                <button type="button" onClick={() => navigate('/courses')}>
                   <img src={acNextIcon} alt="Browse courses" />
                   <span>Browse courses</span>
                 </button>

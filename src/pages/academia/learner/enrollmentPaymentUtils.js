@@ -103,7 +103,7 @@ export function hasSavedPaymentMethods(savedMethods) {
 export function buildAccountPaymentHref(returnPath, section = 'payment-mtn') {
   const params = new URLSearchParams({ section });
   if (returnPath) params.set('return', returnPath);
-  return `/academia/learner/account?${params.toString()}`;
+  return `/learner/account?${params.toString()}`;
 }
 
 export function computeCertificateTotalHours(course) {

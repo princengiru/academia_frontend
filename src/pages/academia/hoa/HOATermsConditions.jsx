@@ -74,13 +74,13 @@ const HOATermsConditions = () => {
                 <div className="hoatc-page-header">
                     <h1>Terms & Conditions</h1>
                     <div className="hoatc-header-actions">
-                        <Link to="/academia/terms" className="hoatc-btn-outline" target="_blank" rel="noreferrer">
+                        <Link to="/terms" className="hoatc-btn-outline" target="_blank" rel="noreferrer">
                             Public terms
                         </Link>
                         <button type="button" className="hoatc-btn-outline" disabled title="Coming soon">
                             <IconPlus /> Add New Rule
                         </button>
-                        <button type="button" className="hoatc-btn-primary" onClick={() => window.open('/academia/terms', '_blank')}>
+                        <button type="button" className="hoatc-btn-primary" onClick={() => window.open('/terms', '_blank')}>
                             Go to website <img src={hoagoto} alt="Go" />
                         </button>
                     </div>
@@ -158,7 +158,7 @@ const HOATermsConditions = () => {
                             <p>{selectedRule.description}</p>
                             <p>
                                 These HOA rules complement the public{' '}
-                                <Link to="/academia/terms" target="_blank" rel="noreferrer">Academia Terms and Conditions</Link>.
+                                <Link to="/terms" target="_blank" rel="noreferrer">Academia Terms and Conditions</Link>.
                             </p>
 
                             {selectedRule.sections.map((section) => (

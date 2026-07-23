@@ -456,11 +456,11 @@ const Management = () => {
 
   // --- Action Handlers ---
   const handleEditCourse = (courseId) => {
-    navigate('/academia/professor/prepare-course', { state: { courseId } });
+    navigate('/professor/prepare-course', { state: { courseId } });
   };
 
   const handleEditSyllabus = (syllabusId) => {
-    navigate(`/academia/professor/prepare-syllabus?id=${syllabusId}`, { state: { syllabusId } });
+    navigate(`/professor/prepare-syllabus?id=${syllabusId}`, { state: { syllabusId } });
   };
 
   const handlePublishCourse = async (courseId) => {
@@ -791,7 +791,7 @@ const Management = () => {
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path></svg>
                 <span>Sync Data</span>
               </a>
-              <a className="learners-btn learners-btn-primary" href="/academia/index" target="_blank" rel="noopener noreferrer">
+              <a className="learners-btn learners-btn-primary" href="/index" target="_blank" rel="noopener noreferrer">
                 <span>Go to website</span>
                 <img src={hoagoto} alt="Go" />
               </a>
@@ -804,7 +804,7 @@ const Management = () => {
           {managementTabs.map((tab) => (
             <Link
               key={tab.id}
-              to={`/academia/professor/${tab.id}`}
+              to={`/professor/${tab.id}`}
               className={`prof-management-tab ${activeTab === tab.id ? 'is-active' : ''}`}
             >
               {tab.label}
@@ -869,7 +869,7 @@ const Management = () => {
                 <p>Manage drafts, publish updates, and view performance outcomes</p>
               </div>
               <div className="oc-add-actions">
-                <button className="oc-btn-primary" onClick={() => navigate('/academia/professor/prepare-course')}>
+                <button className="oc-btn-primary" onClick={() => navigate('/professor/prepare-course')}>
                   <img src={hoawhiteadd} style={{ width: 16 }} alt="" /> Prepare Course
                 </button>
               </div>
@@ -1545,7 +1545,7 @@ const Management = () => {
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                   <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#071437', margin: 0 }}>My Syllabus Proposals</h3>
-                  <button className="syll-btn-primary" style={{ height: '36px' }} onClick={() => navigate('/academia/professor/prepare-syllabus')}>
+                  <button className="syll-btn-primary" style={{ height: '36px' }} onClick={() => navigate('/professor/prepare-syllabus')}>
                     <img src={hoawhiteadd} style={{ width: 14 }} alt="" /> Prepare Syllabus
                   </button>
                 </div>

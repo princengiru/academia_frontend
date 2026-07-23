@@ -61,12 +61,12 @@ function LearnersLayout() {
       // ignore
     }
     setShowLogoutModal(false);
-    navigate('/academia/auth/signin');
+    navigate('/auth/signin');
   };
   const linkClassName = ({ isActive }) => (isActive ? 'active-menu' : '');
 
   useEffect(() => {
-    if (!location.pathname.startsWith('/academia/learner/courses')) return;
+    if (!location.pathname.startsWith('/learner/courses')) return;
     const query = new URLSearchParams(location.search).get('search') || '';
     setSearchQuery(query);
   }, [location.pathname, location.search]);
@@ -79,10 +79,10 @@ function LearnersLayout() {
     const query = searchQuery.trim();
     closeSidebar();
     if (!query) {
-      navigate('/academia/learner/courses');
+      navigate('/learner/courses');
       return;
     }
-    navigate(`/academia/learner/courses?search=${encodeURIComponent(query)}`);
+    navigate(`/learner/courses?search=${encodeURIComponent(query)}`);
   };
 
   useEffect(() => {
@@ -122,7 +122,7 @@ function LearnersLayout() {
 
         if (response.status === 403) {
           localStorage.clear();
-          navigate('/academia/auth/signin', {
+          navigate('/auth/signin', {
             replace: true,
             state: { error: 'This account has been deactivated. Please contact support.' }
           });
@@ -210,7 +210,7 @@ function LearnersLayout() {
   }, []);
 
   if (!token) {
-    return <Navigate to="/academia/auth/signin" replace />;
+    return <Navigate to="/auth/signin" replace />;
   }
 
   if (isSuspended) {
@@ -230,7 +230,7 @@ function LearnersLayout() {
               style={{ background: '#EF4444', color: '#fff', width: '100%', padding: '10px' }} 
               onClick={() => {
                 localStorage.clear();
-                navigate('/academia/auth/signin');
+                navigate('/auth/signin');
               }}
             >
               Return to Sign In
@@ -295,32 +295,32 @@ function LearnersLayout() {
             <img src={learnersSearchIcon} alt="" />
           </form>
 
-          <NavLink to="/academia/learner" end className={linkClassName} onClick={closeSidebar}>
+          <NavLink to="/learner" end className={linkClassName} onClick={closeSidebar}>
             <img src={learnersHomeIcon} alt="Home" />
             <span>Home</span>
           </NavLink>
 
-          <NavLink to="/academia/learner/courses" className={linkClassName} onClick={closeSidebar}>
+          <NavLink to="/learner/courses" className={linkClassName} onClick={closeSidebar}>
             <img src={learnersCoursesIcon} alt="Courses" />
             <span>Courses</span>
           </NavLink>
 
-          <NavLink to="/academia/learner/performance" className={linkClassName} onClick={closeSidebar}>
+          <NavLink to="/learner/performance" className={linkClassName} onClick={closeSidebar}>
             <img src={learnersPerformanceIcon} alt="My Performance" />
             <span>My Performance</span>
           </NavLink>
 
-          <NavLink to="/academia/learner/available-test" className={linkClassName} onClick={closeSidebar}>
+          <NavLink to="/learner/available-test" className={linkClassName} onClick={closeSidebar}>
             <img src={learnersTestIcon} alt="Assessments" />
             <span>Assessments</span>
           </NavLink>
 
-          <NavLink to="/academia/learner/saved-library" className={linkClassName} onClick={closeSidebar}>
+          <NavLink to="/learner/saved-library" className={linkClassName} onClick={closeSidebar}>
             <img src={acSav} alt="Saved Library" />
             <span>Saved Library</span>
           </NavLink>
 
-          <NavLink to="/academia/learner/projects" className={linkClassName} onClick={closeSidebar}>
+          <NavLink to="/learner/projects" className={linkClassName} onClick={closeSidebar}>
             <img src={learnersProjectsIcon} alt="My Projects" />
             <span>My Projects</span>
             <span className="learners-sidebar-badge" aria-label={`${projectsCount} projects`}>
@@ -328,14 +328,14 @@ function LearnersLayout() {
             </span>
           </NavLink>
 
-          <NavLink to="/academia/learner/certificates" className={linkClassName} onClick={closeSidebar}>
+          <NavLink to="/learner/certificates" className={linkClassName} onClick={closeSidebar}>
             <img src={learnersCertificatesIcon} alt="My Certificates" />
             <span>My Certificates</span>
           </NavLink>
 
           <div className="my-line"></div>
 
-          <NavLink to="/academia/learner/settings" className={linkClassName} onClick={closeSidebar}>
+          <NavLink to="/learner/settings" className={linkClassName} onClick={closeSidebar}>
             <img src={learnersSettingsIcon} alt="Settings" />
             <span>Settings</span>
           </NavLink>
@@ -357,7 +357,7 @@ function LearnersLayout() {
         </div>
 
           <div className="learners-sidebar-profile">
-          <NavLink to="/academia/learner/account" className="learners-profile-link" onClick={closeSidebar}>
+          <NavLink to="/learner/account" className="learners-profile-link" onClick={closeSidebar}>
             <div className="learners-sidebar-profile-left">
               <div className="learners-sidebar-profile-img">
                 <img src={profileSummary.avatar} alt="Profile" onError={handleProfileImageError} />
@@ -402,7 +402,7 @@ function LearnersLayout() {
           </div>
 
           <div className="learners-topbar-right">
-            <NavLink to="/academia/learner/account" className="learners-user-link">
+            <NavLink to="/learner/account" className="learners-user-link">
               <div className="learners-user">
                 <div className="learners-user-avatar">
                   <img src={profileSummary.avatar} alt="User" onError={handleProfileImageError} />
@@ -423,9 +423,9 @@ function LearnersLayout() {
             <div className="learners-footer-inner">
               <p>{new Date().getFullYear()}© gonaraza.com</p>
               <nav className="learners-footer-links" aria-label="Footer">
-                <a href="/academia/index">About</a>
-                <a href="/academia/learner/courses">Courses</a>
-                <a href="/academia/learner/account">Account</a>
+                <a href="/index">About</a>
+                <a href="/learner/courses">Courses</a>
+                <a href="/learner/account">Account</a>
               </nav>
             </div>
           </footer>

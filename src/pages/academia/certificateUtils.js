@@ -63,13 +63,13 @@ export function formatShortName(fullName) {
 
 export function buildCertificatePreviewPath(certificateNumber) {
   const number = String(certificateNumber || '').trim();
-  if (!number) return '/academia/certificate-preview';
-  return `/academia/certificate-preview?number=${encodeURIComponent(number)}`;
+  if (!number) return '/certificate-preview';
+  return `/certificate-preview?number=${encodeURIComponent(number)}`;
 }
 
 export function getCertificateVerifyPageUrl(certificateNumber) {
   const origin = typeof window !== 'undefined' ? window.location.origin : '';
-  return `${origin}/academia/certificates?certificate=${encodeURIComponent(certificateNumber)}`;
+  return `${origin}/certificates?certificate=${encodeURIComponent(certificateNumber)}`;
 }
 
 function extractCertificateList(body) {

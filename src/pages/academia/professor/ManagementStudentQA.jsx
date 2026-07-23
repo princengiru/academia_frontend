@@ -626,15 +626,15 @@ const ManagementStudentQA = () => {
           <div className="learners-home-title-top">
             <h1>Management</h1>
             <div className="learners-home-title-actions">
-              <a className="learners-btn learners-btn-secondary" href="/academia/professor/management-schedule" onClick={(e) => { e.preventDefault(); navigate('/academia/professor/management-schedule'); }}>
+              <a className="learners-btn learners-btn-secondary" href="/professor/management-schedule" onClick={(e) => { e.preventDefault(); navigate('/professor/management-schedule'); }}>
                 <img src="/assets/icons/plus1.svg" alt="" style={{ width: '14px', height: '14px', objectFit: 'contain' }} />
                 <span>Add Event</span>
               </a>
-              <a className="learners-btn learners-btn-secondary" href="#" onClick={(e) => { preventDefault(e); navigate('/academia/professor/performance'); }}>
+              <a className="learners-btn learners-btn-secondary" href="#" onClick={(e) => { preventDefault(e); navigate('/professor/performance'); }}>
                 <img src="/assets/icons/van.svg" alt="" style={{ width: '14px', height: '14px', objectFit: 'contain' }} />
                 <span>View Analytics</span>
               </a>
-              <a className="learners-btn learners-btn-primary" href="/academia/index" target="_blank" rel="noopener noreferrer">
+              <a className="learners-btn learners-btn-primary" href="/index" target="_blank" rel="noopener noreferrer">
                 <span>Go to website</span>
                 <img src={hoagoto} alt="Go" style={{ width: '14px', height: '14px', objectFit: 'contain' }} />
               </a>
@@ -647,7 +647,7 @@ const ManagementStudentQA = () => {
           {managementTabs.map((tab) => (
             <Link
               key={tab.id}
-              to={`/academia/professor/${tab.id}`}
+              to={`/professor/${tab.id}`}
               className={`prof-management-tab ${activeTab === tab.id ? 'is-active' : ''}`}
             >
               {tab.label}

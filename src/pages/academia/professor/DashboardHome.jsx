@@ -323,11 +323,11 @@ const DashboardHome = () => {
           <div className="learners-home-title-top">
             <h1>Home</h1>
             <div className="learners-home-title-actions">
-              <a className="learners-btn learners-btn-secondary" href="/academia/professor/performance" onClick={(e) => { e.preventDefault(); navigate('/academia/professor/performance'); }}>
+              <a className="learners-btn learners-btn-secondary" href="/professor/performance" onClick={(e) => { e.preventDefault(); navigate('/professor/performance'); }}>
                 <img src="/assets/icons/charts.svg" alt="" />
                 <span>View Analytics</span>
               </a>
-              <a className="learners-btn learners-btn-primary" href="/academia/index" target="_blank" rel="noopener noreferrer">
+              <a className="learners-btn learners-btn-primary" href="/index" target="_blank" rel="noopener noreferrer">
                 <span>Go to website</span>
                 <img src={hoagoto} alt="Go" />
               </a>
@@ -366,7 +366,7 @@ const DashboardHome = () => {
                     <img src="/assets/icons/pi2.svg" alt="Rating" />
                     <span>Rating</span>
                   </div>
-                  <a href="#" onClick={(e) => { e.preventDefault(); navigate('/academia/professor/performance'); }}>View performance</a>
+                  <a href="#" onClick={(e) => { e.preventDefault(); navigate('/professor/performance'); }}>View performance</a>
                 </div>
                 <svg className="prof-stat-sparkline prof-stat-sparkline-red" viewBox="0 0 72 22"><polyline points="2,14 10,16 18,15 26,10 34,11 42,4 50,20 58,6 70,18"></polyline></svg>
                 <h3>{loading ? '...' : `${Number(dashboardData?.averageRating || 0).toFixed(2)}`}</h3>
@@ -378,7 +378,7 @@ const DashboardHome = () => {
                     <img src="/assets/icons/st3.svg" alt="Certificates" />
                     <span>Certificates</span>
                   </div>
-                  <a href="#" onClick={(e) => { e.preventDefault(); navigate('/academia/professor/performance'); }}>View certificates</a>
+                  <a href="#" onClick={(e) => { e.preventDefault(); navigate('/professor/performance'); }}>View certificates</a>
                 </div>
                 <svg className="prof-stat-sparkline" viewBox="0 0 72 22"><polyline points="2,15 10,19 18,10 26,6 34,10 42,10 50,12 58,10 70,9"></polyline></svg>
                 <h3>{loading ? '...' : `${assessmentMetrics.totalCertificatesEarned || 0}`}</h3>
@@ -390,7 +390,7 @@ const DashboardHome = () => {
             <div className="prof-panel prof-panel--flat">
               <div className="prof-panel-head">
                 <h2>Assignments</h2>
-                <button type="button" className="prof-manage-link" onClick={() => navigate('/academia/professor/management')}>
+                <button type="button" className="prof-manage-link" onClick={() => navigate('/professor/management')}>
                   <img src="/assets/icons/book-open.svg" alt="Manage Courses" />
                   <span><img src="/assets/icons/lea1.svg" alt="" /> Manage Courses</span>
                 </button>
@@ -431,10 +431,10 @@ const DashboardHome = () => {
                 <h2>Quick Actions</h2>
               </div>
               <div className="prof-quick-actions">
-                <button type="button" onClick={() => handleQuickAction('/academia/professor/prepare-course')}><span><BookOpen size={16} strokeWidth={1.8} aria-hidden="true" /></span>Prepare Course</button>
-                <button type="button" onClick={() => handleQuickAction('/academia/professor/assignments')}><span><ClipboardCheck size={16} strokeWidth={1.8} aria-hidden="true" /></span>Create Test</button>
-                <button type="button" onClick={() => handleQuickAction('/academia/professor/prepare-syllabus')}><span><FileText size={16} strokeWidth={1.8} aria-hidden="true" /></span>Prepare Syllabus</button>
-                <button type="button" onClick={() => handleQuickAction('/academia/professor/earnings')}><span><Wallet size={16} strokeWidth={1.8} aria-hidden="true" /></span>Payment History</button>
+                <button type="button" onClick={() => handleQuickAction('/professor/prepare-course')}><span><BookOpen size={16} strokeWidth={1.8} aria-hidden="true" /></span>Prepare Course</button>
+                <button type="button" onClick={() => handleQuickAction('/professor/assignments')}><span><ClipboardCheck size={16} strokeWidth={1.8} aria-hidden="true" /></span>Create Test</button>
+                <button type="button" onClick={() => handleQuickAction('/professor/prepare-syllabus')}><span><FileText size={16} strokeWidth={1.8} aria-hidden="true" /></span>Prepare Syllabus</button>
+                <button type="button" onClick={() => handleQuickAction('/professor/earnings')}><span><Wallet size={16} strokeWidth={1.8} aria-hidden="true" /></span>Payment History</button>
               </div>
             </div>
           </div>
@@ -444,7 +444,7 @@ const DashboardHome = () => {
             <div className="prof-panel prof-side-panel">
               <div className="prof-panel-head">
                 <h2>Schedule</h2>
-                <button type="button" className="prof-manage-link" onClick={() => navigate('/academia/professor/management-schedule')}>
+                <button type="button" className="prof-manage-link" onClick={() => navigate('/professor/management-schedule')}>
                   See all
                 </button>
               </div>
@@ -478,7 +478,7 @@ const DashboardHome = () => {
                 type="button"
                 className="prof-add-event"
                 style={{ marginTop: 16 }}
-                onClick={() => navigate('/academia/professor/management-schedule')}
+                onClick={() => navigate('/professor/management-schedule')}
               >
                 <CalendarPlus size={16} strokeWidth={1.8} aria-hidden="true" />
                 Open schedule
@@ -488,7 +488,7 @@ const DashboardHome = () => {
             <div className="prof-panel prof-side-panel">
               <div className="prof-panel-head">
                 <h2>Analytics</h2>
-                <button type="button" className="prof-manage-link" onClick={() => navigate('/academia/professor/performance')}>
+                <button type="button" className="prof-manage-link" onClick={() => navigate('/professor/performance')}>
                   View all
                 </button>
               </div>
@@ -540,7 +540,7 @@ const DashboardHome = () => {
                 type="button"
                 className="prof-add-event"
                 style={{ marginTop: 16 }}
-                onClick={() => navigate('/academia/professor/earnings')}
+                onClick={() => navigate('/professor/earnings')}
               >
                 <Wallet size={16} strokeWidth={1.8} aria-hidden="true" />
                 View earnings

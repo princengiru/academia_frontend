@@ -268,7 +268,7 @@ const Earnings = () => {
           >
             Refresh
           </button>
-          <Link to="/academia/professor/account" className="learners-btn learners-btn-primary">
+          <Link to="/professor/account" className="learners-btn learners-btn-primary">
             Payout methods
           </Link>
         </div>
@@ -327,7 +327,7 @@ const Earnings = () => {
             onFilterChange={handleCourseFilterChange}
             defaultFilterLabel="Show"
             toolbarExtra={(
-              <button type="button" className="adt-btn-light-purple" onClick={() => navigate('/academia/professor/management')}>
+              <button type="button" className="adt-btn-light-purple" onClick={() => navigate('/professor/management')}>
                 Manage courses
               </button>
             )}
@@ -454,7 +454,7 @@ const Earnings = () => {
         Amounts come from paid invoices for your courses. Course price is VAT-inclusive (what the learner paid);
         platform fee is 20% of the net after VAT; your share is 80% of that net.
         Manage mobile money or bank details under{' '}
-        <Link to="/academia/professor/account">Account → payment methods</Link>.
+        <Link to="/professor/account">Account → payment methods</Link>.
       </p>
     </section>
   );

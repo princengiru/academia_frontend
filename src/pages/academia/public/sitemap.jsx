@@ -2,18 +2,18 @@ import { Link } from 'react-router-dom';
 import PublicInfoPage from './PublicInfoPage';
 
 const publicLinks = [
-  { to: '/academia/index', label: 'Home' },
-  { to: '/academia/courses', label: 'Courses' },
-  { to: '/academia/projects', label: 'Projects' },
-  { to: '/academia/syllabuses', label: 'Syllabuses' },
-  { to: '/academia/watch', label: 'Community Feed' },
-  { to: '/academia/certificates', label: 'Certificates' },
-  { to: '/academia/auth/signin', label: 'Sign in' },
-  { to: '/academia/auth/signup', label: 'Sign up' },
-  { to: '/academia/terms', label: 'Terms and Conditions' },
-  { to: '/academia/privacy', label: 'Privacy Policy' },
-  { to: '/academia/ad-policy', label: 'Advertising Policy' },
-  { to: '/academia/help', label: 'Help Center' },
+  { to: '/index', label: 'Home' },
+  { to: '/courses', label: 'Courses' },
+  { to: '/projects', label: 'Projects' },
+  { to: '/syllabuses', label: 'Syllabuses' },
+  { to: '/watch', label: 'Community Feed' },
+  { to: '/certificates', label: 'Certificates' },
+  { to: '/auth/signin', label: 'Sign in' },
+  { to: '/auth/signup', label: 'Sign up' },
+  { to: '/terms', label: 'Terms and Conditions' },
+  { to: '/privacy', label: 'Privacy Policy' },
+  { to: '/ad-policy', label: 'Advertising Policy' },
+  { to: '/help', label: 'Help Center' },
 ];
 
 function SitemapPage() {

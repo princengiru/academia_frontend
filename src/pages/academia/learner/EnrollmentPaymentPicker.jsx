@@ -5,7 +5,7 @@ function EnrollmentPaymentPicker({
   value,
   onChange,
   loading = false,
-  accountHref = '/academia/learner/account?section=payment-mtn',
+  accountHref = '/learner/account?section=payment-mtn',
   requiresPaymentSetup = false,
 }) {
   if (loading) {

@@ -79,7 +79,7 @@ const HOAFailedCourses = () => {
         try {
             const token = localStorage.getItem('token');
             if (!token) {
-                navigate('/academia/auth/signin');
+                navigate('/auth/signin');
                 return;
             }
             const headers = { Authorization: `Bearer ${token}` };
@@ -94,7 +94,7 @@ const HOAFailedCourses = () => {
             if (statsRes?.status === 401 || assignmentsRes?.status === 401) {
                 localStorage.removeItem('token');
                 localStorage.removeItem('user');
-                navigate('/academia/auth/signin');
+                navigate('/auth/signin');
                 return;
             }
 
@@ -250,7 +250,7 @@ const HOAFailedCourses = () => {
 
         if (actionType === 'View Details') {
             showToast('Opening learners — use the learner profile for full course history.', 'success');
-            navigate('/academia/hoa/learners');
+            navigate('/hoa/learners');
             return;
         }
 
@@ -275,7 +275,7 @@ const HOAFailedCourses = () => {
                             {isLoading ? 'Updating...' : 'Data updated every 5min'}
                             <span className="dot" style={{ background: isLoading ? '#F59E0B' : '#10B981' }}></span>
                         </span>
-                        <button className="hoa-btn-primary" onClick={() => window.open('/academia/index', '_blank')}>
+                        <button className="hoa-btn-primary" onClick={() => window.open('/index', '_blank')}>
                             Go to website <img src={hoagoto} alt="Go" />
                         </button>
                     </div>

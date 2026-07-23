@@ -74,10 +74,10 @@ function LearnersCourses() {
   const handleCourseClick = (course) => {
     const ref = (course && (course.uuid || course.id)) || null;
     if (!ref) {
-      navigate('/academia/learner/course-part');
+      navigate('/learner/course-part');
       return;
     }
-    navigate(`/academia/learner/course-part?id=${encodeURIComponent(ref)}`);
+    navigate(`/learner/course-part?id=${encodeURIComponent(ref)}`);
   };
 
   const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
@@ -357,7 +357,7 @@ function LearnersCourses() {
 
   const openSyllabusTopic = (topicId) => {
     if (!topicId) return;
-    navigate(`/academia/syllabus-part?topicId=${encodeURIComponent(topicId)}`);
+    navigate(`/syllabus-part?topicId=${encodeURIComponent(topicId)}`);
   };
 
   const safeTotalPages = Math.max(1, totalPages);
@@ -382,7 +382,7 @@ function LearnersCourses() {
 
             <div className="learners-home-title-actions">
               <SavedLibraryButton />
-              <a className="learners-btn learners-btn-primary" href="/academia/index" target="_blank" rel="noopener noreferrer">
+              <a className="learners-btn learners-btn-primary" href="/index" target="_blank" rel="noopener noreferrer">
                 <span>Go to website</span>
                 <img src={hoagoto} alt="Go" />
               </a>
@@ -637,7 +637,7 @@ function LearnersCourses() {
                       <p>{course.priceLabel}</p>
                     </div>
                     <div>
-                      <h6><a href="/academia/learner/course-part" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleCourseClick(course); }}>{course.title}</a></h6>
+                      <h6><a href="/learner/course-part" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleCourseClick(course); }}>{course.title}</a></h6>
                       <small>{course.author}</small>
                     </div>
                     <div>
@@ -659,7 +659,7 @@ function LearnersCourses() {
                             Leave
                           </button>
                         ) : null}
-                        <a className="learners-course-open" href="/academia/learner/course-part" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleCourseClick(course); }}>
+                        <a className="learners-course-open" href="/learner/course-part" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleCourseClick(course); }}>
                           <img src={acEn} alt="Enroll" />
                         </a>
                       </div>
@@ -719,7 +719,7 @@ function LearnersCourses() {
                 <h2>Syllabus</h2>
                 <p>Browse topics and outlines</p>
               </div>
-              <button type="button" className="learners-courses-see-all" onClick={() => navigate('/academia/syllabuses')}>
+              <button type="button" className="learners-courses-see-all" onClick={() => navigate('/syllabuses')}>
                 See All
               </button>
             </div>
@@ -733,7 +733,7 @@ function LearnersCourses() {
                   title="Could not load topics"
                   message={syllabusTopicsError}
                   actionLabel="Browse syllabuses"
-                  actionTo="/academia/syllabuses"
+                  actionTo="/syllabuses"
                 />
               ) : syllabusItems.length > 0 ? syllabusItems.map((topic) => (
                 <div key={topic.id} className="fgbl-item learners-syllabus-item" style={{ background: '#FCFCFC', border: '1px solid #E2E8F0', padding: '16px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -784,7 +784,7 @@ function LearnersCourses() {
                   title="No topics available"
                   message="Syllabus topics and outlines will appear here when published."
                   actionLabel="Browse syllabuses"
-                  actionTo="/academia/syllabuses"
+                  actionTo="/syllabuses"
                 />
               )}
             </div>

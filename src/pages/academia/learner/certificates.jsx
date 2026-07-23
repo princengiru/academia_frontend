@@ -318,10 +318,10 @@ function LearnersCertificates() {
           </div>
 
           <div className="learners-projects-profile-actions">
-            <button type="button" className="learners-projects-primary-btn" onClick={() => navigate('/academia/learner/courses')}>
+            <button type="button" className="learners-projects-primary-btn" onClick={() => navigate('/learner/courses')}>
               Earn certificates
             </button>
-            <button type="button" className="learners-projects-secondary-btn" onClick={() => navigate('/academia/learner/account')}>
+            <button type="button" className="learners-projects-secondary-btn" onClick={() => navigate('/learner/account')}>
               View Profile
             </button>
           </div>
@@ -486,10 +486,10 @@ function LearnersCertificates() {
             <h3>No certificates yet</h3>
             <p>Complete a course or assessment and your certificates will appear here.</p>
             <div className="learners-certificates-empty-actions">
-              <button type="button" className="learners-projects-primary-btn" onClick={() => navigate('/academia/learner/courses')}>
+              <button type="button" className="learners-projects-primary-btn" onClick={() => navigate('/learner/courses')}>
                 Browse courses
               </button>
-              <button type="button" className="learners-projects-secondary-btn" onClick={() => navigate('/academia/learner/projects')}>
+              <button type="button" className="learners-projects-secondary-btn" onClick={() => navigate('/learner/projects')}>
                 View projects
               </button>
             </div>

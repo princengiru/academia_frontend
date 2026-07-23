@@ -274,7 +274,7 @@ function AcademiaAuthor() {
   // --- Action Handlers ---
   const handleOpenProject = (projectOrId) => {
     const path = buildProjectPath(projectOrId);
-    if (path === '/academia/projects') return;
+    if (path === '/projects') return;
     navigate(path);
   };
 
@@ -284,7 +284,7 @@ function AcademiaAuthor() {
 
     const token = localStorage.getItem('token');
     if (!token) {
-      navigate('/academia/auth/signin');
+      navigate('/auth/signin');
       return;
     }
 
@@ -319,7 +319,7 @@ function AcademiaAuthor() {
       navigate(buildProjectPath(primaryProject));
       return;
     }
-    navigate('/academia/projects');
+    navigate('/projects');
   };
 
   const handleHireUs = () => {
@@ -337,7 +337,7 @@ function AcademiaAuthor() {
         title="Author unavailable"
         message={loadError || 'Author not found.'}
         onRetry={() => setRetryKey((key) => key + 1)}
-        backTo="/academia/projects"
+        backTo="/projects"
         backLabel="Browse projects"
       />
     );

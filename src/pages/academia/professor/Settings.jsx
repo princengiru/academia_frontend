@@ -276,7 +276,7 @@ function ProfessorSettings() {
   }, [apiFetch]);
 
   const openAccountSection = useCallback((section) => {
-    navigate(`/academia/professor/account?section=${section}`);
+    navigate(`/professor/account?section=${section}`);
   }, [navigate]);
 
   const loadSettings = async () => {
@@ -645,7 +645,7 @@ function ProfessorSettings() {
   };
 
   const openProjectsUpload = () => {
-    navigate('/academia/professor/projects');
+    navigate('/professor/projects');
   };
 
   return (
@@ -694,7 +694,7 @@ function ProfessorSettings() {
               <span>Upload new project</span>
               <img src={exitDown} alt="Upload" />
             </button>
-            <button type="button" className="learners-projects-secondary-btn" onClick={() => navigate('/academia/professor/account')}>
+            <button type="button" className="learners-projects-secondary-btn" onClick={() => navigate('/professor/account')}>
               Account settings
             </button>
           </div>

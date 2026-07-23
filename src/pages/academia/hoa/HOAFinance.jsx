@@ -353,7 +353,7 @@ const HOAFinance = () => {
             >
               Refresh
             </button>
-            <Link to="/academia/hoa/reports" className="hoa-finance-btn hoa-finance-btn--ghost">
+            <Link to="/hoa/reports" className="hoa-finance-btn hoa-finance-btn--ghost">
               Reports
             </Link>
           </div>
@@ -433,7 +433,7 @@ const HOAFinance = () => {
                     Paid invoices grouped by course instructor. Collected is what learners paid.
                   </p>
                 </div>
-                <Link to="/academia/hoa/tutors" className="hoa-finance-link">
+                <Link to="/hoa/tutors" className="hoa-finance-link">
                   Manage tutors
                 </Link>
               </div>

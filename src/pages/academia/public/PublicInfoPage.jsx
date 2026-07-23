@@ -11,7 +11,7 @@ function PublicInfoPage({ title, lead, children }) {
         <h1>{title}</h1>
         {lead ? <p className="public-info-lead">{lead}</p> : null}
         {children}
-        <Link className="public-info-back" to="/academia/index">
+        <Link className="public-info-back" to="/index">
           ← Back to Academia home
         </Link>
       </article>

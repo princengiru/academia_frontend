@@ -117,7 +117,7 @@ const AssessmentView = ({
 
   const handleClaimCertificate = async () => {
     if (hasClaimed) {
-      navigate('/academia/learner/certificates');
+      navigate('/learner/certificates');
       return;
     }
 

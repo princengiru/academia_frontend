@@ -925,7 +925,7 @@ const ManagementSchedule = () => {
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path></svg>
                 <span>Refresh Data</span>
               </a>
-              <a className="learners-btn learners-btn-primary" href="/academia/index" target="_blank" rel="noopener noreferrer">
+              <a className="learners-btn learners-btn-primary" href="/index" target="_blank" rel="noopener noreferrer">
                 <span>Go to website</span>
                 <img src={hoagoto} alt="Go" />
               </a>
@@ -938,7 +938,7 @@ const ManagementSchedule = () => {
           {managementTabs.map((tab) => (
             <Link
               key={tab.id}
-              to={`/academia/professor/${tab.id}`}
+              to={`/professor/${tab.id}`}
               className={`prof-management-tab ${activeTab === tab.id ? 'is-active' : ''}`}
             >
               {tab.label}

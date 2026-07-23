@@ -61,7 +61,7 @@ const HOAETravel = () => {
                             title="No e-Travel records yet"
                             message="Mission travel requests will appear here once the e-Travel module is enabled."
                             actionLabel="Back to dashboard"
-                            actionTo="/academia/hoa"
+                            actionTo="/hoa"
                         />
                         <button type="button" className="hoat-btn-outline-light hoat-btn--coming-soon" disabled title="Coming soon">
                             <IconPlus /> Request an e-Travel <span className="hoat-coming-soon-label">Coming soon</span>

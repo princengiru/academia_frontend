@@ -336,7 +336,7 @@ const PrepareSyllabus = () => {
   };
 
   const exitBuilder = () => {
-    navigate(syllabusId ? '/academia/professor/management-syllabuses' : '/academia/professor');
+    navigate(syllabusId ? '/professor/management-syllabuses' : '/professor');
   };
 
   // --- Save / Create Step 1 ---
@@ -473,7 +473,7 @@ const PrepareSyllabus = () => {
         throw new Error(pubErr.message || 'Failed to publish syllabus.');
       }
 
-      navigate('/academia/professor/management-syllabuses', {
+      navigate('/professor/management-syllabuses', {
         state: { toastMessage: 'Syllabus successfully published!', toastTone: 'success' }
       });
     } catch (err) {

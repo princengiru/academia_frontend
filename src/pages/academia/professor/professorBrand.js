@@ -8,14 +8,14 @@ export function professorPageTitle(pageLabel) {
 export function resolveProfessorCurrentPage(pathname = '') {
   const path = pathname.replace(/\/$/, '');
 
-  if (path === '/academia/professor') return 'index';
-  if (path.startsWith('/academia/professor/assignments')) return 'assignments';
-  if (path.startsWith('/academia/professor/projects') || path.startsWith('/academia/professor/view-project')) return 'projects';
-  if (path.startsWith('/academia/professor/performance')) return 'performance';
-  if (path.startsWith('/academia/professor/earnings')) return 'earnings';
-  if (path.startsWith('/academia/professor/management') || path.startsWith('/academia/professor/prepare-')) return 'management';
-  if (path.startsWith('/academia/professor/settings')) return 'settings';
-  if (path.startsWith('/academia/professor/account')) return 'account';
+  if (path === '/professor') return 'index';
+  if (path.startsWith('/professor/assignments')) return 'assignments';
+  if (path.startsWith('/professor/projects') || path.startsWith('/professor/view-project')) return 'projects';
+  if (path.startsWith('/professor/performance')) return 'performance';
+  if (path.startsWith('/professor/earnings')) return 'earnings';
+  if (path.startsWith('/professor/management') || path.startsWith('/professor/prepare-')) return 'management';
+  if (path.startsWith('/professor/settings')) return 'settings';
+  if (path.startsWith('/professor/account')) return 'account';
 
   return '';
 }

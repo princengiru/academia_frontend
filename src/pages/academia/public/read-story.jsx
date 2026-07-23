@@ -260,7 +260,7 @@ function AcademiaReadStory() {
       navigate(buildAuthorPath(authorRef));
       return;
     }
-    navigate('/academia/watch');
+    navigate('/watch');
   };
 
   const handleShareStory = async () => {
@@ -282,7 +282,7 @@ function AcademiaReadStory() {
     const token = localStorage.getItem('token');
     if (!token) {
       sessionStorage.setItem('redirectAfterLogin', window.location.pathname + window.location.search);
-      navigate('/academia/auth/signin');
+      navigate('/auth/signin');
       return;
     }
 
@@ -355,7 +355,7 @@ function AcademiaReadStory() {
       navigate(-1);
       return;
     }
-    navigate('/academia/watch');
+    navigate('/watch');
   };
 
   const handleRelatedStoryClick = (storyOrId) => {
@@ -381,7 +381,7 @@ function AcademiaReadStory() {
         title="Story unavailable"
         message={loadError || 'Story not found.'}
         onRetry={() => setRetryKey((key) => key + 1)}
-        backTo="/academia/watch"
+        backTo="/watch"
         backLabel="Browse stories"
       />
     );
@@ -610,7 +610,7 @@ function AcademiaReadStory() {
               </div>
               {relatedStories.length > 3 && (
                 <div className="mcnd-r-CTA">
-                  <button type="button" onClick={() => navigate('/academia/watch')}>See more</button>
+                  <button type="button" onClick={() => navigate('/watch')}>See more</button>
                 </div>
               )}
             </div>
@@ -672,7 +672,7 @@ function AcademiaReadStory() {
         </div>
 
         <div className="sec-CTA">
-          <button type="button" onClick={() => navigate('/academia/watch')}>
+          <button type="button" onClick={() => navigate('/watch')}>
             <span>View All Stories</span>
             <img src={acNextIcon} alt="Next" />
           </button>

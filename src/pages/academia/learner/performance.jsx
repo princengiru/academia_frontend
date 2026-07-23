@@ -444,7 +444,7 @@ function LearnersPerformance() {
 
   const handlePerformanceNavigate = (husk) => {
     if (husk.action === 'Download Certificate') {
-      navigate('/academia/learner/certificates');
+      navigate('/learner/certificates');
       return;
     }
     if (husk.readerUrl) {
@@ -471,7 +471,7 @@ function LearnersPerformance() {
       window.open(topCertificate.certificate_url, '_blank', 'noopener,noreferrer');
       return;
     }
-    navigate('/academia/learner/certificates');
+    navigate('/learner/certificates');
   };
 
   if (loading) {
@@ -522,10 +522,10 @@ function LearnersPerformance() {
             <h3>No performance data yet</h3>
             <p>Your stats, charts, and assessment history will appear once you start learning and taking tests.</p>
             <div>
-              <button type="button" className="learners-btn learners-btn-primary" onClick={() => navigate('/academia/learner/courses')}>
+              <button type="button" className="learners-btn learners-btn-primary" onClick={() => navigate('/learner/courses')}>
                 Browse courses
               </button>
-              <button type="button" className="learners-btn learners-btn-secondary" onClick={() => navigate('/academia/learner/certificates')}>
+              <button type="button" className="learners-btn learners-btn-secondary" onClick={() => navigate('/learner/certificates')}>
                 View certificates
               </button>
             </div>
@@ -543,7 +543,7 @@ function LearnersPerformance() {
             <h1>My Performance</h1>
             <div className="learners-home-title-actions">
               <SavedLibraryButton />
-              <a className="learners-btn learners-btn-primary" href="/academia/index" target="_blank" rel="noopener noreferrer">
+              <a className="learners-btn learners-btn-primary" href="/index" target="_blank" rel="noopener noreferrer">
                 <span>Go to website</span>
                 <img src={hoagoto} alt="Go" />
               </a>
@@ -731,7 +731,7 @@ function LearnersPerformance() {
                     <div className="learners-card learners-empty-state learners-empty-state--compact">
                       <h3>No certificates yet</h3>
                       <p>Certificates will appear here once an assessment is marked as passed.</p>
-                      <button className="learners-btn learners-btn-primary" type="button" onClick={() => navigate('/academia/learner/certificates')}>
+                      <button className="learners-btn learners-btn-primary" type="button" onClick={() => navigate('/learner/certificates')}>
                         View certificates
                       </button>
                     </div>
@@ -873,11 +873,11 @@ function LearnersPerformance() {
                     className={`learners-performance-history-action is-${row.actionTone}`}
                     onClick={() => {
                       if (row.action === 'Download Certificate') {
-                        navigate('/academia/learner/certificates');
+                        navigate('/learner/certificates');
                       } else if (row.readerUrl) {
                         navigate(row.readerUrl);
                       } else if (row.courseId) {
-                        navigate(`/academia/learner/read-contents?id=${row.courseId}`);
+                        navigate(`/learner/read-contents?id=${row.courseId}`);
                       }
                     }}
                   >

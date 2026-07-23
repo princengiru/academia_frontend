@@ -15,11 +15,11 @@ import eeIcon from '../assets/icons/ee.svg';
 import './Footer.css';
 
 const footerLinkMap = {
-  'Help center': '/academia/help',
+  'Help center': '/help',
   'Submit a ticket': 'mailto:support@gonaraza.com?subject=Support%20ticket',
   'Report Abuse': 'mailto:support@gonaraza.com?subject=Report%20abuse',
   'Report Problem': 'mailto:support@gonaraza.com?subject=Report%20a%20problem',
-  'About Gonaraza.com': '/academia/index',
+  'About Gonaraza.com': '/index',
 };
 
 function Footer() {
@@ -141,15 +141,15 @@ function Footer() {
 
       <div className="footer-p4">
         <div className="footer-p4-l">
-          <Link to="/academia/terms">Terms and Conditions of use</Link>
+          <Link to="/terms">Terms and Conditions of use</Link>
           <div className="divider">|</div>
-          <Link to="/academia/privacy">Privacy policy</Link>
+          <Link to="/privacy">Privacy policy</Link>
           <div className="divider">|</div>
-          <Link to="/academia/ad-policy">Ad policy</Link>
+          <Link to="/ad-policy">Ad policy</Link>
         </div>
         <div className="footer-p4-divider" />
         <div className="footer-p4-r">
-          <Link to="/academia/sitemap">Sitemap</Link>
+          <Link to="/sitemap">Sitemap</Link>
           <div className="divider">|</div>
           <p>
             {currentYear} &copy; Gonaraza.com All Rights Reserved

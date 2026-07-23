@@ -17,7 +17,7 @@ export function PublicLoadError({
   message,
   onRetry,
   retryLabel = 'Try again',
-  backTo = '/academia/index',
+  backTo = '/index',
   backLabel = 'Back to Academia home',
 }) {
   if (!message) return null;

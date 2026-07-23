@@ -301,10 +301,10 @@ export function extractCourseList(body) {
 
 export function buildReaderUrl(courseId, chapterId) {
   // courseId should preferably be the public course_uuid (same as course-part URLs).
-  if (!courseId) return '/academia/learner/courses';
+  if (!courseId) return '/learner/courses';
   const params = new URLSearchParams({ id: String(courseId) });
   if (chapterId) params.set('chapterId', String(chapterId));
-  return `/academia/learner/read-contents?${params.toString()}`;
+  return `/learner/read-contents?${params.toString()}`;
 }
 
 export function getCoursePublicRef(course) {

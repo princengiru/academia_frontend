@@ -174,7 +174,7 @@ function AcademiaProjects() {
 
   const openProject = (projectOrId) => {
     const path = buildProjectPath(projectOrId);
-    if (path === '/academia/projects') return;
+    if (path === '/projects') return;
     navigate(path);
   };
 
@@ -361,7 +361,7 @@ function AcademiaProjects() {
             title="No projects yet"
             message="There are no public projects to show right now."
             actionLabel="Back to home"
-            actionTo="/academia/index"
+            actionTo="/index"
           />
         )}
 
@@ -371,7 +371,7 @@ function AcademiaProjects() {
             message="Try clearing your search or choosing a different category."
             actionLabel={hasActiveFilters ? 'Clear filters' : 'Browse projects'}
             onAction={hasActiveFilters ? clearFilters : undefined}
-            actionTo={hasActiveFilters ? undefined : '/academia/projects'}
+            actionTo={hasActiveFilters ? undefined : '/projects'}
           />
         )}
 
@@ -381,7 +381,7 @@ function AcademiaProjects() {
               title="Could not load projects"
               message={fetchError}
               onRetry={() => setRetryKey((key) => key + 1)}
-              backTo="/academia/index"
+              backTo="/index"
               backLabel="Back to home"
             />
           </div>

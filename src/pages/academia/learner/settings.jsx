@@ -38,7 +38,7 @@ import AccountQuickLinks from '../learner/AccountQuickLinks';
 import './settings.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-const SIGN_IN_PATH = '/academia/auth/signin';
+const SIGN_IN_PATH = '/auth/signin';
 
 const activityFilters = ['This week', 'Last week', 'This month', 'All time'];
 
@@ -285,7 +285,7 @@ function ProfessorSettings() {
   }, [apiFetch]);
 
   const openAccountSection = useCallback((section) => {
-    navigate(`/academia/professor/account?section=${section}`);
+    navigate(`/professor/account?section=${section}`);
   }, [navigate]);
 
   const loadSettings = async () => {
@@ -879,7 +879,7 @@ function ProfessorSettings() {
   };
 
   const openProjectsUpload = () => {
-    navigate('/academia/professor/projects');
+    navigate('/professor/projects');
   };
 
   return (
@@ -930,7 +930,7 @@ function ProfessorSettings() {
               <span>Upload new project</span>
               <img src={exitDown} alt="Upload" />
             </button>
-            <button type="button" className="learners-projects-secondary-btn" onClick={() => navigate('/academia/professor/account')}>
+            <button type="button" className="learners-projects-secondary-btn" onClick={() => navigate('/professor/account')}>
               Account settings
             </button>
           </div>

@@ -69,7 +69,7 @@ function LearnersIndex() {
   const [enrollmentNotice, setEnrollmentNotice] = useState(null);
   const [dashboardLoadError, setDashboardLoadError] = useState('');
   const handleCourseClick = (id) => {
-    navigate(`/academia/learner/course-part?id=${id}`);
+    navigate(`/learner/course-part?id=${id}`);
   };
 
   const handleContinueCourse = (courseId) => {
@@ -267,7 +267,7 @@ function LearnersIndex() {
   const handleCompleteInformation = () => {
     localStorage.setItem('dismissedWelcomeModal', 'true');
     setShowWelcomeModal(false);
-    navigate('/academia/learner/account');
+    navigate('/learner/account');
   };
 
   const weekDates = useMemo(() => buildWeekDates(calendarAnchor), [calendarAnchor]);
@@ -299,7 +299,7 @@ function LearnersIndex() {
 
             <div className="learners-home-title-actions">
               <SavedLibraryButton />
-              <a className="learners-btn learners-btn-primary" href="/academia/index" target="_blank" rel="noopener noreferrer">
+              <a className="learners-btn learners-btn-primary" href="/index" target="_blank" rel="noopener noreferrer">
                 <span>Go to website</span>
                 <img src={hoagoto} alt="Go" />
               </a>
@@ -595,7 +595,7 @@ function LearnersIndex() {
               <div className="learners-card learners-empty-state learners-empty-state--courses">
                 <h3>No courses for this filter</h3>
                 <p>Try another filter or browse courses to start learning.</p>
-                <button type="button" className="learners-btn learners-btn-primary" onClick={() => navigate('/academia/learner/courses')}>
+                <button type="button" className="learners-btn learners-btn-primary" onClick={() => navigate('/learner/courses')}>
                   <span>Browse courses</span>
                 </button>
               </div>
@@ -640,7 +640,7 @@ function LearnersIndex() {
               <h2>Recommended</h2>
               <p>Popular courses available to explore</p>
             </div>
-            <a className="learners-seeall" href="#" onClick={(event) => { event.preventDefault(); navigate('/academia/learner/courses'); }}>See All</a>
+            <a className="learners-seeall" href="#" onClick={(event) => { event.preventDefault(); navigate('/learner/courses'); }}>See All</a>
           </div>
 
           <div className="learners-recommended">
@@ -669,7 +669,7 @@ function LearnersIndex() {
               <div className="learners-card learners-empty-state learners-empty-state--compact">
                 <h3>No recommendations yet</h3>
                 <p>Recommended courses will appear here as you enroll and progress.</p>
-                <button type="button" className="learners-btn learners-btn-primary" onClick={() => navigate('/academia/learner/courses')}>
+                <button type="button" className="learners-btn learners-btn-primary" onClick={() => navigate('/learner/courses')}>
                   <span>Browse courses</span>
                 </button>
               </div>

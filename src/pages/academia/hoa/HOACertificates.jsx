@@ -231,7 +231,7 @@ const HOACertificates = () => {
                             Refresh data
                             <span className="hoace-dot"></span>
                         </span>
-                        <button className="hoace-btn-primary" onClick={() => window.open('/academia/index', '_blank')}>
+                        <button className="hoace-btn-primary" onClick={() => window.open('/index', '_blank')}>
                             Go to website <img src={hoagoto} alt="Go" />
                         </button>
                     </div>

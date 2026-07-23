@@ -39,7 +39,7 @@ function LazyWatch() {
 
 function RedirectJournalsToProjects() {
   const location = useLocation();
-  return <Navigate to={`/academia/projects${location.search || ''}`} replace />;
+  return <Navigate to={`/projects${location.search || ''}`} replace />;
 }
 
 function RedirectReadJournalToProject() {
@@ -47,7 +47,7 @@ function RedirectReadJournalToProject() {
   const id = searchParams.get('id');
   return (
     <Navigate
-      to={id ? `/academia/read-project?id=${encodeURIComponent(id)}` : '/academia/projects'}
+      to={id ? `/read-project?id=${encodeURIComponent(id)}` : '/projects'}
       replace
     />
   );
@@ -69,7 +69,7 @@ export default function AcademiaPublicRoutes() {
       <Route path="watch" element={<LazyWatch />} />
       <Route path="author" element={<AcademiaAuthor />} />
       <Route path="certificates" element={<AcademiaCertificates />} />
-      <Route path="rewards" element={<Navigate to="/academia/certificates" replace />} />
+      <Route path="rewards" element={<Navigate to="/certificates" replace />} />
       <Route path="course-details" element={<AcademiaCourseDetails />} />
       <Route path="courses" element={<AcademiaCourses />} />
       <Route path="terms" element={<AcademiaTerms />} />

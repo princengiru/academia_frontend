@@ -251,7 +251,7 @@ function AcademiaReadContents() {
       navigate(buildSyllabusPartPath(backTopicId));
       return;
     }
-    navigate('/academia/syllabuses');
+    navigate('/syllabuses');
   };
 
   const pdfUrl = useMemo(() => {
@@ -371,7 +371,7 @@ function AcademiaReadContents() {
         title="Content unavailable"
         message={loadError || 'Content not found.'}
         onRetry={() => setRetryKey((key) => key + 1)}
-        backTo="/academia/syllabuses"
+        backTo="/syllabuses"
         backLabel="Browse syllabuses"
       />
     );

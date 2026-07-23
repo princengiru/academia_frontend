@@ -17,7 +17,7 @@ export function HOALoadError({
   message,
   onRetry,
   retryLabel = 'Try again',
-  backTo = '/academia/hoa',
+  backTo = '/hoa',
   backLabel = 'Back to dashboard',
   inline = false,
 }) {

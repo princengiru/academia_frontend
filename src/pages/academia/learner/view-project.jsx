@@ -610,7 +610,7 @@ function LearnersViewProject() {
               <span>Upload new project</span>
               <img src={exitDown} alt="Upload" />
             </button>
-            <button type="button" className="learners-projects-secondary-btn" onClick={() => navigate('/academia/learner/account')}>
+            <button type="button" className="learners-projects-secondary-btn" onClick={() => navigate('/learner/account')}>
               View Profile
             </button>
           </div>
@@ -622,14 +622,14 @@ function LearnersViewProject() {
               <div className="learners-view-project-empty-state learners-view-project-empty-state--full">
                 <h3>Project not found</h3>
                 <p>Select a project from the Projects page to view it here.</p>
-                <button type="button" className="learners-projects-primary-btn" onClick={() => navigate('/academia/learner/projects')}>
+                <button type="button" className="learners-projects-primary-btn" onClick={() => navigate('/learner/projects')}>
                   Back to Projects
                 </button>
               </div>
             ) : (
               <>
                 <div className="learners-view-project-head">
-                  <button type="button" className="learners-view-project-back" onClick={() => navigate('/academia/learner/projects')}>
+                  <button type="button" className="learners-view-project-back" onClick={() => navigate('/learner/projects')}>
                     <img src={acLe} alt="Back" />
                     <span>Back to Projects</span>
                   </button>

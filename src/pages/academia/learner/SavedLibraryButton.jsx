@@ -8,7 +8,7 @@ function SavedLibraryButton({ className = 'learners-btn learners-btn-secondary' 
     <button
       type="button"
       className={className}
-      onClick={() => navigate('/academia/learner/saved-library')}
+      onClick={() => navigate('/learner/saved-library')}
     >
       <img src={acSav} alt="" />
       <span>Saved Library</span>

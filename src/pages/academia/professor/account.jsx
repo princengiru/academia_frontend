@@ -30,7 +30,7 @@ import HoasButtonSpinner from '../learner/HoasButtonSpinner';
 import { getProfilePhotoDisplayUrl, isCustomProfilePhoto } from '../learner/profilePhotoUtils';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-const SIGN_IN_PATH = '/academia/auth/signin';
+const SIGN_IN_PATH = '/auth/signin';
 
 const MAX_DOCUMENT_BYTES = 5 * 1024 * 1024;
 const MAX_DOCUMENT_COUNT = 5;
@@ -2371,7 +2371,7 @@ const ProfessorAccount = () => {
       pushFeedback(existingMethod ? 'Payment method updated.' : 'Payment method saved.');
 
       const returnPath = searchParams.get('return');
-      if (returnPath && returnPath.startsWith('/academia/')) {
+      if (returnPath && returnPath.startsWith('/')) {
         window.setTimeout(() => navigate(returnPath), 1200);
       }
     } catch (e) {
@@ -2627,7 +2627,7 @@ const ProfessorAccount = () => {
           </div>
         )}
 
-        {enrollmentReturnPath && enrollmentReturnPath.startsWith('/academia/') ? (
+        {enrollmentReturnPath && enrollmentReturnPath.startsWith('/') ? (
           <div
             style={{
               margin: '0 0 16px',
@@ -2667,10 +2667,10 @@ const ProfessorAccount = () => {
               Data updated every 5min
               <span className="hoas-dot" />
             </span>
-            <button type="button" className="hoas-btn-primary" onClick={() => navigate('/academia/professor/settings')}>
+            <button type="button" className="hoas-btn-primary" onClick={() => navigate('/professor/settings')}>
               Project profile
             </button>
-            <a className="hoas-btn-primary" href="/academia/index" target="_blank" rel="noopener noreferrer">
+            <a className="hoas-btn-primary" href="/index" target="_blank" rel="noopener noreferrer">
               Go to website <img src={hoagoto} alt="Go" />
             </a>
           </div>

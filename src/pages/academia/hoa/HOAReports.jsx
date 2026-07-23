@@ -514,7 +514,7 @@ const HOAReports = () => {
               {isLoading ? 'Updating...' : 'Data updated every 5min'}
               <span className="dot" style={{ background: isLoading ? '#F59E0B' : '#10B981' }}></span>
             </span>
-            <button type="button" className="hoa-btn-primary" onClick={() => window.open('/academia/index', '_blank')}>
+            <button type="button" className="hoa-btn-primary" onClick={() => window.open('/index', '_blank')}>
               Go to website <img src={hoagoto} alt="Go" />
             </button>
           </div>
@@ -522,7 +522,7 @@ const HOAReports = () => {
 
         <div className="hoa-reports-notice" role="status">
           Revenue and payment history use the same invoice APIs as{' '}
-          <Link to="/academia/hoa/finance">Finance</Link>.
+          <Link to="/hoa/finance">Finance</Link>.
         </div>
 
         {fetchError ? (
@@ -824,7 +824,7 @@ const HOAReports = () => {
         <div className="rep-table-header-area">
           <div className="rep-table-title">
             <h2>Payment History</h2>
-            <p>{reportsApiConnected ? 'Invoice payment history' : 'Awaiting reports API connection'} · <Link to="/academia/hoa/finance">Open Finance</Link></p>
+            <p>{reportsApiConnected ? 'Invoice payment history' : 'Awaiting reports API connection'} · <Link to="/hoa/finance">Open Finance</Link></p>
           </div>
           <div className="rep-table-actions">
             <div className="rep-search-box">

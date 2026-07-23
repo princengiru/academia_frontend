@@ -37,8 +37,8 @@ export function buildCourseDetailsPath(courseOrId) {
   const ref = typeof courseOrId === 'object' && courseOrId !== null
     ? getCoursePublicRef(courseOrId)
     : courseOrId;
-  if (!ref) return '/academia/courses';
-  return `/academia/course-details?id=${encodeURIComponent(String(ref))}`;
+  if (!ref) return '/courses';
+  return `/course-details?id=${encodeURIComponent(String(ref))}`;
 }
 
 /** Prefer public syllabus_uuid so internal primary keys stay out of URLs. */
@@ -104,8 +104,8 @@ export function buildSyllabusPartPath(topicOrId) {
   const ref = typeof topicOrId === 'object' && topicOrId !== null
     ? getTopicPublicRef(topicOrId)
     : topicOrId;
-  if (!ref) return '/academia/syllabuses';
-  return `/academia/syllabus-part?topicId=${encodeURIComponent(String(ref))}`;
+  if (!ref) return '/syllabuses';
+  return `/syllabus-part?topicId=${encodeURIComponent(String(ref))}`;
 }
 
 export function buildSyllabusReaderPath({
@@ -119,7 +119,7 @@ export function buildSyllabusReaderPath({
   const syllabusRef = syllabus
     ? getSyllabusPublicRef(syllabus)
     : (syllabusId || null);
-  if (!syllabusRef) return '/academia/syllabuses';
+  if (!syllabusRef) return '/syllabuses';
 
   const outlineRef = outline
     ? getOutlinePublicRef(outline)
@@ -133,45 +133,45 @@ export function buildSyllabusReaderPath({
   });
   if (outlineRef) params.set('topicId', String(outlineRef));
   if (categoryTopicRef) params.set('categoryTopicId', String(categoryTopicRef));
-  return `/academia/read-contents?${params.toString()}`;
+  return `/read-contents?${params.toString()}`;
 }
 
 export function buildProjectPath(projectOrId) {
   const ref = typeof projectOrId === 'object' && projectOrId !== null
     ? getProjectPublicRef(projectOrId)
     : projectOrId;
-  if (!ref) return '/academia/projects';
-  return `/academia/read-project?id=${encodeURIComponent(String(ref))}`;
+  if (!ref) return '/projects';
+  return `/read-project?id=${encodeURIComponent(String(ref))}`;
 }
 
 export function buildStoryPath(storyOrId) {
   const ref = typeof storyOrId === 'object' && storyOrId !== null
     ? getStoryPublicRef(storyOrId)
     : storyOrId;
-  if (!ref) return '/academia/watch';
-  return `/academia/read-story?id=${encodeURIComponent(String(ref))}`;
+  if (!ref) return '/watch';
+  return `/read-story?id=${encodeURIComponent(String(ref))}`;
 }
 
 export function buildAuthorPath(userOrId) {
   const ref = typeof userOrId === 'object' && userOrId !== null
     ? getUserPublicRef(userOrId)
     : userOrId;
-  if (!ref) return '/academia/index';
-  return `/academia/author?authorId=${encodeURIComponent(String(ref))}`;
+  if (!ref) return '/index';
+  return `/author?authorId=${encodeURIComponent(String(ref))}`;
 }
 
 export function buildLearnerProjectPath(projectOrId) {
   const ref = typeof projectOrId === 'object' && projectOrId !== null
     ? getProjectPublicRef(projectOrId)
     : projectOrId;
-  if (!ref) return '/academia/learner/projects';
-  return `/academia/learner/view-project?id=${encodeURIComponent(String(ref))}`;
+  if (!ref) return '/learner/projects';
+  return `/learner/view-project?id=${encodeURIComponent(String(ref))}`;
 }
 
 export function buildProfessorProjectPath(projectOrId) {
   const ref = typeof projectOrId === 'object' && projectOrId !== null
     ? getProjectPublicRef(projectOrId)
     : projectOrId;
-  if (!ref) return '/academia/professor/projects';
-  return `/academia/professor/view-project?id=${encodeURIComponent(String(ref))}`;
+  if (!ref) return '/professor/projects';
+  return `/professor/view-project?id=${encodeURIComponent(String(ref))}`;
 }

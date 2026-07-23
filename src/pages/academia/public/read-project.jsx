@@ -383,7 +383,7 @@ function AcademiaReadProject() {
       return;
     }
 
-    navigate('/academia/projects');
+    navigate('/projects');
   };
   const handleAuthor = () => {
     const authorRef = getUserPublicRef({
@@ -394,7 +394,7 @@ function AcademiaReadProject() {
       navigate(buildAuthorPath(authorRef));
       return;
     }
-    navigate('/academia/projects');
+    navigate('/projects');
   };
   const projectId = projectData?.id;
   const projectAuthor = projectData?.user_name || 'Unknown author';
@@ -403,7 +403,7 @@ function AcademiaReadProject() {
   const projectThumbnail = resolveProjectImage(projectData?.thumbnail_url, journalImage);
   const feedbackCount = projectData?.feedback_count || comments.length || 0;
 
-  const requireSignIn = () => navigate('/academia/auth/signin');
+  const requireSignIn = () => navigate('/auth/signin');
   const currentUserId = getStoredUserId();
   const isOwnProject = Boolean(
     currentUserId
@@ -570,7 +570,7 @@ function AcademiaReadProject() {
         title="Project unavailable"
         message={loadError || 'Project not found.'}
         onRetry={() => setRetryKey((key) => key + 1)}
-        backTo="/academia/projects"
+        backTo="/projects"
         backLabel="Browse projects"
       />
     );
@@ -958,7 +958,7 @@ function AcademiaReadProject() {
                       ? `${projectAuthor} has not published other public projects yet.`
                       : 'Related projects will appear here when more are published.'}
                   </p>
-                  <button type="button" onClick={() => navigate('/academia/projects')}>
+                  <button type="button" onClick={() => navigate('/projects')}>
                     Browse all projects
                   </button>
                 </div>
@@ -983,8 +983,8 @@ function AcademiaReadProject() {
               </div>
               {!isSignedIn ? (
                 <div>
-                  <button type="button" onClick={() => navigate('/academia/auth/signin')}>Sign In</button>
-                  <button type="button" onClick={() => navigate('/academia/auth/signup')}>Sign Up</button>
+                  <button type="button" onClick={() => navigate('/auth/signin')}>Sign In</button>
+                  <button type="button" onClick={() => navigate('/auth/signup')}>Sign Up</button>
                 </div>
               ) : null}
             </div>

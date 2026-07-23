@@ -45,7 +45,7 @@ function AcademiaForgotPassword() {
       localStorage.setItem('user', JSON.stringify({ email: apexEmail }));
       setApexEmail('');
       setTimeout(() => {
-        navigate('/academia/auth/check-email-single', { replace: true });
+        navigate('/auth/check-email-single', { replace: true });
       }, 900);
       setTitanLoading(false);
     } catch (error) {

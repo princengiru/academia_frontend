@@ -10,10 +10,10 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 function resolveRoleRedirect(role) {
   const normalized = String(role || '').toLowerCase().trim();
-  if (normalized === 'instructor') return '/academia/professor';
-  if (normalized === 'student') return '/academia/learner/';
+  if (normalized === 'instructor') return '/professor';
+  if (normalized === 'student') return '/learner/';
   if (normalized === 'admin') return null;
-  return '/academia/index';
+  return '/index';
 }
 
 function readStoredRole() {
@@ -59,7 +59,7 @@ const HOALayout = ({ children, currentPage: propCurrentPage }) => {
     const verifyAccess = async () => {
       const token = localStorage.getItem('token');
       if (!token) {
-        navigate('/academia/auth/signin', { replace: true });
+        navigate('/auth/signin', { replace: true });
         return;
       }
 
@@ -79,13 +79,13 @@ const HOALayout = ({ children, currentPage: propCurrentPage }) => {
 
         if (response.status === 401) {
           localStorage.clear();
-          navigate('/academia/auth/signin', { replace: true });
+          navigate('/auth/signin', { replace: true });
           return;
         }
 
         if (response.status === 403) {
           localStorage.clear();
-          navigate('/academia/auth/signin', {
+          navigate('/auth/signin', {
             replace: true,
             state: { error: 'This account has been deactivated. Please contact support.' },
           });
@@ -137,7 +137,7 @@ const HOALayout = ({ children, currentPage: propCurrentPage }) => {
 
         if (response.status === 403) {
           localStorage.clear();
-          navigate('/academia/auth/signin', {
+          navigate('/auth/signin', {
             replace: true,
             state: { error: 'This account has been deactivated. Please contact support.' },
           });
@@ -223,7 +223,7 @@ const HOALayout = ({ children, currentPage: propCurrentPage }) => {
                 onClick={() => {
                   localStorage.clear();
                   setShowLogoutModal(false);
-                  navigate('/academia/auth/signin');
+                  navigate('/auth/signin');
                 }}
               >
                 Logout

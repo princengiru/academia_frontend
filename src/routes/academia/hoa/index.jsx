@@ -32,39 +32,39 @@ function LazyHOAPage({ message, children }) {
 function AcademiaHOARoutes() {
   return (
     <>
-      <Route path="academia/hoa" element={<HOADashboardHome />} />
-      <Route path="academia/hoa/learners" element={<HOALearners />} />
-      <Route path="academia/hoa/tutors" element={<HOATutors />} />
-      <Route path="academia/hoa/reports" element={<HOAReports />} />
-      <Route path="academia/hoa/finance" element={<HOAFinance />} />
-      <Route path="academia/hoa/assignments" element={<HOAAssignments />} />
-      <Route path="academia/hoa/passed-courses" element={<HOAPassedCourses />} />
-      <Route path="academia/hoa/retaken-courses" element={<HOARetakenCourses />} />
-      <Route path="academia/hoa/failed-courses" element={<HOAFailedCourses />} />
-      <Route path="academia/hoa/syllabus" element={<HOASyllabus />} />
+      <Route path="hoa" element={<HOADashboardHome />} />
+      <Route path="hoa/learners" element={<HOALearners />} />
+      <Route path="hoa/tutors" element={<HOATutors />} />
+      <Route path="hoa/reports" element={<HOAReports />} />
+      <Route path="hoa/finance" element={<HOAFinance />} />
+      <Route path="hoa/assignments" element={<HOAAssignments />} />
+      <Route path="hoa/passed-courses" element={<HOAPassedCourses />} />
+      <Route path="hoa/retaken-courses" element={<HOARetakenCourses />} />
+      <Route path="hoa/failed-courses" element={<HOAFailedCourses />} />
+      <Route path="hoa/syllabus" element={<HOASyllabus />} />
       <Route
-        path="academia/hoa/online-courses"
+        path="hoa/online-courses"
         element={(
           <LazyHOAPage message="Loading online courses…">
             <HOAOnlineCourses />
           </LazyHOAPage>
         )}
       />
-      <Route path="academia/hoa/projects" element={<HOAProjects />} />
+      <Route path="hoa/projects" element={<HOAProjects />} />
       <Route
-        path="academia/hoa/community"
+        path="hoa/community"
         element={(
           <LazyHOAPage message="Loading community…">
             <HOACommunity />
           </LazyHOAPage>
         )}
       />
-      <Route path="academia/hoa/certificates" element={<HOACertificates />} />
-      <Route path="academia/hoa/events-planning" element={<HOAEventsPlanning />} />
-      <Route path="academia/hoa/e-travel" element={<HOAETravel />} />
-      <Route path="academia/hoa/terms-conditions" element={<HOATermsConditions />} />
+      <Route path="hoa/certificates" element={<HOACertificates />} />
+      <Route path="hoa/events-planning" element={<HOAEventsPlanning />} />
+      <Route path="hoa/e-travel" element={<HOAETravel />} />
+      <Route path="hoa/terms-conditions" element={<HOATermsConditions />} />
       <Route
-        path="academia/hoa/account"
+        path="hoa/account"
         element={(
           <LazyHOAPage message="Loading account…">
             <HOAAccount />

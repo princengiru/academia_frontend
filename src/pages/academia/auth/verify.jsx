@@ -45,7 +45,7 @@ function AcademiaVerify() {
   useEffect(() => {
     const verifyEndpoint = localStorage.getItem('verifyEndpoint');
     if (!verifyEndpoint || !userEmail) {
-      navigate('/academia/auth/signin', { replace: true });
+      navigate('/auth/signin', { replace: true });
     }
   }, [navigate, userEmail]);
 
@@ -128,11 +128,11 @@ function AcademiaVerify() {
             sessionStorage.removeItem('redirectAfterLogin');
             navigate(redirectAfterLogin, { replace: true });
           } else if (userRole === 'instructor') {
-            navigate('/academia/professor', { replace: true });
+            navigate('/professor', { replace: true });
           } else if (userRole === 'admin') {
             navigate('/admin/dashboard', { replace: true });
           } else {
-            navigate('/academia/learner/', { replace: true });
+            navigate('/learner/', { replace: true });
           }
         }, 2000);
       } else {
@@ -141,11 +141,11 @@ function AcademiaVerify() {
             sessionStorage.removeItem('redirectAfterLogin');
             navigate(redirectAfterLogin, { replace: true });
           } else if (userRole === 'instructor') {
-            navigate('/academia/professor', { replace: true });
+            navigate('/professor', { replace: true });
           } else if (userRole === 'admin') {
             navigate('/admin/dashboard', { replace: true });
           } else {
-            navigate('/academia/learner/', { replace: true });
+            navigate('/learner/', { replace: true });
           }
         }, 500);
       }

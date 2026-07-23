@@ -420,7 +420,7 @@ function AcademiaCourses() {
                   title="Could not load courses"
                   message={fetchError}
                   onRetry={() => setRetryKey((key) => key + 1)}
-                  backTo="/academia/index"
+                  backTo="/index"
                   backLabel="Back to home"
                 />
               </div>
@@ -524,7 +524,7 @@ function AcademiaCourses() {
               <button
                 type="button"
                 className="sidebar-syllabus-link"
-                onClick={() => navigate('/academia/syllabuses')}
+                onClick={() => navigate('/syllabuses')}
               >
                 Browse all syllabuses
               </button>

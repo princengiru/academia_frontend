@@ -283,11 +283,11 @@ function AcademiaSyllabuses() {
       navigate(-1);
       return;
     }
-    navigate('/academia/syllabuses');
+    navigate('/syllabuses');
   };
 
   const handleStoryClick = (storyOrId) => navigate(buildStoryPath(storyOrId));
-  const handleViewMore = () => navigate('/academia/watch');
+  const handleViewMore = () => navigate('/watch');
 
   return (
     <div className="syllabuses-page">

@@ -184,7 +184,7 @@ function AcademiaSyllabusPart() {
       navigate(-1);
       return;
     }
-    navigate('/academia/syllabuses');
+    navigate('/syllabuses');
   };
 
   if (dataLoading) {
@@ -197,7 +197,7 @@ function AcademiaSyllabusPart() {
         title="Syllabus unavailable"
         message={treeError}
         onRetry={() => setRetryKey((key) => key + 1)}
-        backTo="/academia/syllabuses"
+        backTo="/syllabuses"
         backLabel="Browse syllabuses"
       />
     );
@@ -208,7 +208,7 @@ function AcademiaSyllabusPart() {
       <PublicLoadError
         title="Topic not selected"
         message="No topic was specified. Open a topic from the syllabuses page."
-        backTo="/academia/syllabuses"
+        backTo="/syllabuses"
         backLabel="Browse syllabuses"
       />
     );
@@ -219,7 +219,7 @@ function AcademiaSyllabusPart() {
       <PublicLoadError
         title="Topic not found"
         message="This syllabus topic could not be found."
-        backTo="/academia/syllabuses"
+        backTo="/syllabuses"
         backLabel="Browse syllabuses"
       />
     );
@@ -259,7 +259,7 @@ function AcademiaSyllabusPart() {
             <ul className="dropdown-menu">
               {syllabusTypes.map((type, idx) => (
                 <li key={idx} className={`dropdown-item ${idx === 0 ? 'active' : ''}`}>
-                  <a href={`/academia/syllabuses?type=${type.toLowerCase().replace(/\s+/g, '-')}`}>{type}</a>
+                  <a href={`/syllabuses?type=${type.toLowerCase().replace(/\s+/g, '-')}`}>{type}</a>
                 </li>
               ))}
             </ul>
@@ -284,7 +284,7 @@ function AcademiaSyllabusPart() {
                     <ul className="dropdown-menu">
                       {sortOptions.map((option, idx) => (
                         <li key={idx} className={`dropdown-item ${idx === 0 ? 'active' : ''}`}>
-                          <a href={`/academia/syllabuses?sort=${option.toLowerCase().replace(/\s+/g, '-')}`}>{option}</a>
+                          <a href={`/syllabuses?sort=${option.toLowerCase().replace(/\s+/g, '-')}`}>{option}</a>
                         </li>
                       ))}
                     </ul>

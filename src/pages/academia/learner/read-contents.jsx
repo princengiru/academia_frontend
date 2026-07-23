@@ -1829,8 +1829,8 @@ function LearnersReadContents() {
   );
 
   const readerEnrollmentReturnPath = inboundId
-    ? `/academia/learner/read-contents?id=${inboundId}`
-    : '/academia/learner/courses';
+    ? `/learner/read-contents?id=${inboundId}`
+    : '/learner/courses';
   const requiresPaymentSetup = Boolean(
     inboundId
     && courseMetaState?.title
@@ -2677,7 +2677,7 @@ function LearnersReadContents() {
     const token = localStorage.getItem('token');
     if (!token) {
       showToast("Please sign in to enroll in this course.", "error");
-      navigate('/academia/auth/signin');
+      navigate('/auth/signin');
       return;
     }
 
@@ -2769,7 +2769,7 @@ function LearnersReadContents() {
             <h1>Course reader</h1>
             <div className="learners-home-title-actions">
               <SavedLibraryButton />
-              <a className="learners-btn learners-btn-primary" href="/academia/index" target="_blank" rel="noopener noreferrer">
+              <a className="learners-btn learners-btn-primary" href="/index" target="_blank" rel="noopener noreferrer">
                 <span>Go to website</span>
                 <img src={hoagoto} alt="Go" />
               </a>
@@ -2778,7 +2778,7 @@ function LearnersReadContents() {
         </section>
 
         <div className="filters-grid-b-h">
-          <button type="button" onClick={() => navigate(`/academia/learner/course-part?id=${inboundId}`)}>
+          <button type="button" onClick={() => navigate(`/learner/course-part?id=${inboundId}`)}>
             <img src={acLe} alt="Left" />
           </button>
           <div>
@@ -2898,7 +2898,7 @@ function LearnersReadContents() {
                 <div className="learners-card learners-empty-state learners-empty-state--compact">
                   <h3>Select a course</h3>
                   <p>Open a course from your library or catalog to start reading.</p>
-                  <button type="button" className="learners-btn learners-btn-primary" onClick={() => navigate('/academia/learner/courses')}>
+                  <button type="button" className="learners-btn learners-btn-primary" onClick={() => navigate('/learner/courses')}>
                     Browse courses
                   </button>
                 </div>
@@ -3046,7 +3046,7 @@ function LearnersReadContents() {
                   <h3>No content published</h3>
                   <p className="visually-hidden">There are no chapters or learning outcomes for this course yet.</p>
                   <div>
-                    <button type="button" className="learners-btn learners-btn-primary" onClick={() => navigate('/academia/learner/courses')}>
+                    <button type="button" className="learners-btn learners-btn-primary" onClick={() => navigate('/learner/courses')}>
                       Browse courses
                     </button>
                   </div>

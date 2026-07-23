@@ -31,9 +31,9 @@ export function hoaPageTitle(pageLabel) {
 export function resolveHoaCurrentPage(pathname = '') {
   const path = pathname.replace(/\/$/, '');
 
-  if (path === '/academia/hoa') return 'index';
-  if (path.startsWith('/academia/hoa/')) {
-    const slug = path.slice('/academia/hoa/'.length).split('/')[0];
+  if (path === '/hoa') return 'index';
+  if (path.startsWith('/hoa/')) {
+    const slug = path.slice('/hoa/'.length).split('/')[0];
     return HOA_PAGE_TITLES[slug] ? slug : slug || 'index';
   }
 

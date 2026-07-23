@@ -96,7 +96,7 @@ function AcademiaCourseDetails() {
       navigate(buildAuthorPath(authorRef));
       return;
     }
-    navigate('/academia/courses');
+    navigate('/courses');
   };
 
   const handleShareCourse = async () => {
@@ -146,7 +146,7 @@ function AcademiaCourseDetails() {
     const token = localStorage.getItem('token');
     if (!token) {
       sessionStorage.setItem('redirectAfterLogin', `${buildCourseDetailsPath(readerId)}&enroll=true`);
-      navigate('/academia/auth/signin');
+      navigate('/auth/signin');
       return;
     }
 
@@ -178,7 +178,7 @@ function AcademiaCourseDetails() {
       setIsEnrolled(true);
       showToast("Successfully enrolled!", "success");
       setTimeout(() => {
-        navigate(`/academia/learner/read-contents?id=${encodeURIComponent(String(readerId))}`, { state: { courseId: readerId } });
+        navigate(`/learner/read-contents?id=${encodeURIComponent(String(readerId))}`, { state: { courseId: readerId } });
       }, 1000);
     } catch (err) {
       showToast(err.message || 'Failed to enroll in the course.', 'danger');
@@ -218,12 +218,12 @@ function AcademiaCourseDetails() {
             setIsEnrolled(true);
             showToast("Successfully enrolled!", "success");
             setTimeout(() => {
-              navigate(`/academia/learner/read-contents?id=${encodeURIComponent(String(readerId || course.uuid || course.id))}`, { replace: true });
+              navigate(`/learner/read-contents?id=${encodeURIComponent(String(readerId || course.uuid || course.id))}`, { replace: true });
             }, 1000);
           } else {
             if (data.message && data.message.toLowerCase().includes('already enrolled')) {
               setIsEnrolled(true);
-              navigate(`/academia/learner/read-contents?id=${encodeURIComponent(String(readerId || course.uuid || course.id))}`, { replace: true });
+              navigate(`/learner/read-contents?id=${encodeURIComponent(String(readerId || course.uuid || course.id))}`, { replace: true });
             } else {
               showToast(data.message || 'Auto enrollment failed.', 'danger');
             }
@@ -366,7 +366,7 @@ function AcademiaCourseDetails() {
         title="Course unavailable"
         message={error || 'Course not found.'}
         onRetry={() => setRetryKey((key) => key + 1)}
-        backTo="/academia/courses"
+        backTo="/courses"
         backLabel="Browse courses"
       />
     );
@@ -375,7 +375,7 @@ function AcademiaCourseDetails() {
   return (
     <div className="public-course-details-page">
       <div className="breadcrumb-nav">
-        <button type="button" onClick={() => navigate('/academia/index')} className="back-btn">
+        <button type="button" onClick={() => navigate('/index')} className="back-btn">
           <img src={acLe} alt="back" />
         </button>
         <div className="crumbs">
@@ -576,7 +576,7 @@ function AcademiaCourseDetails() {
                     <button
                       type="button"
                       className="enroll-cta-btn go-course"
-                      onClick={() => navigate('/academia/hoa')}
+                      onClick={() => navigate('/hoa')}
                     >
                       <span>Go to Admin Panel</span>
                       <img src={arrowUpRight} alt="" />
@@ -589,7 +589,7 @@ function AcademiaCourseDetails() {
                     <button
                       type="button"
                       className="enroll-cta-btn go-course"
-                      onClick={() => navigate('/academia/professor')}
+                      onClick={() => navigate('/professor')}
                     >
                       <span>Go to Instructor Panel</span>
                       <img src={arrowUpRight} alt="" />
@@ -602,7 +602,7 @@ function AcademiaCourseDetails() {
                     <button
                       type="button"
                       className="enroll-cta-btn go-course"
-                      onClick={() => navigate(`/academia/learner/read-contents?id=${encodeURIComponent(String(readerId))}`, { state: { courseId: readerId } })}
+                      onClick={() => navigate(`/learner/read-contents?id=${encodeURIComponent(String(readerId))}`, { state: { courseId: readerId } })}
                     >
                       <span>Go to Course Workspace</span>
                       <img src={arrowUpRight} alt="" />

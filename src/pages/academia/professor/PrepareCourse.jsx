@@ -42,7 +42,7 @@ const PrepareCourse = () => {
   };
 
   const exitBuilder = () => {
-    navigate(courseId ? '/academia/professor/management' : '/academia/professor');
+    navigate(courseId ? '/professor/management' : '/professor');
   };
 
   // Props passed down to every step
